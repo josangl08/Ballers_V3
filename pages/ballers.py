@@ -7,7 +7,7 @@ from datetime import datetime
 
 def get_db_session():
     """Crea y devuelve una sesión de SQLAlchemy."""
-    engine = create_engine('sqlite:///ballers_app.db')
+    engine = create_engine('sqlite:///./data/ballers_app.db')
     Base.metadata.create_all(engine)  # Crea tablas si no existen
     Session = sessionmaker(bind=engine)
     return Session()
@@ -138,7 +138,7 @@ def show_player_profile(player_id=None):
                 player.notes = new_note
                 db_session.commit()
                 st.success("Notas guardadas correctamente")
-                st.experimental_rerun()
+                st.rerun()
     
     db_session.close()
 
@@ -180,7 +180,7 @@ def show_player_list():
                 
                 if st.button("Ver perfil", key=f"player_{player.player_id}"):
                     st.session_state["selected_player_id"] = player.player_id
-                    st.experimental_rerun()
+                    st.rerun()
     
     db_session.close()
 
