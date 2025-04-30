@@ -1,0 +1,314 @@
+/* styles/styles.css - Archivo CSS completo */
+
+/* Personalización general */
+body {
+    color: #333333;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Encabezados */
+h1 {
+    color: #1E88E5;
+    font-weight: 700;
+}
+
+h2, h3 {
+    color: #0D47A1;
+    font-weight: 600;
+}
+
+/* Sidebar personalizada */
+.sidebar .sidebar-content {
+    background-color: #f8f9fa;
+}
+
+/* Tarjetas y contenedores */
+div.stContainer {
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Botones personalizados */
+.stButton>button {
+    border-radius: 20px;
+    font-weight: 500;
+    background-color: #1E88E5;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.stButton>button:hover {
+    background-color: #0D47A1;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Formularios */
+.stTextInput>div>div>input, 
+.stSelectbox>div>div>select,
+.stMultiselect>div>div>div>div {
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+}
+
+/* Métricas */
+div.stMetric {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+}
+
+div.stMetric label {
+    color: #1E88E5;
+    font-weight: 600;
+}
+
+/* Tablas */
+div.stDataFrame {
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+}
+
+/* Pestañas */
+button.stTab {
+    background-color: #f0f0f0;
+    border-radius: 5px 5px 0 0;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+button.stTab[aria-selected="true"] {
+    background-color: #1E88E5;
+    color: white;
+}
+
+/* Gráficos */
+div.stPlotlyChart {
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Mensajes de alerta y éxito */
+div.stAlert {
+    border-radius: 5px;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Estilos para el formulario de login */
+form {
+    background-color: rgba(29, 221, 110, 1);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 500px;
+}
+
+/* Centrar el formulario */
+div.row-widget.stForm {
+    background-color: rgba(29, 221, 110, 1) !important;
+    max-width: 500px !important;
+    margin: 0 auto 1rem auto !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+}
+
+/* Alineación de columnas dentro del formulario */
+.stForm .row-widget.stHorizontal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Personalización para tarjetas de perfil */
+div.profile-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+div.profile-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilos para los calendarios */
+div.calendar-container {
+    background-color: white;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.session-scheduled {
+    background-color: #E3F2FD;
+    border-left: 4px solid #1E88E5;
+}
+
+.session-completed {
+    background-color: #E8F5E9;
+    border-left: 4px solid #4CAF50;
+}
+
+.session-canceled {
+    background-color: #FFEBEE;
+    border-left: 4px solid #F44336;
+}
+
+/* Estilos para los estados de sesión */
+.status-scheduled {
+    background-color: #1E88E5;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+
+.status-completed {
+    background-color: #4CAF50;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+
+.status-canceled {
+    background-color: #F44336;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+
+/* Personalización de tooltips */
+div.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+div.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+div.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Desactivar zoom en imágenes */
+img {
+    pointer-events: none !important;
+}
+
+button[kind="icon"][aria-label="Fullscreen"] {
+    display: none !important;
+}
+
+div[data-testid="stImage"] {
+    pointer-events: none !important;
+}
+
+/* Arreglo para evitar cuadros blancos */
+div[data-testid="stVerticalBlock"] > div:nth-child(1) {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Estilos para Markdown y texto en general */
+.stMarkdown {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+/* Estilos para los enlaces */
+a {
+    color: #1E88E5;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+a:hover {
+    color: #0D47A1;
+    text-decoration: underline;
+}
+
+/* Estilos para el panel de recuperación de contraseña */
+#forgotPasswordInfo {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: -10px;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#forgotPasswordInfo h4 {
+    color: #1E88E5;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+#forgotPasswordInfo p {
+    margin-bottom: 10px;
+}
+
+/* Ajuste para expanders */
+.streamlit-expanderHeader {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto !important;
+    background-color: #f5f7f9 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.streamlit-expanderContent {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto !important;
+    background-color: white !important;
+    border-radius: 0 0 10px 10px !important;
+    padding: 1rem !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Estilo para los textos dentro del expander */
+.streamlit-expanderContent p {
+    color: #555;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Ajustes para la información de debug */
+div.stExpander {
+    max-width: 500px;
+    margin: 0 auto;
+}
