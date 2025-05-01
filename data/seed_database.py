@@ -4,8 +4,8 @@
 import os
 import sys
 import random
+import hashlib  # Cambiado: usar hashlib en lugar de werkzeug
 from datetime import datetime, timedelta, timezone
-from werkzeug.security import generate_password_hash
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from faker import Faker
@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import Base, User, UserType, Coach, Player, Admin, Session, SessionStatus, TestResult
 
 # Configuración - Ajustada según tus requerimientos
-DATABASE_URL = "sqlite:///./data/ballers_app.db"  # Base de datos en la carpeta data
+DATABASE_URL = "sqlite:///ballers_app.db"  # Base de datos en la misma carpeta data
 NUM_ADMINS = 2
 NUM_COACHES = 6
 NUM_PLAYERS = 30
@@ -33,6 +33,11 @@ Base.metadata.create_all(engine)
 DBSession = sessionmaker(bind=engine)
 db_session = DBSession()
 
+# Función para crear hash de contraseña (igual que en login.py)
+def hash_password(password):
+    """Convierte una contraseña en un hash SHA-256."""
+    return hashlib.sha256(password.encode()).hexdigest()
+
 def create_users():
     """Crear usuarios de diferentes tipos"""
     users = []
@@ -42,20 +47,34 @@ def create_users():
         (UserType.player, NUM_PLAYERS)
     ]
     
+    coach_user_data = []  # Lista para almacenar datos de coaches para referencia
+    player_user_data = []  # Lista para almacenar datos de players para referencia
+    
     for user_type, count in user_types:
         for i in range(count):
             first_name = fake.first_name()
             last_name = fake.last_name()
-            username = f"{first_name.lower()}.{last_name.lower()}{random.randint(1, 99)}"
+            
+            # Crear nombres de usuario más consistentes
+            if user_type == UserType.admin:
+                username = f"admin{i+1}"
+            elif user_type == UserType.coach:
+                username = f"coach{i+1}"
+            elif user_type == UserType.player:
+                username = f"player{i+1}"
+            
+            # Contraseña fácil de recordar basada en el tipo de usuario
+            password = f"{user_type.value}123"
+            password_hash = hash_password(password)
             
             user = User(
                 username=username,
                 name=f"{first_name} {last_name}",
-                password_hash=generate_password_hash("password123"),
+                password_hash=password_hash,
                 email=f"{username}@example.com",
                 phone=fake.phone_number(),
                 line=f"line.{username}",
-                profile_photo="assets/profiles_photos/default_profile.png",  # Usar imagen por defecto para todos
+                profile_photo="assets/profile_photos/default_profile.png",  # Ruta relativa desde la carpeta data
                 date_of_birth=fake.date_of_birth(minimum_age=18, maximum_age=45),
                 user_type=user_type,
                 permit_level=1 if user_type != UserType.admin else random.randint(1, 3),
@@ -64,8 +83,31 @@ def create_users():
             
             db_session.add(user)
             users.append((user, user_type))
+            
+            # Guardar información para mostrarla al final
+            if user_type == UserType.coach:
+                coach_user_data.append((username, password))
+            elif user_type == UserType.player:
+                player_user_data.append((username, password))
     
     db_session.commit()
+    
+    # Guardar datos de usuarios para mostrar al final
+    with open("usuarios_generados.txt", "w") as f:
+        f.write("=== USUARIOS GENERADOS ===\n\n")
+        
+        f.write("== ADMINISTRADORES ==\n")
+        for i in range(NUM_ADMINS):
+            f.write(f"Usuario: admin{i+1}, Contraseña: admin123\n")
+        
+        f.write("\n== ENTRENADORES ==\n")
+        for username, password in coach_user_data:
+            f.write(f"Usuario: {username}, Contraseña: {password}\n")
+        
+        f.write("\n== JUGADORES ==\n")
+        for username, password in player_user_data:
+            f.write(f"Usuario: {username}, Contraseña: {password}\n")
+    
     return users
 
 def create_profiles(users):
@@ -257,11 +299,8 @@ def main():
     print("Iniciando población de la base de datos...")
     
     try:
-        # Crear directorio para la base de datos si no existe
-        os.makedirs("data", exist_ok=True)
-        
         # Comprobar si la base de datos ya existe
-        db_path = os.path.join("data", "ballers_app.db")
+        db_path = "ballers_app.db"
         if os.path.exists(db_path):
             print(f"La base de datos ya existe en {db_path}")
             choice = input("¿Desea limpiar los datos existentes? (s/n): ")
@@ -281,16 +320,19 @@ def main():
             print(f"Creando nueva base de datos en {db_path}")
         
         # Verificar si el directorio de perfiles existe, si no, advertir
-        assets_dir = "assets/profiles_photos"
+        # Ajustamos la ruta para acceder a un directorio fuera de la carpeta data
+        assets_dir = "../assets/profile_photos"
         if not os.path.exists(assets_dir):
             print(f"ADVERTENCIA: El directorio {assets_dir} no existe.")
-            print("Se usará una ruta predeterminada para las fotos de perfil.")
-            print(f"Crea el directorio {assets_dir} manualmente si es necesario.")
+            print("Se creará el directorio para las fotos de perfil.")
+            os.makedirs(assets_dir, exist_ok=True)
+            print(f"Directorio {assets_dir} creado.")
             print("---")
         
         print("Creando usuarios...")
         users = create_users()
         print(f"Creados {len(users)} usuarios")
+        print("NOTA: Todos los usuarios tienen la contraseña 'password123'")
         
         print("Creando perfiles específicos...")
         coaches, players = create_profiles(users)
@@ -323,6 +365,23 @@ def main():
         )).count()
         if players_without_tests > 0:
             print(f"ADVERTENCIA: Hay {players_without_tests} jugadores sin resultados de pruebas")
+        
+        # Muestra un par de usuarios para testing
+        print("\nUsuarios creados para testing:")
+        print("\nAdministradores:")
+        for i in range(NUM_ADMINS):
+            print(f"- Usuario: admin{i+1}, Contraseña: admin123")
+            
+        print("\nEntrenadores:")
+        for i in range(NUM_COACHES):
+            print(f"- Usuario: coach{i+1}, Contraseña: coach123")
+            
+        print("\nJugadores (mostrando primeros 5):")
+        for i in range(min(5, NUM_PLAYERS)):
+            print(f"- Usuario: player{i+1}, Contraseña: player123")
+            
+        print(f"\nTodos los usuarios han sido guardados en data/usuarios_generados.txt")
+        print("Puedes usar cualquiera de estos usuarios para iniciar sesión en la aplicación.")
         
     except Exception as e:
         print(f"Error: {e}")

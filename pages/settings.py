@@ -149,7 +149,7 @@ def create_user_form():
             db_session.close()
             
             st.success(f"Usuario {name} creado correctamente.")
-            st.experimental_rerun()
+            st.rerun()
 
 def edit_profile():
     """Formulario para editar el perfil del usuario actual."""
@@ -249,7 +249,7 @@ def edit_profile():
             # Actualizar nombre en la sesión
             st.session_state["name"] = name
             
-            st.experimental_rerun()
+            st.rerun()
     
     db_session.close()
 

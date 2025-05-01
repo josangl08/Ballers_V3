@@ -55,8 +55,17 @@ def create_sidebar_menu():
             default_index=0,
         )
         
-        # Botón de cerrar sesión
-        st.button("Cerrar Sesión", on_click=logout)
+        # Botón de cerrar sesión - Solución corregida
+        if st.button("Cerrar Sesión"):
+            # En lugar de llamar a una función callback, hacemos todo directamente aquí
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            
+            # Agregamos una clave especial para mostrar mensaje en la siguiente ejecución
+            st.session_state["show_logout_message"] = True
+            
+            # Usar st.rerun() directamente en el flujo principal (no en callback)
+            st.rerun()
         
     return selected
 
@@ -78,12 +87,12 @@ def get_content_path(section):
     
     return content_map.get(section)
 
+# Función legacy que ya no se usa, pero se mantiene por compatibilidad
 def logout():
     """Cierra la sesión del usuario."""
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.success("Has cerrado sesión correctamente")
-    st.experimental_rerun()
+    # No llamamos a rerun() aquí porque no funcionará en un callback
 
 if __name__ == "__main__":
     # Para probar el menú de forma independiente
@@ -91,6 +100,11 @@ if __name__ == "__main__":
     st.session_state["username"] = "test_user"
     st.session_state["name"] = "Test User"
     st.session_state["user_type"] = "admin"
+    
+    # Mostrar mensaje de cierre de sesión si es necesario
+    if st.session_state.get("show_logout_message"):
+        st.success("Has cerrado sesión correctamente")
+        del st.session_state["show_logout_message"]
     
     selected = create_sidebar_menu()
     st.title(f"Sección: {selected}")

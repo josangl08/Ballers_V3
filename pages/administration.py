@@ -139,7 +139,7 @@ def show_coach_calendar():
                     session.notes = notes
                     db_session.commit()
                     st.success("Cambios guardados correctamente")
-                    st.experimental_rerun()
+                    st.rerun()
     
     # Botón para añadir nueva sesión
     st.subheader("Nueva Sesión")
@@ -199,7 +199,7 @@ def show_coach_calendar():
                 db_session.add(new_session)
                 db_session.commit()
                 st.success("Sesión programada correctamente")
-                st.experimental_rerun()
+                st.rerun()
 
 def show_admin_dashboard():
     """Muestra el panel de administración completo para administradores."""
@@ -346,7 +346,7 @@ def show_all_sessions():
                     db_session.delete(session_to_remove)
                     db_session.commit()
                     st.success(f"Sesión #{session_to_delete} eliminada correctamente")
-                    st.experimental_rerun()
+                    st.rerun()
         
         with col2:
             # Permitir cambiar el estado de una sesión
@@ -372,7 +372,7 @@ def show_all_sessions():
                     session.status = SessionStatus(new_status)
                     db_session.commit()
                     st.success(f"Sesión #{session_to_update} actualizada correctamente")
-                    st.experimental_rerun()
+                    st.rerun()
 
 def show_user_management():
     """Muestra la gestión de usuarios para administradores."""
@@ -453,7 +453,7 @@ def show_user_management():
                     user.is_active = not user.is_active
                     db_session.commit()
                     st.success(f"Usuario {toggle_label.lower()}do correctamente")
-                    st.experimental_rerun()
+                    st.rerun()
             else:
                 st.info("La gestión de estado de usuario no está disponible en esta versión.")
     

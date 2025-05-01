@@ -198,7 +198,7 @@ def show_content():
             # Botón para volver a la lista
             if st.button("← Volver a la lista"):
                 del st.session_state["selected_player_id"]
-                st.experimental_rerun()
+                st.rerun()
             
             # Mostrar perfil del jugador seleccionado
             show_player_profile(st.session_state["selected_player_id"])
