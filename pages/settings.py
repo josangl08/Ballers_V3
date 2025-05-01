@@ -285,7 +285,7 @@ def system_settings():
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Settings."""
-    st.title("Configuración")
+    st.markdown('<h3 class="section-title">Settings</h3>', unsafe_allow_html=True)
     
     # Verificar si el usuario es administrador
     user_type = st.session_state.get("user_type")

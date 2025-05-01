@@ -15,6 +15,7 @@ def create_sidebar_menu():
     
     # Obtener el tipo de usuario de la sesión
     user_type = st.session_state.get("user_type")
+    user_name = st.session_state.get("name", "")
     
     # Definir opciones de menú según el tipo de usuario
     menu_options = {
@@ -42,32 +43,42 @@ def create_sidebar_menu():
         except:
             st.write("Logo no encontrado")
         
-        # Información del usuario
-        st.write(f"Usuario: {st.session_state.get('name', '')}")
-        st.write(f"Tipo: {user_type.capitalize()}")
+        # Crear string personalizado para el título del menú con iconos
+        menu_title = f" {user_name}    |    🔑 {user_type.capitalize()}"
         
-        # Menú de opciones
+        # Menú de opciones con título personalizado
         selected = option_menu(
-            "Menu", 
+            menu_title, 
             current_menu["options"],
             icons=current_menu["icons"],
-            menu_icon="cast",
+            menu_icon="person-circle",
             default_index=0,
             styles={
-            "nav-link": {
-                "transition": "all 0.3s ease",
-                "--hover-color": "#1DDD6E",
-                "--hover-text-color": "#333333",
-            },
-            "nav-link-selected": {
-                "background-color": "#333333",
-                "color": "#1DDD6E",
+                "container": {"padding": "1!important","margin-top": "2!important", "background-color": "#1D1B1A"},
+                "icon": {"color": "#1DDD6E", "font-size": "18px"},
+                "nav": {
+                    "font-size": "16px",
+                    "text-align": "left",
+                    "margin": "0px",
+                    "transition": "all 0.3s ease",
+                    "--hover-color": "#333333",
                 },
+                "nav-link-selected": {
+                    "background-color": "#333333",
+                }, 
+                "menu-title": {
+                    "font-size": "14px",
+                    "font-weight": "bold",
+                    "margin-bottom": "10px",
+                    "color": "#FFFFFF",
+                    "text-align": "center"
+                }
             }
         )
         
-        # Botón de cerrar sesión
-        if st.button("Log Out", key="logout_button"):
+        # Botón de cerrar sesión estilizado
+        if st.button("📤 Log Out", key="logout_button", 
+                   type="primary", use_container_width=True):
             # En lugar de llamar a una función callback, hacemos todo directamente aquí
             for key in list(st.session_state.keys()):
                 del st.session_state[key]

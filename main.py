@@ -77,14 +77,37 @@ h2, h3 {
 
 # Función principal
 def main():
+    # Comprobar si ya hay un usuario en sesión antes de configurar la página
+    has_session = "user_id" in st.session_state
+    
     # Cargar estilos
     load_css()
     
-    # Comprobar si ya hay un usuario en sesión
-    if "user_id" not in st.session_state:
-        # Si no hay sesión, mostrar página de login
+    # Si no hay sesión, ocultar completamente el sidebar
+    if not has_session:
+        # Aplicar estilo para ocultar completamente el sidebar
+        st.markdown("""
+        <style>
+        /* Ocultar control de sidebar */
+        [data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        
+        /* Ocultar sidebar completamente */
+        section[data-testid="stSidebar"] {
+            display: none !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Mostrar página de login
         login_page()
     else:
+        # Mostrar logo centrado
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image("assets/ballers/logo_white.png", width=400)
+       
         # Si hay sesión, mostrar menú y contenido según selección
         selected_section = create_sidebar_menu()
         

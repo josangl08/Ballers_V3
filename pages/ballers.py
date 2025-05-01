@@ -154,11 +154,10 @@ def show_player_list():
         db_session.close()
         return
     
-    # Mostrar listado de jugadores
-    st.subheader("Jugadores")
+  
     
     # Filtros
-    search_name = st.text_input("Buscar por nombre:")
+    search_name = st.text_input("Buscar Jugador por nombre:")
     
     # Filtrar jugadores
     filtered_players = players
@@ -186,7 +185,7 @@ def show_player_list():
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Ballers."""
-    st.title("Ballers - Perfiles")
+    st.markdown('<h3 class="section-title">Profiles</h3>', unsafe_allow_html=True)
     
     # Si es un jugador, mostrar su propio perfil
     if st.session_state.get("user_type") == "player":

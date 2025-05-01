@@ -203,7 +203,7 @@ def show_coach_calendar():
 
 def show_admin_dashboard():
     """Muestra el panel de administración completo para administradores."""
-    st.subheader("Panel de Administración")
+    
     
     # Crear pestañas para las diferentes secciones
     tab1, tab2, tab3 = st.tabs(["Sesiones", "Usuarios", "Estadísticas"])
@@ -513,7 +513,7 @@ def show_statistics():
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Administration."""
-    st.title("Administration")
+    st.markdown('<h3 class="section-title">Administration</h3>', unsafe_allow_html=True)
     
     # Mostrar contenido según el tipo de usuario
     user_type = st.session_state.get("user_type")

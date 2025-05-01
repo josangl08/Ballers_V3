@@ -1,27 +1,50 @@
 /* styles/styles.css - Archivo CSS completo */
 
 /* Personalización general */
-
+header[data-testid="stHeader"] {
+    position: absolute !important;
+    top: 0 !important;
+    z-index: 999 !important;
+    height: auto !important;
+  }
+  
+/* contenedor principal */
+[data-testid="stMainBlockContainer"] {
+    padding-top: 0rem !important;
+    margin-top: 0rem !important;
+    padding-bottom: 0rem !important;
+    margin-bottom: 0rem !important;
+}
+/* contenedor de la aplicación completa */
+[data-testid="stAppViewContainer"] > .main .block-container {
+    padding-top: 0rem !important;
+    margin-top: 0rem !important;
+}
+[data-testid="stMainBlockContainer"] {
+    padding-top: 0rem !important;
+    margin-top: 0rem !important;
+    padding-bottom: 0rem !important;
+    margin-bottom: 0rem !important;
+}
+/* Ajustar posición vertical del logo en el sidebar */
+[data-testid="stSidebarContent"] img {
+    margin-top: -40px !important;
+    padding-top: 0 !important;
+    margin-bottom: 40px;
+  }
 body {
     color: #333333;
     font-family: 'Roboto', sans-serif;
 }
 
-/* Encabezados */
-h1 {
-    color: #1E88E5;
-    font-weight: 700;
-}
-
-h2, h3 {
-    color: #0D47A1;
+.st-emotion-cache-seewz2 h2 {
+    margin-bottom: 20px;
     font-weight: 600;
-}
-
-/* Sidebar personalizada */
-.sidebar .sidebar-content {
-    background-color: #f8f9fa;
-}
+    border-bottom: 2px solid #1DDD6E;
+    padding-top: 0px;
+    padding-bottom: 5px;
+    display: inline-block;
+  }
 
 /* Tarjetas y contenedores */
 div.stContainer {
