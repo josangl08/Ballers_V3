@@ -53,10 +53,21 @@ def create_sidebar_menu():
             icons=current_menu["icons"],
             menu_icon="cast",
             default_index=0,
+            styles={
+            "nav-link": {
+                "transition": "all 0.3s ease",
+                "--hover-color": "#1DDD6E",
+                "--hover-text-color": "#333333",
+            },
+            "nav-link-selected": {
+                "background-color": "#333333",
+                "color": "#1DDD6E",
+                },
+            }
         )
         
-        # Botón de cerrar sesión - Solución corregida
-        if st.button("Cerrar Sesión"):
+        # Botón de cerrar sesión
+        if st.button("Log Out", key="logout_button"):
             # En lugar de llamar a una función callback, hacemos todo directamente aquí
             for key in list(st.session_state.keys()):
                 del st.session_state[key]

@@ -228,7 +228,7 @@ def show_all_sessions():
     db_session = get_db_session()
     
     # Filtros de fecha
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
         start_date = st.date_input(
             "Desde", 
@@ -245,13 +245,14 @@ def show_all_sessions():
             max_value=datetime.now().date() + timedelta(days=90),
             key="admin_end_date"
         )
-    with col3:
-        status_values = [s.value for s in SessionStatus]
-        status_filter = st.multiselect(
-            "Estado", 
-            options=status_values,
-            default=status_values
-        )
+
+    # Filtro de estado
+    status_values = [s.value for s in SessionStatus]
+    status_filter = st.multiselect(
+        "Estado", 
+        options=status_values,
+        default=status_values
+    )
     
     # Filtro de coach
     coaches = db_session.query(Coach).join(User).all()

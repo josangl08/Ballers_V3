@@ -1,6 +1,7 @@
 /* styles/styles.css - Archivo CSS completo */
 
 /* Personalización general */
+
 body {
     color: #333333;
     font-family: 'Roboto', sans-serif;
@@ -33,18 +34,32 @@ div.stContainer {
 .stButton>button {
     border-radius: 20px;
     font-weight: 500;
-    background-color: #1E88E5;
-    color: white;
+    background-color: #333333;
+    color: #1DDD6E;
     border: none;
     padding: 0.5rem 1rem;
     transition: all 0.3s ease;
 }
 
 .stButton>button:hover {
-    background-color: #0D47A1;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #1DDD6E;
+    box-shadow: 0 4px 8px rgba(251, 250, 250, 0.1);
+    color: #333333;
 }
 
+[data-testid="stSidebarContent"] .stButton button,
+button[key="logout_button"],
+.stButton button[data-testid="baseButton-secondary"]:last-child {
+    background-color: #1D1B1A !important;
+    color: #1DDD6E !important;
+}
+
+[data-testid="stSidebarContent"] .stButton button:hover,
+button[key="logout_button"],
+.stButton button[data-testid="baseButton-secondary"]:last-child {
+    background-color: #1DDD6E !important;
+    color: #333333 !important;
+}
 /* Formularios */
 .stTextInput>div>div>input, 
 .stSelectbox>div>div>select,
@@ -55,7 +70,7 @@ div.stContainer {
 
 /* Métricas */
 div.stMetric {
-    background-color: #f8f9fa;
+    background-color: #3b3b3a;
     padding: 1rem;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -63,33 +78,33 @@ div.stMetric {
 }
 
 div.stMetric label {
-    color: #1E88E5;
+    color: #1DDD6E;
     font-weight: 600;
 }
 
 /* Tablas */
 div.stDataFrame {
-    border: 1px solid #e0e0e0;
+    border: 1px solid #1DDD6E;
     border-radius: 5px;
     margin-bottom: 1rem;
 }
 
 /* Pestañas */
 button.stTab {
-    background-color: #f0f0f0;
+    background-color: #1DDD6E;
     border-radius: 5px 5px 0 0;
     padding: 0.5rem 1rem;
     font-weight: 500;
 }
 
 button.stTab[aria-selected="true"] {
-    background-color: #1E88E5;
+    background-color: #1DDD6E;
     color: white;
 }
 
 /* Gráficos */
 div.stPlotlyChart {
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0);
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     padding: 1rem;
@@ -105,7 +120,7 @@ div.stAlert {
 
 /* Estilos para el formulario de login */
 form {
-    background-color: rgba(29, 221, 110, 1);
+    background-color: #1DDD6E;
     padding: 1.5rem;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -116,7 +131,7 @@ form {
 
 /* Centrar el formulario */
 div.row-widget.stForm {
-    background-color: rgba(29, 221, 110, 1) !important;
+    background-color: #1DDD6E !important;
     max-width: 500px !important;
     margin: 0 auto 1rem auto !important;
     border-radius: 10px !important;
@@ -142,7 +157,7 @@ div.profile-card {
 
 div.profile-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 12px rgba(134, 85, 85, 0.15);
 }
 
 /* Estilos para los calendarios */
@@ -312,3 +327,5 @@ div.stExpander {
     max-width: 500px;
     margin: 0 auto;
 }
+
+
