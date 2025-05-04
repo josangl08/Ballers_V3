@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from models import User, UserType, Base
 import os
 import sys
+import base64
 from datetime import datetime, timedelta
 
 # Agregar la ruta raíz al path de Python para importar config
@@ -36,9 +37,57 @@ def login_user(username, password):
     
     db_session.close()
     return user
+def get_base64_from_image(image_path):
+    """Convierte una imagen a formato base64."""
+    if not os.path.isfile(image_path):
+        # Si no encuentra la imagen, buscamos alternativas
+        alternatives = [
+            f"assets/ballers/{os.path.basename(image_path)}", 
+            f"static/{os.path.basename(image_path)}",
+            f"../assets/ballers/{os.path.basename(image_path)}"
+        ]
+        for alt_path in alternatives:
+            if os.path.isfile(alt_path):
+                image_path = alt_path
+                break
+        else:
+            print(f"No se pudo encontrar la imagen de fondo: {image_path}")
+            return ""
+            
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
 
+def add_bg_from_image(image_path):
+    """Añade una imagen de fondo usando base64."""
+    base64_image = get_base64_from_image(image_path)
+    if not base64_image:
+        return
+        
+    background_image_style = f"""
+    <style>
+    [data-testid="stAppViewContainer"]::before {{
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/png;base64,{base64_image}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 1; /* Ajusta este valor entre 0 y 1 para cambiar la transparencia */
+        z-index: -1;
+    }}
+    </style>
+    """
+    
+    st.markdown(background_image_style, unsafe_allow_html=True)
 def login_page():
     """Renderiza la página de login y gestiona la autenticación."""
+    
+    # Agregar CSS personalizado para la imagen de fondo
+    add_bg_from_image("assets/ballers/360_mix.png")
     st.title("Ballers App - Login")
     
     # Comprobar si ya hay un usuario en sesión

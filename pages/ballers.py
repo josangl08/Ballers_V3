@@ -4,10 +4,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import User, Player, Coach, TestResult, Base
 from datetime import datetime
+from controllers.calendar_controller import embed_calendar, SessionStatus
+from config import DATABASE_PATH
+
+
 
 def get_db_session():
     """Crea y devuelve una sesión de SQLAlchemy."""
-    engine = create_engine('sqlite:///./data/ballers_app.db')
+    engine = create_engine(f'sqlite:///{DATABASE_PATH}')
     Base.metadata.create_all(engine)  # Crea tablas si no existen
     Session = sessionmaker(bind=engine)
     return Session()
@@ -24,7 +28,7 @@ def show_player_profile(player_id=None):
         player = db_session.query(Player).filter(Player.player_id == player_id).first()
     
     if not player:
-        st.error("No se encontró información del jugador.")
+        st.error("No player information found.")
         db_session.close()
         return
     
@@ -40,18 +44,38 @@ def show_player_profile(player_id=None):
         st.title(f"{user.name}")
         st.write(f"**Email:** {user.email}")
         if user.phone:
-            st.write(f"**Teléfono:** {user.phone}")
+            st.write(f"**Tel:** {user.phone}")
         if user.line:
             st.write(f"**LINE:** {user.line}")
         if user.date_of_birth:
             edad = datetime.now().year - user.date_of_birth.year
-            st.write(f"**Edad:** {edad} años")
+            st.write(f"**Age:** {edad} years")
         
-        st.write(f"**Servicio:** {player.service}")
-        st.write(f"**Sesiones inscritas:** {player.enrolment}")
+        st.write(f"**Services:** {player.service}")
+        st.write(f"**Enrollment Sessions:** {player.enrolment}")
+
+    st.divider()
+
+    # Calendario de sesiones
+    total = len(player.sessions)
+    done  = sum(s.status is SessionStatus.COMPLETED for s in player.sessions)
+    left  = max(player.enrolment - done, 0)
+
+    colA, colB, colC = st.columns(3)
+    colA.metric("Completed", done)
+    colB.metric("Scheduled", total - done - sum(s.status is SessionStatus.CANCELED for s in player.sessions))
+    colC.metric("Remaining", left)
+        
+        
     
+    embed_calendar(
+        title="My Calendar", 
+        filter_tag=f"#P{player.player_id}"
+    )
+    
+
     # Mostrar pestañas con información adicional
-    tab1, tab2 = st.tabs(["Resultados de Pruebas", "Notas"])
+    tab1, tab2 = st.tabs(["Test Results", "Notes"])
     
     with tab1:
         # Obtener resultados de pruebas del jugador
@@ -68,26 +92,26 @@ def show_player_profile(player_id=None):
             test_data = []
             for test in test_results:
                 test_dict = {
-                    "Fecha": test.date,
-                    "Control de balón": test.ball_control,
-                    "Control de pase": test.control_pass,
-                    "Recepción y escaneo": test.receive_scan,
-                    "Dribling y conducción": test.dribling_carriying,
-                    "Tiro": test.shooting,
-                    "Travesaño": test.crossbar,
+                    "Date": test.date,
+                    "Ball Control": test.ball_control,
+                    "Controll & Passing": test.control_pass,
+                    "Receiving & Passing/Scanning": test.receive_scan,
+                    "Dribling & Ball Carriying": test.dribling_carriying,
+                    "Shoot & Finishing": test.shooting,
+                    "Crosbar": test.crossbar,
                     "Sprint": test.sprint,
                     "T-test": test.t_test,
-                    "Salto": test.jumping
+                    "Jumping": test.jumping
                 }
                 test_data.append(test_dict)
             
             df = pd.DataFrame(test_data)
             
             # Mostrar gráfico de evolución
-            st.subheader("Evolución de rendimiento")
+            st.subheader("Performance Evolution")
             metrics = df.columns.tolist()[1:]  # Todas las columnas excepto la fecha
             selected_metrics = st.multiselect(
-                "Selecciona métricas para visualizar", 
+                "Select metrics for visualization", 
                 options=metrics,
                 default=metrics[:3]
             )
@@ -95,49 +119,49 @@ def show_player_profile(player_id=None):
             if selected_metrics:
                 fig = px.line(
                     df, 
-                    x="Fecha", 
+                    x="Date", 
                     y=selected_metrics,
-                    title="Evolución de métricas de rendimiento",
+                    title="Evolution of performance metrics",
                     markers=True
                 )
                 st.plotly_chart(fig, use_container_width=True)
             
             # Mostrar tabla de resultados
-            st.subheader("Historial de pruebas")
+            st.subheader("History of Tests")
             for i, test in enumerate(test_results):
-                with st.expander(f"Prueba del {test.date.strftime('%d/%m/%Y')}"):
+                with st.expander(f"Test of {test.date.strftime('%d/%m/%Y')}"):
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.write(f"**Nombre de prueba:** {test.test_name}")
-                        st.write(f"**Peso:** {test.weight} kg")
-                        st.write(f"**Altura:** {test.height} cm")
+                        st.write(f"**Test Name:** {test.test_name}")
+                        st.write(f"**Weight:** {test.weight} kg")
+                        st.write(f"**Hight:** {test.height} cm")
                     with col2:
-                        st.write(f"**Control de balón:** {test.ball_control}")
-                        st.write(f"**Control de pase:** {test.control_pass}")
-                        st.write(f"**Recepción y escaneo:** {test.receive_scan}")
-                        st.write(f"**Dribling y conducción:** {test.dribling_carriying}")
-                        st.write(f"**Tiro:** {test.shooting}")
-                        st.write(f"**Travesaño:** {test.crossbar}")
+                        st.write(f"**Ball Control:** {test.ball_control}")
+                        st.write(f"**Controll & Passing:** {test.control_pass}")
+                        st.write(f"**Receiving & Passing/Scanning:** {test.receive_scan}")
+                        st.write(f"**Dribling & Ball Carriying:** {test.dribling_carriying}")
+                        st.write(f"**Shoot & Finishing:** {test.shooting}")
+                        st.write(f"**Crosbar:** {test.crossbar}")
                         st.write(f"**Sprint:** {test.sprint}")
                         st.write(f"**T-test:** {test.t_test}")
                         st.write(f"**Salto:** {test.jumping}")
         else:
-            st.info("No hay resultados de pruebas disponibles.")
+            st.info("No test results available.")
     
     with tab2:
-        st.subheader("Notas")
+        st.subheader("Notes")
         if player.notes:
             st.write(player.notes)
         else:
-            st.info("No hay notas disponibles.")
+            st.info("No notes available.")
             
         # Si el usuario es coach o admin, permitir añadir notas
         if st.session_state.get("user_type") in ["coach", "admin"]:
-            new_note = st.text_area("Añadir/Editar notas:", value=player.notes or "")
-            if st.button("Guardar notas"):
+            new_note = st.text_area("Add/Edit notes:", value=player.notes or "")
+            if st.button("Save notes"):
                 player.notes = new_note
                 db_session.commit()
-                st.success("Notas guardadas correctamente")
+                st.success("Notes saved correctly")
                 st.rerun()
     
     db_session.close()
@@ -150,23 +174,27 @@ def show_player_list():
     players = db_session.query(Player).join(User).filter(User.is_active == True).all()
     
     if not players:
-        st.info("No hay jugadores registrados.")
+        st.info("No registered players.")
         db_session.close()
         return
     
   
-    
     # Filtros
-    search_name = st.text_input("Buscar Jugador por nombre:")
+    search_name = st.text_input("Search Player by name:")
     
     # Filtrar jugadores
     filtered_players = players
     if search_name:
         filtered_players = [p for p in players if search_name.lower() in p.user.name.lower()]
     
+    
     # Mostrar jugadores en tarjetas
     cols = st.columns(3)
     for i, player in enumerate(filtered_players):
+        done  = sum(s.status is SessionStatus.COMPLETED for s in player.sessions)
+        if player.user.date_of_birth:
+            edad = datetime.now().year - player.user.date_of_birth.year
+            st.write(f"**Age:** {edad} years")
         with cols[i % 3]:
             with st.container(border=True):
                 col1, col2 = st.columns([1, 2])
@@ -174,10 +202,15 @@ def show_player_list():
                     st.image(player.user.profile_photo, width=100)
                 with col2:
                     st.write(f"**{player.user.name}**")
-                    st.write(f"Servicio: {player.service}")
-                    st.write(f"Sesiones: {player.enrolment}")
+                    st.write(f"**Age:** {edad}")
+                    st.write(f"**Service:** {player.service}")
+                    st.write(f"**Sessions:** {player.enrolment}")
+                    st.write(f"**Reamining:** {player.enrolment - done}")
+                    st.write(f"**Next Session:** ")
+
+
                 
-                if st.button("Ver perfil", key=f"player_{player.player_id}"):
+                if st.button("View Profile", key=f"player_{player.player_id}"):
                     st.session_state["selected_player_id"] = player.player_id
                     st.rerun()
     
@@ -195,7 +228,7 @@ def show_content():
     elif st.session_state.get("user_type") in ["coach", "admin"]:
         if "selected_player_id" in st.session_state:
             # Botón para volver a la lista
-            if st.button("← Volver a la lista"):
+            if st.button("← Back to list"):
                 del st.session_state["selected_player_id"]
                 st.rerun()
             

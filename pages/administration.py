@@ -1,12 +1,17 @@
 # pages/administration.py
 import streamlit as st
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func, case
 from sqlalchemy.orm import sessionmaker
 from models import User, Coach, Player, Session, SessionStatus, Base, UserType
 import pandas as pd
 from datetime import datetime, timedelta
 import os
 import sys
+from models import Session, SessionStatus
+from controllers.calendar_controller import push_session, patch_color, embed_calendar, SessionStatus
+from controllers.sheets_controller import get_accounting_df
+
+
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -32,6 +37,25 @@ def show_coach_calendar():
         db_session.close()
         return
     
+    # métricas globales del coach
+    comp = sum(s.status is SessionStatus.COMPLETED for s in coach.sessions)
+    prog = sum(s.status is SessionStatus.SCHEDULED for s in coach.sessions)
+    canc = sum(s.status is SessionStatus.CANCELED  for s in coach.sessions)
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Programadas", prog)
+    c2.metric("Completadas", comp)
+    c3.metric("Canceladas",  canc)
+
+    # Mostrar calendario del coach
+    embed_calendar(
+        title="My Calendar",
+        filter_tag=f"#C{coach.coach_id}"
+    )
+
+    st.divider()          
+    
+
     # Filtros de fecha
     col1, col2 = st.columns(2)
     with col1:
@@ -61,23 +85,23 @@ def show_coach_calendar():
     ).order_by(Session.start_time).all()
     
     # Mostrar el calendario de sesiones
-    st.subheader("Calendario de Sesiones")
+    st.subheader("Sessions Calendar")
     
     if not sessions:
-        st.info(f"No hay sesiones programadas entre {start_date.strftime('%d/%m/%Y')} y {end_date.strftime('%d/%m/%Y')}.")
+        st.info(f"There are no scheduled sessions between {start_date.strftime('%d/%m/%Y')} y {end_date.strftime('%d/%m/%Y')}.")
     else:
         # Preparar datos para mostrar
         sessions_data = []
         for session in sessions:
             player = db_session.query(Player).filter(Player.player_id == session.player_id).first()
-            player_name = player.user.name if player else "Jugador no encontrado"
+            player_name = player.user.name if player else "Player not found"
             
             sessions_data.append({
                 "ID": session.id,
                 "Jugador": player_name,
                 "Fecha": session.start_time.strftime("%d/%m/%Y"),
                 "Hora Inicio": session.start_time.strftime("%H:%M"),
-                "Hora Fin": session.end_time.strftime("%H:%M") if session.end_time else "No establecida",
+                "Hora Fin": session.end_time.strftime("%H:%M") if session.end_time else "Not established",
                 "Estado": session.status.value,
                 "session_obj": session  # Para usar después, no se muestra
             })
@@ -136,6 +160,8 @@ def show_coach_calendar():
                 # Botón para guardar cambios
                 if st.button("Guardar cambios"):
                     session.status = SessionStatus(new_status)
+                    if session.calendar_event_id:
+                        patch_color(session.calendar_event_id, session.status)
                     session.notes = notes
                     db_session.commit()
                     st.success("Cambios guardados correctamente")
@@ -197,6 +223,7 @@ def show_coach_calendar():
                 )
                 
                 db_session.add(new_session)
+                push_session(new_session)
                 db_session.commit()
                 st.success("Sesión programada correctamente")
                 st.rerun()
@@ -206,7 +233,7 @@ def show_admin_dashboard():
     
     
     # Crear pestañas para las diferentes secciones
-    tab1, tab2, tab3 = st.tabs(["Sesiones", "Usuarios", "Estadísticas"])
+    tab1, tab2, tab3 = st.tabs(["Sessions", "Users", "Financials"])
     
     with tab1:
         # Mostrar todas las sesiones para administradores
@@ -218,6 +245,11 @@ def show_admin_dashboard():
     
     with tab3:
         # Mostrar estadísticas
+        
+        df = get_accounting_df()
+        st.subheader("Contabilidad (Google Sheets)")
+        st.dataframe(df, hide_index=True)
+        st.metric("Balance €", df["Ingresos"].sum() - df["Gastos"].sum())
         show_statistics()
     
     db_session = get_db_session()
@@ -265,6 +297,10 @@ def show_all_sessions():
         format_func=lambda x: next((c[1] for c in coach_options if c[0] == x), ""),
         index=0
     )
+    # Mostrar calendario global
+    st.subheader("Calendario de Sesiones")
+    embed_calendar(title="Calendario global (todos los entrenadores)")
+    st.divider()
     
     # Convertir fechas a datetime para la consulta
     start_datetime = datetime.combine(start_date, datetime.min.time())
@@ -399,16 +435,36 @@ def show_user_management():
         st.info("No hay usuarios que coincidan con los filtros.")
         return
     
+    # Obtener estadísticas de sesiones por coach
+    stats_sq = (
+    db_session.query(
+        Session.coach_id.label("uid"),
+        func.sum(case((Session.status == SessionStatus.COMPLETED, 1), else_=0)).label("comp"),
+        func.sum(case((Session.status == SessionStatus.SCHEDULED, 1), else_=0)).label("prog"),
+        func.sum(case((Session.status == SessionStatus.CANCELED,  1), else_=0)).label("canc"),
+    )
+    .group_by(Session.coach_id)
+    .subquery()
+)
+    
     # Preparar datos para mostrar
     users_data = []
     for user in users:
         is_active = getattr(user, 'is_active', True)  # Para compatibilidad si no existe el campo
+        comp = prog = canc = 0
+        if user.user_type == UserType.coach:
+            row = db_session.query(stats_sq).filter(stats_sq.c.uid == user.coach_profile.coach_id).first()
+            if row:
+                comp, prog, canc = row.comp, row.prog, row.canc
         users_data.append({
             "ID": user.user_id,
             "Nombre": user.name,
             "Username": user.username,
             "Email": user.email,
             "Tipo": user.user_type.name,
+            "Comp": comp,
+            "Prog": prog,
+            "Canc": canc,
             "Activo": "Sí" if is_active else "No",
             "user_obj": user  # Para usar después, no se muestra
         })
@@ -426,6 +482,9 @@ def show_user_management():
             "Username": st.column_config.TextColumn(width="medium"),
             "Email": st.column_config.TextColumn(width="medium"),
             "Tipo": st.column_config.TextColumn(width="small"),
+            "Comp":  st.column_config.NumberColumn("Completadas", width="small"),
+            "Prog":  st.column_config.NumberColumn("Programadas", width="small"),
+            "Canc":  st.column_config.NumberColumn("Canceladas", width="small"),
             "Activo": st.column_config.TextColumn(width="small")
         },
         hide_index=True

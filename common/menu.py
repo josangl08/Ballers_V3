@@ -117,11 +117,6 @@ def logout():
     # No llamamos a rerun() aquí porque no funcionará en un callback
 
 if __name__ == "__main__":
-    # Para probar el menú de forma independiente
-    st.session_state["user_id"] = 1
-    st.session_state["username"] = "test_user"
-    st.session_state["name"] = "Test User"
-    st.session_state["user_type"] = "admin"
     
     # Mostrar mensaje de cierre de sesión si es necesario
     if st.session_state.get("show_logout_message"):

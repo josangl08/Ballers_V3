@@ -1,50 +1,78 @@
 /* styles/styles.css - Archivo CSS completo */
 
-/* Personalización general */
+/* header */
 header[data-testid="stHeader"] {
     position: absolute !important;
     top: 0 !important;
     z-index: 999 !important;
     height: auto !important;
-  }
-  
+}
+
 /* contenedor principal */
 [data-testid="stMainBlockContainer"] {
     padding-top: 0rem !important;
     margin-top: 0rem !important;
-    padding-bottom: 0rem !important;
+    padding-bottom: 50px !important;
     margin-bottom: 0rem !important;
 }
-/* contenedor de la aplicación completa */
-[data-testid="stAppViewContainer"] > .main .block-container {
-    padding-top: 0rem !important;
-    margin-top: 0rem !important;
+
+/* Hacer que el formulario de login sea semitransparente */
+[data-testid="stForm"] {
+    background-color: rgba(51,51,51,0.6); 
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-[data-testid="stMainBlockContainer"] {
-    padding-top: 0rem !important;
-    margin-top: 0rem !important;
-    padding-bottom: 0rem !important;
-    margin-bottom: 0rem !important;
+/* Estilos para el formulario de login */
+form {
+    background-color: #333333;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 500px;
+}
+
+/* Centrar el formulario */
+div.row-widget.stForm {
+    background-color: #333333 !important;
+    max-width: 500px !important;
+    margin: 0 auto 1rem auto !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+}
+
+/* Alineación de columnas dentro del formulario */
+.stForm .row-widget.stHorizontal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 /* Ajustar posición vertical del logo en el sidebar */
 [data-testid="stSidebarContent"] img {
     margin-top: -40px !important;
+    margin-bottom: 40px !important;
     padding-top: 0 !important;
-    margin-bottom: 40px;
-  }
+}
+
+/* Hacemos que el contenedor principal sea semitransparente */
+.stApp {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Datos personales del perfil */
+.st-emotion-cache-my1ldo{
+    margin-left: 50px;
+}
+.st-emotion-cache-seewz2 h1{
+    text-align: center;
+}
+
 body {
     color: #333333;
     font-family: 'Roboto', sans-serif;
 }
-
-.st-emotion-cache-seewz2 h2 {
-    margin-bottom: 20px;
-    font-weight: 600;
-    border-bottom: 2px solid #1DDD6E;
-    padding-top: 0px;
-    padding-bottom: 5px;
-    display: inline-block;
-  }
 
 /* Tarjetas y contenedores */
 div.stContainer {
@@ -141,32 +169,7 @@ div.stAlert {
     margin-bottom: 1rem;
 }
 
-/* Estilos para el formulario de login */
-form {
-    background-color: #1DDD6E;
-    padding: 1.5rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 1rem;
-    width: 100%;
-    max-width: 500px;
-}
 
-/* Centrar el formulario */
-div.row-widget.stForm {
-    background-color: #1DDD6E !important;
-    max-width: 500px !important;
-    margin: 0 auto 1rem auto !important;
-    border-radius: 10px !important;
-    padding: 10px !important;
-}
-
-/* Alineación de columnas dentro del formulario */
-.stForm .row-widget.stHorizontal {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
 
 /* Personalización para tarjetas de perfil */
 div.profile-card {
@@ -185,7 +188,7 @@ div.profile-card:hover {
 
 /* Estilos para los calendarios */
 div.calendar-container {
-    background-color: white;
+    background-color: rgb(13, 11, 11);
     border-radius: 10px;
     padding: 1rem;
     margin-bottom: 1rem;
@@ -273,11 +276,6 @@ div[data-testid="stImage"] {
     pointer-events: none !important;
 }
 
-/* Arreglo para evitar cuadros blancos */
-div[data-testid="stVerticalBlock"] > div:nth-child(1) {
-    background-color: transparent !important;
-    box-shadow: none !important;
-}
 
 /* Estilos para Markdown y texto en general */
 .stMarkdown {

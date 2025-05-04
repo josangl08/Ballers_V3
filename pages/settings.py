@@ -7,10 +7,13 @@ import hashlib
 from datetime import datetime
 import os
 import shutil
+from controllers.calendar_controller import push_all_sessions_to_calendar, sync_calendar_to_db
+from config import DATABASE_PATH
+
 
 def get_db_session():
     """Crea y devuelve una sesión de SQLAlchemy."""
-    engine = create_engine('sqlite:///ballers_app.db')
+    engine = create_engine(f'sqlite:///{DATABASE_PATH}')
     Base.metadata.create_all(engine)  # Crea tablas si no existen
     Session = sessionmaker(bind=engine)
     return Session()
@@ -153,10 +156,10 @@ def create_user_form():
 
 def edit_profile():
     """Formulario para editar el perfil del usuario actual."""
-    db_session = get_db_session()
     
     # Obtener usuario actual
-    user_id = st.session_state.get("user_id")
+    user_id = st.session_state.get("user_id") or st.session_state.get("login_user_id")
+    db_session = get_db_session()
     user = db_session.query(User).filter_by(user_id=user_id).first()
     
     if not user:
@@ -244,6 +247,7 @@ def edit_profile():
             
             # Guardar cambios
             db_session.commit()
+            db_session.close()
             st.success("Perfil actualizado correctamente.")
             
             # Actualizar nombre en la sesión
@@ -251,22 +255,10 @@ def edit_profile():
             
             st.rerun()
     
-    db_session.close()
 
 def system_settings():
     """Configuración del sistema (solo para administradores)."""
     st.subheader("Configuración del Sistema")
-    
-    # Crear carpetas necesarias si no existen
-    if st.button("Verificar y crear directorios del sistema"):
-        directories = ["assets", "assets/profile_photos", "data", "logs"]
-        
-        for directory in directories:
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-                st.success(f"Directorio {directory} creado correctamente.")
-            else:
-                st.info(f"Directorio {directory} ya existe.")
     
     # Opción para crear copia de seguridad de la base de datos
     if st.button("Crear copia de seguridad de la base de datos"):
@@ -282,6 +274,23 @@ def system_settings():
             st.success(f"Copia de seguridad creada: {backup_file}")
         except Exception as e:
             st.error(f"Error al crear copia de seguridad: {str(e)}")
+
+    st.subheader("Sincronización manual")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("Enviar sesiones → Google Calendar"):
+            with st.spinner("Enviando sesiones a Google Calendar…"):
+                n = push_all_sessions_to_calendar()  # llamamos sin callback
+            st.success(f"Se guardaron {n} sesiones nuevas a Google Calendar.")
+
+    with col2:
+        if st.button("Traer eventos ← Google Calendar"):
+            with st.spinner("Sincronizando desde Google Calendar…"):
+                n = sync_calendar_to_db()               # sin pasar ningún argumento
+            st.success(f"Se guardaron {n} sesiones nuveas en la base de datos.")
+
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Settings."""

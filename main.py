@@ -11,6 +11,9 @@ from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE
 # Importar módulos personalizados
 from common.login import login_page
 from common.menu import create_sidebar_menu, get_content_path
+from controllers.calendar_controller import sync_calendar_to_db
+
+
 
 # Configuración de la página
 st.set_page_config(
@@ -77,6 +80,7 @@ h2, h3 {
 
 # Función principal
 def main():
+    
     # Comprobar si ya hay un usuario en sesión antes de configurar la página
     has_session = "user_id" in st.session_state
     
@@ -102,7 +106,14 @@ def main():
         
         # Mostrar página de login
         login_page()
+        st.stop()
     else:
+        try:
+            sync_calendar_to_db()
+        except Exception as e:
+            st.warning(f"No se pudo sincronizar desde Google Calendar: {e}")
+        
+
         # Mostrar logo centrado
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
@@ -133,6 +144,10 @@ def main():
                         st.exception(e)
             else:
                 st.warning("Sección no implementada")
-
+        try:
+            sync_calendar_to_db()
+        except Exception as e:     
+            st.warning(f"No se pudo sincronizar la base de datos: {e}")    
+            
 if __name__ == "__main__":
     main()

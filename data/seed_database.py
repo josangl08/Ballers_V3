@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
-# seed_database.py - Script para poblar la base de datos con datos de ejemplo
+# data/see_database.py
 
 import os
 import sys
 import random
-import hashlib  # Cambiado: usar hashlib en lugar de werkzeug
+import hashlib  
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -15,9 +14,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Importar los modelos
 from models import Base, User, UserType, Coach, Player, Admin, Session, SessionStatus, TestResult
+from config import DATABASE_PATH
 
 # Configuración - Ajustada según tus requerimientos
-DATABASE_URL = "sqlite:///ballers_app.db"  # Base de datos en la misma carpeta data
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"  # Base de datos en la misma carpeta data
 NUM_ADMINS = 2
 NUM_COACHES = 6
 NUM_PLAYERS = 30
@@ -28,7 +28,7 @@ TESTS_PER_PLAYER = 4
 fake = Faker()
 
 # Conectar a la base de datos
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, echo=False)
 Base.metadata.create_all(engine)
 DBSession = sessionmaker(bind=engine)
 db_session = DBSession()
@@ -66,6 +66,9 @@ def create_users():
             # Contraseña fácil de recordar basada en el tipo de usuario
             password = f"{user_type.value}123"
             password_hash = hash_password(password)
+
+            # ► RANGO DE EDADES: 7‑20 si es jugador, 25‑45 para el resto
+            dob_min, dob_max = (7, 20) if user_type == UserType.player else (25, 45)
             
             user = User(
                 username=username,
@@ -75,7 +78,7 @@ def create_users():
                 phone=fake.phone_number(),
                 line=f"line.{username}",
                 profile_photo="assets/profile_photos/default_profile.png",  # Ruta relativa desde la carpeta data
-                date_of_birth=fake.date_of_birth(minimum_age=18, maximum_age=45),
+                date_of_birth=fake.date_of_birth(minimum_age=dob_min, maximum_age=dob_max),
                 user_type=user_type,
                 permit_level=1 if user_type != UserType.admin else random.randint(1, 3),
                 is_active=True
@@ -93,7 +96,7 @@ def create_users():
     db_session.commit()
     
     # Guardar datos de usuarios para mostrar al final
-    with open("usuarios_generados.txt", "w") as f:
+    with open("data/usuarios_generados.txt", "w") as f:
         f.write("=== USUARIOS GENERADOS ===\n\n")
         
         f.write("== ADMINISTRADORES ==\n")
@@ -153,7 +156,7 @@ def create_sessions(coaches, players):
     
     # Fechas para distribuir las sesiones (pasadas, presentes y futuras)
     now = datetime.now(timezone.utc)
-    start_date = now - timedelta(days=180)  # 6 meses atrás para tener un historial más amplio
+    start_date = now - timedelta(days=60)  # 6 meses atrás para tener un historial más amplio
     end_date = now + timedelta(days=60)  # 2 meses en el futuro
     
     # Asegurarse de que cada jugador tenga al menos unas pocas sesiones
@@ -164,8 +167,13 @@ def create_sessions(coaches, players):
         # Crear 3-5 sesiones para cada jugador
         for _ in range(random.randint(3, 5)):
             # Generar fecha aleatoria para la sesión
-            session_date = fake.date_time_between(start_date=start_date, end_date=end_date).replace(tzinfo=timezone.utc)
-            end_time = session_date + timedelta(hours=random.choice([1, 1.5, 2]))
+            base_day = fake.date_time_between(start_date=start_date, end_date=end_date)
+            hour     = random.randint(8, 18)                    # 08:00‑18:00
+            session_date = datetime.combine(
+                base_day, datetime.min.time(), tzinfo=timezone.utc
+            ).replace(hour=hour)
+
+            end_time = session_date + timedelta(hours=1)           # ► 1 hora
             
             # Determinar estado basado en la fecha
             if session_date < now:
@@ -182,7 +190,7 @@ def create_sessions(coaches, players):
                 end_time=end_time,
                 status=status,
                 notes=notes,
-                calendar_event_id=f"cal_{fake.uuid4()}" if random.random() > 0.3 else None
+                calendar_event_id= None
             )
             
             db_session.add(session)
@@ -195,8 +203,12 @@ def create_sessions(coaches, players):
         player = random.choice(players)
         
         # Generar fecha aleatoria para la sesión
-        session_date = fake.date_time_between(start_date=start_date, end_date=end_date).replace(tzinfo=timezone.utc)
-        end_time = session_date + timedelta(hours=random.choice([1, 1.5, 2]))
+        base_day = fake.date_between(start_date=start_date, end_date=end_date)
+        hour    = random.randint(8, 17)
+        session_date = datetime.combine(
+            base_day, datetime.min.time(), tzinfo=timezone.utc
+        ).replace(hour=hour)
+        end_time = session_date + timedelta(hours=1)
         
         # Determinar estado basado en la fecha
         if session_date < now:
@@ -213,7 +225,7 @@ def create_sessions(coaches, players):
             end_time=end_time,
             status=status,
             notes=notes,
-            calendar_event_id=f"cal_{fake.uuid4()}" if random.random() > 0.3 else None
+            calendar_event_id= None
         )
         
         db_session.add(session)
@@ -300,7 +312,7 @@ def main():
     
     try:
         # Comprobar si la base de datos ya existe
-        db_path = "ballers_app.db"
+        db_path = DATABASE_PATH
         if os.path.exists(db_path):
             print(f"La base de datos ya existe en {db_path}")
             choice = input("¿Desea limpiar los datos existentes? (s/n): ")

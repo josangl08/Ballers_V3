@@ -175,3 +175,6 @@ cython_debug/
 
 # Streamlit
 data/usuarios_generados.txt
+data/google_service_account.json
+data/usuarios_generados.txt
+assets/
