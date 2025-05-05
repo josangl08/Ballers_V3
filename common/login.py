@@ -7,19 +7,14 @@ from models import User, UserType, Base
 import os
 import sys
 import base64
+import urllib.parse
 from datetime import datetime, timedelta
+from controllers.db import get_db_session
+
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from config import DATABASE_PATH, DEBUG
-
-# Configuración de la base de datos
-def get_db_session():
-    """Crea y devuelve una sesión de SQLAlchemy."""
-    engine = create_engine(f'sqlite:///{DATABASE_PATH}')
-    Base.metadata.create_all(engine)  # Crea tablas si no existen
-    Session = sessionmaker(bind=engine)
-    return Session()
+from config import DEBUG
 
 def hash_password(password):
     """Convierte una contraseña en un hash SHA-256."""
@@ -102,15 +97,15 @@ def login_page():
     with col2:
         # Formulario de login
         with st.form("login_form"):
-            st.subheader("Iniciar Sesión")
-            username = st.text_input("Nombre de Usuario")
-            password = st.text_input("Contraseña", type="password")
+            st.subheader("Login")
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
             
             # Crear dos columnas dentro del formulario para el botón y el enlace
             btn_col, link_col = st.columns([1, 1])
             
             with btn_col:
-                submit_button = st.form_submit_button("Iniciar Sesión")
+                submit_button = st.form_submit_button("Login")
             
             with link_col:
                 # Centrar verticalmente el texto "¿Olvidaste tu contraseña?"
@@ -122,7 +117,7 @@ def login_page():
             
             if submit_button:
                 if not username or not password:
-                    st.error("Por favor, introduce usuario y contraseña")
+                    st.error("Please enter username and password")
                     return False
                     
                 user = login_user(username, password)
@@ -130,7 +125,7 @@ def login_page():
                 if user:
                     # Comprobar si el usuario está activo (si existe el campo)
                     if hasattr(user, 'is_active') and not user.is_active:
-                        st.error("Este usuario está desactivado. Contacta con un administrador.")
+                        st.error("This user is deactivated. Contact an administrator.")
                         return False
                     
                     # Guardar información de usuario en la sesión
@@ -144,7 +139,7 @@ def login_page():
                     st.rerun()
                     return True
                 else:
-                    st.error("Usuario o contraseña incorrectos")
+                    st.error("Incorrect username or password")
                     return False
         
         # Contenedor para mostrar/ocultar info de recuperación

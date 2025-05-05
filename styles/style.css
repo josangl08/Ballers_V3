@@ -169,8 +169,6 @@ div.stAlert {
     margin-bottom: 1rem;
 }
 
-
-
 /* Personalización para tarjetas de perfil */
 div.profile-card {
     background-color: white;
@@ -294,7 +292,22 @@ a:hover {
     color: #0D47A1;
     text-decoration: underline;
 }
+/* Hide scrollbars in DataFrames */
+[data-testid="stDataFrame"] div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+    overflow: visible !important;
+}
 
+[data-testid="stDataFrame"] div[style*="overflow: auto"] {
+    overflow: visible !important;
+}
+
+div.stDataFrame > div {
+    overflow: visible !important;
+}
+/* For Streamlit versions that use different CSS structure */
+.stDataFrame div[style*="overflow:"] {
+    overflow: visible !important;
+}
 /* Estilos para el panel de recuperación de contraseña */
 #forgotPasswordInfo {
     background-color: #f9f9f9;

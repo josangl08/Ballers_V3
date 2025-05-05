@@ -10,19 +10,10 @@ import sys
 from models import Session, SessionStatus
 from controllers.calendar_controller import push_session, patch_color, embed_calendar, SessionStatus
 from controllers.sheets_controller import get_accounting_df
-
-
+from controllers.db import get_db_session
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from config import DATABASE_PATH
-
-def get_db_session():
-    """Crea y devuelve una sesión de SQLAlchemy."""
-    engine = create_engine(f'sqlite:///{DATABASE_PATH}')
-    Base.metadata.create_all(engine)  # Crea tablas si no existen
-    Session = sessionmaker(bind=engine)
-    return Session()
 
 def show_coach_calendar():
     """Muestra el calendario de sesiones para un coach."""
@@ -43,9 +34,9 @@ def show_coach_calendar():
     canc = sum(s.status is SessionStatus.CANCELED  for s in coach.sessions)
 
     c1, c2, c3 = st.columns(3)
-    c1.metric("Programadas", prog)
-    c2.metric("Completadas", comp)
-    c3.metric("Canceladas",  canc)
+    c1.metric("Sheduled", prog)
+    c2.metric("Completed", comp)
+    c3.metric("Canceled",  canc)
 
     # Mostrar calendario del coach
     embed_calendar(
@@ -60,14 +51,14 @@ def show_coach_calendar():
     col1, col2 = st.columns(2)
     with col1:
         start_date = st.date_input(
-            "Desde", 
+            "From", 
             value=datetime.now().date(),
             min_value=datetime.now().date() - timedelta(days=30),
             max_value=datetime.now().date() + timedelta(days=90)
         )
     with col2:
         end_date = st.date_input(
-            "Hasta", 
+            "To", 
             value=datetime.now().date() + timedelta(days=7),
             min_value=start_date,
             max_value=datetime.now().date() + timedelta(days=90)
@@ -85,7 +76,7 @@ def show_coach_calendar():
     ).order_by(Session.start_time).all()
     
     # Mostrar el calendario de sesiones
-    st.subheader("Sessions Calendar")
+    st.subheader("Sessions List")
     
     if not sessions:
         st.info(f"There are no scheduled sessions between {start_date.strftime('%d/%m/%Y')} y {end_date.strftime('%d/%m/%Y')}.")
@@ -98,11 +89,11 @@ def show_coach_calendar():
             
             sessions_data.append({
                 "ID": session.id,
-                "Jugador": player_name,
-                "Fecha": session.start_time.strftime("%d/%m/%Y"),
-                "Hora Inicio": session.start_time.strftime("%H:%M"),
-                "Hora Fin": session.end_time.strftime("%H:%M") if session.end_time else "Not established",
-                "Estado": session.status.value,
+                "Player": player_name,
+                "Date": session.start_time.strftime("%d/%m/%Y"),
+                "Start Time": session.start_time.strftime("%H:%M"),
+                "End Time": session.end_time.strftime("%H:%M") if session.end_time else "Not established",
+                "Status": session.status.value,
                 "session_obj": session  # Para usar después, no se muestra
             })
         
@@ -115,20 +106,20 @@ def show_coach_calendar():
             df, 
             column_config={
                 "ID": st.column_config.NumberColumn(width="small"),
-                "Jugador": st.column_config.TextColumn(width="medium"),
-                "Fecha": st.column_config.TextColumn(width="small"),
-                "Hora Inicio": st.column_config.TextColumn(width="small"),
-                "Hora Fin": st.column_config.TextColumn(width="small"),
-                "Estado": st.column_config.TextColumn(width="small")
+                "Player": st.column_config.TextColumn(width="medium"),
+                "Date": st.column_config.TextColumn(width="small"),
+                "Start Time": st.column_config.TextColumn(width="small"),
+                "End Time": st.column_config.TextColumn(width="small"),
+                "Status": st.column_config.TextColumn(width="small")
             },
             hide_index=True
         )
         
         # Permitir editar una sesión
         selected_session_id = st.selectbox(
-            "Seleccionar sesión para gestionar:",
+            "Select session to edit:",
             options=[s["ID"] for s in sessions_data],
-            format_func=lambda x: f"Sesión #{x} - {next((s['Jugador'] for s in sessions_data if s['ID'] == x), 'Desconocido')} ({next((s['Fecha'] for s in sessions_data if s['ID'] == x), '')} {next((s['Hora Inicio'] for s in sessions_data if s['ID'] == x), '')})"
+            format_func=lambda x: f"Session #{x} - {next((s['Player'] for s in sessions_data if s['ID'] == x), 'Desconocido')} ({next((s['Date'] for s in sessions_data if s['ID'] == x), '')} {next((s['Start Time'] for s in sessions_data if s['ID'] == x), '')})"
         )
         
         if selected_session_id:
@@ -138,7 +129,7 @@ def show_coach_calendar():
                 session = session_objects.iloc[session_idx]
                 
                 # Mostrar opciones de gestión
-                st.subheader(f"Gestionar Sesión #{selected_session_id}")
+                st.subheader(f"Session Mangament #{selected_session_id}")
                 
                 # Opciones según el estado actual
                 current_status = session.status
@@ -148,60 +139,60 @@ def show_coach_calendar():
                 with col1:
                     # Cambiar estado
                     new_status = st.selectbox(
-                        "Estado:", 
+                        "Status:", 
                         options=[s.value for s in SessionStatus],
                         index=[s.value for s in SessionStatus].index(current_status.value)
                     )
                 
                 with col2:
                     # Añadir/editar notas
-                    notes = st.text_area("Notas:", value=session.notes or "")
+                    notes = st.text_area("Notes:", value=session.notes or "")
                 
                 # Botón para guardar cambios
-                if st.button("Guardar cambios"):
+                if st.button("Save"):
                     session.status = SessionStatus(new_status)
                     if session.calendar_event_id:
                         patch_color(session.calendar_event_id, session.status)
                     session.notes = notes
                     db_session.commit()
-                    st.success("Cambios guardados correctamente")
+                    st.success("Changes saved successfully")
                     st.rerun()
     
     # Botón para añadir nueva sesión
-    st.subheader("Nueva Sesión")
+    st.subheader("New Session")
     
     # Obtener lista de jugadores para seleccionar
     players = db_session.query(Player).join(User).filter(User.is_active == True).all()
     player_options = [(p.player_id, p.user.name) for p in players]
     
     # Formulario para nueva sesión
-    with st.form("nueva_sesion"):
+    with st.form("New Session"):
         col1, col2 = st.columns(2)
         
         with col1:
             player_id = st.selectbox(
-                "Jugador:", 
+                "Player:", 
                 options=[p[0] for p in player_options],
                 format_func=lambda x: next((p[1] for p in player_options if p[0] == x), "")
             )
             
             session_date = st.date_input(
-                "Fecha:", 
+                "Date:", 
                 value=datetime.now().date(),
                 min_value=datetime.now().date(),
                 max_value=datetime.now().date() + timedelta(days=90)
             )
         
         with col2:
-            start_time = st.time_input("Hora de inicio:", value=datetime.now().time())
+            start_time = st.time_input("Start Time:", value=datetime.now().time())
             end_time = st.time_input(
-                "Hora de fin:", 
+                "End Time:", 
                 value=(datetime.now() + timedelta(hours=1)).time()
             )
             
-        notes = st.text_area("Notas:")
+        notes = st.text_area("Notes:")
         
-        submit = st.form_submit_button("Programar Sesión")
+        submit = st.form_submit_button("Save Session")
         
         if submit:
             # Crear objetos datetime para start_time y end_time
@@ -210,7 +201,7 @@ def show_coach_calendar():
             
             # Validar que end_time sea posterior a start_time
             if end_datetime <= start_datetime:
-                st.error("La hora de fin debe ser posterior a la hora de inicio.")
+                st.error("End time should be later than start time.")
             else:
                 # Crear nueva sesión
                 new_session = Session(
@@ -225,7 +216,7 @@ def show_coach_calendar():
                 db_session.add(new_session)
                 push_session(new_session)
                 db_session.commit()
-                st.success("Sesión programada correctamente")
+                st.success("Session created successfully")
                 st.rerun()
 
 def show_admin_dashboard():
@@ -247,9 +238,9 @@ def show_admin_dashboard():
         # Mostrar estadísticas
         
         df = get_accounting_df()
-        st.subheader("Contabilidad (Google Sheets)")
+        st.subheader("Financials (Google Sheets)")
         st.dataframe(df, hide_index=True)
-        st.metric("Balance €", df["Ingresos"].sum() - df["Gastos"].sum())
+        st.metric("Balance €", df["Gastos"].sum() - df["Ingresos"].sum())
         show_statistics()
     
     db_session = get_db_session()
@@ -263,7 +254,7 @@ def show_all_sessions():
     col1, col2 = st.columns(2)
     with col1:
         start_date = st.date_input(
-            "Desde", 
+            "From", 
             value=datetime.now().date() - timedelta(days=7),
             min_value=datetime.now().date() - timedelta(days=90),
             max_value=datetime.now().date() + timedelta(days=90),
@@ -271,7 +262,7 @@ def show_all_sessions():
         )
     with col2:
         end_date = st.date_input(
-            "Hasta", 
+            "To", 
             value=datetime.now().date() + timedelta(days=7),
             min_value=start_date,
             max_value=datetime.now().date() + timedelta(days=90),
@@ -281,7 +272,7 @@ def show_all_sessions():
     # Filtro de estado
     status_values = [s.value for s in SessionStatus]
     status_filter = st.multiselect(
-        "Estado", 
+        "Status", 
         options=status_values,
         default=status_values
     )
@@ -289,7 +280,7 @@ def show_all_sessions():
     # Filtro de coach
     coaches = db_session.query(Coach).join(User).all()
     coach_options = [(c.coach_id, c.user.name) for c in coaches]
-    coach_options.insert(0, (None, "Todos los coaches"))
+    coach_options.insert(0, (None, "All Coaches"))
     
     selected_coach = st.selectbox(
         "Coach:", 
@@ -299,7 +290,7 @@ def show_all_sessions():
     )
     # Mostrar calendario global
     st.subheader("Calendario de Sesiones")
-    embed_calendar(title="Calendario global (todos los entrenadores)")
+    embed_calendar()
     st.divider()
     
     # Convertir fechas a datetime para la consulta
@@ -324,7 +315,7 @@ def show_all_sessions():
     
     # Mostrar las sesiones
     if not sessions:
-        st.info("No hay sesiones que coincidan con los filtros.")
+        st.info("There are no sessions that match the filters.")
     else:
         # Preparar datos para mostrar
         sessions_data = []
@@ -332,17 +323,17 @@ def show_all_sessions():
             coach = db_session.query(Coach).filter(Coach.coach_id == session.coach_id).first()
             player = db_session.query(Player).filter(Player.player_id == session.player_id).first()
             
-            coach_name = coach.user.name if coach and coach.user else "Coach no encontrado"
-            player_name = player.user.name if player and player.user else "Jugador no encontrado"
+            coach_name = coach.user.name if coach and coach.user else "Coach not founded"
+            player_name = player.user.name if player and player.user else "Player not founded"
             
             sessions_data.append({
                 "ID": session.id,
                 "Coach": coach_name,
-                "Jugador": player_name,
-                "Fecha": session.start_time.strftime("%d/%m/%Y"),
-                "Hora Inicio": session.start_time.strftime("%H:%M"),
-                "Hora Fin": session.end_time.strftime("%H:%M") if session.end_time else "No establecida",
-                "Estado": session.status.value,
+                "Player": player_name,
+                "Date": session.start_time.strftime("%d/%m/%Y"),
+                "Start Time": session.start_time.strftime("%H:%M"),
+                "End Time": session.end_time.strftime("%H:%M") if session.end_time else "No establecida",
+                "Status": session.status.value,
                 "session_obj": session  # Para usar después, no se muestra
             })
         
@@ -350,47 +341,59 @@ def show_all_sessions():
         df = pd.DataFrame(sessions_data)
         session_objects = df.pop("session_obj").reset_index(drop=True)  # Quitar de la visualización pero mantener para uso posterior
         
+        # Add styling based on status
+        def style_sessions(row):
+            if row["Status"] == "completed":
+                return ["background-color: rgba(76, 175, 80, 0.2)"] * len(row)
+            elif row["Status"] == "canceled":
+                return ["background-color: rgba(244, 67, 54, 0.2)"] * len(row)
+            elif row["Status"] == "scheduled":
+                return ["background-color: rgba(33, 150, 243, 0.2)"] * len(row)
+            return [""] * len(row)
+
+        # Apply styling
+        styled_df = df.style.apply(style_sessions, axis=1)
         # Mostrar calendario como tabla
         st.dataframe(
-            df, 
+            styled_df, 
             column_config={
                 "ID": st.column_config.NumberColumn(width="small"),
                 "Coach": st.column_config.TextColumn(width="medium"),
-                "Jugador": st.column_config.TextColumn(width="medium"),
-                "Fecha": st.column_config.TextColumn(width="small"),
-                "Hora Inicio": st.column_config.TextColumn(width="small"),
-                "Hora Fin": st.column_config.TextColumn(width="small"),
-                "Estado": st.column_config.TextColumn(width="small")
+                "Player": st.column_config.TextColumn(width="medium"),
+                "Date": st.column_config.TextColumn(width="small"),
+                "Start Time": st.column_config.TextColumn(width="small"),
+                "End Time": st.column_config.TextColumn(width="small"),
+                "Status": st.column_config.TextColumn(width="small")
             },
             hide_index=True
         )
         
         # Opciones de gestión de sesiones para administradores
-        st.subheader("Gestionar Sesión")
+        st.subheader("Edit Session")
         col1, col2 = st.columns(2)
         
         with col1:
             # Permitir eliminar una sesión
             session_to_delete = st.selectbox(
-                "Seleccionar sesión para eliminar:",
+                "Select session to delete:",
                 options=[s["ID"] for s in sessions_data],
-                format_func=lambda x: f"Sesión #{x} - {next((s['Coach'] for s in sessions_data if s['ID'] == x), '')} con {next((s['Jugador'] for s in sessions_data if s['ID'] == x), '')}"
+                format_func=lambda x: f"Session #{x} - {next((s['Coach'] for s in sessions_data if s['ID'] == x), '')} with {next((s['Player'] for s in sessions_data if s['ID'] == x), '')}"
             )
             
-            if st.button("Eliminar Sesión"):
+            if st.button("Delete Session"):
                 session_to_remove = db_session.query(Session).filter(Session.id == session_to_delete).first()
                 if session_to_remove:
                     db_session.delete(session_to_remove)
                     db_session.commit()
-                    st.success(f"Sesión #{session_to_delete} eliminada correctamente")
+                    st.success(f"Session #{session_to_delete} deleted correctly")
                     st.rerun()
         
         with col2:
             # Permitir cambiar el estado de una sesión
             session_to_update = st.selectbox(
-                "Seleccionar sesión para actualizar:",
+                "Select session to update:",
                 options=[s["ID"] for s in sessions_data],
-                format_func=lambda x: f"Sesión #{x} - {next((s['Coach'] for s in sessions_data if s['ID'] == x), '')} con {next((s['Jugador'] for s in sessions_data if s['ID'] == x), '')}",
+                format_func=lambda x: f"Session #{x} - {next((s['Coach'] for s in sessions_data if s['ID'] == x), '')} with {next((s['Player'] for s in sessions_data if s['ID'] == x), '')}",
                 key="update_session_select"
             )
             
@@ -400,39 +403,39 @@ def show_all_sessions():
                 session = session_objects.iloc[session_idx]
                 
                 new_status = st.selectbox(
-                    "Nuevo estado:", 
+                    "New Status:", 
                     options=[s.value for s in SessionStatus],
                     index=[s.value for s in SessionStatus].index(session.status.value)
                 )
                 
-                if st.button("Actualizar Estado"):
+                if st.button("Update Session"):
                     session.status = SessionStatus(new_status)
                     db_session.commit()
-                    st.success(f"Sesión #{session_to_update} actualizada correctamente")
+                    st.success(f"Session #{session_to_update} updated correctly")
                     st.rerun()
 
 def show_user_management():
     """Muestra la gestión de usuarios para administradores."""
     db_session = get_db_session()
     
-    st.subheader("Gestión de Usuarios")
+    st.subheader("User Management")
     
     # Filtros
-    user_types = ["Todos"] + [t.name for t in UserType]
-    selected_type = st.selectbox("Tipo de usuario:", options=user_types)
+    user_types = ["All"] + [t.name for t in UserType]
+    selected_type = st.selectbox("User Type:", options=user_types)
     
     # Construir consulta base
     query = db_session.query(User)
     
     # Aplicar filtros
-    if selected_type != "Todos":
+    if selected_type != "All":
         query = query.filter(User.user_type == UserType[selected_type])
     
     # Ejecutar consulta
     users = query.order_by(User.name).all()
     
     if not users:
-        st.info("No hay usuarios que coincidan con los filtros.")
+        st.info("There are no users that match the filters.")
         return
     
     # Obtener estadísticas de sesiones por coach
@@ -458,14 +461,14 @@ def show_user_management():
                 comp, prog, canc = row.comp, row.prog, row.canc
         users_data.append({
             "ID": user.user_id,
-            "Nombre": user.name,
+            "Name": user.name,
             "Username": user.username,
             "Email": user.email,
-            "Tipo": user.user_type.name,
+            "User Type": user.user_type.name,
             "Comp": comp,
             "Prog": prog,
             "Canc": canc,
-            "Activo": "Sí" if is_active else "No",
+            "Active": "Sí" if is_active else "No",
             "user_obj": user  # Para usar después, no se muestra
         })
     
@@ -473,15 +476,28 @@ def show_user_management():
     df = pd.DataFrame(users_data)
     user_objects = df.pop("user_obj").reset_index(drop=True)  # Quitar de la visualización pero mantener para uso posterior
     
+        # Add styling based on user type
+    def style_users(row):
+        if row["User Type"] == "admin":
+            return ["background-color: rgba(244, 67, 54, 0.2)"] * len(row)
+        elif row["User Type"] == "coach":
+            return ["background-color: rgba(255, 193, 7, 0.2)"] * len(row)
+        elif row["User Type"] == "player":
+            return ["background-color: rgba(76, 175, 80, 0.2)"] * len(row)
+        return [""] * len(row)
+
+    # Apply styling
+    styled_df = df.style.apply(style_users, axis=1)
+
     # Mostrar usuarios como tabla
     st.dataframe(
-        df,
+        styled_df,
         column_config={
             "ID": st.column_config.NumberColumn(width="small"),
-            "Nombre": st.column_config.TextColumn(width="medium"),
+            "Name": st.column_config.TextColumn(width="medium"),
             "Username": st.column_config.TextColumn(width="medium"),
             "Email": st.column_config.TextColumn(width="medium"),
-            "Tipo": st.column_config.TextColumn(width="small"),
+            "User Type": st.column_config.TextColumn(width="small"),
             "Comp":  st.column_config.NumberColumn("Completadas", width="small"),
             "Prog":  st.column_config.NumberColumn("Programadas", width="small"),
             "Canc":  st.column_config.NumberColumn("Canceladas", width="small"),
@@ -496,9 +512,9 @@ def show_user_management():
     with col1:
         # Activar/desactivar usuario
         user_to_toggle = st.selectbox(
-            "Seleccionar usuario para activar/desactivar:",
+            "Select user to activate/deactivate:",
             options=[u["ID"] for u in users_data],
-            format_func=lambda x: f"{next((u['Nombre'] for u in users_data if u['ID'] == x), '')} ({next((u['Username'] for u in users_data if u['ID'] == x), '')})"
+            format_func=lambda x: f"{next((u['Name'] for u in users_data if u['ID'] == x), '')} ({next((u['Username'] for u in users_data if u['ID'] == x), '')})"
         )
         
         # Encontrar índice del usuario seleccionado
@@ -508,24 +524,24 @@ def show_user_management():
             
             # Verificar si el campo is_active existe
             if hasattr(user, 'is_active'):
-                toggle_label = "Desactivar" if user.is_active else "Activar"
-                if st.button(f"{toggle_label} Usuario"):
+                toggle_label = "Deactivate" if user.is_active else "Activar"
+                if st.button(f"{toggle_label} User"):
                     user.is_active = not user.is_active
                     db_session.commit()
-                    st.success(f"Usuario {toggle_label.lower()}do correctamente")
+                    st.success(f"User {toggle_label.lower()} deactivated successfully")
                     st.rerun()
             else:
-                st.info("La gestión de estado de usuario no está disponible en esta versión.")
+                st.info("The user object does not have the 'is_active' field.")
     
     with col2:
-        st.write("Crear nuevo usuario")
-        st.write("Usa la página de configuración para crear usuarios")
+        st.write("Create new user")
+        st.write("Use the configuration page to create users")
 
 def show_statistics():
     """Muestra estadísticas globales para administradores."""
     db_session = get_db_session()
     
-    st.subheader("Estadísticas Globales")
+    st.subheader("Global Statistics")
     
     # Obtener estadísticas básicas
     total_users = db_session.query(User).count()
@@ -542,17 +558,17 @@ def show_statistics():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Total Usuarios", total_users)
-        st.metric("Total Jugadores", total_players)
+        st.metric("Total Users", total_users)
+        st.metric("Total Players", total_players)
     
     with col2:
-        st.metric("Total Entrenadores", total_coaches)
-        st.metric("Ratio Jugadores/Entrenadores", round(total_players/total_coaches, 1) if total_coaches > 0 else 0)
+        st.metric("Total Coaches", total_coaches)
+        st.metric("Ratio Players/Coaches", round(total_players/total_coaches, 1) if total_coaches > 0 else 0)
     
     with col3:
-        st.metric("Total Sesiones", total_sessions)
+        st.metric("Total Sessions", total_sessions)
         percentage = int(completed_sessions/total_sessions*100) if total_sessions > 0 else 0
-        st.metric("Sesiones Completadas", f"{completed_sessions} ({percentage}%)")
+        st.metric("Completed Sessions", f"{completed_sessions} ({percentage}%)")
     
     # Gráfico de sesiones por estado
     try:
@@ -560,15 +576,15 @@ def show_statistics():
         canceled_sessions = db_session.query(Session).filter(Session.status == SessionStatus.CANCELED).count()
         
         status_data = pd.DataFrame({
-            "Estado": ["Programadas", "Completadas", "Canceladas"],
-            "Cantidad": [scheduled_sessions, completed_sessions, canceled_sessions]
+            "Status": ["Scheduled", "Completed", "Canceled"],
+            "Amount": [scheduled_sessions, completed_sessions, canceled_sessions]
         })
         
-        st.subheader("Sesiones por Estado")
-        st.bar_chart(status_data, x="Estado", y="Cantidad")
+        st.subheader("Sessions by Status")
+        st.bar_chart(status_data, x="Status", y="Amount")
     except Exception as e:
-        st.error(f"Error al generar estadísticas de sesiones: {str(e)}")
-        st.info("Asegúrate de que existen sesiones en la base de datos para mostrar estadísticas.")
+        st.error(f"Error generating sessions stadistics: {str(e)}")
+        st.info("Make sure there are sessions in the database to display statistics..")
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Administration."""

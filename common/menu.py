@@ -2,6 +2,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 import os
+from common.login import logout
 
 def create_sidebar_menu():
     """
@@ -109,12 +110,7 @@ def get_content_path(section):
     
     return content_map.get(section)
 
-# Función legacy que ya no se usa, pero se mantiene por compatibilidad
-def logout():
-    """Cierra la sesión del usuario."""
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    # No llamamos a rerun() aquí porque no funcionará en un callback
+
 
 if __name__ == "__main__":
     

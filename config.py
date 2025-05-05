@@ -42,6 +42,5 @@ MAX_PHOTO_SIZE_MB = 2
 # Contantes de la aplicación
 SESSION_DURATION_DEFAULT = 60  # minutos
 
-# Crear directorios necesarios si no existen
-for directory in [DATA_DIR, ASSETS_DIR, STYLES_DIR, PROFILE_PHOTOS_DIR]:
-    os.makedirs(directory, exist_ok=True)
+# Clave secreta para sesiones
+SESSION_SECRET = os.getenv("SESSION_SECRET", "your-default-secret-key")

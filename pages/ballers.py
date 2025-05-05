@@ -2,19 +2,11 @@
 import streamlit as st
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import User, Player, Coach, TestResult, Base
+from models import User, Player, Coach, TestResult, Base, Session
 from datetime import datetime
 from controllers.calendar_controller import embed_calendar, SessionStatus
-from config import DATABASE_PATH
+from controllers.db import get_db_session
 
-
-
-def get_db_session():
-    """Crea y devuelve una sesión de SQLAlchemy."""
-    engine = create_engine(f'sqlite:///{DATABASE_PATH}')
-    Base.metadata.create_all(engine)  # Crea tablas si no existen
-    Session = sessionmaker(bind=engine)
-    return Session()
 
 def show_player_profile(player_id=None):
     """Muestra el perfil de un jugador específico."""
@@ -47,12 +39,23 @@ def show_player_profile(player_id=None):
             st.write(f"**Tel:** {user.phone}")
         if user.line:
             st.write(f"**LINE:** {user.line}")
-        if user.date_of_birth:
-            edad = datetime.now().year - user.date_of_birth.year
-            st.write(f"**Age:** {edad} years")
+        if player.user.date_of_birth:
+            age = datetime.now().year - player.user.date_of_birth.year
+            st.write(f"**Age:** {age} years")
+        # Find next scheduled session
+        next_session = db_session.query(Session).filter(
+        Session.player_id == player.player_id,
+        Session.status == SessionStatus.SCHEDULED,
+        Session.start_time > datetime.now()
+        ).order_by(Session.start_time).first()
+        
+        next_session_text = "To be confirmed"
+        if next_session:
+            next_session_text = next_session.start_time.strftime("%d/%m/%Y %H:%M")   
         
         st.write(f"**Services:** {player.service}")
         st.write(f"**Enrollment Sessions:** {player.enrolment}")
+        st.write(f"**Next Session:** {next_session_text}")
 
     st.divider()
 
@@ -67,7 +70,7 @@ def show_player_profile(player_id=None):
     colC.metric("Remaining", left)
         
         
-    
+    # Mostrar calendario de sesiones
     embed_calendar(
         title="My Calendar", 
         filter_tag=f"#P{player.player_id}"
@@ -193,8 +196,17 @@ def show_player_list():
     for i, player in enumerate(filtered_players):
         done  = sum(s.status is SessionStatus.COMPLETED for s in player.sessions)
         if player.user.date_of_birth:
-            edad = datetime.now().year - player.user.date_of_birth.year
-            st.write(f"**Age:** {edad} years")
+            age = datetime.now().year - player.user.date_of_birth.year
+        # Find next scheduled session
+        next_session = db_session.query(Session).filter(
+        Session.player_id == player.player_id,
+        Session.status == SessionStatus.SCHEDULED,
+        Session.start_time > datetime.now()
+        ).order_by(Session.start_time).first()
+        
+        next_session_text = "To be confirmed"
+        if next_session:
+            next_session_text = next_session.start_time.strftime("%d/%m/%Y %H:%M")
         with cols[i % 3]:
             with st.container(border=True):
                 col1, col2 = st.columns([1, 2])
@@ -202,11 +214,12 @@ def show_player_list():
                     st.image(player.user.profile_photo, width=100)
                 with col2:
                     st.write(f"**{player.user.name}**")
-                    st.write(f"**Age:** {edad}")
+                    
+                    st.write(f"**Age:** {age} years")
                     st.write(f"**Service:** {player.service}")
                     st.write(f"**Sessions:** {player.enrolment}")
                     st.write(f"**Reamining:** {player.enrolment - done}")
-                    st.write(f"**Next Session:** ")
+                    st.write(f"**Next Session:** {next_session_text}")
 
 
                 

@@ -180,7 +180,8 @@ def _extract_id(text, pattern):
 
 def embed_calendar(height=600, title="", filter_tag: str | None = None):
     cal_id = os.getenv("CALENDAR_ID")
-    params = ["src="+cal_id, "ctz=Europe/Madrid", "wkst=2", "hl=es"]
+    # Add the showCalendars and showTz parameters
+    params = ["src="+cal_id, "ctz=Europe/Madrid", "showTitle=0", "wkst=2", "hl=en_GB", "showCalendars=0", "showTz=0", "showPrint=0"]
     if filter_tag:
         params.append("q=" + urllib.parse.quote_plus(filter_tag))
     src = "https://calendar.google.com/calendar/embed?" + "&".join(params)
