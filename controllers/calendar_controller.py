@@ -1,19 +1,26 @@
-from datetime import datetime, timedelta, timezone
+import datetime as dt
 import os, streamlit as st
 from .google_client import calendar
 from models import Session, SessionStatus         
 from controllers.db import get_db_session
-import urllib.parse 
-import re  
+import re 
+from config import CALENDAR_COLORS
+COLOR = {k: v["google"] for k, v in CALENDAR_COLORS.items()} 
 
 CAL_ID = os.getenv("CALENDAR_ID")
-COLOR = {"scheduled": "9", "completed": "2", "canceled": "11"}   # azul‑verde‑rojo
+
 
 def _db():
     return get_db_session()
 
 def _service():
     return calendar()
+
+def _safe_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 # ---------- DB → Calendar ----------
 def push_session(session: Session):
@@ -23,8 +30,8 @@ def push_session(session: Session):
         f"#C{session.coach_id} #P{session.player_id}"
         ),
     "description": session.notes or "",
-    "start": {"dateTime": session.start_time.astimezone(timezone.utc).isoformat()},
-    "end":   {"dateTime": session.end_time.astimezone(timezone.utc).isoformat()},
+    "start": {"dateTime": session.start_time.astimezone(dt.timezone.utc).isoformat()},
+    "end":   {"dateTime": session.end_time.astimezone(dt.timezone.utc).isoformat()},
     "colorId": COLOR[session.status.value],
     "extendedProperties": {
         "private": {
@@ -69,9 +76,9 @@ def sync_calendar_to_db():
     svc = _service()
     db  = get_db_session()
 
-    now = datetime.now(timezone.utc)
-    win_start = now - timedelta(days=1)
-    win_end   = now + timedelta(days=90)
+    now = dt.datetime.now(dt.timezone.utc)
+    win_start = now - dt.timedelta(days=1)
+    win_end   = now + dt.timedelta(days=90)
 
     events = svc.events().list(
         calendarId=CAL_ID,
@@ -82,7 +89,7 @@ def sync_calendar_to_db():
     ).execute().get("items", [])
 
     def _to_dt(iso):
-        return datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        return dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))
 
     for ev in events:
         props   = ev.get("extendedProperties", {}).get("private", {})
@@ -92,8 +99,10 @@ def sync_calendar_to_db():
         status   = _status_from_color(ev.get("colorId", "9"))
 
         # ── Caso A: el evento ya pertenece a una sesión de BBDD ──────────
-        if sess_id:
+        if sess_id and sess_id.isdigit():
             ses = db.query(Session).filter_by(id=int(sess_id)).first()
+        else:
+            ses = None
             if ses:
                 changed = False
                 if ses.status != status:
@@ -159,13 +168,14 @@ def sync_calendar_to_db():
 def _status_from_color(color):
     return {v: SessionStatus(k) for k, v in COLOR.items()}.get(color, SessionStatus.SCHEDULED)
 
+# Devuelve (coach_id, player_id) o (None, None)
 def _guess_ids(ev):
-    """Devuelve (coach_id, player_id) o (None, None)."""
+   
     props = ev.get("extendedProperties", {}).get("private", {})
-    cid = props.get("coach_id")
-    pid = props.get("player_id")
+    cid = _safe_int(props.get("coach_id"))
+    pid = _safe_int(props.get("player_id"))
     if cid and pid:
-        return int(cid), int(pid)
+        return cid, pid
 
     # Eventos creados a mano en Google: intenta descubrir IDs en el summary
     summary = ev.get("summary", "")
@@ -178,15 +188,38 @@ def _extract_id(text, pattern):
     m = re.search(pattern, text, re.IGNORECASE)
     return int(m.group(1)) if m else None
 
-def embed_calendar(height=600, title="", filter_tag: str | None = None):
-    cal_id = os.getenv("CALENDAR_ID")
-    # Add the showCalendars and showTz parameters
-    params = ["src="+cal_id, "ctz=Europe/Madrid", "showTitle=0", "wkst=2", "hl=en_GB", "showCalendars=0", "showTz=0", "showPrint=0"]
-    if filter_tag:
-        params.append("q=" + urllib.parse.quote_plus(filter_tag))
-    src = "https://calendar.google.com/calendar/embed?" + "&".join(params)
-    if title:
-        st.subheader(title)
-    st.components.v1.iframe(src, height=height)
 
+def update_past_sessions():
+    db = get_db_session()
+    now = dt.datetime.now(dt.timezone.utc)
+    todo = db.query(Session).filter(
+        Session.status == SessionStatus.SCHEDULED,
+        Session.end_time <= now
+    ).all()
+    for s in todo:
+        s.status = SessionStatus.COMPLETED
+        if s.calendar_event_id:
+            patch_color(s.calendar_event_id, s.status)
+    if todo:
+        db.commit()
+    return len(todo)
 
+def get_sessions(
+    start: dt,
+    end: dt,
+    coach_id: int | None = None,
+    player_id: int | None = None,
+    statuses: list[SessionStatus] | None = None,
+):
+    # Devuelve las sesiones filtradas y ordenadas por fecha de inicio.
+
+    db = get_db_session()
+    q = db.query(Session).filter(Session.start_time >= start,
+                                 Session.start_time <= end)
+    if coach_id:
+        q = q.filter(Session.coach_id == coach_id)
+    if player_id:
+        q = q.filter(Session.player_id == player_id)
+    if statuses:
+        q = q.filter(Session.status.in_(statuses))
+    return q.order_by(Session.start_time.asc()).all()

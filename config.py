@@ -44,3 +44,10 @@ SESSION_DURATION_DEFAULT = 60  # minutos
 
 # Clave secreta para sesiones
 SESSION_SECRET = os.getenv("SESSION_SECRET", "your-default-secret-key")
+
+# Colores para las sesiones (código Google Calendar + color HEX para la UI)
+CALENDAR_COLORS = {
+    "scheduled": {"google": "9",  "hex": "#1E88E5"},  # azul
+    "completed": {"google": "2",  "hex": "#4CAF50"},  # verde
+    "canceled":  {"google": "11", "hex": "#F44336"},  # rojo
+}

@@ -7,15 +7,9 @@ header[data-testid="stHeader"] {
     z-index: 999 !important;
     height: auto !important;
 }
-
-/* contenedor principal */
-[data-testid="stMainBlockContainer"] {
-    padding-top: 0rem !important;
-    margin-top: 0rem !important;
-    padding-bottom: 50px !important;
-    margin-bottom: 0rem !important;
+#login{
+    color: rgb(36, 222, 132) !important;
 }
-
 /* Hacer que el formulario de login sea semitransparente */
 [data-testid="stForm"] {
     background-color: rgba(51,51,51,0.6); 
@@ -23,6 +17,7 @@ header[data-testid="stHeader"] {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
 /* Estilos para el formulario de login */
 form {
     background-color: #333333;
@@ -49,18 +44,25 @@ div.row-widget.stForm {
     align-items: center;
     justify-content: space-between;
 }
+
+/* contenedor principal */
+[data-testid="stMainBlockContainer"] {
+    padding-top: 0rem !important;
+    margin-top: 0rem !important;
+    padding-bottom: 50px !important;
+    margin-bottom: 0rem !important;
+}
+
 /* Ajustar posición vertical del logo en el sidebar */
 [data-testid="stSidebarContent"] img {
     margin-top: -40px !important;
     margin-bottom: 40px !important;
     padding-top: 0 !important;
 }
-
 /* Hacemos que el contenedor principal sea semitransparente */
 .stApp {
     background-color: rgba(0, 0, 0, 0.2);
 }
-
 /* Datos personales del perfil */
 .st-emotion-cache-my1ldo{
     margin-left: 50px;
@@ -68,32 +70,30 @@ div.row-widget.stForm {
 .st-emotion-cache-seewz2 h1{
     text-align: center;
 }
-
 body {
     color: #333333;
     font-family: 'Roboto', sans-serif;
 }
-
 /* Tarjetas y contenedores */
 div.stContainer {
     border-radius: 10px;
     padding: 1rem;
     margin-bottom: 1rem;
+    background-attachment: #333333;
 }
-
 /* Botones personalizados */
 .stButton>button {
     border-radius: 20px;
     font-weight: 500;
     background-color: #333333;
-    color: #1DDD6E;
+    color: rgba(36, 222, 132, 1);
     border: none;
     padding: 0.5rem 1rem;
     transition: all 0.3s ease;
 }
 
 .stButton>button:hover {
-    background-color: #1DDD6E;
+    background-color: rgba(36, 222, 132, 1);
     box-shadow: 0 4px 8px rgba(251, 250, 250, 0.1);
     color: #333333;
 }
@@ -102,13 +102,13 @@ div.stContainer {
 button[key="logout_button"],
 .stButton button[data-testid="baseButton-secondary"]:last-child {
     background-color: #1D1B1A !important;
-    color: #1DDD6E !important;
+    color: rgba(36, 222, 132, 1) !important;
 }
 
 [data-testid="stSidebarContent"] .stButton button:hover,
 button[key="logout_button"],
 .stButton button[data-testid="baseButton-secondary"]:last-child {
-    background-color: #1DDD6E !important;
+    background-color: rgba(36, 222, 132, 1) !important;
     color: #333333 !important;
 }
 /* Formularios */
@@ -118,7 +118,6 @@ button[key="logout_button"],
     border-radius: 5px;
     border: 1px solid #e0e0e0;
 }
-
 /* Métricas */
 div.stMetric {
     background-color: #3b3b3a;
@@ -129,7 +128,7 @@ div.stMetric {
 }
 
 div.stMetric label {
-    color: #1DDD6E;
+    color: rgba(36, 222, 132, 1);
     font-weight: 600;
 }
 
@@ -142,15 +141,15 @@ div.stDataFrame {
 
 /* Pestañas */
 button.stTab {
-    background-color: #1DDD6E;
+    background-color: rgba(36, 222, 132, 1);
+    color:#333333;
     border-radius: 5px 5px 0 0;
     padding: 0.5rem 1rem;
     font-weight: 500;
 }
-
 button.stTab[aria-selected="true"] {
-    background-color: #1DDD6E;
-    color: white;
+    background-color: rgba(36, 222, 132, 1);
+    color: #333333;
 }
 
 /* Gráficos */
@@ -167,21 +166,6 @@ div.stAlert {
     border-radius: 5px;
     padding: 0.5rem 1rem;
     margin-bottom: 1rem;
-}
-
-/* Personalización para tarjetas de perfil */
-div.profile-card {
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    transition: all 0.3s ease;
-}
-
-div.profile-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(134, 85, 85, 0.15);
 }
 
 /* Estilos para los calendarios */

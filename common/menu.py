@@ -1,7 +1,6 @@
 # common/menu.py
 import streamlit as st
 from streamlit_option_menu import option_menu
-import os
 from common.login import logout
 
 def create_sidebar_menu():
@@ -109,8 +108,6 @@ def get_content_path(section):
     }
     
     return content_map.get(section)
-
-
 
 if __name__ == "__main__":
     

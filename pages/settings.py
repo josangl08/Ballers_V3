@@ -1,14 +1,12 @@
 # pages/settings.py
 import streamlit as st
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from models import User, UserType, Coach, Player, Admin, Base
 import hashlib
-from datetime import datetime
+import datetime as dt
 import os
 import shutil
 from controllers.calendar_controller import push_all_sessions_to_calendar, sync_calendar_to_db
-from controllers.db import get_db_session  # Using centralized db function
+from controllers.db import get_db_session 
 
 def hash_password(password):
     """Convierte una contraseña en un hash SHA-256."""
@@ -21,7 +19,7 @@ def save_profile_photo(uploaded_file, username):
     
     # Generar nombre de archivo único
     file_ext = os.path.splitext(uploaded_file.name)[1]
-    filename = f"{username}_{datetime.now().strftime('%Y%m%d%H%M%S')}{file_ext}"
+    filename = f"{username}_{dt.datetime.now().strftime('%Y%m%d%H%M%S')}{file_ext}"
     file_path = os.path.join("assets/profile_photos", filename)
     
     # Guardar archivo
@@ -108,7 +106,7 @@ def create_user_form():
                 phone=phone,
                 line=line,
                 profile_photo=profile_photo_path,
-                date_of_birth=datetime.combine(date_of_birth, datetime.min.time()) if date_of_birth else None,
+                date_of_birth=dt.datetime.combine(date_of_birth, dt.datetime.min.time()) if date_of_birth else None,
                 user_type=UserType[user_type],
                 permit_level=permit_level if user_type == "admin" else 1
             )
@@ -491,7 +489,7 @@ def system_settings():
         if not os.path.exists(backup_dir):
             os.makedirs(backup_dir)
         
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_file = f"{backup_dir}/ballers_app_{timestamp}.db"
         
         try:

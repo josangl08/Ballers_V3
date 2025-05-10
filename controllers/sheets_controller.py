@@ -1,4 +1,6 @@
-import pandas as pd, os, streamlit as st
+import os
+import pandas as pd
+import streamlit as st
 from .google_client import sheets
 
 SHEET_ID = os.getenv("ACCOUNTING_SHEET_ID")

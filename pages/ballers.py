@@ -1,12 +1,12 @@
 # pages/ballers.py
 import streamlit as st
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import pandas as pd
+import plotly.express as px
 from models import User, Player, Coach, TestResult, Base, Session
-from datetime import datetime
-from controllers.calendar_controller import embed_calendar, SessionStatus
+import datetime as dt
+from controllers.calendar_controller import SessionStatus, get_sessions
+from controllers.internal_calendar import show_calendar
 from controllers.db import get_db_session
-
 
 def show_player_profile(player_id=None):
     """Muestra el perfil de un jugador específico."""
@@ -40,13 +40,14 @@ def show_player_profile(player_id=None):
         if user.line:
             st.write(f"**LINE:** {user.line}")
         if player.user.date_of_birth:
-            age = datetime.now().year - player.user.date_of_birth.year
+            age = dt.datetime.now().year - player.user.date_of_birth.year
             st.write(f"**Age:** {age} years")
+
         # Find next scheduled session
         next_session = db_session.query(Session).filter(
         Session.player_id == player.player_id,
         Session.status == SessionStatus.SCHEDULED,
-        Session.start_time > datetime.now()
+        Session.start_time > dt.datetime.now()
         ).order_by(Session.start_time).first()
         
         next_session_text = "To be confirmed"
@@ -68,15 +69,111 @@ def show_player_profile(player_id=None):
     colA.metric("Completed", done)
     colB.metric("Scheduled", total - done - sum(s.status is SessionStatus.CANCELED for s in player.sessions))
     colC.metric("Remaining", left)
-        
-        
-    # Mostrar calendario de sesiones
-    embed_calendar(
-        title="My Calendar", 
-        filter_tag=f"#P{player.player_id}"
+
+    st.subheader(f"Calendar of {user.name}")
+
+    # Filtros de fecha
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input(
+            "From", 
+            value=dt.datetime.now().date()- dt.timedelta(days=7),
+        )
+    with col2:
+        end_date = st.date_input(
+            "To", 
+            value=dt.datetime.now().date() + dt.timedelta(days=7),
+        )
+    
+    # Filtro de estado
+    status_values = [s.value for s in SessionStatus]
+    status_filter = st.multiselect(
+        "Status", 
+        options=status_values,
+        default=status_values
+    )   
+
+    if end_date < start_date:
+        st.error("The 'To' date must be on or after the 'From' date.")
+    else:
+        # Convertir a datetime solo si las fechas son válidas
+        start_datetime = dt.datetime.combine(start_date, dt.time.min)
+        end_datetime   = dt.datetime.combine(end_date,   dt.time.max)
+    
+    # Construir consulta base
+    query = db_session.query(Session).filter(
+        Session.start_time >= start_datetime,
+        Session.start_time <= end_datetime
     )
     
+    # Aplicar filtros adicionales
+    if status_filter:
+        query = query.filter(Session.status.in_([SessionStatus(s) for s in status_filter]))
+    
+  
+    query = query.filter(Session.player_id == player.player_id)
+    
+    # Ejecutar consulta
+    sessions = query.order_by(Session.start_time).all()
+       
+    # Mostrar calendario de sesiones
 
+    show_calendar("", sessions, key="my_cal")
+    
+    # Mostrar el listado de sesiones
+    st.subheader("Sessions List")
+    
+    if not sessions:
+        st.info(f"There are no scheduled sessions between {start_date.strftime('%d/%m/%Y')} y {end_date.strftime('%d/%m/%Y')}.")
+    else:
+        # Preparar datos para mostrar
+        sessions_data = []
+        for session in sessions:
+            player = db_session.query(Player).filter(Player.player_id == session.player_id).first()
+            player_name = player.user.name if player else "Player not found"
+            
+            sessions_data.append({
+                "ID": session.id,
+                "Player": player_name,
+                "Date": session.start_time.strftime("%d/%m/%Y"),
+                "Start Time": session.start_time.strftime("%H:%M"),
+                "End Time": session.end_time.strftime("%H:%M") if session.end_time else "Not established",
+                "Status": session.status.value,
+                "session_obj": session  # Para usar después, no se muestra
+            })
+        
+        # Crear DataFrame para mostrar
+        df = pd.DataFrame(sessions_data)
+        session_objects = df.pop("session_obj")  # Quitar de la visualización pero mantener para uso posterior
+        
+        # Add styling based on status
+        def style_sessions(row):
+            if row["Status"] == "completed":
+                return ["background-color: rgba(76, 175, 80, 0.2)"] * len(row)
+            elif row["Status"] == "canceled":
+                return ["background-color: rgba(244, 67, 54, 0.2)"] * len(row)
+            elif row["Status"] == "scheduled":
+                return ["background-color: rgba(33, 150, 243, 0.2)"] * len(row)
+            return [""] * len(row)
+
+        # Apply styling
+        styled_df = df.style.apply(style_sessions, axis=1)
+        
+        # Mostrar calendario como tabla
+        st.dataframe(
+            styled_df, 
+            column_config={
+                "ID": st.column_config.NumberColumn(width="small"),
+                "Coach": st.column_config.TextColumn(width="medium"),
+                "Player": st.column_config.TextColumn(width="medium"),
+                "Date": st.column_config.TextColumn(width="small"),
+                "Start Time": st.column_config.TextColumn(width="small"),
+                "End Time": st.column_config.TextColumn(width="small"),
+                "Status": st.column_config.TextColumn(width="small")
+            },
+            hide_index=True
+        )
+    
     # Mostrar pestañas con información adicional
     tab1, tab2 = st.tabs(["Test Results", "Notes"])
     
@@ -88,8 +185,6 @@ def show_player_profile(player_id=None):
         
         if test_results:
             # Mostrar la evolución de las métricas en un gráfico
-            import pandas as pd
-            import plotly.express as px
             
             # Preparar datos para el gráfico
             test_data = []
@@ -181,7 +276,6 @@ def show_player_list():
         db_session.close()
         return
     
-  
     # Filtros
     search_name = st.text_input("Search Player by name:")
     
@@ -196,12 +290,12 @@ def show_player_list():
     for i, player in enumerate(filtered_players):
         done  = sum(s.status is SessionStatus.COMPLETED for s in player.sessions)
         if player.user.date_of_birth:
-            age = datetime.now().year - player.user.date_of_birth.year
+            age = dt.datetime.now().year - player.user.date_of_birth.year
         # Find next scheduled session
         next_session = db_session.query(Session).filter(
         Session.player_id == player.player_id,
         Session.status == SessionStatus.SCHEDULED,
-        Session.start_time > datetime.now()
+        Session.start_time > dt.datetime.now()
         ).order_by(Session.start_time).first()
         
         next_session_text = "To be confirmed"
@@ -252,7 +346,4 @@ def show_content():
             show_player_list()
 
 if __name__ == "__main__":
-    # Para pruebas
-    st.session_state["user_id"] = 1
-    st.session_state["user_type"] = "admin"
     show_content()

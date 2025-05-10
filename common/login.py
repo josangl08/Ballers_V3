@@ -1,14 +1,9 @@
 # common/login.py
 import streamlit as st
 import hashlib
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from models import User, UserType, Base
+from models import User
 import os
 import sys
-import base64
-import urllib.parse
-from datetime import datetime, timedelta
 from controllers.db import get_db_session
 
 
@@ -32,60 +27,18 @@ def login_user(username, password):
     
     db_session.close()
     return user
-def get_base64_from_image(image_path):
-    """Convierte una imagen a formato base64."""
-    if not os.path.isfile(image_path):
-        # Si no encuentra la imagen, buscamos alternativas
-        alternatives = [
-            f"assets/ballers/{os.path.basename(image_path)}", 
-            f"static/{os.path.basename(image_path)}",
-            f"../assets/ballers/{os.path.basename(image_path)}"
-        ]
-        for alt_path in alternatives:
-            if os.path.isfile(alt_path):
-                image_path = alt_path
-                break
-        else:
-            print(f"No se pudo encontrar la imagen de fondo: {image_path}")
-            return ""
-            
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
 
-def add_bg_from_image(image_path):
-    """Añade una imagen de fondo usando base64."""
-    base64_image = get_base64_from_image(image_path)
-    if not base64_image:
-        return
-        
-    background_image_style = f"""
-    <style>
-    [data-testid="stAppViewContainer"]::before {{
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url("data:image/png;base64,{base64_image}");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        opacity: 1; /* Ajusta este valor entre 0 y 1 para cambiar la transparencia */
-        z-index: -1;
-    }}
-    </style>
-    """
     
     st.markdown(background_image_style, unsafe_allow_html=True)
 def login_page():
     """Renderiza la página de login y gestiona la autenticación."""
     
-    # Agregar CSS personalizado para la imagen de fondo
-    add_bg_from_image("assets/ballers/360_mix.png")
-    st.title("Ballers App - Login")
-    
-    # Comprobar si ya hay un usuario en sesión
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("assets/ballers/logo_white.png", width=400)
+
+# Comprobar si ya hay un usuario en sesión
     if "user_id" in st.session_state and st.session_state["user_id"]:
         st.success(f"Ya has iniciado sesión como {st.session_state['username']}")
         st.button("Cerrar Sesión", on_click=logout)
@@ -164,25 +117,6 @@ def login_page():
             </script>
             """, unsafe_allow_html=True)
     
-    # Mostrar información de usuarios en modo debug (también centrado)
-    if DEBUG:
-        with col2:
-            with st.expander("Información de Debug"):
-                st.warning("MODO DEBUG ACTIVADO - Solo para desarrollo")
-                db_session = get_db_session()
-                users = db_session.query(User).all()
-                
-                if users:
-                    st.write("Usuarios disponibles:")
-                    for user in users:
-                        st.write(f"- Usuario: {user.username}, Tipo: {user.user_type.name}")
-                else:
-                    st.write("No hay usuarios en la base de datos.")
-                    st.write("Ejecuta el script create_admin.py para crear un usuario administrador.")
-                
-                db_session.close()
-    
-    return False
 
 def logout():
     """Cierra la sesión del usuario."""
