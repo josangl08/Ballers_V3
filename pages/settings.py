@@ -5,8 +5,9 @@ import hashlib
 import datetime as dt
 import os
 import shutil
-from controllers.calendar_controller import push_all_sessions_to_calendar, sync_calendar_to_db
+from controllers.calendar_controller import sync_db_to_calendar, sync_calendar_to_db
 from controllers.db import get_db_session 
+from controllers.sheets_controller import get_accounting_df
 
 def hash_password(password):
     """Convierte una contraseña en un hash SHA-256."""
@@ -481,38 +482,52 @@ def delete_user():
 
 def system_settings():
     """Configuración del sistema (solo para administradores)."""
-    st.subheader("Database Management")
-    
-    # Opción para crear copia de seguridad de la base de datos
-    if st.button("Create a backup copy of the database"):
-        backup_dir = "backups"
-        if not os.path.exists(backup_dir):
-            os.makedirs(backup_dir)
-        
-        timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_file = f"{backup_dir}/ballers_app_{timestamp}.db"
-        
-        try:
-            shutil.copy2("data/ballers_app.db", backup_file)
-            st.success(f"Copia de seguridad creada: {backup_file}")
-        except Exception as e:
-            st.error(f"Error al crear copia de seguridad: {str(e)}")
+    st.subheader("Database/Googlesheets Management")
+    col1, col2 = st.columns(2)
+    with col1:
+        # Opción para crear copia de seguridad de la base de datos
+        if st.button("Create a backup copy of the database"):
+            backup_dir = "backups"
+            if not os.path.exists(backup_dir):
+                os.makedirs(backup_dir)
+            
+            timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_file = f"{backup_dir}/ballers_app_{timestamp}.db"
+            
+            try:
+                shutil.copy2("data/ballers_app.db", backup_file)
+                st.success(f"Copia de seguridad creada: {backup_file}")
+            except Exception as e:
+                st.error(f"Error al crear copia de seguridad: {str(e)}")
+    with col2:
+        if st.button("Refresh accounting sheet"):
+            get_accounting_df.clear()
+            df = get_accounting_df()
+            st.success("Google Sheets re‑loaded")
 
     st.subheader("Manual Synchronisation")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("Send sessions → Google Calendar"):
-            with st.spinner("Synchronising to Google Calendar..."):
-                n = push_all_sessions_to_calendar() 
-            st.success(f"New {n} sessions were saved to Google Calendar.")
+        if st.button("Push local sessions → Google Calendar"):
+            with st.spinner("Pushing sessions..."):
+                pushed, updated = sync_db_to_calendar()
+            st.success(
+                f"{pushed} sesiones nuevas enviadas, "
+                f"{updated} sesiones actualizadas en Google Calendar."
+            )
 
     with col2:
-        if st.button("Bring events ← Google Calendar"):
-            with st.spinner("Synchronising to Database..."):
-                n = sync_calendar_to_db()               
-            st.success(f"New {n} sessions were saved to Database.")
+        if st.button("Bring events ← Google Calendar(settings)"):
+            sync_calendar_to_db.clear()  # invalida la caché
+            with st.spinner("Sincronizando con Google Calendar..."):
+                imported, updated, deleted = sync_calendar_to_db()
+            st.success(
+                f"{imported} sesiones nuevas importadas, "
+                f"\n{updated} sesiones actualizadas, "
+                f"\n{deleted} sesiones eliminadas."
+            )
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Settings."""

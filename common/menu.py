@@ -2,6 +2,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 from common.login import logout
+from controllers.calendar_controller import sync_calendar_to_db
 
 def create_sidebar_menu():
     """
@@ -88,7 +89,16 @@ def create_sidebar_menu():
             
             # Usar st.rerun() directamente en el flujo principal (no en callback)
             st.rerun()
-        
+
+        if st.button("Bring events ← Google Calendar"):
+            sync_calendar_to_db.clear()  # invalida la caché
+            with st.spinner("Sincronizando con Google Calendar..."):
+                imported, updated, deleted = sync_calendar_to_db()
+            st.success(
+                f"{imported} sesiones nuevas importadas ,  "
+                f"{updated} sesiones actualizadas ,  "
+                f"{deleted} sesiones eliminadas"
+            )
     return selected
 
 def get_content_path(section):

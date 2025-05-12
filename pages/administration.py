@@ -1,12 +1,13 @@
 # pages/administration.py
 import streamlit as st
-from sqlalchemy import func, case
-from models import User, Coach, Player, Session, SessionStatus, Base, UserType
 import pandas as pd
 import datetime as dt
 import os
 import sys
-from controllers.calendar_controller import push_session, patch_color, get_sessions
+import plotly.graph_objects as go
+from sqlalchemy import func, case, asc
+from models import User, Coach, Player, Session, SessionStatus, Base, UserType
+from controllers.calendar_controller import push_session, get_sessions, update_session, delete_session
 from controllers.internal_calendar import show_calendar
 from controllers.sheets_controller import get_accounting_df
 from controllers.db import get_db_session
@@ -137,154 +138,232 @@ def show_coach_calendar():
             hide_index=True
         )
 
-        st.subheader("Edit Session")
+        # -----------------------------------------------------------------
+        # 1. CONFIG COMÚN
+        # -----------------------------------------------------------------
+        st.subheader("My Sessions")
 
-        with st.form("edit_session_form", clear_on_submit=False):
-            # ---------- selector de sesión ----------
-            sessions_by_id = {s.id: s for s in sessions}          # <- SOLO memoria local
-            selected_id = st.selectbox(
-                "Select session:",
-                options=list(sessions_by_id.keys()),
-                format_func=lambda sid: (
-                    f"#{sid} – {next((d['Player'] for d in sessions_data if d['ID']==sid),'?')} "
-                    f"({next((d['Date'] for d in sessions_data if d['ID']==sid),'')})"
-                )
-            )
+        players     = db_session.query(Player).join(User).filter(User.is_active).all()
+        player_opts = [(p.player_id, p.user.name) for p in players]
 
-            if selected_id:
-                session = db_session.get(Session, selected_id)     # ← objeto ligado a este db_session
+        tab1, tab2 = st.tabs(["Create Session", "Edit Session"])
 
+        hours_start = [dt.time(h, 0) for h in range(8, 19)]   # 08‑18
+        hours_end   = [dt.time(h, 0) for h in range(9, 20)]   # 09‑19
+
+        if "start_hour_def" not in st.session_state:
+            st.session_state["start_hour_def"] = dt.time(8, 0)
+        if "end_hour_def" not in st.session_state:
+            st.session_state["end_hour_def"] = dt.time(9, 0)
+
+        # -----------------------------------------------------------------
+        # 2. CREATE SESSION (solo jugador + fecha / hora)
+        # -----------------------------------------------------------------
+        with tab1:
+            st.subheader("New Session")
+
+            with st.form("coach_new_session", clear_on_submit=True):
                 col1, col2 = st.columns(2)
-                new_status = col1.selectbox(
-                    "Status",
-                    [s.value for s in SessionStatus],
-                    index=list(SessionStatus).index(session.status)
-                )
-                notes = col2.text_area("Notes", value=session.notes or "")
 
-                col_save, col_del = st.columns(2)
-                save_clicked   = col_save.form_submit_button("Save",   type="secondary")
-                delete_clicked = col_del.form_submit_button("Delete", type="secondary")
+                # ------------- columna 1 -------------
+                with col1:
+                    player_id = st.selectbox(
+                        "Player",
+                        options=[p[0] for p in player_opts],
+                        format_func=lambda x: next(n for i, n in player_opts if i == x)
+                    )
 
-                if delete_clicked:
-                    # Guardamos el ID de la sesión candidata en el estado global
-                    st.session_state["delete_candidate"] = selected_id
+                    session_date = st.date_input(
+                        "Date",
+                        value=dt.date.today(),
+                        min_value=dt.date.today(),
+                        max_value=dt.date.today() + dt.timedelta(days=90)
+                    )
 
-                elif save_clicked:
-                    session.status = SessionStatus(new_status)
-                    session.notes  = notes
-                    db_session.commit()
-                    st.success("Changes saved")
-                    st.rerun()
+                # ------------- columna 2 -------------
+                with col2:
+                    start_time = st.selectbox(
+                        "Start hour",
+                        options=hours_start,
+                        index=hours_start.index(st.session_state["start_hour_def"]),
+                        format_func=lambda t: t.strftime("%H:%M")
+                    )
 
-        # -------------- DIÁLOGO FUERA DEL FORM -----------------
-        if "delete_candidate" in st.session_state:
-            sid = st.session_state["delete_candidate"]
-            session_to_delete = db_session.get(Session, sid)   # objeto ligado a este db_session
+                    end_time = st.selectbox(
+                        "End hour",
+                        options=hours_end,
+                        index=hours_end.index(st.session_state["end_hour_def"]),
+                        format_func=lambda t: t.strftime("%H:%M")
+                    )
 
-            @st.dialog("Confirm delete")
-            def confirm_delete():
-                st.warning(f"Do you really want to delete Session #{sid}? This action cannot be undone.")
-                c1, c2 = st.columns(2)
-                if c1.button("Delete", type="primary"):
-                    db_session.delete(session_to_delete)
-                    db_session.commit()
-                    st.session_state.pop("delete_candidate")
-                    st.success("Session deleted")
-                    st.rerun()      # cierra el diálogo y refresca la lista
-                if c2.button("Cancel"):
-                    st.session_state.pop("delete_candidate")
-                    st.info("Deletion canceled")
-                    st.rerun()      # solo cierra el diálogo
+                notes  = st.text_area("Notes")
+                submit = st.form_submit_button("Save Session")
 
-            #  ←– abrimos el diálogo
-            confirm_delete()
-    
-    # Añadir nueva sesión
-    st.subheader("New Session")
-    
-    # Obtener lista de jugadores para seleccionar
-    players = db_session.query(Player).join(User).filter(User.is_active == True).all()
-    player_options = [(p.player_id, p.user.name) for p in players]
-    
-    # --------------------------------- CONFIG ---------------------------------
-    hours_start = [dt.time(h, 0) for h in range(8, 19)]   # 08:00 → 18:00
-    hours_end   = [dt.time(h, 0) for h in range(9, 20)]   # 09:00 → 19:00
+                if submit:
+                    start_dt = dt.datetime.combine(session_date, start_time)
+                    end_dt   = dt.datetime.combine(session_date, end_time)
 
-    # Valores por defecto de los selectores (solo la primera vez)
-    if "start_hour_def" not in st.session_state:
-        st.session_state["start_hour_def"] = dt.time(8, 0)
-    if "end_hour_def" not in st.session_state:
-        st.session_state["end_hour_def"] = dt.time(9, 0)
+                    if end_dt <= start_dt:
+                        st.error("End time should be later than start time.")
+                    else:
+                        new_session = Session(
+                            coach_id   = coach.coach_id,             # <— coach fijo
+                            player_id  = player_id,
+                            start_time = start_dt,
+                            end_time   = end_dt,
+                            status     = SessionStatus.SCHEDULED,
+                            notes      = notes
+                        )
+                        db_session.add(new_session)
+                        db_session.commit()
+                        push_session(new_session)             # sincr. GCal
+                        st.success("Session created successfully")
+                        st.rerun()
 
-    # -------------------------------- FORM -----------------------------------
-    st.subheader("New Session")
+        # -----------------------------------------------------------------
+        # 3. EDIT / DELETE SESSION  (solo sus propias sesiones)
+        # -----------------------------------------------------------------
+        with tab2:
+            st.subheader("Edit / Delete Session")
 
-    with st.form("new_session_form", clear_on_submit=False):
-        col1, col2 = st.columns(2)
-
-        # -------- columna 1 : jugador + fecha -----------
-        with col1:
-            player_id = st.selectbox(
-                "Player",
-                options=[p[0] for p in player_options],
-                format_func=lambda x: next(p[1] for p in player_options if p[0] == x)
+            sessions = (
+                db_session.query(Session)
+                .filter(Session.coach_id == coach.coach_id)
+                .order_by(asc(Session.start_time))         
+                .all()
             )
 
-            session_date = st.date_input(
-                "Date",
-                value=dt.date.today(),
-                min_value=dt.date.today(),
-                max_value=dt.date.today() + dt.timedelta(days=90)
-            )
-
-        # -------- columna 2 : horas ---------------------
-        with col2:
-            start_time = st.selectbox(
-                "Start hour",
-                options=hours_start,
-                index=hours_start.index(st.session_state["start_hour_def"]),
-                format_func=lambda t: t.strftime("%H:%M")
-            )
-
-            end_time = st.selectbox(
-                "End hour",
-                options=hours_end,
-                index=hours_end.index(st.session_state["end_hour_def"]),
-                format_func=lambda t: t.strftime("%H:%M")
-            )
-
-        notes = st.text_area("Notes")
-
-        # -------------- botón submit --------------------
-        submit = st.form_submit_button("Save Session")
-
-        if submit:
-            # Validación: fin > inicio
-            start_dt = dt.datetime.combine(session_date, start_time)
-            end_dt   = dt.datetime.combine(session_date, end_time)
-
-            if end_dt <= start_dt:
-                st.error("End hour must be later than start hour.")
+            if not sessions:
+                st.info("You have no sessions to manage.")
             else:
-                new_session = Session(
-                    coach_id  = coach.coach_id,
-                    player_id = player_id,
-                    start_time = start_dt,
-                    end_time   = end_dt,
-                    status   = SessionStatus.SCHEDULED,
-                    notes    = notes
-                )
-                db_session.add(new_session)
-                db_session.commit()
-                push_session(new_session)
+                # Creamos los labels dinámicos
+                today = dt.date.today()
+                tomorrow = today + dt.timedelta(days=1)
 
-                # Guarda las últimas selecciones como “por defecto”
-                st.session_state["start_hour_def"] = start_time
-                st.session_state["end_hour_def"]   = end_time
+                desc = {}
+                for s in sessions:
+                    session_date = s.start_time.date()
 
-                st.success("Session created successfully")
-                st.rerun()
+                    if session_date < today:
+                        prefix = "🔘 Past – "
+                    elif session_date == today:
+                        prefix = "🟢 Today – "
+                    elif session_date == tomorrow:
+                        prefix = "🟡 Tomorrow – "
+                    else:
+                        prefix = ""
+
+                    desc[s.id] = (
+                        f"{prefix}#{s.id} – {s.coach.user.name} with {s.player.user.name} "
+                        f"({s.start_time:%d/%m %H:%M})"
+                    )
+
+                with st.container():
+                    selected_id = st.selectbox(
+                        "Select session",
+                        options=list(desc.keys()),
+                        format_func=lambda x: desc[x],
+                        key="coach_sess_to_edit"
+                    )
+                    session = db_session.get(Session, selected_id)
+
+                    with st.form(f"coach_edit_{selected_id}", clear_on_submit=True):
+                        col1, col2 = st.columns(2)
+
+                        # ------ columna 1 : status ------
+                        with col1:
+                            new_player_id = st.selectbox(                      
+                                "Player",
+                                options=[p[0] for p in player_opts],
+                                index=[p[0] for p in player_opts].index(session.player_id),
+                                format_func=lambda x: next(n for i, n in player_opts if i == x)
+                            )
+                            new_status = st.selectbox(
+                                "Status",
+                                options=[s.value for s in SessionStatus],
+                                index=list(SessionStatus).index(session.status)
+                            )
+
+                        # ------ columna 2 : horas ------
+                        with col2:
+                            # — Fecha —
+                            session_date = st.date_input(
+                                "Date",
+                                value=session.start_time.date() if dt.date.today() <= session.start_time.date() <= dt.date.today() + dt.timedelta(days=90) else dt.date.today(),
+                                min_value=dt.date.today(),
+                                max_value=dt.date.today() + dt.timedelta(days=90),
+                                key=f"date_{selected_id}",
+                            )
+                            start_time = st.selectbox(
+                                "Start hour",
+                                options=hours_start,
+                                index=hours_start.index(session.start_time.time()),
+                                format_func=lambda t: t.strftime("%H:%M"),
+                                key=f"start_{selected_id}"
+                            )
+
+                            end_time = st.selectbox(
+                                "End hour",
+                                options=hours_end,
+                                index=hours_end.index(session.end_time.time()),
+                                format_func=lambda t: t.strftime("%H:%M"),
+                                key=f"end_{selected_id}"
+                            )
+                        # — Notes (nuevo) —
+                        notes = st.text_area(
+                            "Notes",
+                            value=session.notes or "",
+                            help="Comentarios o detalles de la sesión",
+                        )
+
+                        # ------ botones ------
+                        col_save, col_del = st.columns(2)
+                        save_clicked = col_save.form_submit_button("Save",   type="secondary")
+                        del_clicked  = col_del.form_submit_button("Delete", type="secondary")
+
+                        # --- guardar ---
+                        if save_clicked:
+                            start_dt = dt.datetime.combine(session_date, start_time)
+                            end_dt   = dt.datetime.combine(session_date, end_time)
+
+                            if end_dt <= start_dt:
+                                st.error("End hour must be later than start hour.")
+                            else:
+                                session.player_id  = new_player_id
+                                session.status     = SessionStatus(new_status)
+                                session.start_time = start_dt
+                                session.end_time   = end_dt
+                                session.notes      = notes
+                                db_session.commit()
+                                update_session(session)         # sincr. GCal
+                                st.success(f"Session #{selected_id} updated correctly")
+                                st.rerun()
+
+                        # --- borrar (1ª fase) ---
+                        if del_clicked:
+                            st.session_state["coach_del_candidate"] = selected_id
+
+                # -------- diálogo de confirmación fuera del form ----------
+                if "coach_del_candidate" in st.session_state:
+                    sid = st.session_state.pop("coach_del_candidate")
+                    session_to_del = db_session.get(Session, sid)
+
+                    @st.dialog("Confirm delete")
+                    def confirm_delete():
+                        st.warning(f"Do you really want to delete Session #{sid}? "
+                                "This action cannot be undone.")
+                        c1, c2 = st.columns(2)
+                        if c1.button("Delete", type="primary"):
+                            delete_session(session_to_del)    # sincr. GCal
+                            db_session.delete(session_to_del)
+                            db_session.commit()
+                            st.success("Session deleted")
+                            st.rerun()
+                        if c2.button("Cancel"):
+                            st.info("Deletion canceled")
+                            st.rerun()
+
+                    confirm_delete()
 
 def show_admin_dashboard():
     """Muestra el panel de administración completo para administradores."""
@@ -302,16 +381,73 @@ def show_admin_dashboard():
         show_user_management()
     
     with tab3:
-        # Mostrar estadísticas
-        
+        # Obtener y preparar datos
         df = get_accounting_df()
-        st.subheader("Financials (Google Sheets)")
-        st.dataframe(df, hide_index=True)
-        st.metric("Balance €", df["Gastos"].sum() - df["Ingresos"].sum())
-        show_statistics()
-    
-    db_session = get_db_session()
-    db_session.close()
+
+        # Eliminar la última fila (cálculos de gastos e ingresos)
+        df_no_total = df.iloc[:-1].copy()
+
+        st.subheader("Financials (Google Sheets)")
+
+        # Mostrar tabla sin la última fila
+        st.dataframe(df_no_total, hide_index=True)
+
+        # Calcular métricas
+        total_gastos = df_no_total["Gastos"].sum()
+        total_ingresos = df_no_total["Ingresos"].sum()
+        balance = total_ingresos - total_gastos
+
+        # Mostrar métricas
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Balance €", f"{balance:,.2f}")
+        with col2:
+            st.metric("Ingresos €", f"{total_ingresos:,.2f}")
+        with col3:
+            st.metric("Gastos €", f"{total_gastos:,.2f}")
+
+        # -----------------------------------
+        # Progresión de balance por mes
+        # -----------------------------------
+
+        # Asegurar que la primera columna (Fecha) esté en formato datetime
+        fecha_col = df_no_total.columns[0]
+        df_no_total[fecha_col] = pd.to_datetime(df_no_total[fecha_col], errors='coerce')
+
+        # Crear columna 'Mes' tipo YYYY-MM
+        df_no_total["Mes"] = df_no_total[fecha_col].dt.to_period("M").astype(str)
+
+        # Agrupar por mes y calcular sumas
+        monthly_summary = df_no_total.groupby("Mes").agg({
+            "Ingresos": "sum",
+            "Gastos": "sum"
+        }).reset_index()
+
+        # Calcular balance mensual
+        monthly_summary["Balance mensual"] = monthly_summary["Ingresos"] - monthly_summary["Gastos"]
+
+        # Calcular balance acumulado
+        monthly_summary["Balance acumulado"] = monthly_summary["Balance mensual"].cumsum()
+
+        # --- Ocultar vega-bindings ---
+        st.markdown(
+            """
+            <style>
+            .vega-bindings {
+                display: none;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+        # Mostrar gráfico
+        st.line_chart(
+            monthly_summary.set_index("Mes")["Balance acumulado"]
+        )
+
+        # Cerrar db_session
+        db_session = get_db_session()
+        db_session.close()
 
 def show_all_sessions():
     """Muestra todas las sesiones para los administradores."""
@@ -436,6 +572,12 @@ def show_all_sessions():
         # Opciones de gestión de sesiones para administradores
         st.subheader("Sessions Management")
 
+        players  = db_session.query(Player).join(User).filter(User.is_active).all()
+        coaches  = db_session.query(Coach).join(User).filter(User.is_active).all()
+
+        player_opts = [(p.player_id, p.user.name) for p in players]
+        coach_opts  = [(c.coach_id,  c.user.name) for c in coaches]
+
         tab1, tab2 = st.tabs(["Create Session", "Edit Session"])
         # --------------------------------- CONFIG ---------------------------------
         hours_start = [dt.time(h, 0) for h in range(8, 19)]   # 08:00 → 18:00
@@ -451,13 +593,6 @@ def show_all_sessions():
         # ---------------------------------------------------------------------
         with tab1:
             st.subheader("New Session")
-
-            # --- listas de jugadores y coaches activos ---
-            players  = db_session.query(Player).join(User).filter(User.is_active).all()
-            coaches  = db_session.query(Coach).join(User).filter(User.is_active).all()
-
-            player_opts = [(p.player_id, p.user.name) for p in players]
-            coach_opts  = [(c.coach_id,  c.user.name) for c in coaches]
 
             # --- formulario ---
             with st.form("admin_new_session", clear_on_submit=True):
@@ -487,16 +622,17 @@ def show_all_sessions():
                 # ------------------ columna 2 ------------------
                 with col2:
                     start_time = st.selectbox(
-                    "Start hour",
+                    "Start hour",
                     options=hours_start,
                     index=hours_start.index(st.session_state["start_hour_def"]),
                     format_func=lambda t: t.strftime("%H:%M")
                     )
 
+                    
                     end_time = st.selectbox(
-                        "End hour",
+                        "End hour",
                         options=hours_end,
-                        index=hours_end.index(st.session_state["end_hour_def"]),
+                        index=hours_start.index(st.session_state["end_hour_def"]),
                         format_func=lambda t: t.strftime("%H:%M")
                     )
 
@@ -530,92 +666,126 @@ def show_all_sessions():
         with tab2:
             st.subheader("Edit / Delete Session")
 
-            sessions = db_session.query(Session).all()
+            sessions = db_session.query(Session).order_by(asc(Session.start_time)).all()
             if not sessions:
                 st.info("There are no sessions to manage.")
             else:
-                desc = {
-                    s.id: f"#{s.id} – {s.coach.user.name} with {s.player.user.name} "
+                # 2. Creamos los labels dinámicos
+                today = dt.date.today()
+                tomorrow = today + dt.timedelta(days=1)
+
+                desc = {}
+                for s in sessions:
+                    session_date = s.start_time.date()
+
+                    if session_date < today:
+                        prefix = "🔘 Past – "
+                    elif session_date == today:
+                        prefix = "🟢 Today – "
+                    elif session_date == tomorrow:
+                        prefix = "🟡 Tomorrow – "
+                    else:
+                        prefix = ""
+
+                    desc[s.id] = (
+                        f"{prefix}#{s.id} – {s.coach.user.name} with {s.player.user.name} "
                         f"({s.start_time:%d/%m %H:%M})"
-                    for s in sessions
-                }
-
-                hours_start = [dt.time(h, 0) for h in range(8, 19)]   # 08‑18
-                hours_end   = [dt.time(h, 0) for h in range(9, 20)]   # 09‑19
-
-                # -------- contenedor visual único -------------
+                    )
+                
                 with st.container():
-                    # -------- 1. selector reactivo (fuera del form) -------
-                    sel_id = st.selectbox(
+                    selected_id = st.selectbox(
                         "Select session",
                         options=list(desc.keys()),
                         format_func=lambda x: desc[x],
                         key="sess_to_edit"
                     )
-                    session = db_session.get(Session, sel_id)
 
-                    # -------- 2. formulario con los campos editables ------
-                    with st.form(f"admin_edit_{sel_id}", clear_on_submit=False):
+                    # ← Aquí recuperamos la sesión
+                    session = db_session.get(Session, selected_id)
 
+                    with st.form(f"admin_edit_{selected_id}", clear_on_submit=False):
                         col1, col2 = st.columns(2)
 
-                        # ------ columna 1 : coach y status ------
+                        # Columna 1: coach, player, status
                         with col1:
                             new_coach_id = st.selectbox(
                                 "Coach",
                                 options=[c[0] for c in coach_opts],
                                 index=[c[0] for c in coach_opts].index(session.coach_id),
-                                format_func=lambda x: next(n for i, n in coach_opts if i == x)
+                                format_func=lambda x: next(n for i, n in coach_opts if i == x),
+                                key=f"coach_{selected_id}"
                             )
-
+                            new_player_id = st.selectbox(
+                                "Player",
+                                options=[p[0] for p in player_opts],
+                                index=[p[0] for p in player_opts].index(session.player_id),
+                                format_func=lambda x: next(n for i, n in player_opts if i == x),
+                                key=f"player_{selected_id}"
+                            )
                             new_status = st.selectbox(
                                 "Status",
                                 options=[s.value for s in SessionStatus],
-                                index=list(SessionStatus).index(session.status)
+                                index=list(SessionStatus).index(session.status),
+                                key=f"status_{selected_id}"
                             )
 
-                        # ------ columna 2 : horas ------
+                        # Columna 2: fecha y horas
                         with col2:
+                            session_date = st.date_input(
+                                "Date",
+                                value=session.start_time.date() if dt.date.today() <= session.start_time.date() <= dt.date.today() + dt.timedelta(days=90) else dt.date.today(),
+                                min_value=dt.date.today(),
+                                max_value=dt.date.today() + dt.timedelta(days=90),
+                                key=f"date_{selected_id}",
+                            )
                             start_time = st.selectbox(
                                 "Start hour",
                                 options=hours_start,
                                 index=hours_start.index(session.start_time.time()),
-                                format_func=lambda t: t.strftime("%H:%M")
+                                format_func=lambda t: t.strftime("%H:%M"),
+                                key=f"start_{selected_id}"
                             )
-
-                            end_opts = [t for t in hours_end if t > start_time]
+                            
                             end_time = st.selectbox(
                                 "End hour",
-                                options=end_opts,
-                                index=end_opts.index(session.end_time.time())
-                                    if session.end_time and session.end_time.time() in end_opts else 0,
-                                format_func=lambda t: t.strftime("%H:%M")
+                                options=hours_end,
+                                index=hours_end.index(session.end_time.time()),
+                                format_func=lambda t: t.strftime("%H:%M"),
+                                key=f"end_{selected_id}"
                             )
 
-                        # ------ botones ------
+                        # Notes
+                        notes = st.text_area(
+                            "Notes",
+                            value=session.notes or "",
+                            key=f"notes_{selected_id}"
+                        )
+
+                        # Botones
                         col_save, col_del = st.columns(2)
-                        save_clicked = col_save.form_submit_button("Save",   type="secondary")
+                        save_clicked = col_save.form_submit_button("Save", type="secondary")
                         del_clicked  = col_del.form_submit_button("Delete", type="secondary")
 
-                        # --- guardar ---
                         if save_clicked:
-                            start_dt = dt.datetime.combine(session.start_time.date(), start_time)
-                            end_dt   = dt.datetime.combine(session.end_time.date(),   end_time)
+                            start_dt = dt.datetime.combine(session_date, start_time)
+                            end_dt   = dt.datetime.combine(session_date, end_time)
 
                             if end_dt <= start_dt:
-                                st.error("End hour must be later than start hour.")
+                                st.error("End time must be later than start time.")
                             else:
                                 session.coach_id   = new_coach_id
+                                session.player_id  = new_player_id
                                 session.status     = SessionStatus(new_status)
                                 session.start_time = start_dt
                                 session.end_time   = end_dt
+                                session.notes      = notes
                                 db_session.commit()
-                                st.success(f"Session #{sel_id} updated correctly")
+                                update_session(session)
+                                st.success(f"Session #{selected_id} updated correctly")
                                 st.rerun()
 
-                        # --- borrar (1ª fase) ---
                         if del_clicked:
-                            st.session_state["admin_del_candidate"] = sel_id
+                            st.session_state["admin_del_candidate"] = selected_id
 
                 # -------- diálogo de confirmación fuera del form ----------
                 if "admin_del_candidate" in st.session_state:
@@ -628,6 +798,7 @@ def show_all_sessions():
                                 "This action cannot be undone.")
                         c1, c2 = st.columns(2)
                         if c1.button("Delete", type="primary"):
+                            delete_session(session_to_del)
                             db_session.delete(session_to_del)
                             db_session.commit()
                             st.session_state.pop("admin_del_candidate")
@@ -640,8 +811,7 @@ def show_all_sessions():
 
                     confirm_delete()
         
-        
-
+    
 def show_user_management():
     """Muestra la gestión de usuarios para administradores."""
     db_session = get_db_session()
@@ -808,8 +978,89 @@ def show_statistics():
             "Amount": [scheduled_sessions, completed_sessions, canceled_sessions]
         })
         
-        st.subheader("Sessions by Status")
-        st.bar_chart(status_data, x="Status", y="Amount")
+        # Obtener colores de los estados desde CALENDAR_COLORS
+        colors = {
+            "Scheduled": "#3788D8",  # Azul (actualiza esto con el color correcto de tu configuración)
+            "Completed": "#4CAF50",  # Verde
+            "Canceled": "#F44336"    # Rojo
+        }
+        
+        # Crear figura de Plotly
+        fig = go.Figure()
+        
+        # Añadir barras para cada estado con esquinas redondeadas
+        for status in status_data['Status']:
+            data_row = status_data[status_data['Status'] == status]
+            fig.add_trace(go.Bar(
+                x=[status],
+                y=[data_row['Amount'].values[0]],
+                name=status,
+                marker_color=colors.get(status, "#1DDD6E"),  # Usar color de estado o verde por defecto
+                width=0.6,  # Ancho de las barras
+                text=[data_row['Amount'].values[0]],  # Mostrar valor como texto en la barra
+                textposition='auto',
+                hoverinfo='text',
+                hovertext=[f"{status}: {data_row['Amount'].values[0]}"],
+            ))
+        
+        # Personalizar diseño
+        fig.update_layout(
+            title={
+                'text': 'Sessions by Status',
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': {
+                    'size': 24,
+                    'color': '#FAFAFA'
+                }
+            },
+            showlegend=True,
+            legend={
+                'orientation': 'h',
+                'yanchor': 'bottom',
+                'y': -0.2,
+                'xanchor': 'center',
+                'x': 0.5,
+                'font': {
+                    'size': 14,
+                    'color': '#FAFAFA'
+                }
+            },
+            plot_bgcolor='rgba(0,0,0,0)',  # Fondo transparente
+            paper_bgcolor='rgba(0,0,0,0)',  # Fondo del papel transparente
+            xaxis={
+                'showgrid': False,
+                'linecolor': '#333',
+                'title': None,
+                'tickfont': {
+                    'size': 14,
+                    'color': '#FAFAFA'
+                }
+            },
+            yaxis={
+                'showgrid': True,
+                'gridcolor': '#333',
+                'gridwidth': 0.5,
+                'title': 'Number of Sessions',
+                'tickfont': {
+                    'size': 14,
+                    'color': '#FAFAFA'
+                }
+            },
+            margin={'t': 50, 'b': 100, 'l': 40, 'r': 40},
+            height=500,
+        )
+        
+        # Ajustar las esquinas redondeadas
+        fig.update_traces(marker=dict(
+            line=dict(width=0),  # Sin borde
+            cornerradius=10,  # Esquinas redondeadas
+        ))
+        
+        # Mostrar el gráfico en Streamlit
+        st.plotly_chart(fig, use_container_width=True)
     except Exception as e:
         st.error(f"Error generating sessions stadistics: {str(e)}")
         st.info("Make sure there are sessions in the database to display statistics..")
@@ -831,7 +1082,4 @@ def show_content():
         st.error("No tienes permisos para acceder a esta sección.")
 
 if __name__ == "__main__":
-    # Para pruebas
-    st.session_state["user_id"] = 1
-    st.session_state["user_type"] = "admin"
     show_content()

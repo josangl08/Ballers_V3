@@ -176,5 +176,8 @@ cython_debug/
 # Streamlit
 data/usuarios_generados.txt
 data/google_service_account.json
-data/usuarios_generados.txt
+data/clear_calendar.py
+data/seed_calendar.py
+data/seed_database.py
+data/ballers_app.db
 assets/
