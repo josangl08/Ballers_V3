@@ -252,7 +252,7 @@ def sync_calendar_to_db():
     seen_ev_ids: set[str] = set()
 
     now = dt.datetime.now(dt.timezone.utc)
-    win_start = now - dt.timedelta(days=1)
+    win_start = now - dt.timedelta(days=30)
     win_end   = now + dt.timedelta(days=90)
 
     events = svc.events().list(
@@ -347,8 +347,18 @@ def sync_calendar_to_db():
     # —————————————————————————————————————————————————————————
     for ev_id, ses in db_sessions.items():
         if ev_id not in seen_ev_ids:
-            db.delete(ses)
-            deleted += 1
+            try:
+                # Intentamos obtener el evento directamente
+                svc.events().get(calendarId=CAL_ID, eventId=ev_id).execute()
+                # Si no lanza error, existe -> no borrar
+                continue
+            except Exception as e:
+                # Si lanza error 404 Not Found, el evento no existe -> borrar
+                if "404" in str(e):
+                    db.delete(ses)
+                    deleted += 1
+                else:
+                    print(f"⚠️ Error inesperado comprobando evento {ev_id}: {e}")
 
     db.commit()
     return imported, updated, deleted
