@@ -2,8 +2,6 @@
 import streamlit as st
 import importlib
 import os
-import sys
-from pathlib import Path
 
 # Importar configuración
 from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE

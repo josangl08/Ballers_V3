@@ -1,13 +1,18 @@
-from sqlalchemy import Column, Integer, ForeignKey, String
-from sqlalchemy.orm import relationship
-from .user_model import Base
+from __future__ import annotations
+from typing import Optional, TYPE_CHECKING
+from sqlalchemy import Integer, String, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+if TYPE_CHECKING:
+    from .user_model import User
+
+from .base import Base
+
 
 class Admin(Base):
     __tablename__ = "admins"
 
-    admin_id = Column(Integer, primary_key=True)
-    user_id  = Column(Integer, ForeignKey("users.user_id"), unique=True, nullable=False)
-    role     = Column(String)     # Descripción de rol interno si hiciera falta
+    admin_id: Mapped[int]          = mapped_column(Integer, primary_key=True)
+    user_id:  Mapped[int]          = mapped_column(ForeignKey("users.user_id"), unique=True, nullable=False)
+    role:     Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
-    # Relaciones
-    user     = relationship("User", back_populates="admin_profile")
+    user: Mapped["User"] = relationship(back_populates="admin_profile")

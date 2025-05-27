@@ -15,7 +15,7 @@ def create_sidebar_menu():
         return None
     
     # Obtener el tipo de usuario de la sesión
-    user_type = st.session_state.get("user_type")
+    user_type: str = st.session_state.get("user_type", "player")
     user_name = st.session_state.get("name", "")
     
     # Definir opciones de menú según el tipo de usuario
@@ -35,7 +35,7 @@ def create_sidebar_menu():
     }
     
     # Obtener configuración de menú para el tipo de usuario actual
-    current_menu = menu_options.get(user_type, menu_options["player"])
+    current_menu = menu_options.get(user_type) or menu_options["player"]
     
     # Crear menú
     with st.sidebar:
