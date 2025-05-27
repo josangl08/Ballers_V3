@@ -8,7 +8,7 @@ font="sans serif"
 
 [server]
 headless = true
-enableCORS = false
+enableCORS = true
 enableXsrfProtection = true
 
 [browser]
@@ -16,7 +16,7 @@ gatherUsageStats = false
 
 [runner]
 magicEnabled = true
-installTracer = false
+
 
 [client]
 toolbarMode = "auto"
@@ -25,4 +25,3 @@ showSidebarNavigation = false
 
 [ui]
 hideTopBar = true  
-disableClickToZoom = true
