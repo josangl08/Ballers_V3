@@ -402,8 +402,8 @@ def update_past_sessions():
     return len(todo)
 
 def get_sessions(
-    start: dt,
-    end: dt,
+    start: dt.datetime,
+    end: dt.datetime,
     coach_id: int | None = None,
     player_id: int | None = None,
     statuses: list[SessionStatus] | None = None,

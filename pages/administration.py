@@ -4,6 +4,7 @@ import pandas as pd
 import datetime as dt
 import os
 import sys
+from typing import Optional
 import plotly.graph_objects as go
 from sqlalchemy import func, case, asc
 from models import User, Coach, Player, Session, SessionStatus, Base, UserType
@@ -66,11 +67,12 @@ def show_coach_calendar():
     
     if end_date < start_date:
         st.error("The 'To' date must be on or after the 'From' date.")
-    else:
-        # Convertir a datetime solo si las fechas son válidas
-        start_datetime = dt.datetime.combine(start_date, dt.time.min)
-        end_datetime   = dt.datetime.combine(end_date,   dt.time.max)
-    
+        return                      # ⬅️  no seguimos si hay error
+
+    # Convertir a datetime solo si las fechas son válidas
+    start_datetime: dt.datetime = dt.datetime.combine(start_date, dt.time.min)
+    end_datetime:   dt.datetime = dt.datetime.combine(end_date,   dt.time.max)
+
     # Aplicar filtros adicionales
     status_enums = [SessionStatus(s) for s in status_filter] if status_filter else None
        
@@ -334,8 +336,9 @@ def show_coach_calendar():
                                 session.start_time = start_dt
                                 session.end_time   = end_dt
                                 session.notes      = notes
-                                db_session.commit()
-                                update_session(session)         # sincr. GCal
+                                db_session.commit()         # sincr. GCal
+                                if session:                     # ⬅️  protección
+                                    update_session(session)     # sincr. GCal
                                 st.success(f"Session #{selected_id} updated correctly")
                                 st.rerun()
 
@@ -354,7 +357,8 @@ def show_coach_calendar():
                                 "This action cannot be undone.")
                         c1, c2 = st.columns(2)
                         if c1.button("Delete", type="primary"):
-                            delete_session(session_to_del)    # sincr. GCal
+                            if session_to_del:
+                                delete_session(session_to_del)    # sincr. GCal
                             db_session.delete(session_to_del)
                             db_session.commit()
                             st.success("Session deleted")
@@ -480,10 +484,8 @@ def show_all_sessions():
     
     # Filtro de coach
     coaches = db_session.query(Coach).join(User).all()
-    coach_options = [(c.coach_id, c.user.name) for c in coaches]
-    coach_options.insert(0, (None, "All Coaches"))
-    
-    selected_coach = st.selectbox(
+    coach_options: list[tuple[Optional[int], str]] = [(None, "All Coaches"),*[(c.coach_id, c.user.name) for c in coaches],]
+    selected_coach: Optional[int] = st.selectbox(
         "Coach:", 
         options=[c[0] for c in coach_options],
         format_func=lambda x: next((c[1] for c in coach_options if c[0] == x), ""),
@@ -780,7 +782,8 @@ def show_all_sessions():
                                 session.end_time   = end_dt
                                 session.notes      = notes
                                 db_session.commit()
-                                update_session(session)
+                                if session:                     # ⬅️  protección
+                                    update_session(session)     # sincr. GCal
                                 st.success(f"Session #{selected_id} updated correctly")
                                 st.rerun()
 
@@ -798,7 +801,8 @@ def show_all_sessions():
                                 "This action cannot be undone.")
                         c1, c2 = st.columns(2)
                         if c1.button("Delete", type="primary"):
-                            delete_session(session_to_del)
+                            if session_to_del:
+                                delete_session(session_to_del)
                             db_session.delete(session_to_del)
                             db_session.commit()
                             st.session_state.pop("admin_del_candidate")

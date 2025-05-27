@@ -1,8 +1,9 @@
 # pages/ballers.py
+from __future__ import annotations
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from models import User, Player, Coach, TestResult, Base, Session
+from models import User, Player, TestResult, Session
 import datetime as dt
 from controllers.calendar_controller import SessionStatus, get_sessions
 from controllers.internal_calendar import show_calendar
@@ -13,7 +14,7 @@ def show_player_profile(player_id=None):
     db_session = get_db_session()
     
     # Si no se especifica un jugador, usamos el del usuario actual
-    if player_id is None and st.session_state.get("user_type") == "player":
+    if player_id == None and st.session_state.get("user_type") == "player":
         user_id = st.session_state.get("user_id")
         player = db_session.query(Player).join(User).filter(User.user_id == user_id).first()
     else:
@@ -62,12 +63,12 @@ def show_player_profile(player_id=None):
 
     # Calendario de sesiones
     total = len(player.sessions)
-    done  = sum(s.status is SessionStatus.COMPLETED for s in player.sessions)
+    done  = sum(s.status == SessionStatus.COMPLETED for s in player.sessions)
     left  = max(player.enrolment - done, 0)
 
     colA, colB, colC = st.columns(3)
     colA.metric("Completed", done)
-    colB.metric("Scheduled", total - done - sum(s.status is SessionStatus.CANCELED for s in player.sessions))
+    colB.metric("Scheduled", total - done - sum(s.status == SessionStatus.CANCELED for s in player.sessions))
     colC.metric("Remaining", left)
 
     st.subheader(f"Calendar of {user.name}")
@@ -89,8 +90,8 @@ def show_player_profile(player_id=None):
     status_values = [s.value for s in SessionStatus]
     status_filter = st.multiselect(
         "Status", 
-        options=status_values,
-        default=status_values
+        options=[s.value for s in SessionStatus],
+        default=[s.value for s in SessionStatus],
     )   
 
     if end_date < start_date:
@@ -144,7 +145,6 @@ def show_player_profile(player_id=None):
         
         # Crear DataFrame para mostrar
         df = pd.DataFrame(sessions_data)
-        session_objects = df.pop("session_obj")  # Quitar de la visualización pero mantener para uso posterior
         
         # Add styling based on status
         def style_sessions(row):
@@ -288,7 +288,7 @@ def show_player_list():
     # Mostrar jugadores en tarjetas
     cols = st.columns(3)
     for i, player in enumerate(filtered_players):
-        done  = sum(s.status is SessionStatus.COMPLETED for s in player.sessions)
+        done  = sum(s.status == SessionStatus.COMPLETED for s in player.sessions)
         if player.user.date_of_birth:
             age = dt.datetime.now().year - player.user.date_of_birth.year
         # Find next scheduled session

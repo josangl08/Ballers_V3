@@ -231,7 +231,15 @@ def edit_any_user():
             current_services = service_type.split(", ") if service_type else ["Basic"]
             current_services = [s for s in current_services if s in service_options]
 
-            service_input = st.multiselect("Service type(s)", options=service_options, default=current_services)
+            service_input: list[str] = st.multiselect(
+                "Service(s)",
+                options=service_options,
+                default=(
+                    player_profile.service.split(", ")
+                    if player_profile and player_profile.service
+                    else []
+                ),
+            )
             enrolment_input = st.number_input("Number of enrolled sessions", min_value=0, value=enrolment)
             notes_input = st.text_area("Additional notes", value=notes)
             
@@ -349,14 +357,15 @@ def edit_any_user():
                 
                 elif new_user_type == "player":
                     player_profile = db_session.query(Player).filter_by(user_id=selected_user.user_id).first()
+                    service_str = ", ".join(service_input) or None
                     if player_profile:
-                        player_profile.service = service_input
+                        player_profile.service = service_str
                         player_profile.enrolment = enrolment_input
                         player_profile.notes = notes_input
                     else:
                         player_profile = Player(
                             user_id=selected_user.user_id,
-                            service=service_input,
+                            service=service_str,
                             enrolment=enrolment_input,
                             notes=notes_input
                         )

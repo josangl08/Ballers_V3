@@ -19,7 +19,7 @@ def _to_event(s: Session) -> dict:
         "id":    s.id,
         "title": f"{s.coach.user.name} × {s.player.user.name}",
         "start": _fmt_local(s.start_time),   # 13:00 «tal cual»
-        "end":   _fmt_local(s.end_time),
+        "end":   _fmt_local(s.end_time) if s.end_time else "",
         "description": s.notes or "",
         "player": s.player.user.name,
         "coach":  s.coach.user.name,
