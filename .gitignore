@@ -180,4 +180,6 @@ data/clear_calendar.py
 data/seed_calendar.py
 data/seed_database.py
 data/ballers_app.db
+data/ballers_app.db*
+*.db-journal
 assets/

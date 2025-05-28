@@ -10,6 +10,7 @@ from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE
 from common.login import login_page
 from common.menu import create_sidebar_menu, get_content_path
 from controllers.sync import run_sync_once
+from controllers.db import initialize_database  # ← NUEVO IMPORT
 
 # Configuración de la página
 st.set_page_config(
@@ -76,6 +77,19 @@ h2, h3 {
 
 # Función principal
 def main():
+    # ⭐ INICIALIZAR BASE DE DATOS AL INICIO
+    try:
+        from controllers.db import initialize_database
+        if not initialize_database():
+            st.error("❌ Error crítico: No se pudo inicializar la base de datos")
+            st.info("💡 Soluciones sugeridas:")
+            st.info("1. Ejecuta `python data/check_database.py` para diagnosticar")
+            st.info("2. Verifica permisos de escritura en la carpeta `data/`")
+            st.info("3. Ejecuta `python data/seed_database.py` para recrear la BD")
+            st.stop()
+    except Exception as e:
+        st.error(f"❌ Error inicializando la aplicación: {str(e)}")
+        st.stop()
     
     # Comprobar si ya hay un usuario en sesión antes de configurar la página
     has_session = "user_id" in st.session_state
@@ -140,5 +154,3 @@ def main():
             
 if __name__ == "__main__":
     main()
-
-    

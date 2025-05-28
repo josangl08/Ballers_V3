@@ -8,6 +8,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from faker import Faker
+from controllers.db import get_db_session, initialize_database, get_database_info
+
 
 # Asegúrate de que el script pueda importar los modelos
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,12 +28,14 @@ TESTS_PER_PLAYER = 4
 
 # Inicializar Faker para generar datos realistas
 fake = Faker()
+db_session = None
 
 # Conectar a la base de datos
 engine = create_engine(DATABASE_URL, echo=False)
 Base.metadata.create_all(engine)
 DBSession = sessionmaker(bind=engine)
 db_session = DBSession()
+
 
 # Función para crear hash de contraseña (igual que en login.py)
 def hash_password(password):
@@ -308,16 +312,26 @@ def create_test_results(players):
 
 def main():
     """Función principal para ejecutar la carga de datos"""
+    global db_session
+    
     print("Iniciando población de la base de datos...")
     
     try:
-        # Comprobar si la base de datos ya existe
-        db_path = DATABASE_PATH
-        if os.path.exists(db_path):
-            print(f"La base de datos ya existe en {db_path}")
+        # Inicializar base de datos
+        if not initialize_database():
+            print("❌ Error al inicializar la base de datos")
+            return
+        
+        # Obtener sesión
+        db_session = get_db_session()
+        
+        # Verificar datos existentes
+        existing_users = db_session.query(User).count()
+        if existing_users > 0:
+            print(f"La base de datos ya contiene {existing_users} usuarios")
             choice = input("¿Desea limpiar los datos existentes? (s/n): ")
             if choice.lower() == 's':
-                # Limpiar datos existentes
+                print("Limpiando datos existentes...")
                 db_session.query(TestResult).delete()
                 db_session.query(Session).delete()
                 db_session.query(Player).delete()
@@ -325,11 +339,13 @@ def main():
                 db_session.query(Admin).delete()
                 db_session.query(User).delete()
                 db_session.commit()
-                print("Datos existentes eliminados")
+                print("✅ Datos eliminados")
             else:
-                print("Se agregarán datos a la base de datos existente")
+                print("❌ Operación cancelada")
+                db_session.close()
+                return
         else:
-            print(f"Creando nueva base de datos en {db_path}")
+            print("✅ Base de datos vacía, procediendo con la población...")
         
         # Verificar si el directorio de perfiles existe, si no, advertir
         # Ajustamos la ruta para acceder a un directorio fuera de la carpeta data
