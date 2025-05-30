@@ -4,7 +4,7 @@ import os
 import re 
 import logging
 from googleapiclient.errors import HttpError
-from sqlalchemy import select
+from sqlalchemy.orm import object_session, Session as AlchSession
 from .google_client import calendar
 from googleapiclient.errors import HttpError
 from models import Session, SessionStatus, Coach, Player, User        
@@ -110,11 +110,18 @@ def _guess_ids(ev):
     return None, None
 
 # ---------- DB → Calendar ----------
-def push_session(session: Session):
+def push_session(session: Session, db: AlchSession | None = None):
+    # 1️⃣ usar la misma conexión que la instancia, si existe
+    db = db or object_session(session) or get_db_session()
+
     body = _build_body(session)
-    ev = _service().events().insert(calendarId=CAL_ID, body=body).execute()
+    ev   = _service().events().insert(
+        calendarId=CAL_ID, body=body).execute()
+
     session.calendar_event_id = ev["id"]
-    _db().commit()
+    db.add(session)          # asegura que está en la Sesión activa
+    db.commit()              # persiste el cambio
+    db.refresh(session)      # opcional: recarga para la UI
 
 # --------------------------------------------------------------------------
 #  ACTUALIZAR una sesión existente

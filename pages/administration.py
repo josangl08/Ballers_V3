@@ -217,8 +217,8 @@ def show_coach_calendar():
                             notes      = notes
                         )
                         db_session.add(new_session)
-                        db_session.commit()
-                        push_session(new_session)             # sincr. GCal
+                        db_session.flush()            # obtiene new_session.id sin cerrar la tx
+                        push_session(new_session)     # crea el evento y guarda calendar_event_id
                         st.success("Session created successfully")
                         st.rerun()
 
@@ -657,8 +657,8 @@ def show_all_sessions():
                             notes      = notes
                         )
                         db_session.add(new_session)
-                        db_session.commit()
-                        push_session(new_session)
+                        db_session.flush()            # obtiene new_session.id sin cerrar la tx
+                        push_session(new_session)     # crea el evento y guarda calendar_event_id
                         st.success("Session created successfully")
                         st.rerun()
 
