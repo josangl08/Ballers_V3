@@ -150,7 +150,7 @@ def main():
             else:
                 st.warning("Sección no implementada")
                 
-        run_sync_once()
+       # run_sync_once()
             
 if __name__ == "__main__":
     main()

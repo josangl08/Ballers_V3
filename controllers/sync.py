@@ -37,13 +37,21 @@ def _pull_google() -> None:
     sync_calendar_to_db()
 
 # — Push de BBDD a Google Calendar + pull final -----------------------------
-@st.cache_data(ttl=300, show_spinner=False)
 def _push_local() -> None:
     """Marca sesiones pasadas como *completed*, sube cambios y refresca."""
-    n = update_past_sessions()
-    if n:
-        sync_db_to_calendar()
-    sync_calendar_to_db()
+    with st.spinner("🔄 Actualizando sesiones pasadas..."):
+        n = update_past_sessions()
+        if n:
+            st.info(f"✅ Marcadas {n} sesiones como completadas")
+        
+    with st.spinner("📤 Sincronizando cambios locales..."):
+        if n:
+            sync_db_to_calendar()
+            st.info("✅ Cambios enviados a Google Calendar")
+    
+    with st.spinner("📥 Descargando cambios de Calendar..."):
+        sync_calendar_to_db()
+        st.info("✅ Cambios descargados de Google Calendar")
 
 # ---------------------------------------------------------------------------
 # Public API ----------------------------------------------------------------

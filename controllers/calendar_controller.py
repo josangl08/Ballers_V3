@@ -3,7 +3,10 @@ import datetime as dt
 import os
 import re 
 import logging
+import time
+import hashlib
 from googleapiclient.errors import HttpError
+from sqlalchemy import func
 from sqlalchemy.orm import object_session, Session as AlchSession
 from .google_client import calendar
 from googleapiclient.errors import HttpError
@@ -15,6 +18,14 @@ COLOR = {k: v["google"] for k, v in CALENDAR_COLORS.items()}
 CAL_ID = os.getenv("CALENDAR_ID")
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Handler para mostrar en streamlit si no existe
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 def _db():
     return get_db_session()
@@ -60,53 +71,73 @@ def _find_unique(model, name_norm: str):
 # —————————————————————————————————————————————————————————————————————
 def _guess_ids(ev):
     """
-    1) private props
-    2) #C / #P o Coach# / Player#
-    3) nombres “Coach × Player” (sin prefijo “Session:” ni “Sesión:”)
+    ESTRATEGIA HÍBRIDA INTELIGENTE:
+    1) Extended properties (automático)
+    2) Parsing híbrido: nombres + IDs opcionales  
+    3) Solo nombres (fuzzy)
+    4) Solo IDs (#C #P)
     """
     props = ev.get("extendedProperties", {}).get("private", {})
-    # 1) extendedProperties
+    
+    # 1) Extended properties (solo si válidos)
     cid = _safe_int(props.get("coach_id"))
     pid = _safe_int(props.get("player_id"))
-    if cid and pid:
+    if cid and pid and cid < 100 and pid < 100:
         return cid, pid
 
-    # Extrae el summary para los siguientes pasos
     summary = ev.get("summary", "") or ""
-
-    # 2) IDs en texto (case-insensitive)
+    
+    # 2) PARSING HÍBRIDO: nombres + IDs opcionales
+    # Limpiar prefijo "Sesión:" / "Session:"
+    summary_clean = re.sub(r'^(?:sesión|session)[:\-]\s*', '', summary, flags=re.IGNORECASE)
+    
+    # Buscar patrón: [algo] × [algo] o [algo] x [algo]
+    match = re.search(r"(.+?)\s*[×x]\s*(.+)", summary_clean, re.IGNORECASE)
+    
+    if match:
+        left_part = match.group(1).strip()   # Lado coach
+        right_part = match.group(2).strip()  # Lado player
+        
+        coach_id = player_id = None
+        
+        # ANALIZAR LADO COACH (izquierda)
+        coach_id_match = re.search(r"#[Cc](\d+)", left_part)
+        if coach_id_match:
+            # Hay ID explícito → usarlo
+            coach_id = int(coach_id_match.group(1))
+        else:
+            # No hay ID → buscar por nombre
+            coach_name = left_part.strip()
+            coach_name_norm = _normalize(coach_name)
+            coach_obj = _find_unique(Coach, coach_name_norm)
+            if coach_obj:
+                coach_id = coach_obj.coach_id
+        
+        # ANALIZAR LADO PLAYER (derecha)  
+        player_id_match = re.search(r"#[Pp](\d+)", right_part)
+        if player_id_match:
+            # Hay ID explícito → usarlo
+            player_id = int(player_id_match.group(1))
+        else:
+            # No hay ID → buscar por nombre
+            player_name = right_part.strip()
+            player_name_norm = _normalize(player_name)
+            player_obj = _find_unique(Player, player_name_norm)
+            if player_obj:
+                player_id = player_obj.player_id
+        
+        # Si encontramos ambos, devolver
+        if coach_id and player_id:
+            return coach_id, player_id
+    
+    # 3) FALLBACK: Solo IDs tradicionales #C #P (anywhere en título)
     cid = (_extract_id(summary, r"#C(\d+)") or
-        _extract_id(summary, r"Coach[#\s]*(\d+)"))
+           _extract_id(summary, r"Coach[#\s]*(\d+)"))
     pid = (_extract_id(summary, r"#P(\d+)") or
-        _extract_id(summary, r"Player[#\s]*(\d+)"))
+           _extract_id(summary, r"Player[#\s]*(\d+)"))
     if cid and pid:
         return cid, pid
 
-    # 3) quitamos prefijo “Session:” / “Sesión:” (si existe)
-    summary_clean = re.sub(r'^(?:sesión|session)[:\-]\s*', '', summary, flags=re.IGNORECASE)
-
-    # 4) nombres separados por × o x
-    m = re.search(r"(.+?)\s*[×x]\s*(.+)", summary_clean)
-    if not m:
-        return None, None
-
-    coach_name_raw  = m.group(1)
-    player_name_raw = m.group(2)
-    coach_name_norm  = _normalize(coach_name_raw)
-    player_name_norm = _normalize(player_name_raw)
-
-    coach  = _find_unique(Coach,  coach_name_norm)
-    player = _find_unique(Player, player_name_norm)
-
-    if coach and player:
-        return coach.coach_id, player.player_id
-
-    # Si alguno es None o hay duplicados, ignoramos e informamos
-    
-    logging.getLogger(__name__).warning(
-        "No unique match for event summary '%s': coach=%s player=%s",
-        summary, coach_name_raw, player_name_raw
-    )
     return None, None
 
 # ---------- DB → Calendar ----------
@@ -205,28 +236,50 @@ def patch_color(event_id: str, status: SessionStatus):
 def patch_event_after_import(session: Session, event_id: str):
     """
     Parcha un evento importado: añade IDs y formatea el título.
+    OPTIMIZADO: Solo si realmente es necesario.
     """
-    db = get_db_session()
+    try:
+        # Verificar si el evento ya tiene los datos correctos
+        current_event = _service().events().get(calendarId=CAL_ID, eventId=event_id).execute()
+        
+        props = current_event.get("extendedProperties", {}).get("private", {})
+        session_id_in_event = props.get("session_id")
+        
+        # Si ya tiene el session_id correcto, no hacer nada
+        if session_id_in_event == str(session.id):
+            logger.debug(f"✅ Evento {event_id[:8]}... ya tiene datos correctos")
+            return
+        
+        # Solo patchear si realmente es necesario
+        db = get_db_session()
+        try:
+            coach_name = db.query(User.name).join(Coach).filter(Coach.coach_id == session.coach_id).scalar()
+            player_name = db.query(User.name).join(Player).filter(Player.player_id == session.player_id).scalar()
 
-    coach_name = db.query(User.name).join(Coach).filter(Coach.coach_id == session.coach_id).scalar()
-    player_name = db.query(User.name).join(Player).filter(Player.player_id == session.player_id).scalar()
-
-    patch_body = {
-        "summary": f"Sesión: {coach_name} × {player_name}  #C{session.coach_id} #P{session.player_id}",
-        "extendedProperties": {
-            "private": {
-                "session_id": str(session.id),
-                "coach_id": str(session.coach_id),
-                "player_id": str(session.player_id),
+            patch_body = {
+                "summary": f"Sesión: {coach_name} × {player_name}  #C{session.coach_id} #P{session.player_id}",
+                "extendedProperties": {
+                    "private": {
+                        "session_id": str(session.id),
+                        "coach_id": str(session.coach_id),
+                        "player_id": str(session.player_id),
+                    }
+                }
             }
-        }
-    }
 
-    _service().events().patch(
-        calendarId=CAL_ID,
-        eventId=event_id,
-        body=patch_body
-    ).execute()
+            _service().events().patch(
+                calendarId=CAL_ID,
+                eventId=event_id,
+                body=patch_body
+            ).execute()
+            
+            logger.info(f"🔧 Evento {event_id[:8]}... actualizado correctamente")
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"❌ Error actualizando evento {event_id[:8]}...: {e}")
 
 # ---------- DB → Calendar ----------   
 def sync_db_to_calendar():
@@ -250,125 +303,245 @@ def sync_db_to_calendar():
     return pushed, updated
 
 # ---------- Calendar → DB ----------
-@st.cache_data(ttl=int(os.getenv("SYNC_INTERVAL_MIN", "5")) * 60, show_spinner=False)
+#@st.cache_data(ttl=int(os.getenv("SYNC_INTERVAL_MIN", "5")) * 60, show_spinner=False)
 def sync_calendar_to_db():
+    """Sincroniza eventos de Google Calendar hacia la base de datos con logging detallado."""
+    start_time = time.time()
+    logger.info("🔄 INICIANDO sincronización Calendar → BD")
+    
     svc = _service()
-    db  = get_db_session()
+    db = get_db_session()
+    
+    try:
+        imported = updated = deleted = 0
+        seen_ev_ids: set[str] = set()
 
-    imported = updated = deleted = 0
-    seen_ev_ids: set[str] = set()
+        now = dt.datetime.now(dt.timezone.utc)
+        win_start = now - dt.timedelta(days=30)
+        win_end   = now + dt.timedelta(days=60)
+        
+        logger.info(f"📅 Ventana de sincronización: {win_start.date()} a {win_end.date()}")
 
-    now = dt.datetime.now(dt.timezone.utc)
-    win_start = now - dt.timedelta(days=30)
-    win_end   = now + dt.timedelta(days=90)
+        # Obtener eventos de Google Calendar
+        logger.info("📡 Obteniendo eventos de Google Calendar...")
+        events_response = svc.events().list(
+            calendarId=CAL_ID,
+            timeMin=win_start.isoformat(),
+            timeMax=win_end.isoformat(),
+            singleEvents=True,
+            orderBy="startTime",
+        ).execute()
+        
+        events = events_response.get("items", [])
+        logger.info(f"📋 Encontrados {len(events)} eventos en Google Calendar")
 
-    events = svc.events().list(
-        calendarId=CAL_ID,
-        timeMin=win_start.isoformat(),
-        timeMax=win_end.isoformat(),
-        singleEvents=True,
-        orderBy="startTime",
-    ).execute().get("items", [])
+        def _to_dt(iso: str) -> dt.datetime:
+            return dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))
 
-    def _to_dt(iso: str) -> dt.datetime:
-        return dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        # Cargar todas las sesiones con calendar_event_id ya guardado
+        logger.info("🗄️ Cargando sesiones existentes de la BD...")
+        db_sessions = {
+            s.calendar_event_id: s
+            for s in db.query(Session)
+                        .filter(Session.calendar_event_id != None)
+                        .all()
+        }
+        logger.info(f"💾 Encontradas {len(db_sessions)} sesiones con event_id en BD")
 
-    # 1) Cargar todas las sesiones con calendar_event_id ya guardado
-    db_sessions = {
-        s.calendar_event_id: s
-        for s in db.query(Session)
-                    .filter(Session.calendar_event_id != None)
-                    .all()
-    }
+        # Procesar cada evento de Google Calendar
+        for i, ev in enumerate(events, 1):
+            ev_id = ev["id"]
+            seen_ev_ids.add(ev_id)
+            
+            if i % 10 == 0:  # Log progreso cada 10 eventos
+                logger.info(f"⏳ Procesando evento {i}/{len(events)}")
 
-    for ev in events:
-        ev_id    = ev["id"]
-        seen_ev_ids.add(ev_id)
+            props = ev.get("extendedProperties", {}).get("private", {})
+            sess_id = props.get("session_id")
+            start_dt = _to_dt(ev["start"]["dateTime"])
+            end_dt = _to_dt(ev["end"]["dateTime"])
+            status = _status_from_color(ev.get("colorId", "9"))
+            
+            # ================================================================
+            # BÚSQUEDA DE SESIÓN EXISTENTE - LÓGICA IMPLEMENTADA
+            # ================================================================
+            ses = None
+            
+            # 1. Buscar por session_id en extended properties
+            if sess_id and sess_id.isdigit():
+                ses = db.get(Session, int(sess_id))
+                if ses:
+                    logger.debug(f"✅ Encontrada por session_id: {sess_id}")
+            
+            # 2. Buscar por calendar_event_id (MÁS COMÚN)
+            if not ses:
+                ses = db_sessions.get(ev_id)
+                if ses:
+                    logger.debug(f"✅ Encontrada por event_id: {ev_id}")
+            
+            # 3. BÚSQUEDA FUZZY como último recurso
+            if not ses:
+                coach_id, player_id = _guess_ids(ev)
+                if coach_id and player_id:
+                    # Buscar sesión sin event_id que coincida en fecha/coach/player
+                    potential_matches = db.query(Session).filter(
+                        Session.coach_id == coach_id,
+                        Session.player_id == player_id,
+                        Session.calendar_event_id == None,
+                        func.date(Session.start_time) == start_dt.date()
+                    ).all()
+                    
+                    if potential_matches:
+                        ses = potential_matches[0]
+                        ses.calendar_event_id = ev_id  # Vincular evento
+                        logger.info(f"🔗 MATCH FUZZY: Sesión #{ses.id} vinculada al evento {ev_id[:8]}...")
+                        db.add(ses)
+                        db.flush()
+            
+            # ================================================================
+            # PROCESAMIENTO SEGÚN SI EXISTE O NO
+            # ================================================================
+            if ses:
+                # ACTUALIZAR SESIÓN EXISTENTE
+                changed = False
+                changes = []
+                
+                # Estrategia: Calendar wins
+                if ses.status != status:
+                    changes.append(f"status: {ses.status.value} → {status.value}")
+                    ses.status = status
+                    changed = True
 
-        props    = ev.get("extendedProperties", {}).get("private", {})
-        sess_id  = props.get("session_id")
-        start_dt = _to_dt(ev["start"]["dateTime"])
-        end_dt   = _to_dt(ev["end"]["dateTime"])
-        status   = _status_from_color(ev.get("colorId", "9"))
+                db_start = ses.start_time.astimezone(dt.timezone.utc).replace(microsecond=0)
+                new_start = start_dt.astimezone(dt.timezone.utc).replace(microsecond=0)
+                if db_start != new_start:
+                    changes.append(f"start: {db_start.strftime('%H:%M')} → {new_start.strftime('%H:%M')}")
+                    ses.start_time = start_dt
+                    changed = True
 
-        # —————————————————————————————————————————————————————————
-        #  A) Buscar si ya existe en BD
-        # —————————————————————————————————————————————————————————
-        ses = None
-        if sess_id and sess_id.isdigit():
-            ses = db.get(Session, int(sess_id))
-        if not ses:
-            with db.no_autoflush:
-                ses = db_sessions.get(ev_id) or db.query(Session).filter_by(calendar_event_id=ev_id).first()
+                db_end = ses.end_time.astimezone(dt.timezone.utc).replace(microsecond=0)
+                new_end = end_dt.astimezone(dt.timezone.utc).replace(microsecond=0)
+                if db_end != new_end:
+                    changes.append(f"end: {db_end.strftime('%H:%M')} → {new_end.strftime('%H:%M')}")
+                    ses.end_time = end_dt
+                    changed = True
+                
+                # Actualizar notas si han cambiado
+                new_notes = ev.get("description", "") or ""
+                if (ses.notes or "") != new_notes:
+                    changes.append("notes updated")
+                    ses.notes = new_notes if new_notes else None
+                    changed = True
 
-        if ses:
-            # Actualizar si cambia algo
-            changed = False
-            if ses.status != status:
-                ses.status = status
-                changed = True
-
-            db_start = ses.start_time.astimezone(dt.timezone.utc).replace(microsecond=0)
-            new_start = start_dt.astimezone(dt.timezone.utc).replace(microsecond=0)
-            if db_start != new_start:
-                ses.start_time = start_dt
-                changed = True
-
-            db_end = ses.end_time.astimezone(dt.timezone.utc).replace(microsecond=0)
-            new_end = end_dt.astimezone(dt.timezone.utc).replace(microsecond=0)
-            if db_end != new_end:
-                ses.end_time = end_dt
-                changed = True
-
-            if changed:
-                db.add(ses)
-                updated += 1
-            continue  # evitamos crear duplicados
-
-        # —————————————————————————————————————————————————————————
-        #  B) Evento nuevo: importar
-        # —————————————————————————————————————————————————————————
-        coach_id, player_id = _guess_ids(ev)
-        if coach_id is None or player_id is None:
-            continue  # no podemos mapearlo
-
-        ses = Session(
-            coach_id=coach_id,
-            player_id=player_id,
-            start_time=start_dt,
-            end_time=end_dt,
-            status=status,
-            notes=ev.get("description"),
-            calendar_event_id=ev_id,
-        )
-        db.add(ses)
-        db.flush()   # Para obtener ses.id antes de patch
-
-        # Parchar el evento para añadir IDs + formatear título
-        patch_event_after_import(ses, ev_id)
-
-        imported += 1
-
-    # —————————————————————————————————————————————————————————
-    #  C) Eliminar sesiones cuyo evento ya no existe en GCal
-    # —————————————————————————————————————————————————————————
-    for ev_id, ses in db_sessions.items():
-        if ev_id not in seen_ev_ids:
-            try:
-                # Intentamos obtener el evento directamente
-                svc.events().get(calendarId=CAL_ID, eventId=ev_id).execute()
-                # Si no lanza error, existe -> no borrar
-                continue
-            except Exception as e:
-                # Si lanza error 404 Not Found, el evento no existe -> borrar
-                if "404" in str(e):
-                    db.delete(ses)
-                    deleted += 1
+                if changed:
+                    logger.info(f"🔄 ACTUALIZADA Sesión #{ses.id}: {', '.join(changes)}")
+                    db.add(ses)
+                    updated += 1
                 else:
-                    print(f"⚠️ Error inesperado comprobando evento {ev_id}: {e}")
+                    logger.debug(f"✅ Sesión #{ses.id} sin cambios")
+                    
+            else:
+                # CREAR NUEVA SESIÓN CON VALIDACIÓN
+                logger.info(f"🆕 Creando sesión nueva: {ev.get('summary', 'Sin título')}")
+                coach_id, player_id = _guess_ids(ev)
+                
+                if coach_id is None or player_id is None:
+                    logger.warning(f"⚠️ No se pudo mapear evento - coach_id: {coach_id}, player_id: {player_id}")
+                    continue
 
-    db.commit()
-    return imported, updated, deleted
+                # VALIDAR QUE COACH Y PLAYER EXISTEN EN BD
+                coach_exists = db.query(Coach).filter(Coach.coach_id == coach_id).first()
+                player_exists = db.query(Player).filter(Player.player_id == player_id).first()
+                
+                if not coach_exists:
+                    logger.warning(f"⚠️ Coach ID {coach_id} no existe en BD - ignorando evento")
+                    continue
+                    
+                if not player_exists:
+                    logger.warning(f"⚠️ Player ID {player_id} no existe en BD - ignorando evento")
+                    continue
+
+                logger.info(f"✅ Mapeado y validado - Coach ID: {coach_id}, Player ID: {player_id}")
+                
+                new_session = Session(
+                    coach_id=coach_id,
+                    player_id=player_id,
+                    start_time=start_dt,
+                    end_time=end_dt,
+                    status=status,
+                    notes=ev.get("description"),
+                    calendar_event_id=ev_id,
+                    source="calendar",
+                    version=1
+                )
+                
+                db.add(new_session)
+                db.flush()
+
+                # Actualizar formato del evento en Calendar
+                try:
+                    patch_event_after_import(new_session, ev_id)
+                    logger.debug(f"🔧 Evento {ev_id[:8]}... actualizado")
+                except Exception as e:
+                    logger.error(f"❌ Error actualizando evento en Calendar: {e}")
+
+                imported += 1
+
+        # ================================================================
+        # DETECTAR ELIMINACIONES - LÓGICA CORREGIDA
+        # ================================================================
+        logger.info("🗑️ Verificando eventos eliminados...")
+
+        # Sesiones en ventana que DEBERÍAN tener eventos correspondientes
+        sessions_in_window = db.query(Session).filter(
+            Session.calendar_event_id != None,
+            Session.start_time >= win_start,
+            Session.start_time <= win_end
+        ).all()
+
+        # Crear dict de sesiones EN LA VENTANA
+        window_sessions = {s.calendar_event_id: s for s in sessions_in_window}
+
+        # Candidatos: event_ids de BD que NO aparecieron en la búsqueda de Calendar
+        elimination_candidates = [
+            ev_id for ev_id in window_sessions.keys() 
+            if ev_id not in seen_ev_ids
+        ]
+
+        logger.info(f"🔍 Sesiones en ventana: {len(window_sessions)}")
+        logger.info(f"🔍 Candidatos para eliminación: {len(elimination_candidates)}")
+
+        # NUEVA ESTRATEGIA: Si no aparece en la búsqueda de la ventana = eliminado
+        if elimination_candidates:
+            for ev_id in elimination_candidates:
+                ses = window_sessions[ev_id]
+                
+                # Si el evento no apareció en la búsqueda dentro de la ventana de tiempo,
+                # y la sesión SÍ está en esa ventana, entonces fue eliminado
+                logger.info(f"🗑️ ELIMINANDO sesión #{ses.id} - evento {(ev_id[:8] if ev_id else 'N/A')}... no encontrado en ventana")
+                db.delete(ses)
+                deleted += 1
+
+        if deleted == 0:
+            logger.info("✅ No hay eventos para eliminar")
+
+        # Commit final
+        db.commit()
+        
+        elapsed_time = time.time() - start_time
+        events_per_second = len(events) / elapsed_time if elapsed_time > 0 else 0
+
+        logger.info(f"✅ SYNC COMPLETADA en {elapsed_time:.2f}s ({events_per_second:.1f} eventos/seg)")
+        logger.info(f"📊 Resultados: {imported} importadas, {updated} actualizadas, {deleted} eliminadas")
+
+        return imported, updated, deleted
+        
+    except Exception as e:
+        logger.error(f"❌ ERROR durante sincronización: {e}")
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 def _status_from_color(color: str) -> SessionStatus:
@@ -427,3 +600,39 @@ def get_sessions(
     if statuses:
         q = q.filter(Session.status.in_(statuses))
     return q.order_by(Session.start_time.asc()).all()
+
+import hashlib  # ← Asegurar que está importado
+
+def _calculate_session_hash(session: Session) -> str:
+    """Calcula hash basado en datos importantes de la sesión."""
+    data = (
+        f"{session.coach_id}|{session.player_id}|"
+        f"{session.start_time.isoformat()}|{session.end_time.isoformat()}|"
+        f"{session.status.value}|{session.notes or ''}"
+    )
+    return hashlib.md5(data.encode()).hexdigest()
+
+def _calculate_event_hash(ev: dict) -> str:
+    """Calcula hash basado en datos importantes del evento de Calendar."""
+    start_dt = dt.datetime.fromisoformat(ev["start"]["dateTime"].replace("Z", "+00:00"))
+    end_dt = dt.datetime.fromisoformat(ev["end"]["dateTime"].replace("Z", "+00:00"))
+    status = _status_from_color(ev.get("colorId", "9"))
+    
+    props = ev.get("extendedProperties", {}).get("private", {})
+    coach_id = props.get("coach_id", "")
+    player_id = props.get("player_id", "")
+    
+    data = (
+        f"{coach_id}|{player_id}|"
+        f"{start_dt.isoformat()}|{end_dt.isoformat()}|"
+        f"{status.value}|{ev.get('description', '') or ''}"
+    )
+    return hashlib.md5(data.encode()).hexdigest()
+
+def _update_session_tracking(session: Session):
+    """Actualiza campos de tracking después de cambios."""
+    session.sync_hash = _calculate_session_hash(session)
+    session.updated_at = dt.datetime.now(dt.timezone.utc)
+    session.last_sync_at = dt.datetime.now(dt.timezone.utc)
+    session.is_dirty = False
+    session.version += 1

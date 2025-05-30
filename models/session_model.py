@@ -2,7 +2,7 @@ from __future__ import annotations
 import enum
 from datetime import datetime, timezone
 from typing import Optional, TYPE_CHECKING
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 if TYPE_CHECKING:
     from models.coach_model import Coach
@@ -36,8 +36,38 @@ class Session(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc)
     )
-    calendar_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     
+    calendar_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    last_sync_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), 
+        nullable=True
+    )
+
+    sync_hash: Mapped[Optional[str]] = mapped_column(
+        String(32), 
+        nullable=True
+    )
+
+    source: Mapped[str] = mapped_column(
+        String(10), 
+        default="app"
+    )
+
+    version: Mapped[int] = mapped_column(
+        Integer, 
+        default=1
+    )
+
+    is_dirty: Mapped[bool] = mapped_column(
+        Boolean, 
+        default=False
+    )
     # Relaciones
     coach:  Mapped["Coach"]  = relationship(back_populates="sessions")
     player: Mapped["Player"] = relationship(back_populates="sessions")
