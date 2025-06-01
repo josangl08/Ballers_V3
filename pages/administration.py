@@ -219,6 +219,10 @@ def show_coach_calendar():
                         db_session.add(new_session)
                         db_session.flush()            # obtiene new_session.id sin cerrar la tx
                         push_session(new_session)     # crea el evento y guarda calendar_event_id
+
+                        db_session.commit()           # Asegurar que se guarda en BD
+                        db_session.refresh(new_session)  # Refrescar objeto desde BD
+
                         st.success("Session created successfully")
                         st.rerun()
 
@@ -659,6 +663,10 @@ def show_all_sessions():
                         db_session.add(new_session)
                         db_session.flush()            # obtiene new_session.id sin cerrar la tx
                         push_session(new_session)     # crea el evento y guarda calendar_event_id
+
+                        db_session.commit()           # Asegurar que se guarda en BD
+                        db_session.refresh(new_session)  # Refrescar objeto desde BD
+                        
                         st.success("Session created successfully")
                         st.rerun()
 

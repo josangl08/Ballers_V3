@@ -5,6 +5,7 @@ import re
 import logging
 import time
 import hashlib
+from zoneinfo import ZoneInfo
 from googleapiclient.errors import HttpError
 from sqlalchemy import func
 from sqlalchemy.orm import object_session, Session as AlchSession
@@ -27,30 +28,82 @@ if not logger.handlers:
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
+def _normalize_datetime_for_hash(dt_obj) -> str:
+    """
+    Normaliza datetime para hash: convierte a UTC y quita timezone info
+    MEJORADO: Maneja correctamente datetime naive desde timezone local
+    """
+    if dt_obj is None:
+        return ""
+    
+    # Si es string, convertir a datetime primero
+    if isinstance(dt_obj, str):
+        try:
+            dt_obj = dt.datetime.fromisoformat(dt_obj.replace("Z", "+00:00"))
+        except:
+            return dt_obj  # Si falla, devolver como está
+    
+    # ================================================================
+    # LÓGICA MEJORADA PARA DATETIME NAIVE
+    # ================================================================
+    
+    if dt_obj.tzinfo is None:
+        # OPCIÓN 1: Asumir que datetime naive es en timezone local (Madrid)
+        # Esto es más probable para sesiones creadas desde la app
+        try:
+            local_tz = ZoneInfo("Europe/Madrid")  # +01:00 en invierno, +02:00 en verano
+            dt_obj = dt_obj.replace(tzinfo=local_tz)
+            logger.debug(f"🌍 Datetime naive convertido a Madrid timezone: {dt_obj}")
+        except:
+            # Si falla ZoneInfo, usar offset fijo +02:00 (horario de verano típico)
+            dt_obj = dt_obj.replace(tzinfo=dt.timezone(dt.timedelta(hours=2)))
+            logger.debug(f"🌍 Datetime naive convertido a +02:00: {dt_obj}")
+    
+    # Convertir a UTC y quitar timezone info para consistencia
+    utc_naive = dt_obj.astimezone(dt.timezone.utc).replace(tzinfo=None)
+    
+    # Devolver formato ISO sin microsegundos
+    result = utc_naive.replace(microsecond=0).isoformat()
+    logger.debug(f"🔧 Normalización final: {dt_obj} → {result}")
+    return result
+
 def _calculate_session_hash(session: Session) -> str:
-    """Calcula hash MD5 basado en datos importantes de la sesión."""
+    """Calcula hash MD5 basado en datos importantes de la sesión CON FECHAS NORMALIZADAS."""
     try:
+        # Normalizar fechas
+        start_normalized = _normalize_datetime_for_hash(session.start_time)
+        end_normalized = _normalize_datetime_for_hash(session.end_time)
+        
         data = "|".join([
             str(session.coach_id),
             str(session.player_id), 
-            session.start_time.isoformat(),
-            session.end_time.isoformat() if session.end_time else "",
+            start_normalized,
+            end_normalized,
             session.status.value,
             session.notes or ""
         ])
-        return hashlib.md5(data.encode('utf-8')).hexdigest()
+        
+        hash_result = hashlib.md5(data.encode('utf-8')).hexdigest()
+        logger.debug(f"🔧 Session hash data: '{data}' → {hash_result[:8]}...")
+        return hash_result
+        
     except Exception as e:
         logger.warning(f"⚠️ Error calculando hash sesión #{session.id}: {e}")
         return ""
 
 def _calculate_event_hash(ev: dict) -> str:
-    """Calcula hash MD5 basado en datos importantes del evento."""
+    """Calcula hash MD5 basado en datos importantes del evento CON FECHAS NORMALIZADAS."""
     try:
         def _to_dt_local(iso: str) -> dt.datetime:
             return dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))
         
+        # Obtener fechas del evento y normalizarlas
         start_dt = _to_dt_local(ev["start"]["dateTime"])
-        end_dt = _to_dt_local(ev["end"]["dateTime"]) 
+        end_dt = _to_dt_local(ev["end"]["dateTime"])
+        
+        start_normalized = _normalize_datetime_for_hash(start_dt)
+        end_normalized = _normalize_datetime_for_hash(end_dt)
+        
         status = _status_from_color(ev.get("colorId", "9"))
         
         props = ev.get("extendedProperties", {}).get("private", {})
@@ -60,15 +113,59 @@ def _calculate_event_hash(ev: dict) -> str:
         data = "|".join([
             str(coach_id),
             str(player_id),
-            start_dt.isoformat(),
-            end_dt.isoformat(),
+            start_normalized,
+            end_normalized,
             status.value,
             ev.get("description", "") or ""
         ])
-        return hashlib.md5(data.encode('utf-8')).hexdigest()
+        
+        hash_result = hashlib.md5(data.encode('utf-8')).hexdigest()
+        logger.debug(f"🔧 Event hash data: '{data}' → {hash_result[:8]}...")
+        return hash_result
+        
     except Exception as e:
         logger.warning(f"⚠️ Error calculando hash evento: {e}")
         return ""
+
+# BONUS: Función para verificar el fix
+def test_hash_normalization():
+    """Test para verificar que la normalización funciona"""
+    from models import Session
+    from controllers.db import get_db_session
+    
+    db = get_db_session()
+    session = db.get(Session, 318)  # Usar sesión problemática
+    
+    if session and session.calendar_event_id:
+        print("🧪 TESTING HASH NORMALIZATION")
+        print("="*50)
+        
+        # Hash de sesión
+        session_hash = _calculate_session_hash(session)
+        print(f"Session hash (normalizado): {session_hash}")
+        
+        # Obtener evento y calcular hash
+        try:
+            import os
+            from .google_client import calendar
+            CAL_ID = os.getenv("CALENDAR_ID")
+            event = calendar().events().get(
+                calendarId=CAL_ID,
+                eventId=session.calendar_event_id
+            ).execute()
+            
+            event_hash = _calculate_event_hash(event)
+            print(f"Event hash (normalizado):   {event_hash}")
+            
+            if session_hash == event_hash:
+                print("✅ SUCCESS: Hashes ahora coinciden!")
+            else:
+                print("❌ FAIL: Hashes siguen siendo diferentes")
+                
+        except Exception as e:
+            print(f"❌ Error obteniendo evento: {e}")
+    
+    db.close()
 
 def _update_session_tracking(session: Session):
     """Actualiza campos de tracking después de cambios."""
@@ -221,53 +318,50 @@ def _guess_ids(ev):
 # ---------- DB → Calendar ----------
 def push_session(session: Session, db: AlchSession | None = None):
     """Crea evento en Google Calendar con manejo correcto de sesiones."""
-    # Usar la sesión proporcionada o obtener la del objeto o crear nueva
     if db is None:
         db = object_session(session) or get_db_session()
     
-    # Si el objeto no está en la sesión actual, hacer merge
     if object_session(session) != db:
         session = db.merge(session)
 
     # Actualizar tracking antes de enviar
     _update_session_tracking(session)
-    session.source = "app"  # Marcar origen
+    session.source = "app"
     
     body = _build_body(session)
     ev = _service().events().insert(
         calendarId=CAL_ID, body=body).execute()
 
     session.calendar_event_id = ev["id"]
-    session.is_dirty = False  # Limpio después de sync exitoso
+    session.is_dirty = False
     
-    # Solo hacer commit si creamos nosotros la sesión
     if db != object_session(session):
         db.add(session)
         db.commit()
-
-        # ✅ NUEVO: Actualizar timestamps después de sync exitoso
+        
+        # ✅ FIX: Solo actualizar timestamp después de SUCCESS
         session.updated_at = dt.datetime.now(dt.timezone.utc)
         session.last_sync_at = dt.datetime.now(dt.timezone.utc)
         db.commit()
-
         db.refresh(session)
     
     logger.info(f"📤 Sesión #{session.id} creada en Calendar (evento {ev['id'][:8]}...)")
 
-# --------------------------------------------------------------------------
-#  ACTUALIZAR una sesión existente
 def update_session(session: Session):
-    """Actualiza evento existente con manejo correcto de sesiones BD."""
-    # Obtener la sesión BD desde el objeto o crear nueva
+    """Actualiza evento existente SOLO SI HAY CAMBIOS REALES."""
     db = object_session(session) or get_db_session()
     
-    # Si el objeto no está en la sesión actual, hacer merge
     if object_session(session) != db:
         session = db.merge(session)
     
     if not session.calendar_event_id:
         logger.warning(f"⚠️ Sesión #{session.id} sin event_id - usando push_session")
         return push_session(session, db)
+
+    # ✅ NUEVO: Verificar si realmente hay cambios antes de actualizar
+    if not _session_has_real_changes(session):
+        logger.debug(f"⏭️ Sesión #{session.id} - sin cambios reales, skip update")
+        return
 
     # Actualizar tracking antes de enviar
     _update_session_tracking(session)
@@ -280,27 +374,23 @@ def update_session(session: Session):
             body=body
         ).execute()
 
-        # ✅ NUEVO: Actualizar timestamps después de sync exitoso
+        # ✅ FIX: Solo actualizar timestamp después de SUCCESS
         session.updated_at = dt.datetime.now(dt.timezone.utc)
         session.last_sync_at = dt.datetime.now(dt.timezone.utc)
-        db.commit()
+        session.is_dirty = False
         
-        session.is_dirty = False  # Limpio después de sync exitoso
         logger.info(f"📤 Sesión #{session.id} actualizada en Calendar")
         
     except HttpError as e:
         if e.resp.status == 404:
-            # Evento borrado manualmente en GCal → recrear
             logger.warning(f"⚠️ Evento {session.calendar_event_id[:8]}... no existe - recreando")
             session.calendar_event_id = None
             push_session(session, db)
         else:
-            # Error real → marcar como dirty para retry
             session.is_dirty = True
             logger.error(f"❌ Error actualizando evento: {e}")
             raise
     
-    # Solo hacer commit si creamos nosotros la sesión
     if object_session(session) is None:
         db.add(session)
         db.commit()
@@ -402,25 +492,73 @@ def patch_event_after_import(session: Session, event_id: str):
         logger.error(f"❌ Error actualizando evento {event_id[:8]}...: {e}")
 
 # ---------- DB → Calendar ----------   
+
+def _session_has_real_changes(session: Session) -> bool:
+    """
+    Verifica si una sesión tiene cambios REALES que justifiquen update
+    """
+    # 1. Si está marcada como dirty → hay cambios
+    if hasattr(session, 'is_dirty') and session.is_dirty:
+        logger.debug(f"🔄 Sesión #{session.id} marcada como dirty")
+        return True
+    
+    # 2. Si no tiene hash → primera vez
+    if not session.sync_hash:
+        logger.debug(f"🔄 Sesión #{session.id} sin hash - primera sincronización")
+        return True
+    
+    # 3. Comparar hash actual vs. guardado
+    current_hash = _calculate_session_hash(session)
+    
+    if session.sync_hash != current_hash:
+        logger.debug(f"🔄 Sesión #{session.id} hash cambió: {session.sync_hash[:8]}... → {current_hash[:8]}...")
+        return True
+    
+    # 4. Sin cambios reales
+    logger.debug(f"✅ Sesión #{session.id} - sin cambios reales")
+    return False
+
 def sync_db_to_calendar():
     """
-    Recorre todas las sesiones en BD y:
-      - push_session() si no tienen calendar_event_id
-      - update_session() si ya lo tienen
-    Devuelve (pushed, updated).
+    VERSIÓN OPTIMIZADA: Solo actualiza sesiones que realmente han cambiado
     """
     db = get_db_session()
-    pushed = updated = 0
+    pushed = updated = skipped = 0
 
     for ses in db.query(Session).all():
         if not ses.calendar_event_id:
+            # Sin event_id → crear nuevo
             push_session(ses)
             pushed += 1
-        else:
+        elif _session_needs_update(ses):
+            # Verificar si necesita actualización
             update_session(ses)
             updated += 1
+        else:
+            skipped += 1
+            logger.debug(f"⏭️ Sesión #{ses.id} - sin cambios, skip update")
 
+    logger.info(f"📊 Push completado: {pushed} creadas, {updated} actualizadas, {skipped} omitidas")
     return pushed, updated
+
+def _session_needs_update(session: Session) -> bool:
+    """Versión simple - Solo actualizar si está dirty o no tiene hash"""
+    # 1. Si está dirty → actualizar
+    if hasattr(session, 'is_dirty') and session.is_dirty:
+        return True
+    
+    # 2. Si no tiene hash → actualizar
+    if not session.sync_hash:
+        return True
+        
+    # 3. Verificar cambios en hash
+    current_hash = _calculate_session_hash(session)
+    has_changes = session.sync_hash != current_hash
+    
+    if has_changes:
+        logger.debug(f"🔄 Sesión #{session.id} - cambios detectados en hash")
+    
+    return has_changes
 
 # ---------- Calendar → DB ----------
 #@st.cache_data(ttl=int(os.getenv("SYNC_INTERVAL_MIN", "5")) * 60, show_spinner=False)
@@ -519,10 +657,20 @@ def sync_calendar_to_db():
                         db.flush()
 
             if ses:
-                # DETECCIÓN INTELIGENTE DE CAMBIOS Y CONFLICTOS
-                # 1. Calcular hashes para detectar cambios reales
-                current_hash = ses.sync_hash or ""
+                # ================================================================
+                # NUEVA LÓGICA: HASH-FIRST APPROACH 
+                # ================================================================
+                
+                # 1. Verificar si event_id coincide
+                if ses.calendar_event_id != ev_id:
+                    logger.debug(f"🔗 Actualizando event_id: {ses.calendar_event_id} → {ev_id}")
+                    ses.calendar_event_id = ev_id
+                    db.add(ses)
+                    db.flush()
 
+                # 2. HASH COMPARISON - Prioridad máxima
+                current_hash = ses.sync_hash or ""
+                
                 # Si no tiene hash, calcularlo ahora (sesión antigua)
                 if not current_hash:
                     current_hash = _calculate_session_hash(ses)
@@ -533,62 +681,64 @@ def sync_calendar_to_db():
                 
                 logger.debug(f"🔍 Hash check Sesión #{ses.id}: BD='{current_hash[:8]}...' vs Event='{event_hash[:8]}...'")
                 
-                # Si los hashes coinciden, no hay cambios reales
+                # 3. Si hashes coinciden → NO HAY CAMBIOS REALES
                 if current_hash == event_hash:
-                    logger.debug(f"✅ Sesión #{ses.id} - sin cambios (hash match)")
+                    logger.debug(f"✅ Sesión #{ses.id} - hashes coinciden, sin cambios")
                     continue
                 
-                # 2. ANÁLISIS DE CONFLICTOS POR TIMESTAMP
+                # 4. HASHES DIFERENTES → Hay cambios reales, decidir quién gana
                 
-                # Obtener timestamp del evento (siempre timezone-aware)
+                # 4a. Verificar si sesión está marcada como dirty (cambios locales pendientes)
+                if hasattr(ses, 'is_dirty') and ses.is_dirty:
+                    # Sesión local tiene cambios pendientes → APP WINS
+                    logger.info(f"🔄 APP WINS - Sesión #{ses.id} (cambios locales pendientes)")
+                    try:
+                        ses.is_dirty = False
+                        ses.last_sync_at = dt.datetime.now(dt.timezone.utc)
+                        _update_session_in_calendar_only(ses)
+                        logger.info(f"✅ Evento actualizado en Calendar desde BD (dirty)")
+                    except Exception as e:
+                        logger.error(f"❌ Error actualizando Calendar desde BD: {e}")
+                        ses.is_dirty = True
+                        db.add(ses)
+                    continue
+                
+                # 4b. Análisis de timestamps (solo como tiebreaker)
                 event_updated_str = ev.get("updated") or ev.get("created") or ""
                 event_updated = None
-                if event_updated_str:
+                session_updated = ses.updated_at or ses.created_at
+                
+                calendar_wins = True  # Default: Calendar wins
+                conflict_reason = "hash_different_calendar_default"
+                
+                if event_updated_str and session_updated:
                     try:
                         event_updated = dt.datetime.fromisoformat(event_updated_str.replace("Z", "+00:00"))
-                        # Asegurar que sea timezone-aware
                         if event_updated.tzinfo is None:
                             event_updated = event_updated.replace(tzinfo=dt.timezone.utc)
-                    except Exception as e:
-                        logger.debug(f"⚠️ Error parseando timestamp de evento: {e}")
-
-                # Timestamp de la sesión (convertir a timezone-aware si es necesario)
-                session_updated = ses.updated_at or ses.created_at
-                if session_updated and session_updated.tzinfo is None:
-                    # Si es naive, asumir UTC
-                    session_updated = session_updated.replace(tzinfo=dt.timezone.utc)
-
-                # ESTRATEGIA DE RESOLUCIÓN
-                calendar_wins = True  # Default strategy
-                conflict_reason = "calendar_default"
-
-                if event_updated and session_updated:
-                    try:
-                        time_diff = (session_updated - event_updated).total_seconds()
                         
-                        # LÓGICA MEJORADA: Ignorar diferencias pequeñas (artefactos de sync)
+                        if session_updated and session_updated.tzinfo is None:
+                            session_updated = session_updated.replace(tzinfo=dt.timezone.utc)
+                        
+                        time_diff = (session_updated - event_updated).total_seconds()
                         time_diff_abs = abs(time_diff)
 
-                        if time_diff_abs <= 10:
-                            # Diferencia muy pequeña (≤10s) → Probablemente artefacto de sincronización
-                            # No hacer cambios, mantener como está
-                            logger.debug(f"✅ Sesión #{ses.id} - diferencia mínima ({int(time_diff)}s), no cambiar")
-                            continue
-                            
-                        elif time_diff > 10:
-                            # BD claramente más reciente → APP WINS
-                            calendar_wins = False
-                            conflict_reason = f"app_newer_by_{int(time_diff)}s"
-                            
+                        # Solo usar timestamps para DIFERENCIAS SIGNIFICATIVAS (>5 minutos)
+                        if time_diff_abs > 300:  # 5 minutos
+                            if time_diff > 300:
+                                calendar_wins = False
+                                conflict_reason = f"app_significantly_newer_by_{int(time_diff)}s"
+                            else:
+                                calendar_wins = True
+                                conflict_reason = f"calendar_significantly_newer_by_{int(-time_diff)}s"
                         else:
-                            # Calendar claramente más reciente → CALENDAR WINS  
-                            calendar_wins = True
-                            conflict_reason = f"calendar_newer_by_{int(-time_diff)}s"
+                            # Diferencia pequeña → usar estrategia por defecto
+                            conflict_reason = f"small_time_diff_{int(time_diff)}s_calendar_wins"
+                            
                     except Exception as e:
-                        logger.warning(f"⚠️ Error calculando time_diff para sesión #{ses.id}: {e}")
-                        conflict_reason = "timestamp_error"
+                        logger.warning(f"⚠️ Error calculando timestamps para sesión #{ses.id}: {e}")
                 
-                # 3. APLICAR RESOLUCIÓN
+                # 5. APLICAR RESOLUCIÓN
                 if calendar_wins:
                     logger.info(f"🔄 CALENDAR WINS - Sesión #{ses.id} ({conflict_reason})")
                     
@@ -615,7 +765,6 @@ def sync_calendar_to_db():
                         ses.end_time = end_dt
                         changed = True
                     
-                    # Actualizar notas si han cambiado
                     new_notes = ev.get("description", "") or ""
                     if (ses.notes or "") != new_notes:
                         changes.append("notes")
@@ -623,7 +772,6 @@ def sync_calendar_to_db():
                         changed = True
 
                     if changed:
-                        # Actualizar tracking
                         _update_session_tracking(ses)
                         logger.info(f"📝 CALENDAR→BD Sesión #{ses.id}: {', '.join(changes)}")
                         db.add(ses)
@@ -632,23 +780,17 @@ def sync_calendar_to_db():
                         logger.debug(f"✅ Sesión #{ses.id} sin cambios después de análisis")
                         
                 else:
-                    
                     # APP WINS - actualizar Calendar desde BD
                     logger.info(f"🔄 APP WINS - Sesión #{ses.id} ({conflict_reason})")
                     logger.info(f"📝 BD→CALENDAR: Forzando actualización de evento desde sesión #{ses.id}")
                     
                     try:
-                        # NO crear nueva sesión BD - usar la existente
                         ses.is_dirty = False
                         ses.last_sync_at = dt.datetime.now(dt.timezone.utc)
-                        
-                        # Actualizar el evento en Calendar SIN nueva sesión BD
                         _update_session_in_calendar_only(ses)
                         logger.info(f"✅ Evento actualizado en Calendar desde BD")
-                        
                     except Exception as e:
                         logger.error(f"❌ Error actualizando Calendar desde BD: {e}")
-                        # Si falla, marcar como dirty para retry
                         ses.is_dirty = True
                         db.add(ses)
                     
