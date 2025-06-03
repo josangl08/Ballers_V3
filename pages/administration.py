@@ -12,6 +12,7 @@ from controllers.calendar_controller import push_session, get_sessions, update_s
 from controllers.internal_calendar import show_calendar
 from controllers.sheets_controller import get_accounting_df
 from controllers.db import get_db_session
+from common.validation import validate_session_time  
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -202,6 +203,9 @@ def show_coach_calendar():
                 submit = st.form_submit_button("Save Session")
 
                 if submit:
+                    is_valid, error_msg = validate_session_time(session_date, start_time, end_time)
+                    if not is_valid:
+                        st.error(error_msg)
                     start_dt = dt.datetime.combine(session_date, start_time)
                     end_dt   = dt.datetime.combine(session_date, end_time)
 
@@ -329,6 +333,9 @@ def show_coach_calendar():
 
                         # --- guardar ---
                         if save_clicked:
+                            is_valid, error_msg = validate_session_time(session_date, start_time, end_time)
+                            if not is_valid:
+                                st.error(error_msg)
                             start_dt = dt.datetime.combine(session_date, start_time)
                             end_dt   = dt.datetime.combine(session_date, end_time)
 
@@ -646,6 +653,9 @@ def show_all_sessions():
                 submit = st.form_submit_button("Save Session")
 
                 if submit:
+                    is_valid, error_msg = validate_session_time(session_date, start_time, end_time)
+                    if not is_valid:
+                        st.error(error_msg)
                     start_dt = dt.datetime.combine(session_date, start_time)
                     end_dt   = dt.datetime.combine(session_date, end_time)
 
@@ -777,6 +787,9 @@ def show_all_sessions():
                         del_clicked  = col_del.form_submit_button("Delete", type="secondary")
 
                         if save_clicked:
+                            is_valid, error_msg = validate_session_time(session_date, start_time, end_time)
+                            if not is_valid:
+                                st.error(error_msg)
                             start_dt = dt.datetime.combine(session_date, start_time)
                             end_dt   = dt.datetime.combine(session_date, end_time)
 

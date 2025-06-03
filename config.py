@@ -2,6 +2,7 @@
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+import datetime as dt
 
 # Cargar variables de entorno si existe el archivo .env
 load_dotenv()
@@ -50,4 +51,14 @@ CALENDAR_COLORS = {
     "scheduled": {"google": "9",  "hex": "#1E88E5"},  # azul
     "completed": {"google": "2",  "hex": "#4CAF50"},  # verde
     "canceled":  {"google": "11", "hex": "#F44336"},  # rojo
+}
+# Configuración de horarios 
+WORK_HOURS = {
+    "start": dt.time(8, 0),
+    "end": dt.time(18, 0)
+}
+
+SESSION_DURATION = {
+    "min_minutes": 60,
+    "max_minutes": 120  # 4 horas
 }

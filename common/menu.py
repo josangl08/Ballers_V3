@@ -45,6 +45,18 @@ def create_sidebar_menu():
             st.image("assets/ballers/isotipo_white.png", width=200)
         except:
             st.write("Logo no encontrado")
+
+        if 'sync_notification' in st.session_state:
+            notification_time = st.session_state.get('sync_notification_time')
+            if notification_time:
+                # Mostrar por 10 segundos
+                elapsed = (dt.datetime.now() - notification_time).total_seconds()
+                if elapsed < 10:
+                    st.info(st.session_state['sync_notification'])
+                else:
+                    # Limpiar después de 10 segundos
+                    del st.session_state['sync_notification']
+                    del st.session_state['sync_notification_time']
         
         # Crear string personalizado para el título del menú con iconos
         menu_title = f" {user_name}    |    🔑 {user_type.capitalize()}"
@@ -101,7 +113,7 @@ def create_sidebar_menu():
             else:
                 st.info("🔄 Auto-Sync: ⏸️")
             
-            # 🔧 FIX: UN SOLO BOTÓN DE SYNC MANUAL
+            #  UN SOLO BOTÓN DE SYNC MANUAL
             
             if st.button("⚡ Quick Sync", type="primary", use_container_width=True):
                 with st.spinner("Ejecutando sync manual..."):

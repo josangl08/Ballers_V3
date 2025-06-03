@@ -372,11 +372,14 @@ def update_session(session: Session):
         logger.warning(f"⚠️ Sesión #{session.id} sin event_id - usando push_session")
         return push_session(session, db)
 
-    # ✅ NUEVO: Verificar si realmente hay cambios antes de actualizar
+    # Verificar si realmente hay cambios antes de actualizar
     if not _session_has_real_changes(session):
         logger.debug(f"⏭️ Sesión #{session.id} - sin cambios reales, skip update")
-        return
 
+        return
+    # Logging más específico sobre el tipo de actualización
+    logger.info(f"🔄 MANUAL UPDATE - Sesión #{session.id} (cambios locales)")
+    
     # Actualizar tracking antes de enviar
     _update_session_tracking(session)
     
@@ -388,7 +391,7 @@ def update_session(session: Session):
             body=body
         ).execute()
 
-        # ✅ FIX: Solo actualizar timestamp después de SUCCESS
+        # Solo actualizar timestamp después de SUCCESS
         session.updated_at = dt.datetime.now(dt.timezone.utc)
         session.last_sync_at = dt.datetime.now(dt.timezone.utc)
         session.is_dirty = False
@@ -409,7 +412,6 @@ def update_session(session: Session):
         db.add(session)
         db.commit()
 
-# --------------------------------------------------------------------------
 #  BORRAR una sesión
 def delete_session(session: Session):
     """
@@ -705,16 +707,19 @@ def sync_calendar_to_db():
                 # 4a. Verificar si sesión está marcada como dirty (cambios locales pendientes)
                 if hasattr(ses, 'is_dirty') and ses.is_dirty:
                     # Sesión local tiene cambios pendientes → APP WINS
-                    logger.info(f"🔄 APP WINS - Sesión #{ses.id} (cambios locales pendientes)")
+                    logger.info(f"🔄 APP WINS - Sesión #{ses.id} ({conflict_reason})")
+                    logger.info(f"📝 BD→CALENDAR: Forzando actualización de evento desde sesión #{ses.id}")
+                    
                     try:
                         ses.is_dirty = False
                         ses.last_sync_at = dt.datetime.now(dt.timezone.utc)
                         _update_session_in_calendar_only(ses)
-                        logger.info(f"✅ Evento actualizado en Calendar desde BD (dirty)")
+                        logger.info(f"✅ Evento actualizado en Calendar desde BD (APP WINS)")  # 🔧 AGREGAR ESTA LÍNEA
                     except Exception as e:
                         logger.error(f"❌ Error actualizando Calendar desde BD: {e}")
                         ses.is_dirty = True
                         db.add(ses)
+
                     continue
                 
                 # 4b. Análisis de timestamps (solo como tiebreaker)
@@ -914,7 +919,16 @@ def sync_calendar_to_db():
         return imported, updated, deleted
         
     except Exception as e:
-        logger.error(f"❌ ERROR durante sincronización: {e}")
+        # 🔧 MEJORAR LOGGING DE ERRORES
+        if "403" in str(e):
+            logger.error("❌ ERROR 403: Sin permisos para Google Calendar - verificar API keys")
+        elif "404" in str(e):
+            logger.error("❌ ERROR 404: Calendario no encontrado - verificar CALENDAR_ID")
+        elif "JSON" in str(e) or "Expecting property name" in str(e):
+            logger.error("❌ ERROR AUTH: Credenciales inválidas - verificar google_service_account.json")
+        else:
+            logger.error(f"❌ ERROR sincronización: {e}")
+        
         db.rollback()
         raise
     finally:

@@ -16,12 +16,15 @@ import datetime as dt
 from dataclasses import dataclass, asdict
 from typing import Optional, Dict, Any
 import streamlit as st
+import logging
+
 from controllers.calendar_controller import sync_calendar_to_db, update_past_sessions, sync_db_to_calendar
 from controllers.sheets_controller import get_accounting_df 
 
-# ---------------------------------------------------------------------------
+logger = logging.getLogger(__name__)
+
 # Internal helpers -----------------------------------------------------------
-# ---------------------------------------------------------------------------
+
 SYNC_LOCK_FILE = os.path.join(tempfile.gettempdir(), "ballers_sync.lock")
 
 def _acquire_sync_lock():
@@ -45,13 +48,19 @@ def _release_sync_lock(lock_file):
             pass
    
 def _toast(msg: str, icon: str = "") -> None:
-    """Muestra un mensaje flotante o, si la versión de Streamlit no soporta
-    ``st.toast()``, cae a ``st.success()``/``st.warning()``.
-    """
+    """Muestra un mensaje flotante con duración extendida."""
     if hasattr(st, "toast"):
+        # 🔧 FIX: Aumentar duración de toast a 5 segundos
         st.toast(msg, icon=icon)
+        # Nota: Streamlit no permite configurar duración directamente,
+        # pero podemos mostrar también en sidebar para notificaciones importantes
+        if "Auto-Sync" in msg and ("importada" in msg or "actualizada" in msg or "eliminada" in msg):
+            # Para cambios importantes, también mostrar en sidebar temporalmente
+            if 'sync_notification' not in st.session_state:
+                st.session_state['sync_notification'] = msg
+                st.session_state['sync_notification_time'] = dt.datetime.now()
     else:
-        # Selección rápida de fallback según icono
+        # Fallback para versiones sin toast
         if icon == "✅":
             st.success(msg)
         elif icon == "⚠️":
@@ -135,8 +144,24 @@ def run_sync_once(force: bool = False) -> None:
     with st.spinner("Actualizando desde Google Calendar…"):
         try:
             _pull_google()
-        except Exception as exc:  # pylint: disable=broad-except
-            _toast(f"No se pudo sincronizar desde Google Calendar: {exc}", "⚠️")
+        except Exception as exc:
+            # 🔧 MEJORAR MENSAJES DE ERROR
+            error_msg = str(exc)
+            
+            # Detectar errores comunes y dar mensajes más claros
+            if "Expecting property name" in error_msg or "JSON" in error_msg:
+                user_friendly_msg = "Error de autenticación con Google Calendar. Verificar API keys."
+            elif "403" in error_msg or "forbidden" in error_msg:
+                user_friendly_msg = "Sin permisos para acceder a Google Calendar. Verificar configuración."
+            elif "404" in error_msg:
+                user_friendly_msg = "Calendario no encontrado. Verificar CALENDAR_ID."
+            elif "timeout" in error_msg.lower() or "connection" in error_msg.lower():
+                user_friendly_msg = "Error de conexión con Google Calendar. Verificar internet."
+            else:
+                user_friendly_msg = f"Error sincronizando Google Calendar: {error_msg}"
+            
+            _toast(user_friendly_msg, "⚠️")
+            logger.error(f"❌ Error sync Google Calendar: {exc}")
         else:
             _toast("Google Calendar actualizado", "✅")
 
@@ -144,19 +169,24 @@ def run_sync_once(force: bool = False) -> None:
     with st.spinner("Sincronizando base de datos…"):
         try:
             _push_local()
-        except Exception as exc:  # pylint: disable=broad-except
-            _toast(f"No se pudo sincronizar la base de datos: {exc}", "⚠️")
+        except Exception as exc:
+            _toast(f"Error sincronizando base de datos: {exc}", "⚠️")
+            logger.error(f"❌ Error sync BD: {exc}")
         else:
             _toast("Base de datos actualizada", "✅")
+    
     # Google Sheets ---------------------------------------------------
-    with st.spinner("Actualizando Google Sheets…"):
-        try:
-            get_accounting_df.clear()      # invalida la caché de 5 min
-            get_accounting_df()            # recarga y deja el DataFrame en cache
-        except Exception as exc:           # pylint: disable=broad-except
-            _toast(f"No se pudo sincronizar Google Sheets: {exc}", "⚠️")
-        else:
-            _toast("Google Sheets actualizado", "✅")
+    # 🔧 FIX: Solo si force=True (sync manual completo)
+    if force:
+        with st.spinner("Actualizando Google Sheets…"):
+            try:
+                get_accounting_df.clear()
+                get_accounting_df()
+            except Exception as exc:
+                _toast(f"Error sincronizando Google Sheets: {exc}", "⚠️")
+                logger.error(f"❌ Error sync Sheets: {exc}")
+            else:
+                _toast("Google Sheets actualizado", "✅")
 
     st.session_state["_synced"] = True
 
@@ -220,8 +250,14 @@ class SimpleAutoSync:
         start_time = time.time()
         
         try:
-            # Para sync manual, usar versión con UI
-            run_sync_once(force=True)
+            # Para sync manual, usar función que devuelve estadísticas
+            imported, updated, deleted = sync_calendar_to_db()
+            
+            # Actualizar sesiones pasadas si es necesario
+            n_past = update_past_sessions()
+            if n_past > 0:
+                sync_db_to_calendar()
+            
             
             duration = time.time() - start_time
             
@@ -234,6 +270,10 @@ class SimpleAutoSync:
             return {
                 "success": True,
                 "duration": duration,
+                "imported": imported,
+                "updated": updated, 
+                "deleted": deleted,
+                "past_updated": n_past,
                 "error": None
             }
             

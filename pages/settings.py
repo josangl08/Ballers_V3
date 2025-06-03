@@ -9,6 +9,7 @@ from controllers.calendar_controller import sync_db_to_calendar
 from controllers.sync import start_auto_sync, stop_auto_sync, get_auto_sync_status, force_manual_sync, is_auto_sync_running, has_pending_notifications
 from controllers.db import get_db_session 
 from controllers.sheets_controller import get_accounting_df
+from common.validation import validate_user_data
 
 def hash_password(password):
     """Convierte una contraseña en un hash SHA-256."""
@@ -70,8 +71,9 @@ def create_user_form():
         
         if submit:
             # Validar campos obligatorios
-            if not name or not username or not email or not password or not confirm_password:
-                st.error("Please fill in all required fields.")
+            is_valid, error_msg = validate_user_data(name, username, email, password)
+            if not is_valid:
+                st.error(error_msg)
                 return
             
             # Validar contraseñas
@@ -273,8 +275,9 @@ def edit_any_user():
         
         if submit:
             # Validar campos
-            if not name or not email:
-                st.error("The name and email are required.")
+            is_valid, error_msg = validate_user_data(name, selected_user.username, email) 
+            if not is_valid:
+                st.error(error_msg)
                 return
             
             # Validar que el email no esté en uso por otro usuario
@@ -511,10 +514,14 @@ def system_settings():
             except Exception as e:
                 st.error(f"Error al crear copia de seguridad: {str(e)}")
     with col2:
-        if st.button("Refresh accounting sheet"):
-            get_accounting_df.clear()
-            df = get_accounting_df()
-            st.success("Google Sheets re‑loaded")
+        if st.button("🔄 Refresh Google Sheets", help="Actualizar datos financieros desde Google Sheets"):
+            with st.spinner("Actualizando Google Sheets..."):
+                try:
+                    get_accounting_df.clear()
+                    df = get_accounting_df()
+                    st.success("✅ Google Sheets actualizado correctamente")
+                except Exception as e:
+                    st.error(f"❌ Error actualizando Google Sheets: {e}")
 
     st.subheader("Manual Synchronisation")
 
@@ -536,7 +543,13 @@ def system_settings():
             with st.spinner("Ejecutando sync manual..."):
                 result = force_manual_sync()
                 if result['success']:
-                    st.success(f"✅ Sync completado en {result['duration']:.1f}s")
+                    # Mostrar estadísticas detalladas
+                    stats_msg = f"✅ Sync completado en {result['duration']:.1f}s"
+                    if any([result.get('imported', 0), result.get('updated', 0), result.get('deleted', 0)]):
+                        stats_msg += f" - {result.get('imported', 0)} importadas, {result.get('updated', 0)} actualizadas, {result.get('deleted', 0)} eliminadas"
+                    if result.get('past_updated', 0) > 0:
+                        stats_msg += f", {result['past_updated']} marcadas como completadas"
+                    st.success(stats_msg)
                 else:
                     st.error(f"❌ Error: {result['error']}")
 
