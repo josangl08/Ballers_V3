@@ -5,7 +5,8 @@ import hashlib
 import datetime as dt
 import os
 import shutil
-from controllers.calendar_controller import sync_db_to_calendar, sync_calendar_to_db
+from controllers.calendar_controller import sync_db_to_calendar
+from controllers.sync import start_auto_sync, stop_auto_sync, get_auto_sync_status, force_manual_sync, is_auto_sync_running, has_pending_notifications
 from controllers.db import get_db_session 
 from controllers.sheets_controller import get_accounting_df
 
@@ -489,6 +490,7 @@ def delete_user():
     
     db_session.close()
 
+
 def system_settings():
     """Configuración del sistema (solo para administradores)."""
     st.subheader("Database/Googlesheets Management")
@@ -512,7 +514,7 @@ def system_settings():
         if st.button("Refresh accounting sheet"):
             get_accounting_df.clear()
             df = get_accounting_df()
-            st.success("Google Sheets re‑loaded")
+            st.success("Google Sheets re‑loaded")
 
     st.subheader("Manual Synchronisation")
 
@@ -528,15 +530,104 @@ def system_settings():
             )
 
     with col2:
-        if st.button("Bring events ← Google Calendar(settings)"):
-            sync_calendar_to_db.clear()  # invalida la caché
-            with st.spinner("Sincronizando con Google Calendar..."):
-                imported, updated, deleted = sync_calendar_to_db()
-            st.success(
-                f"{imported} sesiones nuevas importadas, "
-                f"\n{updated} sesiones actualizadas, "
-                f"\n{deleted} sesiones eliminadas."
-            )
+        # 🔧 FIX: Usar nueva función de sync manual
+        
+        if st.button("Bring events ← Google Calendar"):
+            with st.spinner("Ejecutando sync manual..."):
+                result = force_manual_sync()
+                if result['success']:
+                    st.success(f"✅ Sync completado en {result['duration']:.1f}s")
+                else:
+                    st.error(f"❌ Error: {result['error']}")
+
+    # 🔧 FIX: AUTO-SYNC MANAGEMENT MEJORADO
+    st.subheader("🤖 Auto-Sync Management")
+    
+    if has_pending_notifications():
+        st.info("🔔 Hay cambios pendientes de notificar del auto-sync")
+
+    # Estado actual
+    if is_auto_sync_running():
+        st.success("✅ Auto-Sync ACTIVO")
+        
+        # Mostrar estadísticas
+        status = get_auto_sync_status()
+        
+        if status['total_syncs'] > 0:
+            success_rate = (status['successful_syncs'] / status['total_syncs']) * 100
+            
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Syncs", status['total_syncs'])
+            col2.metric("Tasa Éxito", f"{success_rate:.0f}%")
+            col3.metric("Intervalo", f"{status['interval_minutes']}m")
+
+            if status.get('last_changes'):
+                changes = status['last_changes']
+                imported = changes.get('imported', 0)
+                updated = changes.get('updated', 0)
+                deleted = changes.get('deleted', 0)
+                
+                if imported + updated + deleted > 0:
+                    st.info(f"📊 Últimos cambios: {imported} importadas, {updated} actualizadas, {deleted} eliminadas")
+            
+            
+            if status['last_sync_time']:
+                last_sync = dt.datetime.fromisoformat(status['last_sync_time'])
+                time_ago = dt.datetime.now() - last_sync
+                
+                if time_ago.total_seconds() < 60:
+                    st.info(f"Último sync: {int(time_ago.total_seconds())}s ago")
+                elif time_ago.total_seconds() < 3600:
+                    st.info(f"Último sync: {int(time_ago.total_seconds()/60)}m ago")
+                else:
+                    st.info(f"Último sync: {last_sync.strftime('%H:%M:%S')}")
+        
+        # Botones de control
+        if st.button("⏸️ Detener Auto-Sync", use_container_width=True):
+            if stop_auto_sync():
+                st.success("Auto-Sync detenido")
+                st.rerun()
+            else:
+                st.error("Error deteniendo Auto-Sync")
+                
+        # 💡 Agregar nota informativa
+        st.info("💡 Para sync manual usa: 'Bring events ← Google Calendar' arriba")
+    
+    else:
+        st.info("⏸️ Auto-Sync INACTIVO")
+        
+        # Configuración
+        interval = st.slider(
+            "Intervalo de sincronización (minutos)",
+            min_value=2,  # 🔧 Mínimo 2 minutos para evitar database locking
+            max_value=60,
+            value=5,
+            help="Frecuencia de sincronización automática (mínimo 2 min para evitar conflictos)"
+        )
+
+        # 🔧 AGREGAR advertencia si es muy bajo:
+        if interval < 3:
+            st.warning("⚠️ Intervalos muy cortos (< 3 min) pueden causar errores de concurrencia")
+            st.info("💡 Recomendado: 5+ minutos para máxima estabilidad")
+        
+        auto_start = st.checkbox(
+            "Auto-iniciar al login",
+            value=st.session_state.get("auto_sync_auto_start", False),
+            help="Iniciar auto-sync automáticamente al hacer login"
+        )
+        
+        if auto_start != st.session_state.get("auto_sync_auto_start", False):
+            st.session_state["auto_sync_auto_start"] = auto_start
+        
+        # Botón de inicio
+        if st.button("▶️ Iniciar Auto-Sync"):
+            if start_auto_sync(interval):
+                st.success(f"Auto-sync iniciado (intervalo: {interval} min)")
+                st.rerun()
+            else:
+                st.error("Auto-sync ya está ejecutándose")
+
+
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Settings."""

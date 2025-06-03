@@ -2,6 +2,7 @@
 import streamlit as st
 import importlib
 import os
+import logging
 
 # Importar configuración
 from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE
@@ -9,8 +10,8 @@ from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE
 # Importar módulos personalizados
 from common.login import login_page
 from common.menu import create_sidebar_menu, get_content_path
-from controllers.sync import run_sync_once
-from controllers.db import initialize_database  # ← NUEVO IMPORT
+from controllers.sync import run_sync_once, is_auto_sync_running, start_auto_sync
+from controllers.db import initialize_database 
 
 # Configuración de la página
 st.set_page_config(
@@ -77,9 +78,8 @@ h2, h3 {
 
 # Función principal
 def main():
-    # ⭐ INICIALIZAR BASE DE DATOS AL INICIO
+    # INICIALIZAR BASE DE DATOS AL INICIO
     try:
-        from controllers.db import initialize_database
         if not initialize_database():
             st.error("❌ Error crítico: No se pudo inicializar la base de datos")
             st.info("💡 Soluciones sugeridas:")
@@ -119,6 +119,27 @@ def main():
         st.stop()
     else:
     
+        # Auto-iniciar sincronización automática si es admin o coach  
+        user_type = st.session_state.get("user_type")
+        
+        if user_type in ["admin", "coach"]:
+            try:
+                
+                # Verificar si debe auto-iniciarse
+                auto_start = st.session_state.get('auto_sync_auto_start', False)
+                interval = st.session_state.get('auto_sync_interval', 5)
+                
+                # Auto-iniciar solo si está configurado y no está ya ejecutándose
+                if auto_start and not is_auto_sync_running():
+                    start_auto_sync(interval)
+                    
+            except ImportError:
+                # Auto-sync no disponible, continuar normalmente
+                pass
+            except Exception:
+                # Error silencioso para no afectar la app principal
+                pass
+
         # Mostrar logo centrado
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:

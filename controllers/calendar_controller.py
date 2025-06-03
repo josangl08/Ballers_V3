@@ -17,6 +17,7 @@ from unidecode import unidecode
 from config import CALENDAR_COLORS
 COLOR = {k: v["google"] for k, v in CALENDAR_COLORS.items()} 
 CAL_ID = os.getenv("CALENDAR_ID")
+LOCAL_TZ = ZoneInfo("Europe/Madrid")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,6 +28,19 @@ if not logger.handlers:
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+
+def _format_time_local(dt_obj):
+    """Convierte datetime UTC a hora local Madrid para logging legible"""
+    if dt_obj is None:
+        return "None"
+        
+    # Asegurar que tiene timezone info
+    if dt_obj.tzinfo is None:
+        dt_obj = dt_obj.replace(tzinfo=dt.timezone.utc)
+    
+    # Convertir a hora de Madrid
+    local_time = dt_obj.astimezone(LOCAL_TZ)
+    return local_time.strftime('%H:%M')
 
 def _normalize_datetime_for_hash(dt_obj) -> str:
     """
@@ -723,21 +737,30 @@ def sync_calendar_to_db():
                         time_diff = (session_updated - event_updated).total_seconds()
                         time_diff_abs = abs(time_diff)
 
-                        # Solo usar timestamps para DIFERENCIAS SIGNIFICATIVAS (>5 minutos)
-                        if time_diff_abs > 300:  # 5 minutos
-                            if time_diff > 300:
-                                calendar_wins = False
-                                conflict_reason = f"app_significantly_newer_by_{int(time_diff)}s"
-                            else:
-                                calendar_wins = True
-                                conflict_reason = f"calendar_significantly_newer_by_{int(-time_diff)}s"
+                        # Solo usar timestamps para DIFERENCIAS SIGNIFICATIVAS (>10 segundos)
+                        if time_diff_abs <= 10:  
+                            
+                            logger.debug(f"✅ Sesión #{ses.id} - diferencia mínima ({int(time_diff)}s), sin cambios")
+                            continue  
+                            
+                        # Solo procesar si diferencia > 10 segundos    
+                        elif time_diff > 10:  
+                            calendar_wins = False
+                            conflict_reason = f"app_significantly_newer_by_{int(time_diff)}s"
                         else:
-                            # Diferencia pequeña → usar estrategia por defecto
-                            conflict_reason = f"small_time_diff_{int(time_diff)}s_calendar_wins"
+                            calendar_wins = True
+                            conflict_reason = f"calendar_significantly_newer_by_{int(-time_diff)}s"
                             
                     except Exception as e:
                         logger.warning(f"⚠️ Error calculando timestamps para sesión #{ses.id}: {e}")
-                
+                        # Si hay error, usar estrategia por defecto
+                        calendar_wins = True
+                        conflict_reason = "timestamp_error"
+                else:
+                    # Si no hay timestamps, usar estrategia por defecto  
+                    calendar_wins = True
+                    conflict_reason = "no_timestamps"
+                    
                 # 5. APLICAR RESOLUCIÓN
                 if calendar_wins:
                     logger.info(f"🔄 CALENDAR WINS - Sesión #{ses.id} ({conflict_reason})")
@@ -754,14 +777,14 @@ def sync_calendar_to_db():
                     db_start = ses.start_time.astimezone(dt.timezone.utc).replace(microsecond=0)
                     new_start = start_dt.astimezone(dt.timezone.utc).replace(microsecond=0)
                     if db_start != new_start:
-                        changes.append(f"start: {db_start.strftime('%H:%M')} → {new_start.strftime('%H:%M')}")
+                        changes.append(f"start: {_format_time_local(db_start)} → {_format_time_local(new_start)}")
                         ses.start_time = start_dt
                         changed = True
 
                     db_end = ses.end_time.astimezone(dt.timezone.utc).replace(microsecond=0)
                     new_end = end_dt.astimezone(dt.timezone.utc).replace(microsecond=0)
                     if db_end != new_end:
-                        changes.append(f"end: {db_end.strftime('%H:%M')} → {new_end.strftime('%H:%M')}")
+                        changes.append(f"end: {_format_time_local(db_end)} → {_format_time_local(new_end)}")
                         ses.end_time = end_dt
                         changed = True
                     

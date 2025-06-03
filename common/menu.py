@@ -1,8 +1,10 @@
 # common/menu.py
 import streamlit as st
+import datetime as dt
 from streamlit_option_menu import option_menu
 from common.login import logout
 from controllers.calendar_controller import sync_calendar_to_db
+from controllers.sync import is_auto_sync_running, get_auto_sync_status, force_manual_sync, check_and_show_autosync_notifications
 
 def create_sidebar_menu():
     """
@@ -77,27 +79,47 @@ def create_sidebar_menu():
             }
         )
         
-        # Botón de cerrar sesión estilizado
+        # 🔧 FIX: SECCIÓN AUTO-SYNC UNIFICADA (solo admins y coaches)
+        if user_type in ["admin", "coach"]:
+            
+            st.divider()
+            try:
+                check_and_show_autosync_notifications()
+            except Exception as e:
+                # Fallar silenciosamente para no romper el sidebar
+                pass
+            # Estado del auto-sync
+            if is_auto_sync_running():
+                status = get_auto_sync_status()
+                if status['last_sync_time']:
+                    last_sync = dt.datetime.fromisoformat(status['last_sync_time'])
+                    time_ago = dt.datetime.now() - last_sync
+                    minutes_ago = int(time_ago.total_seconds() / 60)
+                    st.success(f"🔄 Auto-Sync: ✅ ({minutes_ago}m ago)")
+                else:
+                    st.success("🔄 Auto-Sync: ✅")
+            else:
+                st.info("🔄 Auto-Sync: ⏸️")
+            
+            # 🔧 FIX: UN SOLO BOTÓN DE SYNC MANUAL
+            
+            if st.button("⚡ Quick Sync", type="primary", use_container_width=True):
+                with st.spinner("Ejecutando sync manual..."):
+                    result = force_manual_sync()
+                    if result['success']:
+                        st.success(f"✅ Sync completado en {result['duration']:.1f}s")
+                    else:
+                        st.error(f"❌ Error: {result['error']}")
+        
+        # Botón de cerrar sesión
         if st.button("📤 Log Out", key="logout_button", 
                    type="primary", use_container_width=True):
-            # En lugar de llamar a una función callback, hacemos todo directamente aquí
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             
-            # Agregamos una clave especial para mostrar mensaje en la siguiente ejecución
             st.session_state["show_logout_message"] = True
-            
-            # Usar st.rerun() directamente en el flujo principal (no en callback)
             st.rerun()
 
-        if st.button("Bring events ← Google Calendar"):
-            with st.spinner("Sincronizando con Google Calendar..."):
-                imported, updated, deleted = sync_calendar_to_db()
-            st.success(
-                f"{imported} sesiones nuevas importadas, "
-                f"{updated} sesiones actualizadas, "
-                f"{deleted} sesiones eliminadas"
-            )
     return selected
 
 def get_content_path(section):

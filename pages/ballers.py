@@ -140,7 +140,6 @@ def show_player_profile(player_id=None):
                 "Start Time": session.start_time.strftime("%H:%M"),
                 "End Time": session.end_time.strftime("%H:%M") if session.end_time else "Not established",
                 "Status": session.status.value,
-                "session_obj": session  # Para usar después, no se muestra
             })
         
         # Crear DataFrame para mostrar
