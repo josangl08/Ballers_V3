@@ -4,6 +4,7 @@ import os
 import re 
 import logging
 import time
+from unidecode import unidecode
 import hashlib
 from zoneinfo import ZoneInfo
 from googleapiclient.errors import HttpError
@@ -13,7 +14,9 @@ from .google_client import calendar
 from googleapiclient.errors import HttpError
 from models import Session, SessionStatus, Coach, Player, User        
 from controllers.db import get_db_session
-from unidecode import unidecode
+from common.validation import validate_session_for_import
+
+
 from config import CALENDAR_COLORS
 COLOR = {k: v["google"] for k, v in CALENDAR_COLORS.items()} 
 CAL_ID = os.getenv("CALENDAR_ID")
@@ -577,14 +580,17 @@ def _session_needs_update(session: Session) -> bool:
     return has_changes
 
 # ---------- Calendar → DB ----------
-#@st.cache_data(ttl=int(os.getenv("SYNC_INTERVAL_MIN", "5")) * 60, show_spinner=False)
-def sync_calendar_to_db():
+
+def sync_calendar_to_db_with_feedback():
     """Sincroniza eventos de Google Calendar hacia la base de datos con logging detallado."""
     start_time = time.time()
     logger.info("🔄 INICIANDO sincronización Calendar → BD")
     
     svc = _service()
     db = get_db_session()
+
+    rejected_events = []  # Lista de eventos rechazados
+    warning_events = []   # Lista de eventos con warnings
     
     try:
         imported = updated = deleted = 0
@@ -636,9 +642,9 @@ def sync_calendar_to_db():
             end_dt = _to_dt(ev["end"]["dateTime"])
             status = _status_from_color(ev.get("colorId", "9"))
             
-            # ================================================================
-            # BÚSQUEDA DE SESIÓN EXISTENTE - LÓGICA IMPLEMENTADA
-            # ================================================================
+            
+            # Busqueda de sesion existente
+           
             ses = None
 
             # 1. Buscar por session_id en extended properties
@@ -673,9 +679,8 @@ def sync_calendar_to_db():
                         db.flush()
 
             if ses:
-                # ================================================================
-                # NUEVA LÓGICA: HASH-FIRST APPROACH 
-                # ================================================================
+                
+                # Hash first - Verificar si ya tiene un hash
                 
                 # 1. Verificar si event_id coincide
                 if ses.calendar_event_id != ev_id:
@@ -828,6 +833,13 @@ def sync_calendar_to_db():
                 coach_id, player_id = _guess_ids(ev)
                 
                 if coach_id is None or player_id is None:
+                    rejected_events.append({
+                        "title": ev.get("summary", "Sin título"),
+                        "date": start_dt.strftime("%d/%m/%Y"),
+                        "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
+                        "reason": "No se pudo identificar coach/player en el título",
+                        "suggestion": "Verificar formato: 'Juan × María #C1 #P5'"
+                    })
                     logger.warning(f"⚠️ No se pudo mapear evento - coach_id: {coach_id}, player_id: {player_id}")
                     continue
 
@@ -836,14 +848,53 @@ def sync_calendar_to_db():
                 player_exists = db.query(Player).filter(Player.player_id == player_id).first()
                 
                 if not coach_exists:
+                    rejected_events.append({
+                        "title": ev.get("summary", "Sin título"),
+                        "date": start_dt.strftime("%d/%m/%Y"),
+                        "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
+                        "reason": f"Coach ID {coach_id} no existe en la base de datos",
+                        "suggestion": "Verificar que el coach esté registrado en la aplicación"
+                    })
                     logger.warning(f"⚠️ Coach ID {coach_id} no existe en BD - ignorando evento")
                     continue
-                    
+
+                # 🔧 VALIDACIÓN FLEXIBLE CON FEEDBACK AL USUARIO
+                is_valid, error_msg, warnings = validate_session_for_import(start_dt, end_dt)
+
                 if not player_exists:
+                    rejected_events.append({
+                        "title": ev.get("summary", "Sin título"),
+                        "date": start_dt.strftime("%d/%m/%Y"),
+                        "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
+                        "reason": f"Player ID {player_id} no existe en la base de datos",
+                        "suggestion": "Verificar que el player esté registrado en la aplicación"
+                    })
                     logger.warning(f"⚠️ Player ID {player_id} no existe en BD - ignorando evento")
                     continue
-
-                logger.info(f"✅ Mapeado y validado - Coach ID: {coach_id}, Player ID: {player_id}")
+                
+                if not is_valid:
+                    # RECHAZADO - feedback al usuario
+                    rejected_events.append({
+                        "title": ev.get("summary", "Sin título"),
+                        "date": start_dt.strftime("%d/%m/%Y"),
+                        "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
+                        "reason": error_msg,
+                        "suggestion": "Corregir horarios en Google Calendar y ejecutar sync manual"
+                    })
+                    logger.error(f"❌ EVENTO RECHAZADO - {ev.get('summary', 'Sin título')}: {error_msg}")
+                    continue
+                
+                # IMPORTADO - verificar si tiene warnings
+                if warnings:
+                    warning_events.append({
+                        "title": ev.get("summary", "Sin título"),
+                        "date": start_dt.strftime("%d/%m/%Y"),
+                        "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
+                        "warnings": warnings
+                    })
+                    logger.warning(f"⚠️ EVENTO CON WARNINGS - {ev.get('summary', 'Sin título')}: {'; '.join(warnings)}")
+                else:
+                    logger.info(f"✅ Mapeado y validado - Coach ID: {coach_id}, Player ID: {player_id}")
                 
                 new_session = Session(
                     coach_id=coach_id,
@@ -869,9 +920,8 @@ def sync_calendar_to_db():
 
                 imported += 1
 
-        # ================================================================
-        # DETECTAR ELIMINACIONES - LÓGICA CORREGIDA
-        # ================================================================
+        # DDetectar eliminaciones
+
         logger.info("🗑️ Verificando eventos eliminados...")
 
         # Sesiones en ventana que DEBERÍAN tener eventos correspondientes
@@ -893,7 +943,7 @@ def sync_calendar_to_db():
         logger.info(f"🔍 Sesiones en ventana: {len(window_sessions)}")
         logger.info(f"🔍 Candidatos para eliminación: {len(elimination_candidates)}")
 
-        # NUEVA ESTRATEGIA: Si no aparece en la búsqueda de la ventana = eliminado
+        # Si no aparece en la búsqueda de la ventana = eliminado
         if elimination_candidates:
             for ev_id in elimination_candidates:
                 ses = window_sessions[ev_id]
@@ -916,7 +966,13 @@ def sync_calendar_to_db():
         logger.info(f"✅ SYNC COMPLETADA en {elapsed_time:.2f}s ({events_per_second:.1f} eventos/seg)")
         logger.info(f"📊 Resultados: {imported} importadas, {updated} actualizadas, {deleted} eliminadas")
 
-        return imported, updated, deleted
+        # Log resumen de problemas
+        if rejected_events:
+            logger.warning(f"🚫 {len(rejected_events)} eventos rechazados por problemas críticos")
+        if warning_events:
+            logger.warning(f"⚠️ {len(warning_events)} eventos importados con advertencias")
+
+        return imported, updated, deleted, rejected_events, warning_events
         
     except Exception as e:
         # 🔧 MEJORAR LOGGING DE ERRORES
@@ -934,6 +990,17 @@ def sync_calendar_to_db():
     finally:
         db.close()
 
+def sync_calendar_to_db():
+    """Función original que solo devuelve estadísticas básicas (para auto-sync)."""
+    imported, updated, deleted, rejected_events, warning_events = sync_calendar_to_db_with_feedback()
+    
+    # Solo loggar problemas pero no devolver las listas (para auto-sync simple)
+    if rejected_events:
+        logger.warning(f"🚫 Auto-sync rechazó {len(rejected_events)} eventos")
+    if warning_events:
+        logger.warning(f"⚠️ Auto-sync importó {len(warning_events)} eventos con advertencias")
+    
+    return imported, updated, deleted
 
 def _status_from_color(color: str) -> SessionStatus:
     """

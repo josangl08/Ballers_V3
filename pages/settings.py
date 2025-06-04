@@ -10,6 +10,7 @@ from controllers.sync import start_auto_sync, stop_auto_sync, get_auto_sync_stat
 from controllers.db import get_db_session 
 from controllers.sheets_controller import get_accounting_df
 from common.validation import validate_user_data
+from common.notifications import auto_cleanup_old_problems, show_sync_problems_compact, save_sync_problems
 
 def hash_password(password):
     """Convierte una contraseña en un hash SHA-256."""
@@ -496,7 +497,18 @@ def delete_user():
 
 def system_settings():
     """Configuración del sistema (solo para administradores)."""
+
+    # 🔧 LIMPIAR problemas antiguos automáticamente (24 horas)
+    auto_cleanup_old_problems(max_age_hours=24)
+    
+    # 🔧 MOSTRAR problemas persistentes AL INICIO (solo si existen)
+    problems_shown = show_sync_problems_compact(location="settings")
+    
+    if problems_shown:
+        st.divider()  # Separar problemas del resto del contenido
+
     st.subheader("Database/Googlesheets Management")
+
     col1, col2 = st.columns(2)
     with col1:
         # Opción para crear copia de seguridad de la base de datos
@@ -514,8 +526,8 @@ def system_settings():
             except Exception as e:
                 st.error(f"Error al crear copia de seguridad: {str(e)}")
     with col2:
-        if st.button("🔄 Refresh Google Sheets", help="Actualizar datos financieros desde Google Sheets"):
-            with st.spinner("Actualizando Google Sheets..."):
+        if st.button("Refresh Google Sheets"):
+            with st.spinner("Updating Google Sheets..."):
                 try:
                     get_accounting_df.clear()
                     df = get_accounting_df()
@@ -537,7 +549,7 @@ def system_settings():
             )
 
     with col2:
-        # 🔧 FIX: Usar nueva función de sync manual
+        # Usar nueva función de sync manual
         
         if st.button("Bring events ← Google Calendar"):
             with st.spinner("Ejecutando sync manual..."):
@@ -545,15 +557,45 @@ def system_settings():
                 if result['success']:
                     # Mostrar estadísticas detalladas
                     stats_msg = f"✅ Sync completado en {result['duration']:.1f}s"
-                    if any([result.get('imported', 0), result.get('updated', 0), result.get('deleted', 0)]):
-                        stats_msg += f" - {result.get('imported', 0)} importadas, {result.get('updated', 0)} actualizadas, {result.get('deleted', 0)} eliminadas"
+                    changes = [result.get('imported', 0), result.get('updated', 0), result.get('deleted', 0)]
+                    if any(changes):
+                        stats_msg += f" - {changes[0]} importadas, {changes[1]} actualizadas, {changes[2]} eliminadas"
                     if result.get('past_updated', 0) > 0:
                         stats_msg += f", {result['past_updated']} marcadas como completadas"
-                    st.success(stats_msg)
-                else:
-                    st.error(f"❌ Error: {result['error']}")
+                    
+                    
+                    # 🚫 EVENTOS RECHAZADOS - Mostrar al usuario
+                    rejected_events = result.get('rejected_events', [])
+                    warning_events = result.get('warning_events', [])
 
-    # 🔧 FIX: AUTO-SYNC MANAGEMENT MEJORADO
+                    # Guardar problemas de forma persistente (solo si existen)
+                    save_sync_problems(rejected_events, warning_events)
+                    
+                    # Determinar el tipo de mensaje principal
+                    if rejected_events or warning_events:
+                        # HAY PROBLEMAS - mostrar estadísticas pero sin balloons
+                        if rejected_events:
+                            st.warning(stats_msg)  # Warning porque hay problemas críticos
+                        else:
+                            st.success(stats_msg)  # Success porque funcionó, solo con advertencias
+
+                    # Los problemas se mostrarán automáticamente arriba en la próxima recarga
+                        st.info("⬆️ Ver problemas detectados arriba. Se guardarán hasta que los marques como vistos.")
+
+                    else:
+                        # TODO PERFECTO - mensaje de éxito simple (no persistente)
+                        st.success(stats_msg)
+                        st.balloons()
+                        st.success("🎉 Todos los eventos sincronizados sin problemas!")
+                
+                else:
+                    # Error en sync
+                    st.error(f"❌ Error durante sincronización: {result['error']}")
+                    # Limpiar problemas previos en caso de error
+                    from common.notifications import clear_sync_problems
+                    clear_sync_problems()
+
+    # AAuto-Sync
     st.subheader("🤖 Auto-Sync Management")
     
     if has_pending_notifications():

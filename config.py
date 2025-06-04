@@ -52,13 +52,20 @@ CALENDAR_COLORS = {
     "completed": {"google": "2",  "hex": "#4CAF50"},  # verde
     "canceled":  {"google": "11", "hex": "#F44336"},  # rojo
 }
-# Configuración de horarios 
-WORK_HOURS = {
+# Horarios para formularios de la app (estrictos)
+WORK_HOURS_STRICT = {
     "start": dt.time(8, 0),
     "end": dt.time(18, 0)
 }
 
+# Horarios para imports de Calendar (flexibles)
+WORK_HOURS_FLEXIBLE = {
+    "start": dt.time(6, 0),
+    "end": dt.time(22, 0)
+}
+
 SESSION_DURATION = {
     "min_minutes": 60,
-    "max_minutes": 120  # 4 horas
+    "max_minutes": 120,  # 2 horas para formularios
+    "max_minutes_import": 180  # 3 horas para imports (antes de rechazar)
 }

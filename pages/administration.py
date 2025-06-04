@@ -12,12 +12,64 @@ from controllers.calendar_controller import push_session, get_sessions, update_s
 from controllers.internal_calendar import show_calendar
 from controllers.sheets_controller import get_accounting_df
 from controllers.db import get_db_session
-from common.validation import validate_session_time  
+from common.validation import validate_session_time
+from common.notifications import show_sync_problems_compact, get_sync_problems, get_sync_problems, mark_problems_as_seen, clear_sync_problems
+
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-
+def show_coach_sync_alerts():
+    """
+    Muestra alertas de sync específicas para coaches de forma no invasiva.
+    NO interfiere con layout de pestañas.
+    """
+    from common.notifications import get_sync_problems
+    
+    problems = get_sync_problems()
+    if not problems:
+        return
+    
+    rejected = problems.get('rejected', [])
+    warnings = problems.get('warnings', [])
+    
+    if not rejected and not warnings:
+        return
+    
+    # Mostrar alerta compacta que no interfiera con tabs
+    
+    if rejected:
+        with st.expander("🚫 Problemas de Sincronización Detectados", expanded=False):
+            st.error(f"❌ {len(rejected)} eventos rechazados en la última sincronización")
+            
+            # Mostrar solo el primero
+            if rejected:
+                first = rejected[0]
+                st.write(f"**Ejemplo**: {first['title']} - {first.get('date', 'N/A')}")
+                st.write(f"**Problema**: {first['reason']}")
+            
+            if len(rejected) > 1:
+                st.info(f"+ {len(rejected) - 1} eventos más")
+            
+            st.info("💡 **Solución**: Update Session in Google Calendar")
+    
+    elif warnings:
+        with st.expander("⚠️ Advertencias de Sincronización", expanded=False):
+            st.warning(f"⚠️ {len(warnings)} eventos importados con horarios no ideales")
+            
+            # Mostrar solo el primero
+            if warnings:
+                first = warnings[0]
+                st.write(f"**Ejemplo**: {first['title']} - {first.get('date', 'N/A')}")
+                if first.get('warnings'):
+                    st.write(f"**Advertencia**: {first['warnings'][0]}")
+            
+            if len(warnings) > 1:
+                st.info(f"+ {len(warnings) - 1} eventos más")
+            
+            st.info("💡 **Nota**: Las sesiones se importaron correctamente pero tienen horarios fuera del rango recomendado (8:00-18:00).")
+    st.divider()
+    
 def show_coach_calendar():
     """Muestra el calendario de sesiones para un coach."""
     db_session = get_db_session()
@@ -63,12 +115,14 @@ def show_coach_calendar():
     status_filter = st.multiselect(
         "Status", 
         options=status_values,
-        default=status_values
+        default=status_values,
+        key="coach_status_filter"
     )
     
     if end_date < start_date:
         st.error("The 'To' date must be on or after the 'From' date.")
-        return                      # ⬅️  no seguimos si hay error
+        db_session.close()
+        return                      # no seguimos si hay error
 
     # Convertir a datetime solo si las fechas son válidas
     start_datetime: dt.datetime = dt.datetime.combine(start_date, dt.time.min)
@@ -76,7 +130,7 @@ def show_coach_calendar():
 
     # Aplicar filtros adicionales
     status_enums = [SessionStatus(s) for s in status_filter] if status_filter else None
-       
+
     # Ejecutar consulta
     sessions = get_sessions(
         start=start_datetime,
@@ -86,8 +140,10 @@ def show_coach_calendar():
     )
     
     # Mostrar calendario del coach
-    show_calendar("", sessions, key="my_cal")
+    show_calendar("", sessions, key="coach_cal")
     
+    show_coach_sync_alerts()
+
     # Mostrar el listado de sesiones
     st.subheader("Sessions List")
     
@@ -111,8 +167,7 @@ def show_coach_calendar():
         
         # Crear DataFrame para mostrar
         df = pd.DataFrame(sessions_data)
-        
-        
+               
         # Add styling based on status
         def style_sessions(row):
             if row["Status"] == "completed":
@@ -140,253 +195,364 @@ def show_coach_calendar():
             },
             hide_index=True
         )
+    # Cerrar db_session
+    db_session.close()
 
-        # -----------------------------------------------------------------
-        # 1. CONFIG COMÚN
-        # -----------------------------------------------------------------
-        st.subheader("My Sessions")
+    # Configuracion común
+    
+    st.subheader("My Sessions")
 
-        players     = db_session.query(Player).join(User).filter(User.is_active).all()
-        player_opts = [(p.player_id, p.user.name) for p in players]
+    players     = db_session.query(Player).join(User).filter(User.is_active).all()
+    player_opts = [(p.player_id, p.user.name) for p in players]
 
-        tab1, tab2 = st.tabs(["Create Session", "Edit Session"])
+    tab1, tab2 = st.tabs(["Create Session", "Edit Session"])
 
-        hours_start = [dt.time(h, 0) for h in range(8, 19)]   # 08‑18
-        hours_end   = [dt.time(h, 0) for h in range(9, 20)]   # 09‑19
+    hours_start = [dt.time(h, 0) for h in range(8, 19)]   # 08‑18
+    hours_end   = [dt.time(h, 0) for h in range(9, 20)]   # 09‑19
 
-        if "start_hour_def" not in st.session_state:
-            st.session_state["start_hour_def"] = dt.time(8, 0)
-        if "end_hour_def" not in st.session_state:
-            st.session_state["end_hour_def"] = dt.time(9, 0)
+    if "start_hour_def" not in st.session_state:
+        st.session_state["start_hour_def"] = dt.time(8, 0)
+    if "end_hour_def" not in st.session_state:
+        st.session_state["end_hour_def"] = dt.time(9, 0)
 
-        # -----------------------------------------------------------------
-        # 2. CREATE SESSION (solo jugador + fecha / hora)
-        # -----------------------------------------------------------------
-        with tab1:
-            st.subheader("New Session")
+    # -----------------------------------------------------------------
+    # 2. CREATE SESSION (solo jugador + fecha / hora)
+    # -----------------------------------------------------------------
+    with tab1:
+        st.subheader("New Session")
 
-            with st.form("coach_new_session", clear_on_submit=True):
-                col1, col2 = st.columns(2)
+        with st.form("coach_new_session", clear_on_submit=True):
+            col1, col2 = st.columns(2)
 
-                # ------------- columna 1 -------------
-                with col1:
-                    player_id = st.selectbox(
-                        "Player",
-                        options=[p[0] for p in player_opts],
-                        format_func=lambda x: next(n for i, n in player_opts if i == x)
+            # ------------- columna 1 -------------
+            with col1:
+                player_id = st.selectbox(
+                    "Player",
+                    options=[p[0] for p in player_opts],
+                    format_func=lambda x: next(n for i, n in player_opts if i == x)
+                )
+
+                session_date = st.date_input(
+                    "Date",
+                    value=dt.date.today(),
+                    min_value=dt.date.today(),
+                    max_value=dt.date.today() + dt.timedelta(days=90)
+                )
+
+            # ------------- columna 2 -------------
+            with col2:
+                start_time = st.selectbox(
+                    "Start hour",
+                    options=hours_start,
+                    index=hours_start.index(st.session_state["start_hour_def"]),
+                    format_func=lambda t: t.strftime("%H:%M")
+                )
+
+                end_time = st.selectbox(
+                    "End hour",
+                    options=hours_end,
+                    index=hours_end.index(st.session_state["end_hour_def"]),
+                    format_func=lambda t: t.strftime("%H:%M")
+                )
+
+            notes  = st.text_area("Notes")
+            submit = st.form_submit_button("Save Session")
+
+            if submit:
+                is_valid, error_msg = validate_session_time(session_date, start_time, end_time)
+                if not is_valid:
+                    st.error(error_msg)
+                start_dt = dt.datetime.combine(session_date, start_time)
+                end_dt   = dt.datetime.combine(session_date, end_time)
+
+                if end_dt <= start_dt:
+                    st.error("End time should be later than start time.")
+                else:
+                    new_session = Session(
+                        coach_id   = coach.coach_id,             # <— coach fijo
+                        player_id  = player_id,
+                        start_time = start_dt,
+                        end_time   = end_dt,
+                        status     = SessionStatus.SCHEDULED,
+                        notes      = notes
                     )
+                    db_session.add(new_session)
+                    db_session.flush()            # obtiene new_session.id sin cerrar la tx
+                    push_session(new_session)     # crea el evento y guarda calendar_event_id
 
-                    session_date = st.date_input(
-                        "Date",
-                        value=dt.date.today(),
-                        min_value=dt.date.today(),
-                        max_value=dt.date.today() + dt.timedelta(days=90)
-                    )
+                    db_session.commit()           # Asegurar que se guarda en BD
+                    db_session.refresh(new_session)  # Refrescar objeto desde BD
 
-                # ------------- columna 2 -------------
-                with col2:
-                    start_time = st.selectbox(
-                        "Start hour",
-                        options=hours_start,
-                        index=hours_start.index(st.session_state["start_hour_def"]),
-                        format_func=lambda t: t.strftime("%H:%M")
-                    )
+                    st.success("Session created successfully")
+                    st.rerun()
 
-                    end_time = st.selectbox(
-                        "End hour",
-                        options=hours_end,
-                        index=hours_end.index(st.session_state["end_hour_def"]),
-                        format_func=lambda t: t.strftime("%H:%M")
-                    )
+    # -----------------------------------------------------------------
+    # 3. EDIT / DELETE SESSION  (solo sus propias sesiones)
+    # -----------------------------------------------------------------
+    with tab2:
+        st.subheader("Edit / Delete Session")
 
-                notes  = st.text_area("Notes")
-                submit = st.form_submit_button("Save Session")
+        sessions = (
+            db_session.query(Session)
+            .filter(Session.coach_id == coach.coach_id)
+            .order_by(asc(Session.start_time))         
+            .all()
+        )
 
-                if submit:
-                    is_valid, error_msg = validate_session_time(session_date, start_time, end_time)
-                    if not is_valid:
-                        st.error(error_msg)
-                    start_dt = dt.datetime.combine(session_date, start_time)
-                    end_dt   = dt.datetime.combine(session_date, end_time)
+        if not sessions:
+            st.info("You have no sessions to manage.")
+        else:
+            # Creamos los labels dinámicos
+            today = dt.date.today()
+            tomorrow = today + dt.timedelta(days=1)
 
-                    if end_dt <= start_dt:
-                        st.error("End time should be later than start time.")
-                    else:
-                        new_session = Session(
-                            coach_id   = coach.coach_id,             # <— coach fijo
-                            player_id  = player_id,
-                            start_time = start_dt,
-                            end_time   = end_dt,
-                            status     = SessionStatus.SCHEDULED,
-                            notes      = notes
+            desc = {}
+            for s in sessions:
+                session_date = s.start_time.date()
+
+                if session_date < today:
+                    prefix = "🔘 Past – "
+                elif session_date == today:
+                    prefix = "🟢 Today – "
+                elif session_date == tomorrow:
+                    prefix = "🟡 Tomorrow – "
+                else:
+                    prefix = ""
+
+                desc[s.id] = (
+                    f"{prefix}#{s.id} – {s.coach.user.name} with {s.player.user.name} "
+                    f"({s.start_time:%d/%m %H:%M})"
+                )
+
+            with st.container():
+                selected_id = st.selectbox(
+                    "Select session",
+                    options=list(desc.keys()),
+                    format_func=lambda x: desc[x],
+                    key="coach_sess_to_edit"
+                )
+                session = db_session.get(Session, selected_id)
+
+                with st.form(f"coach_edit_{selected_id}", clear_on_submit=True):
+                    col1, col2 = st.columns(2)
+
+                    # ------ columna 1 : status ------
+                    with col1:
+                        new_player_id = st.selectbox(                      
+                            "Player",
+                            options=[p[0] for p in player_opts],
+                            index=[p[0] for p in player_opts].index(session.player_id),
+                            format_func=lambda x: next(n for i, n in player_opts if i == x)
                         )
-                        db_session.add(new_session)
-                        db_session.flush()            # obtiene new_session.id sin cerrar la tx
-                        push_session(new_session)     # crea el evento y guarda calendar_event_id
+                        new_status = st.selectbox(
+                            "Status",
+                            options=[s.value for s in SessionStatus],
+                            index=list(SessionStatus).index(session.status)
+                        )
 
-                        db_session.commit()           # Asegurar que se guarda en BD
-                        db_session.refresh(new_session)  # Refrescar objeto desde BD
+                    # ------ columna 2 : horas ------
+                    with col2:
+                        # — Fecha —
+                        session_date = st.date_input(
+                            "Date",
+                            value=session.start_time.date() if dt.date.today() <= session.start_time.date() <= dt.date.today() + dt.timedelta(days=90) else dt.date.today(),
+                            min_value=dt.date.today(),
+                            max_value=dt.date.today() + dt.timedelta(days=90),
+                            key=f"date_{selected_id}",
+                        )
+                        start_time = st.selectbox(
+                            "Start hour",
+                            options=hours_start,
+                            index=hours_start.index(session.start_time.time()),
+                            format_func=lambda t: t.strftime("%H:%M"),
+                            key=f"start_{selected_id}"
+                        )
 
-                        st.success("Session created successfully")
+                        end_time = st.selectbox(
+                            "End hour",
+                            options=hours_end,
+                            index=hours_end.index(session.end_time.time()),
+                            format_func=lambda t: t.strftime("%H:%M"),
+                            key=f"end_{selected_id}"
+                        )
+                    # — Notes (nuevo) —
+                    notes = st.text_area(
+                        "Notes",
+                        value=session.notes or "",
+                        help="Comentarios o detalles de la sesión",
+                    )
+
+                    # ------ botones ------
+                    col_save, col_del = st.columns(2)
+                    save_clicked = col_save.form_submit_button("Save",   type="secondary")
+                    del_clicked  = col_del.form_submit_button("Delete", type="secondary")
+
+                    # --- guardar ---
+                    if save_clicked:
+                        is_valid, error_msg = validate_session_time(session_date, start_time, end_time)
+                        if not is_valid:
+                            st.error(error_msg)
+                        start_dt = dt.datetime.combine(session_date, start_time)
+                        end_dt   = dt.datetime.combine(session_date, end_time)
+
+                        if end_dt <= start_dt:
+                            st.error("End hour must be later than start hour.")
+                        else:
+                            session.player_id  = new_player_id
+                            session.status     = SessionStatus(new_status)
+                            session.start_time = start_dt
+                            session.end_time   = end_dt
+                            session.notes      = notes
+                            db_session.commit()         # sincr. GCal
+                            if session:                     # ⬅️  protección
+                                update_session(session)     # sincr. GCal
+                            st.success(f"Session #{selected_id} updated correctly")
+                            st.rerun()
+
+                    # --- borrar (1ª fase) ---
+                    if del_clicked:
+                        st.session_state["coach_del_candidate"] = selected_id
+
+            # -------- diálogo de confirmación fuera del form ----------
+            if "coach_del_candidate" in st.session_state:
+                sid = st.session_state.pop("coach_del_candidate")
+                session_to_del = db_session.get(Session, sid)
+
+                @st.dialog("Confirm delete")
+                def confirm_delete():
+                    st.warning(f"Do you really want to delete Session #{sid}? "
+                            "This action cannot be undone.")
+                    c1, c2 = st.columns(2)
+                    if c1.button("Delete", type="primary"):
+                        if session_to_del:
+                            delete_session(session_to_del)    # sincr. GCal
+                        db_session.delete(session_to_del)
+                        db_session.commit()
+                        st.success("Session deleted")
+                        st.rerun()
+                    if c2.button("Cancel"):
+                        st.info("Deletion canceled")
                         st.rerun()
 
-        # -----------------------------------------------------------------
-        # 3. EDIT / DELETE SESSION  (solo sus propias sesiones)
-        # -----------------------------------------------------------------
-        with tab2:
-            st.subheader("Edit / Delete Session")
+                confirm_delete()
 
-            sessions = (
-                db_session.query(Session)
-                .filter(Session.coach_id == coach.coach_id)
-                .order_by(asc(Session.start_time))         
-                .all()
-            )
+def show_financials():
+     # Eliminar la última fila (cálculos de gastos e ingresos)
 
-            if not sessions:
-                st.info("You have no sessions to manage.")
-            else:
-                # Creamos los labels dinámicos
-                today = dt.date.today()
-                tomorrow = today + dt.timedelta(days=1)
+    # Obtener y preparar datos
+    df = get_accounting_df()
 
-                desc = {}
-                for s in sessions:
-                    session_date = s.start_time.date()
+    df_no_total = df.iloc[:-1].copy()
 
-                    if session_date < today:
-                        prefix = "🔘 Past – "
-                    elif session_date == today:
-                        prefix = "🟢 Today – "
-                    elif session_date == tomorrow:
-                        prefix = "🟡 Tomorrow – "
+    st.subheader("Financials (Google Sheets)")
+
+    # Mostrar tabla sin la última fila
+    st.dataframe(df_no_total, hide_index=True)
+
+    # Calcular métricas
+    total_gastos = df_no_total["Gastos"].sum()
+    total_ingresos = df_no_total["Ingresos"].sum()
+    balance = total_ingresos - total_gastos
+
+    # Mostrar métricas
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Balance €", f"{balance:,.2f}")
+    with col2:
+        st.metric("Ingresos €", f"{total_ingresos:,.2f}")
+    with col3:
+        st.metric("Gastos €", f"{total_gastos:,.2f}")
+
+    # Progresión de balance por mes
+
+    # Asegurar que la primera columna (Fecha) esté en formato datetime
+    fecha_col = df_no_total.columns[0]
+    df_no_total[fecha_col] = pd.to_datetime(df_no_total[fecha_col], errors='coerce')
+
+    # Crear columna 'Mes' tipo YYYY-MM
+    df_no_total["Mes"] = df_no_total[fecha_col].dt.to_period("M").astype(str)
+
+    # Agrupar por mes y calcular sumas
+    monthly_summary = df_no_total.groupby("Mes").agg({
+        "Ingresos": "sum",
+        "Gastos": "sum"
+    }).reset_index()
+
+    # Calcular balance mensual
+    monthly_summary["Balance mensual"] = monthly_summary["Ingresos"] - monthly_summary["Gastos"]
+
+    # Calcular balance acumulado
+    monthly_summary["Balance acumulado"] = monthly_summary["Balance mensual"].cumsum()
+
+    # --- Ocultar vega-bindings ---
+    st.markdown(
+        """
+        <style>
+        .vega-bindings {
+            display: none;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    # Mostrar gráfico
+    st.line_chart(
+        monthly_summary.set_index("Mes")["Balance acumulado"]
+    )
+
+    # Cerrar db_session
+    db_session = get_db_session()
+    db_session.close()
+
+def show_sync_problems_dashboard():
+    """Dashboard completo de problemas usando el sistema de notificaciones."""
+    st.subheader("🚨 Problemas de Sincronización")
+    
+    # Mostrar problemas en modo dashboard (vista completa)
+    problems_shown = show_sync_problems_compact(location="dashboard")
+    
+    if problems_shown:
+        # Marcar como vistos ya que el usuario está viendo el dashboard completo
+        mark_problems_as_seen()
+        
+        # Botón para limpiar todos los problemas
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("🧹 Limpiar todos los problemas", help="Marcar todos como resueltos"):
+                clear_sync_problems()
+                st.success("Problemas limpiados")
+                st.rerun()
+    else:
+        st.success("✅ No hay problemas de sincronización pendientes")
+        
+        # Información sobre el último sync
+        st.info("💡 Los problemas aparecerán aquí automáticamente cuando se detecten durante la sincronización.")
+        
+        # Botón para forzar sync y verificar problemas
+        if st.button("🔍 Ejecutar sync para verificar problemas"):
+            with st.spinner("Verificando..."):
+                from controllers.sync import force_manual_sync
+                result = force_manual_sync()
+                
+                if result['success']:
+                    rejected = result.get('rejected_events', [])
+                    warnings = result.get('warning_events', [])
+                    
+                    if rejected or warnings:
+                        st.success("Sync completado - problemas detectados y guardados")
+                        st.rerun()  # Refrescar para mostrar problemas
                     else:
-                        prefix = ""
-
-                    desc[s.id] = (
-                        f"{prefix}#{s.id} – {s.coach.user.name} with {s.player.user.name} "
-                        f"({s.start_time:%d/%m %H:%M})"
-                    )
-
-                with st.container():
-                    selected_id = st.selectbox(
-                        "Select session",
-                        options=list(desc.keys()),
-                        format_func=lambda x: desc[x],
-                        key="coach_sess_to_edit"
-                    )
-                    session = db_session.get(Session, selected_id)
-
-                    with st.form(f"coach_edit_{selected_id}", clear_on_submit=True):
-                        col1, col2 = st.columns(2)
-
-                        # ------ columna 1 : status ------
-                        with col1:
-                            new_player_id = st.selectbox(                      
-                                "Player",
-                                options=[p[0] for p in player_opts],
-                                index=[p[0] for p in player_opts].index(session.player_id),
-                                format_func=lambda x: next(n for i, n in player_opts if i == x)
-                            )
-                            new_status = st.selectbox(
-                                "Status",
-                                options=[s.value for s in SessionStatus],
-                                index=list(SessionStatus).index(session.status)
-                            )
-
-                        # ------ columna 2 : horas ------
-                        with col2:
-                            # — Fecha —
-                            session_date = st.date_input(
-                                "Date",
-                                value=session.start_time.date() if dt.date.today() <= session.start_time.date() <= dt.date.today() + dt.timedelta(days=90) else dt.date.today(),
-                                min_value=dt.date.today(),
-                                max_value=dt.date.today() + dt.timedelta(days=90),
-                                key=f"date_{selected_id}",
-                            )
-                            start_time = st.selectbox(
-                                "Start hour",
-                                options=hours_start,
-                                index=hours_start.index(session.start_time.time()),
-                                format_func=lambda t: t.strftime("%H:%M"),
-                                key=f"start_{selected_id}"
-                            )
-
-                            end_time = st.selectbox(
-                                "End hour",
-                                options=hours_end,
-                                index=hours_end.index(session.end_time.time()),
-                                format_func=lambda t: t.strftime("%H:%M"),
-                                key=f"end_{selected_id}"
-                            )
-                        # — Notes (nuevo) —
-                        notes = st.text_area(
-                            "Notes",
-                            value=session.notes or "",
-                            help="Comentarios o detalles de la sesión",
-                        )
-
-                        # ------ botones ------
-                        col_save, col_del = st.columns(2)
-                        save_clicked = col_save.form_submit_button("Save",   type="secondary")
-                        del_clicked  = col_del.form_submit_button("Delete", type="secondary")
-
-                        # --- guardar ---
-                        if save_clicked:
-                            is_valid, error_msg = validate_session_time(session_date, start_time, end_time)
-                            if not is_valid:
-                                st.error(error_msg)
-                            start_dt = dt.datetime.combine(session_date, start_time)
-                            end_dt   = dt.datetime.combine(session_date, end_time)
-
-                            if end_dt <= start_dt:
-                                st.error("End hour must be later than start hour.")
-                            else:
-                                session.player_id  = new_player_id
-                                session.status     = SessionStatus(new_status)
-                                session.start_time = start_dt
-                                session.end_time   = end_dt
-                                session.notes      = notes
-                                db_session.commit()         # sincr. GCal
-                                if session:                     # ⬅️  protección
-                                    update_session(session)     # sincr. GCal
-                                st.success(f"Session #{selected_id} updated correctly")
-                                st.rerun()
-
-                        # --- borrar (1ª fase) ---
-                        if del_clicked:
-                            st.session_state["coach_del_candidate"] = selected_id
-
-                # -------- diálogo de confirmación fuera del form ----------
-                if "coach_del_candidate" in st.session_state:
-                    sid = st.session_state.pop("coach_del_candidate")
-                    session_to_del = db_session.get(Session, sid)
-
-                    @st.dialog("Confirm delete")
-                    def confirm_delete():
-                        st.warning(f"Do you really want to delete Session #{sid}? "
-                                "This action cannot be undone.")
-                        c1, c2 = st.columns(2)
-                        if c1.button("Delete", type="primary"):
-                            if session_to_del:
-                                delete_session(session_to_del)    # sincr. GCal
-                            db_session.delete(session_to_del)
-                            db_session.commit()
-                            st.success("Session deleted")
-                            st.rerun()
-                        if c2.button("Cancel"):
-                            st.info("Deletion canceled")
-                            st.rerun()
-
-                    confirm_delete()
+                        st.success("✅ Sync completado sin problemas")
+                else:
+                    st.error(f"❌ Error: {result['error']}")
 
 def show_admin_dashboard():
     """Muestra el panel de administración completo para administradores."""
     
-    
     # Crear pestañas para las diferentes secciones
-    tab1, tab2, tab3 = st.tabs(["Sessions", "Users", "Financials"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Sessions", "Users", "Financials", "🚨 Sync Problems"])
     
+
     with tab1:
         # Mostrar todas las sesiones para administradores
         show_all_sessions()
@@ -397,73 +563,12 @@ def show_admin_dashboard():
     
     with tab3:
         # Obtener y preparar datos
-        df = get_accounting_df()
+        show_financials()
+        pass
+    with tab4:
+        show_sync_problems_dashboard()
 
-        # Eliminar la última fila (cálculos de gastos e ingresos)
-        df_no_total = df.iloc[:-1].copy()
-
-        st.subheader("Financials (Google Sheets)")
-
-        # Mostrar tabla sin la última fila
-        st.dataframe(df_no_total, hide_index=True)
-
-        # Calcular métricas
-        total_gastos = df_no_total["Gastos"].sum()
-        total_ingresos = df_no_total["Ingresos"].sum()
-        balance = total_ingresos - total_gastos
-
-        # Mostrar métricas
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Balance €", f"{balance:,.2f}")
-        with col2:
-            st.metric("Ingresos €", f"{total_ingresos:,.2f}")
-        with col3:
-            st.metric("Gastos €", f"{total_gastos:,.2f}")
-
-        # -----------------------------------
-        # Progresión de balance por mes
-        # -----------------------------------
-
-        # Asegurar que la primera columna (Fecha) esté en formato datetime
-        fecha_col = df_no_total.columns[0]
-        df_no_total[fecha_col] = pd.to_datetime(df_no_total[fecha_col], errors='coerce')
-
-        # Crear columna 'Mes' tipo YYYY-MM
-        df_no_total["Mes"] = df_no_total[fecha_col].dt.to_period("M").astype(str)
-
-        # Agrupar por mes y calcular sumas
-        monthly_summary = df_no_total.groupby("Mes").agg({
-            "Ingresos": "sum",
-            "Gastos": "sum"
-        }).reset_index()
-
-        # Calcular balance mensual
-        monthly_summary["Balance mensual"] = monthly_summary["Ingresos"] - monthly_summary["Gastos"]
-
-        # Calcular balance acumulado
-        monthly_summary["Balance acumulado"] = monthly_summary["Balance mensual"].cumsum()
-
-        # --- Ocultar vega-bindings ---
-        st.markdown(
-            """
-            <style>
-            .vega-bindings {
-                display: none;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-        # Mostrar gráfico
-        st.line_chart(
-            monthly_summary.set_index("Mes")["Balance acumulado"]
-        )
-
-        # Cerrar db_session
-        db_session = get_db_session()
-        db_session.close()
-
+    
 def show_all_sessions():
     """Muestra todas las sesiones para los administradores."""
     db_session = get_db_session()

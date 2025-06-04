@@ -17,8 +17,8 @@ from dataclasses import dataclass, asdict
 from typing import Optional, Dict, Any
 import streamlit as st
 import logging
-
-from controllers.calendar_controller import sync_calendar_to_db, update_past_sessions, sync_db_to_calendar
+from common.notifications import save_sync_problems, clear_sync_problems
+from controllers.calendar_controller import sync_calendar_to_db, update_past_sessions, sync_db_to_calendar, sync_calendar_to_db_with_feedback
 from controllers.sheets_controller import get_accounting_df 
 
 logger = logging.getLogger(__name__)
@@ -175,8 +175,8 @@ def run_sync_once(force: bool = False) -> None:
         else:
             _toast("Base de datos actualizada", "✅")
     
-    # Google Sheets ---------------------------------------------------
-    # 🔧 FIX: Solo si force=True (sync manual completo)
+    # Google Sheets 
+
     if force:
         with st.spinner("Actualizando Google Sheets…"):
             try:
@@ -190,9 +190,8 @@ def run_sync_once(force: bool = False) -> None:
 
     st.session_state["_synced"] = True
 
-# ---------------------------------------------------------------------------
 # Auto-Sync Classes and Functions ------------------------------------------
-# ---------------------------------------------------------------------------
+
     
 @dataclass
 class AutoSyncStats:
@@ -205,8 +204,8 @@ class AutoSyncStats:
     failed_syncs: int = 0
     last_error: Optional[str] = None
     interval_minutes: int = 5
-    last_changes: Optional[Dict[str, int]] = None  # {"imported": 0, "updated": 1, "deleted": 0}
-    last_changes_time: Optional[str] = None        # Timestamp para evitar duplicados
+    last_changes: Optional[Dict[str, int]] = None  
+    last_changes_time: Optional[str] = None        
     changes_notified: bool = True   
 
 class SimpleAutoSync:
@@ -251,7 +250,7 @@ class SimpleAutoSync:
         
         try:
             # Para sync manual, usar función que devuelve estadísticas
-            imported, updated, deleted = sync_calendar_to_db()
+            imported, updated, deleted, rejected_events, warning_events = sync_calendar_to_db_with_feedback()
             
             # Actualizar sesiones pasadas si es necesario
             n_past = update_past_sessions()
@@ -266,6 +265,9 @@ class SimpleAutoSync:
             self.stats.last_sync_time = dt.datetime.now().isoformat()
             self.stats.last_sync_duration = duration
             self.stats.last_error = None
+
+             # 🔧 GUARDAR PROBLEMAS automáticamente (solo si existen)
+            save_sync_problems(rejected_events, warning_events)
             
             return {
                 "success": True,
@@ -274,6 +276,8 @@ class SimpleAutoSync:
                 "updated": updated, 
                 "deleted": deleted,
                 "past_updated": n_past,
+                "rejected_events": rejected_events,      
+                "warning_events": warning_events,    
                 "error": None
             }
             
@@ -283,10 +287,14 @@ class SimpleAutoSync:
             self.stats.total_syncs += 1
             self.stats.failed_syncs += 1
             self.stats.last_error = str(e)
+
+            clear_sync_problems()
             
             return {
                 "success": False,
                 "duration": duration,
+                "rejected_events": [],
+                "warning_events": [],
                 "error": str(e)
             }
     
@@ -295,23 +303,27 @@ class SimpleAutoSync:
         return asdict(self.stats)       
 
     def _sync_loop(self):
-        """🔔 MODIFICADO: Loop con detección de cambios para notificaciones"""
+        """ Loop con detección de cambios para notificaciones"""
         while not self._stop_event.is_set():
             try:
                 start_time = time.time()
-                
-                # Ejecutar sync y capturar cambios
-                imported, updated, deleted = run_sync_once_silent()
-                
+                try:    
+                    # Ejecutar sync y capturar cambios
+                    imported, updated, deleted, rejected_events, warning_events = sync_calendar_to_db_with_feedback()
+                except ImportError:
+                        # Fallback a función normal si no existe la nueva
+                        imported, updated, deleted = sync_calendar_to_db()
+                        rejected_events, warning_events = [], []
+
                 duration = time.time() - start_time
-                
+                    
                 # Actualizar estadísticas
                 self.stats.total_syncs += 1
                 self.stats.successful_syncs += 1
                 self.stats.last_sync_time = dt.datetime.now().isoformat()
                 self.stats.last_sync_duration = duration
                 self.stats.last_error = None
-                
+                    
                 # 🔔 NUEVO: Detectar y guardar cambios para notificaciones
                 total_changes = imported + updated + deleted
                 if total_changes > 0:
@@ -323,28 +335,35 @@ class SimpleAutoSync:
                     }
                     self.stats.last_changes_time = dt.datetime.now().isoformat()
                     self.stats.changes_notified = False  # Marcar como pendiente de notificar
-                    
+                        
                     print(f"🔔 Auto-sync detectó cambios: {imported}+{updated}+{deleted}")
                 else:
                     # Sin cambios → no notificar
                     self.stats.changes_notified = True
+
+                # 🔧 GUARDAR PROBLEMAS automáticamente (solo si existen)
+                if rejected_events or warning_events:
+                    save_sync_problems(rejected_events, warning_events)
+                    print(f"🚨 Auto-sync detectó problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
+                    
+                    # No limpiar problemas si no hay - pueden ser de sync anterior
                 
                 print(f"✅ Auto-sync OK en {duration:.1f}s: {imported}+{updated}+{deleted}")
-                
+            
             except Exception as e:
                 self.stats.total_syncs += 1
                 self.stats.failed_syncs += 1
                 self.stats.last_error = str(e)
-                self.stats.changes_notified = True  # No notificar errores por toast
+                self.stats.changes_notified = True
                 print(f"❌ Error auto-sync: {e}")
-            
+        
             # Esperar hasta próximo sync
             self._stop_event.wait(timeout=self.stats.interval_minutes * 60)
 
-# 🔧 FIX: Instancia única global
+# Instancia única global
 _auto_sync = SimpleAutoSync()
 
-# 🔧 FIX: Funciones públicas (mantener nombres originales)
+# Funciones públicas (mantener nombres originales)
 def start_auto_sync(interval_minutes: int = 5) -> bool:
     """Inicia auto-sync"""
     return _auto_sync.start(interval_minutes)

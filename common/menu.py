@@ -1,10 +1,94 @@
 # common/menu.py
 import streamlit as st
+import re
 import datetime as dt
 from streamlit_option_menu import option_menu
 from common.login import logout
 from controllers.calendar_controller import sync_calendar_to_db
 from controllers.sync import is_auto_sync_running, get_auto_sync_status, force_manual_sync, check_and_show_autosync_notifications
+from common.notifications import show_sidebar_alert
+
+def get_last_sync_stats():
+    """Lee las estadísticas del último sync desde session_state"""
+    if 'last_sync_result' in st.session_state:
+        result = st.session_state['last_sync_result']
+        
+        # Verificar que sea reciente (menos de 1 minuto)
+        timestamp = result.get('timestamp')
+        if timestamp:
+            import datetime as dt
+            try:
+                sync_time = dt.datetime.fromisoformat(timestamp)
+                if (dt.datetime.now() - sync_time).total_seconds() > 60:
+                    return None  # Más de 1 minuto, no mostrar
+            except:
+                pass
+        
+        return {
+            "imported": result.get('imported', 0),
+            "updated": result.get('updated', 0),
+            "deleted": result.get('deleted', 0),
+            "rejected": len(result.get('rejected_events', [])),
+            "warnings": len(result.get('warning_events', [])),
+            "sync_time": result.get('duration', 0)
+        }
+    return None
+
+def show_sync_status_message(stats):
+    """Muestra mensaje de sync con color apropiado"""
+    # Construir texto de estadísticas
+    changes = []
+    if stats['imported'] > 0:
+        changes.append(f"{stats['imported']}📥")
+    if stats['updated'] > 0:
+        changes.append(f"{stats['updated']}🔄")
+    if stats['deleted'] > 0:
+        changes.append(f"{stats['deleted']}🗑️")
+        
+    problems = []
+    if stats['rejected'] > 0:
+        problems.append(f"{stats['rejected']}🚫")
+    if stats['warnings'] > 0:
+        problems.append(f"{stats['warnings']}⚠️")
+    
+    # Determinar color y mensaje
+    has_changes = stats['imported'] + stats['updated'] + stats['deleted'] > 0
+    has_warnings = stats['warnings'] > 0
+    has_rejected = stats['rejected'] > 0
+    
+    if has_rejected:
+        # ROJO - Hay rechazados
+        changes_text = " ".join(changes) if changes else ""
+        problems_text = " ".join(problems)
+        separator = " • " if changes_text and problems_text else ""
+        message = f"Sync {stats['sync_time']:.1f}s • {changes_text}{separator}{problems_text}"
+        st.error(message)
+        
+    elif has_warnings:
+        # AMARILLO - Hay warnings
+        changes_text = " ".join(changes) if changes else ""
+        problems_text = " ".join(problems)
+        separator = " • " if changes_text and problems_text else ""
+        message = f"Sync {stats['sync_time']:.1f}s • {changes_text}{separator}{problems_text}"
+        st.warning(message)
+        
+    elif has_changes:
+        # VERDE - Hay cambios normales
+        changes_text = " ".join(changes)
+        message = f"Sync {stats['sync_time']:.1f}s • {changes_text}"
+        st.success(message)
+        
+    else:
+        # AZUL - Sin cambios
+        message = f"Sync {stats['sync_time']:.1f}s • Sin cambios"
+        st.info(message)
+    
+    # Mostrar enlace a detalles solo si hay problemas
+    if has_rejected or has_warnings:
+        user_type = st.session_state.get("user_type")
+        detail_location = "Settings" if user_type == "admin" else "Administration"
+        st.info(f"🔍 Ver detalles en **{detail_location}**")
+
 
 def create_sidebar_menu():
     """
@@ -45,18 +129,6 @@ def create_sidebar_menu():
             st.image("assets/ballers/isotipo_white.png", width=200)
         except:
             st.write("Logo no encontrado")
-
-        if 'sync_notification' in st.session_state:
-            notification_time = st.session_state.get('sync_notification_time')
-            if notification_time:
-                # Mostrar por 10 segundos
-                elapsed = (dt.datetime.now() - notification_time).total_seconds()
-                if elapsed < 10:
-                    st.info(st.session_state['sync_notification'])
-                else:
-                    # Limpiar después de 10 segundos
-                    del st.session_state['sync_notification']
-                    del st.session_state['sync_notification_time']
         
         # Crear string personalizado para el título del menú con iconos
         menu_title = f" {user_name}    |    🔑 {user_type.capitalize()}"
@@ -91,37 +163,70 @@ def create_sidebar_menu():
             }
         )
         
-        # 🔧 FIX: SECCIÓN AUTO-SYNC UNIFICADA (solo admins y coaches)
+        # Seccion Auto-sync unificada (solo admins y coaches)
         if user_type in ["admin", "coach"]:
-            
             st.divider()
-            try:
-                check_and_show_autosync_notifications()
-            except Exception as e:
-                # Fallar silenciosamente para no romper el sidebar
-                pass
-            # Estado del auto-sync
-            if is_auto_sync_running():
-                status = get_auto_sync_status()
-                if status['last_sync_time']:
-                    last_sync = dt.datetime.fromisoformat(status['last_sync_time'])
-                    time_ago = dt.datetime.now() - last_sync
-                    minutes_ago = int(time_ago.total_seconds() / 60)
-                    st.success(f"🔄 Auto-Sync: ✅ ({minutes_ago}m ago)")
-                else:
+            
+            # 🎯 MOSTRAR ESTADÍSTICAS SIMPLE (temporal - usando datos del log)
+            stats = get_last_sync_stats()
+            if stats:
+                # Formato: "1🔄 1🗑️ • 1🚫"
+                changes = []
+                if stats['imported'] > 0:
+                    changes.append(f"{stats['imported']}📥")
+                if stats['updated'] > 0:
+                    changes.append(f"{stats['updated']}🔄")
+                if stats['deleted'] > 0:
+                    changes.append(f"{stats['deleted']}🗑️")
+                    
+                problems = []
+                if stats['rejected'] > 0:
+                    problems.append(f"{stats['rejected']}🚫")
+                if stats['warnings'] > 0:
+                    problems.append(f"{stats['warnings']}⚠️")
+                
+                # Mostrar solo si hay datos
+                if changes or problems:
+                    changes_text = " ".join(changes) if changes else ""
+                    problems_text = " ".join(problems) if problems else ""
+                    separator = " • " if changes_text and problems_text else ""
+                    
+                    st.markdown(f"**Last sync**: {stats['sync_time']:.1f}s • {changes_text}{separator}{problems_text}")
+                    
+                    # Enlace a detalles si hay problemas
+                    if problems:
+                        detail_location = "Settings" if user_type == "admin" else "Administration"
+                        st.info(f"🔍 Ver detalles en **{detail_location}**")
+            
+            # 🎯 AUTO-SYNC STATUS (código existente)
+            if user_type in ["admin", "coach"]:
+    
+                # 🎯 ÁREA DE SYNC (solo si hay datos recientes)
+                stats = get_last_sync_stats()
+                if stats:
+                    st.divider()
+                    show_sync_status_message(stats)
+                    st.divider()
+                
+                # 🎯 AUTO-SYNC STATUS
+                if is_auto_sync_running():
                     st.success("🔄 Auto-Sync: ✅")
-            else:
-                st.info("🔄 Auto-Sync: ⏸️")
-            
-            #  UN SOLO BOTÓN DE SYNC MANUAL
-            
-            if st.button("⚡ Quick Sync", type="primary", use_container_width=True):
-                with st.spinner("Ejecutando sync manual..."):
-                    result = force_manual_sync()
-                    if result['success']:
-                        st.success(f"✅ Sync completado en {result['duration']:.1f}s")
-                    else:
-                        st.error(f"❌ Error: {result['error']}")
+                else:
+                    st.info("🔄 Auto-Sync: ⏸️")
+                
+                # 🎯 QUICK SYNC
+                if st.button("⚡ Quick Sync", type="primary", use_container_width=True):
+                    with st.spinner("Ejecutando sync manual..."):
+                        result = force_manual_sync()
+                        
+                        if result['success']:
+                            # Guardar resultado con timestamp para que dure 1 minuto
+                            import datetime as dt
+                            result['timestamp'] = dt.datetime.now().isoformat()
+                            st.session_state['last_sync_result'] = result
+                            st.rerun()  # Refrescar para mostrar el mensaje
+                        else:
+                            st.error(f"❌ Error: {result['error']}")
         
         # Botón de cerrar sesión
         if st.button("📤 Log Out", key="logout_button", 
@@ -161,3 +266,6 @@ if __name__ == "__main__":
     
     selected = create_sidebar_menu()
     st.title(f"Sección: {selected}")
+
+
+
