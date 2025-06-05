@@ -312,26 +312,23 @@ def show_coach_calendar():
                 start_dt = dt.datetime.combine(session_date, start_time)
                 end_dt   = dt.datetime.combine(session_date, end_time)
 
-                if end_dt <= start_dt:
-                    st.error("End time should be later than start time.")
-                else:
-                    new_session = Session(
-                        coach_id   = coach.coach_id,             # <— coach fijo
-                        player_id  = player_id,
-                        start_time = start_dt,
-                        end_time   = end_dt,
-                        status     = SessionStatus.SCHEDULED,
-                        notes      = notes
-                    )
-                    db_session.add(new_session)
-                    db_session.flush()            # obtiene new_session.id sin cerrar la tx
-                    push_session(new_session)     # crea el evento y guarda calendar_event_id
+                new_session = Session(
+                    coach_id   = coach.coach_id,             # <— coach fijo
+                    player_id  = player_id,
+                    start_time = start_dt,
+                    end_time   = end_dt,
+                    status     = SessionStatus.SCHEDULED,
+                    notes      = notes
+                )
+                db_session.add(new_session)
+                db_session.flush()            # obtiene new_session.id sin cerrar la tx
+                push_session(new_session)     # crea el evento y guarda calendar_event_id
 
-                    db_session.commit()           # Asegurar que se guarda en BD
-                    db_session.refresh(new_session)  # Refrescar objeto desde BD
+                db_session.commit()           # Asegurar que se guarda en BD
+                db_session.refresh(new_session)  # Refrescar objeto desde BD
 
-                    st.success("Session created successfully")
-                    st.rerun()
+                st.success("Session created successfully")
+                st.rerun()
 
     # Editar / Eliminar sesion  (solo sus propias sesiones)
     with tab2:
@@ -595,7 +592,7 @@ def show_admin_dashboard():
     """Muestra el panel de administración completo para administradores."""
     
     # Crear pestañas para las diferentes secciones
-    tab1, tab2, tab3, tab4 = st.tabs(["Sessions", "Users", "Financials", "🚨 Sync Problems"])
+    tab1, tab2, tab3 = st.tabs(["Sessions", "Users", "Financials"])
     
 
     with tab1:
@@ -609,11 +606,7 @@ def show_admin_dashboard():
     with tab3:
         # Obtener y preparar datos
         show_financials()
-        pass
-    with tab4:
-        show_sync_problems_dashboard()
-
-    
+  
 def show_all_sessions():
     """Muestra todas las sesiones para los administradores."""
     db_session = get_db_session()
@@ -809,26 +802,24 @@ def show_all_sessions():
                     start_dt = dt.datetime.combine(session_date, start_time)
                     end_dt   = dt.datetime.combine(session_date, end_time)
 
-                    if end_dt <= start_dt:
-                        st.error("End time should be later than start time.")
-                    else:
-                        new_session = Session(
-                            coach_id   = coach_id,
-                            player_id  = player_id,
-                            start_time = start_dt,
-                            end_time   = end_dt,
-                            status     = SessionStatus.SCHEDULED,
-                            notes      = notes
-                        )
-                        db_session.add(new_session)
-                        db_session.flush()            # obtiene new_session.id sin cerrar la tx
-                        push_session(new_session)     # crea el evento y guarda calendar_event_id
+                    
+                    new_session = Session(
+                        coach_id   = coach_id,
+                        player_id  = player_id,
+                        start_time = start_dt,
+                        end_time   = end_dt,
+                        status     = SessionStatus.SCHEDULED,
+                        notes      = notes
+                    )
+                    db_session.add(new_session)
+                    db_session.flush()            # obtiene new_session.id sin cerrar la tx
+                    push_session(new_session)     # crea el evento y guarda calendar_event_id
 
-                        db_session.commit()           # Asegurar que se guarda en BD
-                        db_session.refresh(new_session)  # Refrescar objeto desde BD
-                        
-                        st.success("Session created successfully")
-                        st.rerun()
+                    db_session.commit()           # Asegurar que se guarda en BD
+                    db_session.refresh(new_session)  # Refrescar objeto desde BD
+                    
+                    st.success("Session created successfully")
+                    st.rerun()
 
         # ---------------------------------------------------------------------
         # 2. EDIT / DELETE SESSION

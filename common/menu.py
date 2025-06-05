@@ -1,4 +1,3 @@
-# common/menu.py - VERSIÓN LIMPIA COMPLETA
 
 import streamlit as st
 import datetime as dt
@@ -10,79 +9,83 @@ from common.notifications import get_sync_problems
 def get_last_sync_stats():
     """Lee estadísticas con manejo robusto de errores"""
     
-    manual_stats = None
-    auto_stats = None
+    # 🔧 FIX: Agregar flag para evitar bucles infinitos
+    if hasattr(st.session_state, '_reading_stats') and st.session_state._reading_stats:
+        return None  # Evitar bucle infinito
     
-    # Fuente 1: Manual sync
-    if 'last_sync_result' in st.session_state:
-        result = st.session_state['last_sync_result']
-        timestamp = result.get('timestamp')
-        
-        if timestamp:
-            try:
-                sync_time = dt.datetime.fromisoformat(timestamp)
-                seconds_ago = (dt.datetime.now() - sync_time).total_seconds()
-                
-                if seconds_ago < 90:  # 90 segundos
-                    manual_stats = build_stats_from_manual_sync(result)
-                    print(f"🔍 MANUAL STATS: {manual_stats}")
-                else:
-                    # Auto-limpiar datos expirados
-                    del st.session_state['last_sync_result']
-            except Exception:
-                # Si hay error, limpiar
-                if 'last_sync_result' in st.session_state:
-                    del st.session_state['last_sync_result']
+    st.session_state._reading_stats = True
     
-    # Fuente 2: Auto-sync - con validacion
     try:
-        auto_status = get_auto_sync_status()
-        last_sync_time = auto_status.get('last_sync_time')
-        
-        # Verificar que auto-sync tenga datos válidos
-        if last_sync_time and auto_status.get('last_sync_duration', 0) > 0:
-            last_sync = dt.datetime.fromisoformat(last_sync_time)
-            time_since_sync = (dt.datetime.now() - last_sync).total_seconds()
-            
-            if time_since_sync < 300:  # 5 minutos
-                auto_stats = build_stats_from_auto_sync(auto_status)
-                print(f"🔍 AUTO STATS: {auto_stats}")
-                
-                # Validar que auto_stats tenga datos útiles
-                if auto_stats:
-                    total_data = (auto_stats['imported'] + auto_stats['updated'] + 
-                                auto_stats['deleted'] + auto_stats['rejected'] + 
-                                auto_stats['warnings'])
-                    print(f"🔍 TOTAL DATA: {total_data}")
-                    
-                    # Si auto-sync solo tiene duración pero no datos, ignorar
-                    if total_data == 0 and not manual_stats:
-                        auto_stats = None
-                        print(f"🔍 AUTO STATS IGNORED - no useful data")
-                        
-    except Exception as e:
-        # 🔧 MEJORAR: Log más específico del error pero no crashear
-        import traceback
-        print(f"Error getting auto-sync stats: {e}")
+        manual_stats = None
         auto_stats = None
-    
-    # Decidir cuál usar (resto del código mantener igual)
-    if manual_stats and auto_stats:
-        manual_total = sum([manual_stats['imported'], manual_stats['updated'], 
-            manual_stats['deleted'], manual_stats['rejected'], 
-            manual_stats['warnings']])
-        auto_total = sum([auto_stats['imported'], auto_stats['updated'], 
-            auto_stats['deleted'], auto_stats['rejected'], 
-            auto_stats['warnings']])
         
-        selected = manual_stats if manual_total >= auto_total else auto_stats
-        print(f"🔍 SELECTED STATS: {'MANUAL' if selected == manual_stats else 'AUTO'}")
-        print(f"🔍 FINAL STATS: {selected}")
-        return selected
+        # Fuente 1: Manual sync (session_state) - mas reciente
+        if 'last_sync_result' in st.session_state:
+            result = st.session_state['last_sync_result']
+            timestamp = result.get('timestamp')
+            
+            if timestamp:
+                try:
+                    sync_time = dt.datetime.fromisoformat(timestamp)
+                    seconds_ago = (dt.datetime.now() - sync_time).total_seconds()
+                    
+                    if seconds_ago < 90:  # 90 segundos
+                        manual_stats = build_stats_from_manual_sync(result)
+
+                    else:
+                        # Auto-limpiar datos expirados
+                        del st.session_state['last_sync_result']
+                except Exception:
+                    # Si hay error, limpiar
+                    if 'last_sync_result' in st.session_state:
+                        del st.session_state['last_sync_result']
+        
+        # Fuente 2: Auto-sync - con validacion
+        try:
+            auto_status = get_auto_sync_status()
+            last_sync_time = auto_status.get('last_sync_time')
+            
+            # Verificar que auto-sync tenga datos válidos
+            if last_sync_time and auto_status.get('last_sync_duration', 0) > 0:
+                last_sync = dt.datetime.fromisoformat(last_sync_time)
+                time_since_sync = (dt.datetime.now() - last_sync).total_seconds()
+                
+                if time_since_sync < 300:  # 5 minutos
+                    auto_stats = build_stats_from_auto_sync(auto_status)
+                    
+                    # Validar que auto_stats tenga datos útiles
+                    if auto_stats:
+                        total_data = (auto_stats['imported'] + auto_stats['updated'] + 
+                                    auto_stats['deleted'] + auto_stats['rejected'] + 
+                                    auto_stats['warnings'])
+                        
+                        # Si auto-sync solo tiene duración pero no datos, ignorar
+                        if total_data == 0 and not manual_stats:
+                            auto_stats = None
+                            
+                            
+        except Exception as e:
+            auto_stats = None
+        
+        # Decidir cuál usar 
+        if manual_stats and auto_stats:
+            manual_total = sum([manual_stats['imported'], manual_stats['updated'], 
+                manual_stats['deleted'], manual_stats['rejected'], 
+                manual_stats['warnings']])
+            auto_total = sum([auto_stats['imported'], auto_stats['updated'], 
+                auto_stats['deleted'], auto_stats['rejected'], 
+                auto_stats['warnings']])
+            
+            selected = manual_stats if manual_total >= auto_total else auto_stats
+            return selected
+        
+        final_stats = manual_stats or auto_stats
+        return final_stats
     
-    final_stats = manual_stats or auto_stats
-    print(f"🔍 FINAL STATS: {final_stats}")
-    return final_stats
+    finally:
+        # flag siempre
+        if '_reading_stats' in st.session_state:
+            del st.session_state._reading_stats
 
 def show_sync_status_message(stats):
     """Muestra mensaje de sync con color apropiado"""
@@ -95,7 +98,6 @@ def show_sync_status_message(stats):
     if stats['deleted'] > 0:
         changes.append(f"{stats['deleted']} 🗑️")
 
-    print(f"🔍 CHANGES: {changes}")
         
     problems = []
     if stats['rejected'] > 0:
@@ -103,7 +105,6 @@ def show_sync_status_message(stats):
     if stats['warnings'] > 0:
         problems.append(f"{stats['warnings']} ⚠️")
 
-    print(f"🔍 PROBLEMS: {problems}")
     
     # Determinar color y mensaje
     has_changes = stats['imported'] + stats['updated'] + stats['deleted'] > 0
@@ -115,7 +116,7 @@ def show_sync_status_message(stats):
     message_parts.append(f"Sync: ⏱ {stats['sync_time']:.1f}s")
 
     if changes or problems:
-        message_parts.append("●")
+        message_parts.append(" ● ")
         
         # Agregar cambios exitosos
         if changes:
@@ -128,7 +129,7 @@ def show_sync_status_message(stats):
         message_parts.append("● No Changes")
     
     message = " ".join(message_parts)
-    print(f"🔍 FINAL MESSAGE: {message}")
+    
 
     if has_rejected:
         # 🔴 ROJO - Prioridad máxima: hay eventos rechazados
@@ -348,36 +349,53 @@ def build_stats_from_auto_sync(auto_status):
     
     # Stats de cambios
     last_changes = auto_status.get('last_changes') or {}
-    print(f"🔍 LAST CHANGES: {last_changes}")
-    
+ 
     problems = get_sync_problems()
-    print(f"🔍 PROBLEMS: {problems}")
 
     rejected_count = 0
     warnings_count = 0
   
     
     if problems:
-        rejected = problems.get('rejected', [])
-        warnings = problems.get('warnings', [])
-        print(f"🔍 REJECTED: {len(rejected)}, WARNINGS: {len(warnings)}")
+        # 🔧 VERIFICAR que los datos sean recientes (últimos 2 minutos)
+        timestamp_str = problems.get('timestamp', '')
+        if timestamp_str:
+            try:
+                import datetime as dt
+                problem_time = dt.datetime.strptime(timestamp_str, "%d/%m/%Y %H:%M:%S")
+                current_time = dt.datetime.now()
+                age_minutes = (current_time - problem_time).total_seconds() / 60
+                
+                # Solo usar datos si son recientes (< 2 min)
+                if age_minutes < 2:
+                    rejected = problems.get('rejected', [])
+                    warnings = problems.get('warnings', [])
+                else:
+                    # Datos antiguos, usar listas vacías
+                    rejected = []
+                    warnings = []
+            except:
+                # Error parseando timestamp, usar datos como están
+                rejected = problems.get('rejected', [])
+                warnings = problems.get('warnings', [])
+        else:
+            rejected = problems.get('rejected', [])
+            warnings = problems.get('warnings', [])
 
-    # Filtrar por coach si es necesario
-    coach_id = get_coach_id_if_needed()
-    if coach_id:
-        temp_result = {
-            'rejected_events': rejected,
-            'warning_events': warnings
-        }
-        filtered_result = filter_sync_results_by_coach(temp_result, coach_id)
-        
-        rejected_count = len(filtered_result.get('rejected_events', []))
-        warnings_count = len(filtered_result.get('warning_events', []))
-        print(f"🔍 FILTERED - REJECTED: {rejected_count}, WARNINGS: {warnings_count}")
-    else:
-        rejected_count = len(rejected)
-        warnings_count = len(warnings)
-        print(f"🔍 NOT FILTERED - REJECTED: {rejected_count}, WARNINGS: {warnings_count}")
+        # Filtrar por coach si es necesario
+        coach_id = get_coach_id_if_needed()
+        if coach_id:
+            temp_result = {
+                'rejected_events': rejected,
+                'warning_events': warnings
+            }
+            filtered_result = filter_sync_results_by_coach(temp_result, coach_id)
+            
+            rejected_count = len(filtered_result.get('rejected_events', []))
+            warnings_count = len(filtered_result.get('warning_events', []))
+        else:
+            rejected_count = len(rejected)
+            warnings_count = len(warnings)
     
     result = {
         "imported": last_changes.get('imported', 0),
@@ -387,7 +405,7 @@ def build_stats_from_auto_sync(auto_status):
         "warnings": warnings_count,
         "sync_time": auto_status.get('last_sync_duration', 0)
     }
-    print(f"🔍 BUILT AUTO STATS: {result}")
+    
     return result
 
 def filter_sync_results_by_coach(result, coach_id):

@@ -1,7 +1,6 @@
 # pages/settings.py
 import streamlit as st
 from models import User, UserType, Coach, Player, Admin, Base
-import hashlib
 import datetime as dt
 import os
 import shutil

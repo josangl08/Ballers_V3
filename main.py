@@ -78,6 +78,21 @@ h2, h3 {
 
 # Función principal
 def main():
+
+    # Configurar nivel de logging basado en variable de entorno
+    DEBUG_MODE = os.getenv("DEBUG", "False") == "True"
+    
+    if DEBUG_MODE:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        print("🔧 DEBUG MODE ENABLED - Verbose logging active")
+    else:
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s'
+        )
     # INICIALIZAR BASE DE DATOS AL INICIO
     try:
         if not initialize_database():
