@@ -1,465 +1,308 @@
 # pages/settings.py
 import streamlit as st
-from models import User, UserType, Coach, Player, Admin, Base
+import pandas as pd
 import datetime as dt
 import os
 import shutil
+
+from controllers.user_controller import UserController, get_users_for_management, create_user_simple, update_user_simple, delete_user_simple, get_user_with_profile
 from controllers.calendar_controller import sync_db_to_calendar
 from controllers.sync import start_auto_sync, stop_auto_sync, get_auto_sync_status, force_manual_sync, is_auto_sync_running, has_pending_notifications
-from controllers.db import get_db_session 
 from controllers.sheets_controller import get_accounting_df
-from common.validation import validate_user_data
 from common.notifications import auto_cleanup_old_problems, get_sync_problems, clear_sync_problems
-from common.utils import hash_password
+from models import UserType
 
-
-def save_profile_photo(uploaded_file, username):
-    """Guarda la foto de perfil y devuelve la ruta."""
-    if not os.path.exists("assets/profile_photos"):
-        os.makedirs("assets/profile_photos")
-    
-    # Generar nombre de archivo único
-    file_ext = os.path.splitext(uploaded_file.name)[1]
-    filename = f"{username}_{dt.datetime.now().strftime('%Y%m%d%H%M%S')}{file_ext}"
-    file_path = os.path.join("assets/profile_photos", filename)
-    
-    # Guardar archivo
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    
-    return file_path
 
 def create_user_form():
-    """Formulario para crear un nuevo usuario."""
+    """Formulario con selector integrado visualmente."""
     st.subheader("Create New User")
     
-    with st.form("create_user_form"):
-        # Información básica
-        col1, col2 = st.columns(2)
+    # 🎨 CONTENEDOR PRINCIPAL que simula un form único
+    with st.container(border=True):
+        st.markdown("### 👤 User Information")
         
-        with col1:
-            name = st.text_input("Full Name*")
-            username = st.text_input("Username*")
-            email = st.text_input("E-mail*")
+        # === SELECTOR FUERA DEL FORM (pero dentro del contenedor) ===
+        user_type = st.selectbox(
+            "User Type*", 
+            options=[t.name for t in UserType],
+            help="Select user type to see specific fields below"
+        )
         
-        with col2:
-            password = st.text_input("Password*", type="password")
-            confirm_password = st.text_input("Confirm Password*", type="password")
-            user_type = st.selectbox("User Type*", options=[t.name for t in UserType])
-        
-        # Información adicional
-        phone = st.text_input("Telf")
-        line = st.text_input("LINE ID")
-        date_of_birth = st.date_input("Date of Birth", value=dt.date(2000, 1, 1), 
-            min_value=dt.date(1900, 1, 1),max_value=dt.date.today())
-        profile_photo = st.file_uploader("Profile Picture", type=["jpg", "jpeg", "png"])
-        
-        # Información específica según el tipo de usuario
-        if user_type == "coach":
-            license_number = st.text_input("License Name")
-        elif user_type == "player":
-            service_options = ["Basic", "Premium", "Elite", "Performance", "Recovery"]
-            service_type = st.multiselect("Service type(s)", options=service_options, default=["Basic"])
-            enrolment = st.number_input("Number of enrolled sessions", min_value=0, value=0)
-            notes = st.text_area("Additional notes")
-        elif user_type == "admin":
-            role = st.text_input("Internal Role")
-            permit_level = st.number_input("Permit Level", min_value=1, max_value=10, value=1)
-        
-        submit = st.form_submit_button("Create User")
-        
-        if submit:
-            # Validar campos obligatorios
-            is_valid, error_msg = validate_user_data(name, username, email, password)
-            if not is_valid:
-                st.error(error_msg)
-                return
+        # === FORM VISUAL SIN BORDE ===
+        with st.form("create_user_form", border=True):  #  Sin borde para integración
+            # Información básica
+            st.markdown("#### Basic Information")
+            col1, col2 = st.columns(2)
             
-            # Validar contraseñas
-            if password != confirm_password:
-                st.error("The passwords do not match.")
-                return
+            with col1:
+                name = st.text_input("Full Name*")
+                username = st.text_input("Username*")
+                email = st.text_input("E-mail*")
             
-            # Validar que el username y email no existan
-            db_session = get_db_session()
-            existing_username = db_session.query(User).filter_by(username=username).first()
-            existing_email = db_session.query(User).filter_by(email=email).first()
+            with col2:
+                password = st.text_input("Password*", type="password")
+                confirm_password = st.text_input("Confirm Password*", type="password")
             
-            if existing_username:
-                st.error("The username is already in use.")
-                db_session.close()
-                return
+            # Información adicional común
+            st.markdown("#### Additional Information")
+            col3, col4 = st.columns(2)
+            with col3:
+                phone = st.text_input("Phone")
+                line = st.text_input("LINE ID")
+            with col4:
+                date_of_birth = st.date_input("Date of Birth", value=dt.date(2000, 1, 1), 
+                    min_value=dt.date(1900, 1, 1), max_value=dt.date.today())
+                profile_photo = st.file_uploader("Profile Picture", type=["jpg", "jpeg", "png"])
             
-            if existing_email:
-                st.error("The email is already in use.")
-                db_session.close()
-                return
-            
-            # Guardar foto de perfil si se proporcionó
-            profile_photo_path = "assets/default_profile.png"  # Valor por defecto
-            if profile_photo:
-                profile_photo_path = save_profile_photo(profile_photo, username)
-            
-            # Crear objeto de usuario
-            new_user = User(
-                username=username,
-                name=name,
-                password_hash=hash_password(password),
-                email=email,
-                phone=phone,
-                line=line,
-                profile_photo=profile_photo_path,
-                date_of_birth=dt.datetime.combine(date_of_birth, dt.datetime.min.time()) if date_of_birth else None,
-                user_type=UserType[user_type],
-                permit_level=permit_level if user_type == "admin" else 1
-            )
-            
-            db_session.add(new_user)
-            db_session.flush()  # Para obtener el ID generado
-            
-            # Crear perfil específico según el tipo
+            # === CAMPOS ESPECÍFICOS DINÁMICOS ===
             if user_type == "coach":
-                coach_profile = Coach(
-                    user_id=new_user.user_id,
-                    license=license_number
-                )
-                db_session.add(coach_profile)
-            
+                st.markdown("#### 📢 Coach Information")
+                license_number = st.text_input("License Name", 
+                    help="Professional coaching license or certification")
+                
             elif user_type == "player":
-                player_profile = Player(
-                    user_id=new_user.user_id,
-                    service=", ".join(service_type), 
-                    enrolment=enrolment,
-                    notes=notes
-                )
-                db_session.add(player_profile)
-            
+                st.markdown("#### ⚽ Player Information")
+                service_options = ["Basic", "Premium", "Elite", "Performance", "Recovery"]
+                service_type = st.multiselect("Service type(s)", options=service_options, default=["Basic"])
+                
+                col5, col6 = st.columns(2)
+                with col5:
+                    enrolment = st.number_input("Number of enrolled sessions", min_value=0, value=0)
+                with col6:
+                    st.empty()  # Para layout
+                
+                notes = st.text_area("Additional notes")
+                
             elif user_type == "admin":
-                admin_profile = Admin(
-                    user_id=new_user.user_id,
-                    role=role
-                )
-                db_session.add(admin_profile)
+                st.markdown("#### 🔑 Admin Information")
+                col7, col8 = st.columns(2)
+                with col7:
+                    role = st.text_input("Internal Role")
+                with col8:
+                    permit_level = st.number_input("Permit Level", min_value=1, max_value=10, value=1)
             
-            # Guardar cambios
-            db_session.commit()
-            db_session.close()
+            # Submit button
+            submit = st.form_submit_button("Create User", type="primary", use_container_width=True)
             
-            st.success(f"User {name} created successfully.")
-            st.rerun()
+            if submit:
+                # Lógica de validación y creación...
+                if password != confirm_password:
+                    st.error("The passwords do not match.")
+                    return
+                
+                # Preparar datos específicos
+                profile_data = {}
+                if user_type == "coach":
+                    profile_data['license'] = license_number
+                elif user_type == "player":
+                    profile_data.update({
+                        'services': service_type,
+                        'enrolment': enrolment,
+                        'notes': notes
+                    })
+                elif user_type == "admin":
+                    profile_data.update({
+                        'role': role,
+                        'permit_level': permit_level
+                    })
+                
+                user_data = {
+                    'name': name, 'username': username, 'email': email, 'password': password,
+                    'user_type': user_type, 'phone': phone, 'line': line,
+                    'date_of_birth': date_of_birth, 'profile_photo_file': profile_photo,
+                    **profile_data
+                }
+                
+                success, message = create_user_simple(user_data)
+                if success:
+                    st.success(message)
+                    st.rerun()
+                else:
+                    st.error(message)
 
 
 def edit_any_user():
-    """Función para que los administradores editen cualquier usuario."""
-    st.subheader("Editar Usuarios")
+    """Función para que los administradores editen cualquier usuario - MEJORADO."""
+    st.subheader("Edit Users")
     
-    # Obtener todos los usuarios de la base de datos
-    db_session = get_db_session()
-    users = db_session.query(User).all()
+    # 🔧 FIX: Usar nueva función sin lazy loading
+    users_data = get_users_for_management()
     
-    if not users:
+    if not users_data:
         st.info("There are no users in the database.")
-        db_session.close()
         return
     
-    # Crear un selector de usuarios
-    user_options = [(u.user_id, f"{u.name} ({u.username}, {u.user_type.name})") for u in users]
+    # Selector de usuarios
     selected_user_id = st.selectbox(
         "Select User to Edit:",
-        options=[u[0] for u in user_options],
-        format_func=lambda x: next((u[1] for u in user_options if u[0] == x), "")
+        options=[u["ID"] for u in users_data],
+        format_func=lambda x: next((f"{u['Name']} ({u['Username']}, {u['User Type']})" for u in users_data if u["ID"] == x), "")
     )
     
-    # Obtener el usuario seleccionado
-    selected_user = db_session.query(User).filter_by(user_id=selected_user_id).first()
-    
-    if not selected_user:
-        st.error("It was not possible to load the selected user.")
-        db_session.close()
+    # 🔧 FIX: Usar función que evita lazy loading
+    user_data = get_user_with_profile(selected_user_id)
+    if not user_data:
+        st.error("Could not load the selected user.")
         return
     
     # Mostrar información del usuario
     col1, col2 = st.columns([1, 3])
     
     with col1:
-        st.image(selected_user.profile_photo, width=150)
+        st.image(user_data["profile_photo"], width=150)
     
     with col2:
-        st.write(f"**Username:** {selected_user.username}")
-        st.write(f"**User Type:** {selected_user.user_type.name}")
-        st.write(f"**E-mail:** {selected_user.email}")
+        st.write(f"**Username:** {user_data['username']}")
+        st.write(f"**User Type:** {user_data['user_type']}")
+        st.write(f"**E-mail:** {user_data['email']}")
     
-    # Formulario de edición para el administrador
+    # 🔧 FIX: Formulario de edición con SUBMIT BUTTON
     with st.form("admin_edit_user_form"):
-        name = st.text_input("Full Name", value=selected_user.name)
-        email = st.text_input("E-mail", value=selected_user.email)
-        phone = st.text_input("Telf", value=selected_user.phone or "")
-        line = st.text_input("LINE ID", value=selected_user.line or "")
+        # 🆕 AGREGAR campo USERNAME editable
+        col1, col2 = st.columns(2)
+        with col1:
+            name = st.text_input("Full Name", value=user_data["name"])
+            username = st.text_input("Username", value=user_data["username"])  # 🆕 NUEVO
+            email = st.text_input("E-mail", value=user_data["email"])
+        with col2:
+            phone = st.text_input("Phone", value=user_data["phone"] or "")
+            line = st.text_input("LINE ID", value=user_data["line"] or "")
+            
+            # Estado activo
+            status = st.checkbox("User Active", value=user_data["is_active"])
         
-        # Opción para cambiar el tipo de usuario
+        # Tipo de usuario
         new_user_type = st.selectbox(
             "User Type", 
             options=[t.name for t in UserType],
-            index=[t.name for t in UserType].index(selected_user.user_type.name)
+            index=[t.name for t in UserType].index(user_data["user_type"])
         )
         
-        # Permitir habilitar/deshabilitar el usuario
-        is_active = getattr(selected_user, 'is_active', True)
-        status = st.checkbox("User Active", value=is_active)
+        # 🆕 Información específica del perfil (dinámico)
+        st.divider()
+        st.subheader(f"{new_user_type} Specific Information")
         
-        # Información específica según el tipo de usuario
+        profile_data = {}
+        
         if new_user_type == "coach":
-            # Obtener perfil de coach si existe
-            coach_profile = db_session.query(Coach).filter_by(user_id=selected_user.user_id).first()
-            license_number = ""
-            if coach_profile:
-                license_number = coach_profile.license
-            
-            license_input = st.text_input("License Name", value=license_number)
+            license_current = user_data.get("coach_license", "")
+            license_input = st.text_input("License Name", value=license_current)
+            profile_data['license'] = license_input
             
         elif new_user_type == "player":
-            # Obtener perfil de jugador si existe
-            player_profile = db_session.query(Player).filter_by(user_id=selected_user.user_id).first()
-            service_type = "Basic"
-            enrolment = 0
-            notes = ""
-            
-            if player_profile:
-                service_type = player_profile.service or "Basic"
-                enrolment = player_profile.enrolment or 0
-                notes = player_profile.notes or ""
+            service_current = user_data.get("player_service", "")
+            enrolment_current = user_data.get("player_enrolment", 0)
+            notes_current = user_data.get("player_notes", "")
             
             service_options = ["Basic", "Premium", "Elite", "Performance", "Recovery"]
-            current_services = service_type.split(", ") if service_type else ["Basic"]
+            current_services = service_current.split(", ") if service_current else []
             current_services = [s for s in current_services if s in service_options]
-
-            service_input: list[str] = st.multiselect(
+            
+            service_input = st.multiselect(
                 "Service(s)",
                 options=service_options,
-                default=(
-                    player_profile.service.split(", ")
-                    if player_profile and player_profile.service
-                    else []
-                ),
+                default=current_services
             )
-            enrolment_input = st.number_input("Number of enrolled sessions", min_value=0, value=enrolment)
-            notes_input = st.text_area("Additional notes", value=notes)
+            enrolment_input = st.number_input("Number of enrolled sessions", min_value=0, value=enrolment_current)
+            notes_input = st.text_area("Additional notes", value=notes_current)
+            
+            profile_data.update({
+                'services': service_input,
+                'enrolment': enrolment_input,
+                'notes': notes_input
+            })
             
         elif new_user_type == "admin":
-            # Obtener perfil de admin si existe
-            admin_profile = db_session.query(Admin).filter_by(user_id=selected_user.user_id).first()
-            role = ""
-            permit_level = 1
+            role_current = user_data.get("admin_role", "")
+            permit_level_current = user_data.get("permit_level", 1)
             
-            if admin_profile:
-                role = admin_profile.role or ""
+            role_input = st.text_input("Internal Role", value=role_current)
+            permit_level_input = st.number_input("Permit Level", min_value=1, max_value=10, value=permit_level_current)
             
-            if hasattr(selected_user, 'permit_level'):
-                permit_level = selected_user.permit_level
-            
-            role_input = st.text_input("Internal Role", value=role)
-            permit_level_input = st.number_input("Permit Level", min_value=1, max_value=10, value=permit_level)
+            profile_data.update({
+                'role': role_input,
+                'permit_level': permit_level_input
+            })
         
-        # Opción para cambiar la contraseña
+        # Cambio de contraseña
+        st.divider()
         st.subheader("Change Password")
         st.info("As an administrator, you can change the password without knowing the previous password.")
         new_password = st.text_input("New Password", type="password")
         confirm_password = st.text_input("Confirm New Password", type="password")
         
-        # Opción para cambiar foto de perfil
+        # Cambio de foto
         st.subheader("Change Profile Picture")
         new_profile_photo = st.file_uploader("New Profile Picture", type=["jpg", "jpeg", "png"])
         
-        submit = st.form_submit_button("Save Changes")
+        # 🔧 FIX: SUBMIT BUTTON (era lo que faltaba)
+        submit = st.form_submit_button("Save Changes", type="primary")
         
         if submit:
-            # Validar campos
-            is_valid, error_msg = validate_user_data(name, selected_user.username, email) 
-            if not is_valid:
-                st.error(error_msg)
-                return
-            
-            # Validar que el email no esté en uso por otro usuario
-            existing_email = db_session.query(User).filter(
-                User.email == email,
-                User.user_id != selected_user.user_id
-            ).first()
-            
-            if existing_email:
-                st.error("The email is already in use.")
-                return
-            
-            # Actualizar campos básicos
-            selected_user.name = name
-            selected_user.email = email
-            selected_user.phone = phone
-            selected_user.line = line
-            
-            # Actualizar estado de activación
-            if hasattr(selected_user, 'is_active'):
-                selected_user.is_active = status
-            
-            # Manejar cambio de tipo de usuario
-            if new_user_type != selected_user.user_type.name:
-                # Cambiar el tipo de usuario
-                selected_user.user_type = UserType[new_user_type]
-                
-                # Eliminar perfiles existentes (limpiar relaciones)
-                if hasattr(selected_user, 'coach_profile') and selected_user.coach_profile:
-                    db_session.delete(selected_user.coach_profile)
-                
-                if hasattr(selected_user, 'player_profile') and selected_user.player_profile:
-                    db_session.delete(selected_user.player_profile)
-                
-                if hasattr(selected_user, 'admin_profile') and selected_user.admin_profile:
-                    db_session.delete(selected_user.admin_profile)
-                
-                # Crear nuevo perfil según el tipo
-                if new_user_type == "coach":
-                    coach_profile = Coach(
-                        user_id=selected_user.user_id,
-                        license=license_input
-                    )
-                    db_session.add(coach_profile)
-                
-                elif new_user_type == "player":
-                    player_profile = db_session.query(Player).filter_by(user_id=selected_user.user_id).first()
-                    if player_profile:
-                        player_profile.service = ", ".join(service_input)
-                        player_profile.enrolment = enrolment_input
-                        player_profile.notes = notes_input
-                    else:
-                        player_profile = Player(
-                            user_id=selected_user.user_id,
-                            service=", ".join(service_input),
-                            enrolment=enrolment_input,
-                            notes=notes_input
-                        )
-                        db_session.add(player_profile)
-                
-                elif new_user_type == "admin":
-                    admin_profile = Admin(
-                        user_id=selected_user.user_id,
-                        role=role_input
-                    )
-                    db_session.add(admin_profile)
-                    # Actualizar nivel de permiso
-                    selected_user.permit_level = permit_level_input
-            else:
-                # Actualizar información específica según el tipo actual
-                if new_user_type == "coach":
-                    coach_profile = db_session.query(Coach).filter_by(user_id=selected_user.user_id).first()
-                    if coach_profile:
-                        coach_profile.license = license_input
-                    else:
-                        coach_profile = Coach(
-                            user_id=selected_user.user_id,
-                            license=license_input
-                        )
-                        db_session.add(coach_profile)
-                
-                elif new_user_type == "player":
-                    player_profile = db_session.query(Player).filter_by(user_id=selected_user.user_id).first()
-                    service_str = ", ".join(service_input) or None
-                    if player_profile:
-                        player_profile.service = service_str
-                        player_profile.enrolment = enrolment_input
-                        player_profile.notes = notes_input
-                    else:
-                        player_profile = Player(
-                            user_id=selected_user.user_id,
-                            service=service_str,
-                            enrolment=enrolment_input,
-                            notes=notes_input
-                        )
-                        db_session.add(player_profile)
-                
-                elif new_user_type == "admin":
-                    admin_profile = db_session.query(Admin).filter_by(user_id=selected_user.user_id).first()
-                    if admin_profile:
-                        admin_profile.role = role_input
-                    else:
-                        admin_profile = Admin(
-                            user_id=selected_user.user_id,
-                            role=role_input
-                        )
-                        db_session.add(admin_profile)
-                    
-                    # Actualizar nivel de permiso
-                    if hasattr(selected_user, 'permit_level'):
-                        selected_user.permit_level = permit_level_input
-            
-            # Cambiar contraseña si se proporcionó
-            if new_password and confirm_password:
+            # Validar contraseñas si se proporcionan
+            if new_password or confirm_password:
                 if new_password != confirm_password:
                     st.error("The new passwords do not match.")
                     return
-                
-                selected_user.password_hash = hash_password(new_password)
             
-            # Cambiar foto de perfil si se proporcionó
-            if new_profile_photo:
-                profile_photo_path = save_profile_photo(new_profile_photo, selected_user.username)
-                
-                # Eliminar foto anterior si no es la predeterminada
-                if selected_user.profile_photo != "assets/default_profile.png" and os.path.exists(selected_user.profile_photo):
-                    try:
-                        os.remove(selected_user.profile_photo)
-                    except:
-                        pass
-                
-                selected_user.profile_photo = profile_photo_path
+            # Preparar datos para actualización
+            update_data = {
+                'name': name,
+                'username': username,  # 🆕 INCLUIR username
+                'email': email,
+                'phone': phone if phone else None,
+                'line': line if line else None,
+                'is_active': status,
+                'new_password': new_password if new_password else None,
+                'new_user_type': new_user_type if new_user_type != user_data["user_type"] else None,
+                'profile_photo_file': new_profile_photo,
+                **profile_data
+            }
             
-            # Guardar cambios
-            db_session.commit()
-            db_session.close()
-            st.success(f"User {name} updated successfully.")
-            st.rerun()
-    
-    db_session.close()
-# In pages/settings.py, add this new function:
+            # 🔧 FIX: Actualizar controller para manejar username
+            success, message = update_user_simple(selected_user_id, **update_data)
+            
+            if success:
+                st.success(message)
+                st.rerun()
+            else:
+                st.error(message)
+
 
 def delete_user():
-    """Function for admins to delete users."""
+    """Function for admins to delete users - FIX APLICADO."""
     st.subheader("Delete User")
     
-    # Obtener todos los usuarios de la base de datos
-    db_session = get_db_session()
-    users = db_session.query(User).all()
+    users_data = get_users_for_management()
     
-    if not users:
+    if not users_data:
         st.info("No registered users in the system.")
-        db_session.close()
         return
     
-    # Crear un selector de usuarios
-    user_options = [(u.user_id, f"{u.name} ({u.username}, {u.user_type.name})") for u in users]
     selected_user_id = st.selectbox(
         "Select user to delete:",
-        options=[u[0] for u in user_options],
-        format_func=lambda x: next((u[1] for u in user_options if u[0] == x), "")
+        options=[u["ID"] for u in users_data],
+        format_func=lambda x: next((f"{u['Name']} ({u['Username']}, {u['User Type']})" for u in users_data if u["ID"] == x), "")
     )
     
-    # Obtener el usuario seleccionado
-    selected_user = db_session.query(User).filter_by(user_id=selected_user_id).first()
-    
-    if not selected_user:
+    # 🔧 FIX: Usar get_user_with_profile en lugar de user_obj
+    user_data = get_user_with_profile(selected_user_id)
+    if not user_data:
         st.error("Could not load the selected user.")
-        db_session.close()
         return
     
-    # Show user information
+    # Mostrar información del usuario
     col1, col2 = st.columns([1, 3])
     
     with col1:
-        st.image(selected_user.profile_photo, width=150)
+        st.image(user_data["profile_photo"], width=150)  # 🔧 FIX: usar user_data
     
     with col2:
-        st.write(f"**Username:** {selected_user.username}")
-        st.write(f"**Type:** {selected_user.user_type.name}")
-        st.write(f"**Email:** {selected_user.email}")
+        st.write(f"**Username:** {user_data['username']}")
+        st.write(f"**Type:** {user_data['user_type']}")
+        st.write(f"**Email:** {user_data['email']}")
     
-    # Confirm deletion
+    # Confirmación de eliminación
     st.warning("Warning: This action cannot be undone!")
     confirm_text = st.text_input("Type 'DELETE' to confirm:")
     
@@ -467,39 +310,162 @@ def delete_user():
         if confirm_text != "DELETE":
             st.error("Please type 'DELETE' to confirm.")
             return
-            
-        try:
-            # Delete profile first (due to foreign key constraints)
-            if selected_user.user_type == UserType.coach and selected_user.coach_profile:
-                db_session.delete(selected_user.coach_profile)
-                
-            elif selected_user.user_type == UserType.player and selected_user.player_profile:
-                db_session.delete(selected_user.player_profile)
-                
-            elif selected_user.user_type == UserType.admin and selected_user.admin_profile:
-                db_session.delete(selected_user.admin_profile)
-            
-            # Delete user
-            db_session.delete(selected_user)
-            db_session.commit()
-            st.success(f"User {selected_user.name} successfully deleted.")
+        
+        # Usar controller para eliminar
+        success, message = delete_user_simple(user_data["user_id"])  # 🔧 FIX: usar user_data
+        
+        if success:
+            st.success(message)
             st.rerun()
-            
-        except Exception as e:
-            db_session.rollback()
-            st.error(f"Error deleting user: {str(e)}")
-            st.info("This user may have associated sessions or other data that prevents deletion.")
+        else:
+            st.error(message)
+
+
+def manage_user_status():
+    """Gestiona activación/desactivación de usuarios - UI MEJORADA."""
+    st.subheader("User Status Management")
     
-    db_session.close()
+    # Obtener usuarios
+    users_data = get_users_for_management()
+    
+    if not users_data:
+        st.info("No users available.")
+        return
+    
+    # 🆕 FILTRO POR TIPO DE USUARIO
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        user_types = ["All"] + [t.name for t in UserType]
+        selected_type = st.selectbox("Filter by User Type:", options=user_types)
+    
+    with col2:
+        status_filter = st.selectbox("Filter by Status:", options=["All", "Active", "Inactive"])
+    
+    # Filtrar usuarios
+    filtered_users = users_data
+    
+    if selected_type != "All":
+        filtered_users = [u for u in filtered_users if u["User Type"] == selected_type]
+    
+    if status_filter == "Active":
+        filtered_users = [u for u in filtered_users if u["Active_Bool"]]
+    elif status_filter == "Inactive":
+        filtered_users = [u for u in filtered_users if not u["Active_Bool"]]
+    
+    if not filtered_users:
+        st.info("No users match the selected filters.")
+        return
+    
+    # 🆕 TABLA VISUAL con colores e iconos
+    st.subheader("Users Overview")
+    
+    # Preparar datos para tabla
+    table_data = []
+    for user in filtered_users:
+        # 🎨 Iconos para estado
+        status_icon = "🟢" if user["Active_Bool"] else "🔴"
+        status_text = f"{status_icon} {'Active' if user['Active_Bool'] else 'Inactive'}"
+        
+        # 🎨 Iconos para tipo de usuario
+        type_icons = {
+            "admin": "👑",
+            "coach": "🏃‍♂️", 
+            "player": "⚽"
+        }
+        type_icon = type_icons.get(user["User Type"].lower(), "👤")
+        type_text = f"{type_icon} {user['User Type']}"
+        
+        table_data.append({
+            "ID": user["ID"],
+            "Name": user["Name"],
+            "Username": user["Username"],
+            "Type": type_text,
+            "Status": status_text,
+            "Email": user["Email"]
+        })
+    
+    # Crear DataFrame
+    df = pd.DataFrame(table_data)
+    
+    # 🎨 Estilos por tipo de usuario
+    def style_users(row):
+        user_type = row["Type"].split()[1].lower()  # Extraer tipo sin icono
+        if user_type == "admin":
+            return ["background-color: rgba(244, 67, 54, 0.2)"] * len(row)
+        elif user_type == "coach":
+            return ["background-color: rgba(255, 193, 7, 0.2)"] * len(row)
+        elif user_type == "player":
+            return ["background-color: rgba(76, 175, 80, 0.2)"] * len(row)
+        return [""] * len(row)
+    
+    # Aplicar estilos
+    styled_df = df.style.apply(style_users, axis=1)
+    
+    # Mostrar tabla
+    st.dataframe(
+        styled_df,
+        column_config={
+            "ID": st.column_config.NumberColumn(width="small"),
+            "Name": st.column_config.TextColumn(width="medium"),
+            "Username": st.column_config.TextColumn(width="medium"),
+            "Type": st.column_config.TextColumn(width="small"),
+            "Status": st.column_config.TextColumn(width="small"),
+            "Email": st.column_config.TextColumn(width="large")
+        },
+        hide_index=True,
+        use_container_width=True
+    )
+    
+    # 🆕 SELECTOR MEJORADO con iconos
+    st.subheader("Change User Status")
+    
+    # Preparar opciones del selector con iconos
+    selector_options = []
+    for user in filtered_users:
+        status_icon = "🟢" if user["Active_Bool"] else "🔴"
+        type_icon = type_icons.get(user["User Type"].lower(), "👤")
+        
+        label = f"{type_icon} {user['Name']} ({user['Username']}) {status_icon}"
+        selector_options.append((user["ID"], label))
+    
+    selected_user_id = st.selectbox(
+        "Select user to change status:",
+        options=[opt[0] for opt in selector_options],
+        format_func=lambda x: next((opt[1] for opt in selector_options if opt[0] == x), "")
+    )
+    
+    # Encontrar usuario seleccionado
+    selected_user = next((u for u in filtered_users if u["ID"] == selected_user_id), None)
+    
+    if selected_user:
+        current_status = "Active" if selected_user["Active_Bool"] else "Inactive"
+        action = "Deactivate" if selected_user["Active_Bool"] else "Activate"
+        action_icon = "🔴" if selected_user["Active_Bool"] else "🟢"
+        
+        # Mostrar información actual
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.info(f"**{selected_user['Name']}** - Current status: **{current_status}**")
+        
+        with col2:
+            if st.button(f"{action_icon} {action} User", type="primary"):
+                # Usar controller para cambiar estado
+                with UserController() as controller:
+                    success, message = controller.toggle_user_status(selected_user["ID"])
+                
+                if success:
+                    st.success(message)
+                    st.rerun()
+                else:
+                    st.error(message)
 
 
 def system_settings():
-    """Configuración del sistema (solo para administradores)."""
-
-    # 🔧 LIMPIAR problemas antiguos automáticamente
+    """Configuración del sistema - MANTIENE FUNCIONALIDAD EXISTENTE."""
+    # Limpiar problemas antiguos automáticamente
     auto_cleanup_old_problems(max_age_hours=2)
     
-    # 🔧 MOSTRAR DETALLES COMPLETOS si hay flag de redirección O problemas guardados
+    # Mostrar detalles completos si hay flag de redirección O problemas guardados
     should_show_details = (
         st.session_state.get("show_sync_details", False) or 
         st.session_state.get("show_sync_problems_tab", False) or
@@ -507,23 +473,19 @@ def system_settings():
     )
     
     if should_show_details:
-        
         with st.container():
             st.subheader("🚨 Sync Results & Monitoring")
             
-            # Obtener datos de ambas fuentes
+            
             result_data = None
             
-            # Fuente 1: Manual sync (session_state) - mas reciente
             if 'last_sync_result' in st.session_state:
                 result_data = st.session_state['last_sync_result']
                 st.info("📊 Data from: Manual Sync")
             
-            # Fuente 2: Auto-sync problems (notifications) - si no hay manual
             if not result_data:
                 problems = get_sync_problems()
                 if problems:
-                    # 🔧 USAR estadísticas guardadas si están disponibles
                     stats = problems.get('stats', {})
                     result_data = {
                         'imported': stats.get('imported', 0),
@@ -539,9 +501,7 @@ def system_settings():
                     else:
                         st.info("📊 Data from: Auto-sync (problems only)")
             
-            # Mostrar datos si están disponibles
             if result_data:
-                # 📊 ESTADÍSTICAS DETALLADAS con métricas
                 imported = result_data.get('imported', 0)
                 updated = result_data.get('updated', 0)
                 deleted = result_data.get('deleted', 0)
@@ -550,7 +510,6 @@ def system_settings():
                 warning_events = result_data.get('warning_events', [])
                 duration = result_data.get('duration', 0)
                 
-                # MÉTRICAS EN COLUMNAS
                 col1, col2, col3, col4, col5, col6 = st.columns(6)
                 col1.metric("📥 Imported", imported)
                 col2.metric("🔄 Updated", updated)
@@ -565,12 +524,9 @@ def system_settings():
                 if past_updated > 0:
                     st.info(f"📅 Additionally: {past_updated} past sessions marked as completed")
                 
-                # 🎨 MENSAJE PRINCIPAL CON COLORES APROPIADOS (como sidebar)
                 total_changes = imported + updated + deleted
-                total_problems = len(rejected_events) + len(warning_events)
                 
                 if len(rejected_events) > 0:
-                    # 🔴 ROJO: Hay eventos rechazados (crítico)
                     st.error(f"🚫 Sync completed with {len(rejected_events)} rejected events")
                     if total_changes > 0:
                         st.error(f"📊 Changes: {total_changes} total ({imported} imported, {updated} updated, {deleted} deleted)")
@@ -578,7 +534,6 @@ def system_settings():
                         st.warning(f"⚠️ Additionally: {len(warning_events)} events with warnings")
                         
                 elif len(warning_events) > 0:
-                    # 🟡 AMARILLO: Solo warnings (no crítico)
                     st.warning(f"⚠️ Sync completed with {len(warning_events)} warnings")
                     if total_changes > 0:
                         st.warning(f"📊 Changes: {total_changes} total ({imported} imported, {updated} updated, {deleted} deleted)")
@@ -586,18 +541,15 @@ def system_settings():
                         st.warning("📊 No data changes")
                         
                 elif total_changes > 0:
-                    # 🟢 VERDE: Hay cambios exitosos
                     st.success(f"✅ Sync completed successfully with changes")
                     st.success(f"📊 Changes: {total_changes} total ({imported} imported, {updated} updated, {deleted} deleted)")
                     
                 else:
-                    # 🔵 AZUL: Sin cambios (todo en sync)
                     st.info(f"ℹ️ Sync completed - no changes needed")
                     st.info("📊 Database and Calendar are already in sync")
                 
-                # 📋 MOSTRAR DETALLES DE PROBLEMAS si existen
+                # Mostrar detalles de problemas
                 if rejected_events or warning_events:
-                    
                     if rejected_events and warning_events:
                         detail_tab1, detail_tab2 = st.tabs([f"🚫 Rejected ({len(rejected_events)})", f"⚠️ Warnings ({len(warning_events)})"])
                     elif rejected_events:
@@ -626,7 +578,6 @@ def system_settings():
                                 if i < len(warning_events) - 1:
                                     st.markdown("---")
                 
-                # 🧹 BOTÓN PARA LIMPIAR
                 col1, col2, col3 = st.columns([1, 1, 1])
                 with col2:
                     if st.button("🧹 Clear sync results", help="Mark all problems as resolved"):
@@ -638,7 +589,6 @@ def system_settings():
             else:
                 st.info("ℹ️ No recent sync data available")
         
-        # Limpiar flag después de mostrar
         if "show_sync_details" in st.session_state:
             st.session_state["show_sync_details"] = False
         if "show_sync_problems_tab" in st.session_state:
@@ -646,12 +596,11 @@ def system_settings():
             
         st.divider()
 
-    # 📊 RESTO DE SYSTEM SETTINGS (mantener todo igual)
+    # 📊 RESTO DE SYSTEM SETTINGS
     st.subheader("Database/Googlesheets Management")
 
     col1, col2 = st.columns(2)
     with col1:
-        # Opción para crear copia de seguridad de la base de datos
         if st.button("Create a backup copy of the database"):
             backup_dir = "backups"
             if not os.path.exists(backup_dir):
@@ -662,18 +611,18 @@ def system_settings():
             
             try:
                 shutil.copy2("data/ballers_app.db", backup_file)
-                st.success(f"Copia de seguridad creada: {backup_file}")
+                st.success(f"Backup created: {backup_file}")
             except Exception as e:
-                st.error(f"Error al crear copia de seguridad: {str(e)}")
+                st.error(f"Error creating backup: {str(e)}")
     with col2:
         if st.button("Refresh Google Sheets"):
             with st.spinner("Updating Google Sheets..."):
                 try:
                     get_accounting_df.clear()
                     df = get_accounting_df()
-                    st.success("✅ Google Sheets actualizado correctamente")
+                    st.success("✅ Google Sheets updated correctly")
                 except Exception as e:
-                    st.error(f"❌ Error actualizando Google Sheets: {e}")
+                    st.error(f"❌ Error updating Google Sheets: {e}")
 
     st.subheader("Manual Synchronisation")
 
@@ -684,14 +633,13 @@ def system_settings():
             with st.spinner("Pushing sessions..."):
                 pushed, updated = sync_db_to_calendar()
             st.success(
-                f"{pushed} sesiones nuevas enviadas, "
-                f"{updated} sesiones actualizadas en Google Calendar."
+                f"{pushed} new sessions sent, "
+                f"{updated} sessions updated in Google Calendar."
             )
 
     with col2:
-        # 🔧 BRING EVENTS con guardado de estadísticas para mostrar arriba
         if st.button("Bring events ← Google Calendar"):
-            with st.spinner("Ejecutando sync manual..."):
+            with st.spinner("Executing manual sync..."):
                 result = force_manual_sync()
                 
                 if result['success']:
@@ -703,10 +651,8 @@ def system_settings():
                     rejected_events = result.get('rejected_events', [])
                     warning_events = result.get('warning_events', [])
                     
-                    # 💾 GUARDAR resultado para mostrar arriba
                     st.session_state['last_sync_result'] = result
                     
-                    # Construir mensaje rápido
                     changes = []
                     if imported > 0:
                         changes.append(f"{imported} imported")
@@ -719,7 +665,6 @@ def system_settings():
                         
                     changes_text = ", ".join(changes) if changes else "no changes"
                     
-                    # 🎨 MENSAJE RÁPIDO con colores apropiados
                     total_problems = len(rejected_events) + len(warning_events)
                     
                     if len(rejected_events) > 0:
@@ -731,24 +676,21 @@ def system_settings():
                     else:
                         st.info(f"ℹ️ Sync completed - no changes ({duration:.1f}s)")
                     
-                    # 🔄 FORZAR RERUN para mostrar estadísticas arriba
                     st.session_state["show_sync_details"] = True
                     st.rerun()
                     
                 else:
                     st.error(f"❌ Sync failed: {result['error']}")
 
-    # Auto-Sync (mantener código existente)
+    # Auto-Sync
     st.subheader("Auto-Sync Management")
     
     if has_pending_notifications():
-        st.info("🔔 Hay cambios pendientes de notificar del auto-sync")
+        st.info("🔔 There are pending changes to be notified from auto-sync")
 
-    # Estado actual
     if is_auto_sync_running():
-        st.success("✅ Auto-Sync ACTIVO")
+        st.success("✅ Auto-Sync ACTIVE")
         
-        # Mostrar estadísticas
         status = get_auto_sync_status()
         
         if status['total_syncs'] > 0:
@@ -756,8 +698,8 @@ def system_settings():
             
             col1, col2, col3 = st.columns(3)
             col1.metric("Total Syncs", status['total_syncs'])
-            col2.metric("Tasa Éxito", f"{success_rate:.0f}%")
-            col3.metric("Intervalo", f"{status['interval_minutes']}m")
+            col2.metric("Success Rate", f"{success_rate:.0f}%")
+            col3.metric("Interval", f"{status['interval_minutes']}m")
 
             if status.get('last_changes'):
                 changes = status['last_changes']
@@ -766,64 +708,58 @@ def system_settings():
                 deleted = changes.get('deleted', 0)
                 
                 if imported + updated + deleted > 0:
-                    st.info(f"📊 Últimos cambios: {imported} importadas, {updated} actualizadas, {deleted} eliminadas")
-            
+                    st.info(f"📊 Latest changes: {imported} imported, {updated} updated, {deleted} deleted")
             
             if status['last_sync_time']:
                 last_sync = dt.datetime.fromisoformat(status['last_sync_time'])
                 time_ago = dt.datetime.now() - last_sync
                 
                 if time_ago.total_seconds() < 60:
-                    st.info(f"Último sync: {int(time_ago.total_seconds())}s ago")
+                    st.info(f"Last sync: {int(time_ago.total_seconds())}s ago")
                 elif time_ago.total_seconds() < 3600:
-                    st.info(f"Último sync: {int(time_ago.total_seconds()/60)}m ago")
+                    st.info(f"Last sync: {int(time_ago.total_seconds()/60)}m ago")
                 else:
-                    st.info(f"Último sync: {last_sync.strftime('%H:%M:%S')}")
+                    st.info(f"Last sync: {last_sync.strftime('%H:%M:%S')}")
         
-        # Botones de control
-        if st.button("⏸️ Detener Auto-Sync", use_container_width=True):
+        if st.button("⏸️ Stop Auto-Sync", use_container_width=True):
             if stop_auto_sync():
-                st.success("Auto-Sync detenido")
+                st.success("Auto-Sync stopped")
                 st.rerun()
             else:
-                st.error("Error deteniendo Auto-Sync")
+                st.error("Error stopping Auto-Sync")
                 
-        # 💡 Agregar nota informativa
-        st.info("💡 Para sync manual usa: 'Bring events ← Google Calendar' arriba")
+        st.info("💡 For manual sync use: 'Bring events ← Google Calendar' above")
     
     else:
-        st.info("⏸️ Auto-Sync INACTIVO")
+        st.info("⏸️ Auto-Sync INACTIVE")
         
-        # Configuración
         interval = st.slider(
-            "Intervalo de sincronización (minutos)",
-            min_value=2,  # 🔧 Mínimo 2 minutos para evitar database locking
+            "Synchronization interval (minutes)",
+            min_value=2,
             max_value=60,
             value=5,
-            help="Frecuencia de sincronización automática (mínimo 2 min para evitar conflictos)"
+            help="Automatic synchronization frequency (minimum 2 min to avoid conflicts)"
         )
 
-        # 🔧 AGREGAR advertencia si es muy bajo:
         if interval < 3:
-            st.warning("⚠️ Intervalos muy cortos (< 3 min) pueden causar errores de concurrencia")
-            st.info("💡 Recomendado: 5+ minutos para máxima estabilidad")
+            st.warning("⚠️ Very short intervals (< 3 min) can cause concurrency errors")
+            st.info("💡 Recommended: 5+ minutes for maximum stability")
         
         auto_start = st.checkbox(
-            "Auto-iniciar al login",
+            "Auto-start on login",
             value=st.session_state.get("auto_sync_auto_start", False),
-            help="Iniciar auto-sync automáticamente al hacer login"
+            help="Start auto-sync automatically when logging in"
         )
         
         if auto_start != st.session_state.get("auto_sync_auto_start", False):
             st.session_state["auto_sync_auto_start"] = auto_start
         
-        # Botón de inicio
-        if st.button("▶️ Iniciar Auto-Sync"):
+        if st.button("▶️ Start Auto-Sync"):
             if start_auto_sync(interval):
-                st.success(f"Auto-sync iniciado (intervalo: {interval} min)")
+                st.success(f"Auto-sync started (interval: {interval} min)")
                 st.rerun()
             else:
-                st.error("Auto-sync ya está ejecutándose")
+                st.error("Auto-sync is already running")
 
 
 def show_content():
@@ -831,14 +767,13 @@ def show_content():
     st.markdown('<h3 class="section-title">Settings</h3>', unsafe_allow_html=True)
     
     # System primero, Users segundo
-    
     tab1, tab2 = st.tabs(["System", "Users"])
     
     with tab1:  # System - Pestaña Principal
         system_settings()
     
     with tab2:  # Users - Pestaña secundaria
-        user_tab1, user_tab2, user_tab3 = st.tabs(["Create User", "Edit User", "Delete User"])
+        user_tab1, user_tab2, user_tab3, user_tab4 = st.tabs(["Create User", "Edit User", "Delete User", "User Status"])
         
         with user_tab1:
             create_user_form()
@@ -848,7 +783,10 @@ def show_content():
 
         with user_tab3:
             delete_user()
+        
+        with user_tab4:
+            manage_user_status()
+
 
 if __name__ == "__main__":
-    
     show_content()

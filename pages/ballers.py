@@ -3,29 +3,28 @@ from __future__ import annotations
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from models import User, Player, TestResult, Session
 import datetime as dt
-from controllers.calendar_controller import SessionStatus, get_sessions
+
+from controllers.player_controller import PlayerController, get_player_profile_data, get_players_for_list, update_player_notes_simple
+from controllers.session_controller import SessionController
 from controllers.internal_calendar import show_calendar
-from controllers.db import get_db_session
+
 
 def show_player_profile(player_id=None):
-    """Muestra el perfil de un jugador específico."""
-    db_session = get_db_session()
+    """Muestra el perfil de un jugador específico - SIMPLIFICADO."""
     
-    # Si no se especifica un jugador, usamos el del usuario actual
-    if player_id == None and st.session_state.get("user_type") == "player":
-        user_id = st.session_state.get("user_id")
-        player = db_session.query(Player).join(User).filter(User.user_id == user_id).first()
-    else:
-        player = db_session.query(Player).filter(Player.player_id == player_id).first()
+    # Obtener datos usando controller
+    user_id = st.session_state.get("user_id") if st.session_state.get("user_type") == "player" else None
+    profile_data = get_player_profile_data(player_id=player_id, user_id=user_id)
     
-    if not player:
+    if not profile_data:
         st.error("No player information found.")
-        db_session.close()
         return
     
-    user = player.user
+    player = profile_data["player"]
+    user = profile_data["user"]
+    stats = profile_data["stats"]
+    test_results = profile_data["test_results"]
     
     # Mostrar información del perfil
     col1, col2 = st.columns([1, 3])
@@ -40,36 +39,20 @@ def show_player_profile(player_id=None):
             st.write(f"**Tel:** {user.phone}")
         if user.line:
             st.write(f"**LINE:** {user.line}")
-        if player.user.date_of_birth:
-            age = dt.datetime.now().year - player.user.date_of_birth.year
-            st.write(f"**Age:** {age} years")
-
-        # Find next scheduled session
-        next_session = db_session.query(Session).filter(
-        Session.player_id == player.player_id,
-        Session.status == SessionStatus.SCHEDULED,
-        Session.start_time > dt.datetime.now()
-        ).order_by(Session.start_time).first()
-        
-        next_session_text = "To be confirmed"
-        if next_session:
-            next_session_text = next_session.start_time.strftime("%d/%m/%Y %H:%M")   
+        if stats["age"]:
+            st.write(f"**Age:** {stats['age']} years")
         
         st.write(f"**Services:** {player.service}")
         st.write(f"**Enrollment Sessions:** {player.enrolment}")
-        st.write(f"**Next Session:** {next_session_text}")
+        st.write(f"**Next Session:** {stats['next_session']}")
 
     st.divider()
 
-    # Calendario de sesiones
-    total = len(player.sessions)
-    done  = sum(s.status == SessionStatus.COMPLETED for s in player.sessions)
-    left  = max(player.enrolment - done, 0)
-
+    # Métricas usando stats calculadas
     colA, colB, colC = st.columns(3)
-    colA.metric("Completed", done)
-    colB.metric("Scheduled", total - done - sum(s.status == SessionStatus.CANCELED for s in player.sessions))
-    colC.metric("Remaining", left)
+    colA.metric("Completed", stats["completed"])
+    colB.metric("Scheduled", stats["scheduled"])
+    colC.metric("Remaining", stats["remaining"])
 
     st.subheader(f"Calendar of {user.name}")
 
@@ -78,7 +61,7 @@ def show_player_profile(player_id=None):
     with col1:
         start_date = st.date_input(
             "From", 
-            value=dt.datetime.now().date()- dt.timedelta(days=7),
+            value=dt.datetime.now().date() - dt.timedelta(days=7),
         )
     with col2:
         end_date = st.date_input(
@@ -87,130 +70,84 @@ def show_player_profile(player_id=None):
         )
     
     # Filtro de estado
+    from models import SessionStatus
     status_values = [s.value for s in SessionStatus]
     status_filter = st.multiselect(
         "Status", 
-        options=[s.value for s in SessionStatus],
-        default=[s.value for s in SessionStatus],
+        options=status_values,
+        default=status_values,
     )   
 
     if end_date < start_date:
         st.error("The 'To' date must be on or after the 'From' date.")
-    else:
-        # Convertir a datetime solo si las fechas son válidas
-        start_datetime = dt.datetime.combine(start_date, dt.time.min)
-        end_datetime   = dt.datetime.combine(end_date,   dt.time.max)
-    
-    # Construir consulta base
-    query = db_session.query(Session).filter(
-        Session.start_time >= start_datetime,
-        Session.start_time <= end_datetime
-    )
-    
-    # Aplicar filtros adicionales
-    if status_filter:
-        query = query.filter(Session.status.in_([SessionStatus(s) for s in status_filter]))
-    
-  
-    query = query.filter(Session.player_id == player.player_id)
-    
-    # Ejecutar consulta
-    sessions = query.order_by(Session.start_time).all()
-       
-    # Mostrar calendario de sesiones
+        return
 
-    show_calendar("", sessions, key="my_cal")
-    
-    # Mostrar el listado de sesiones
-    st.subheader("Sessions List")
-    
-    if not sessions:
-        st.info(f"There are no scheduled sessions between {start_date.strftime('%d/%m/%Y')} y {end_date.strftime('%d/%m/%Y')}.")
-    else:
-        # Preparar datos para mostrar
-        sessions_data = []
-        for session in sessions:
-            player = db_session.query(Player).filter(Player.player_id == session.player_id).first()
-            player_name = player.user.name if player else "Player not found"
-            
-            sessions_data.append({
-                "ID": session.id,
-                "Player": player_name,
-                "Date": session.start_time.strftime("%d/%m/%Y"),
-                "Start Time": session.start_time.strftime("%H:%M"),
-                "End Time": session.end_time.strftime("%H:%M") if session.end_time else "Not established",
-                "Status": session.status.value,
-            })
-        
-        # Crear DataFrame para mostrar
-        df = pd.DataFrame(sessions_data)
-        
-        # Add styling based on status
-        def style_sessions(row):
-            if row["Status"] == "completed":
-                return ["background-color: rgba(76, 175, 80, 0.2)"] * len(row)
-            elif row["Status"] == "canceled":
-                return ["background-color: rgba(244, 67, 54, 0.2)"] * len(row)
-            elif row["Status"] == "scheduled":
-                return ["background-color: rgba(33, 150, 243, 0.2)"] * len(row)
-            return [""] * len(row)
-
-        # Apply styling
-        styled_df = df.style.apply(style_sessions, axis=1)
-        
-        # Mostrar calendario como tabla
-        st.dataframe(
-            styled_df, 
-            column_config={
-                "ID": st.column_config.NumberColumn(width="small"),
-                "Coach": st.column_config.TextColumn(width="medium"),
-                "Player": st.column_config.TextColumn(width="medium"),
-                "Date": st.column_config.TextColumn(width="small"),
-                "Start Time": st.column_config.TextColumn(width="small"),
-                "End Time": st.column_config.TextColumn(width="small"),
-                "Status": st.column_config.TextColumn(width="small")
-            },
-            hide_index=True
+    # Usar SessionController para obtener y formatear sesiones
+    with SessionController() as session_controller:
+        sessions = session_controller.get_sessions_for_display(
+            start_date=start_date,
+            end_date=end_date,
+            player_id=player.player_id,
+            status_filter=status_filter
         )
+        
+        # Mostrar calendario
+        show_calendar("", sessions, key="player_cal")
+        
+        # Mostrar listado de sesiones
+        st.subheader("Sessions List")
+        
+        if not sessions:
+            st.info(f"There are no scheduled sessions between {start_date.strftime('%d/%m/%Y')} and {end_date.strftime('%d/%m/%Y')}.")
+        else:
+            # Usar formateo unificado del SessionController
+            formatted_data = session_controller.format_sessions_for_table(sessions)
+            df = pd.DataFrame(formatted_data)
+            
+            # Aplicar estilos
+            def style_sessions(row):
+                if row["Status"] == "completed":
+                    return ["background-color: rgba(76, 175, 80, 0.2)"] * len(row)
+                elif row["Status"] == "canceled":
+                    return ["background-color: rgba(244, 67, 54, 0.2)"] * len(row)
+                elif row["Status"] == "scheduled":
+                    return ["background-color: rgba(33, 150, 243, 0.2)"] * len(row)
+                return [""] * len(row)
+
+            styled_df = df.style.apply(style_sessions, axis=1)
+            
+            st.dataframe(
+                styled_df, 
+                column_config={
+                    "ID": st.column_config.NumberColumn(width="small"),
+                    "Coach": st.column_config.TextColumn(width="medium"),
+                    "Player": st.column_config.TextColumn(width="medium"),
+                    "Date": st.column_config.TextColumn(width="small"),
+                    "Start Time": st.column_config.TextColumn(width="small"),
+                    "End Time": st.column_config.TextColumn(width="small"),
+                    "Status": st.column_config.TextColumn(width="small")
+                },
+                hide_index=True
+            )
     
     # Mostrar pestañas con información adicional
     tab1, tab2 = st.tabs(["Test Results", "Notes"])
     
     with tab1:
-        # Obtener resultados de pruebas del jugador
-        test_results = db_session.query(TestResult).filter(
-            TestResult.player_id == player.player_id
-        ).order_by(TestResult.date.desc()).all()
-        
         if test_results:
-            # Mostrar la evolución de las métricas en un gráfico
-            
-            # Preparar datos para el gráfico
-            test_data = []
-            for test in test_results:
-                test_dict = {
-                    "Date": test.date,
-                    "Ball Control": test.ball_control,
-                    "Controll & Passing": test.control_pass,
-                    "Receiving & Passing/Scanning": test.receive_scan,
-                    "Dribling & Ball Carriying": test.dribling_carriying,
-                    "Shoot & Finishing": test.shooting,
-                    "Crosbar": test.crossbar,
-                    "Sprint": test.sprint,
-                    "T-test": test.t_test,
-                    "Jumping": test.jumping
-                }
-                test_data.append(test_dict)
+            # Usar PlayerController para formatear datos de tests
+            with PlayerController() as player_controller:
+                test_data = player_controller.format_test_data_for_chart(test_results)
+                metrics_list = player_controller.get_test_metrics_list()
             
             df = pd.DataFrame(test_data)
             
             # Mostrar gráfico de evolución
             st.subheader("Performance Evolution")
-            metrics = df.columns.tolist()[1:]  # Todas las columnas excepto la fecha
             selected_metrics = st.multiselect(
                 "Select metrics for visualization", 
-                options=metrics,
-                default=metrics[:3]
+                options=metrics_list,
+                default=metrics_list[:3]
             )
             
             if selected_metrics:
@@ -231,17 +168,17 @@ def show_player_profile(player_id=None):
                     with col1:
                         st.write(f"**Test Name:** {test.test_name}")
                         st.write(f"**Weight:** {test.weight} kg")
-                        st.write(f"**Hight:** {test.height} cm")
+                        st.write(f"**Height:** {test.height} cm")
                     with col2:
                         st.write(f"**Ball Control:** {test.ball_control}")
-                        st.write(f"**Controll & Passing:** {test.control_pass}")
+                        st.write(f"**Control & Passing:** {test.control_pass}")
                         st.write(f"**Receiving & Passing/Scanning:** {test.receive_scan}")
                         st.write(f"**Dribling & Ball Carriying:** {test.dribling_carriying}")
                         st.write(f"**Shoot & Finishing:** {test.shooting}")
-                        st.write(f"**Crosbar:** {test.crossbar}")
+                        st.write(f"**Crossbar:** {test.crossbar}")
                         st.write(f"**Sprint:** {test.sprint}")
                         st.write(f"**T-test:** {test.t_test}")
-                        st.write(f"**Salto:** {test.jumping}")
+                        st.write(f"**Jumping:** {test.jumping}")
         else:
             st.info("No test results available.")
     
@@ -256,71 +193,53 @@ def show_player_profile(player_id=None):
         if st.session_state.get("user_type") in ["coach", "admin"]:
             new_note = st.text_area("Add/Edit notes:", value=player.notes or "")
             if st.button("Save notes"):
-                player.notes = new_note
-                db_session.commit()
-                st.success("Notes saved correctly")
-                st.rerun()
-    
-    db_session.close()
+                # Usar función simplificada del controller
+                success, message = update_player_notes_simple(player.player_id, new_note)
+                if success:
+                    st.success(message)
+                    st.rerun()
+                else:
+                    st.error(message)
+
 
 def show_player_list():
-    """Muestra una lista de jugadores para coaches y admins."""
-    db_session = get_db_session()
+    """Muestra una lista de jugadores para coaches y admins - SIMPLIFICADO."""
     
-    # Obtener todos los jugadores
-    players = db_session.query(Player).join(User).filter(User.is_active == True).all()
-    
-    if not players:
-        st.info("No registered players.")
-        db_session.close()
-        return
-    
-    # Filtros
+    # Filtros de UI
     search_name = st.text_input("Search Player by name:")
     
-    # Filtrar jugadores
-    filtered_players = players
-    if search_name:
-        filtered_players = [p for p in players if search_name.lower() in p.user.name.lower()]
+    # Obtener datos usando controller
+    players_data = get_players_for_list(search_term=search_name)
     
+    if not players_data:
+        if search_name:
+            st.info(f"No players found matching '{search_name}'.")
+        else:
+            st.info("No registered players.")
+        return
     
-    # Mostrar jugadores en tarjetas
+    # Mostrar jugadores en tarjetas - UI SOLO
     cols = st.columns(3)
-    for i, player in enumerate(filtered_players):
-        done  = sum(s.status == SessionStatus.COMPLETED for s in player.sessions)
-        if player.user.date_of_birth:
-            age = dt.datetime.now().year - player.user.date_of_birth.year
-        # Find next scheduled session
-        next_session = db_session.query(Session).filter(
-        Session.player_id == player.player_id,
-        Session.status == SessionStatus.SCHEDULED,
-        Session.start_time > dt.datetime.now()
-        ).order_by(Session.start_time).first()
-        
-        next_session_text = "To be confirmed"
-        if next_session:
-            next_session_text = next_session.start_time.strftime("%d/%m/%Y %H:%M")
+    for i, player_data in enumerate(players_data):
         with cols[i % 3]:
             with st.container(border=True):
                 col1, col2 = st.columns([1, 2])
                 with col1:
-                    st.image(player.user.profile_photo, width=100)
+                    st.image(player_data["profile_photo"], width=100)
                 with col2:
-                    st.write(f"**{player.user.name}**")
+                    st.write(f"**{player_data['name']}**")
                     
-                    st.write(f"**Age:** {age} years")
-                    st.write(f"**Service:** {player.service}")
-                    st.write(f"**Sessions:** {player.enrolment}")
-                    st.write(f"**Reamining:** {player.enrolment - done}")
-                    st.write(f"**Next Session:** {next_session_text}")
+                    if player_data["age"]:
+                        st.write(f"**Age:** {player_data['age']} years")
+                    st.write(f"**Service:** {player_data['service']}")
+                    st.write(f"**Sessions:** {player_data['enrolment']}")
+                    st.write(f"**Remaining:** {player_data['remaining']}")
+                    st.write(f"**Next Session:** {player_data['next_session']}")
 
-
-                
-                if st.button("View Profile", key=f"player_{player.player_id}"):
-                    st.session_state["selected_player_id"] = player.player_id
+                if st.button("View Profile", key=f"player_{player_data['player_id']}"):
+                    st.session_state["selected_player_id"] = player_data["player_id"]
                     st.rerun()
-    
-    db_session.close()
+
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Ballers."""
@@ -343,6 +262,7 @@ def show_content():
         else:
             # Mostrar lista de jugadores
             show_player_list()
+
 
 if __name__ == "__main__":
     show_content()
