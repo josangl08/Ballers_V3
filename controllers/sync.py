@@ -87,102 +87,44 @@ def _push_local() -> None:
         sync_calendar_to_db()
         st.info("✅ Cambios descargados de Google Calendar")
 
-# 🔧 FIX: Versión SILENT de run_sync_once (sin Streamlit UI)
-def run_sync_once_silent() -> tuple[int, int, int]:
-    """
-    Versión REALMENTE silenciosa con control de concurrencia.
-    """
-    # Intentar adquirir lock
-    lock_file = _acquire_sync_lock()
-    if not lock_file:
-        print("⚠️ Sync ya en progreso, saltando...")
-        return 0, 0, 0
-    
-    try:
-        # 1. Pull Google Calendar → BD
-        imported, updated, deleted = sync_calendar_to_db()
-        
-        # 2. Push BD → Google Calendar (solo si necesario)
-        n_past = update_past_sessions()
-        if n_past > 0:
-            sync_db_to_calendar()
-        
-        # 3. NO tocar Google Sheets (evita warnings)
-        
-        return imported, updated, deleted
-        
-    except Exception as e:
-        print(f"❌ Error en sync silencioso: {e}")
-        return 0, 0, 0
-    finally:
-        # Siempre liberar lock
-        _release_sync_lock(lock_file)
-
-# ---------------------------------------------------------------------------
-# Public API ----------------------------------------------------------------
-# ---------------------------------------------------------------------------
 
 def run_sync_once(force: bool = False) -> None:
-    """Ejecuta la sincronización completa la **primera** vez que se llama.
-
+    """
+    Ejecuta la sincronización completa usando force_manual_sync.
+    Mantiene compatibilidad con interfaz anterior pero simplifica lógica.
+    
     Parameters
     ----------
-    force: bool, default ``False``
-        Si se pasa ``True`` se ignora la bandera en ``st.session_state`` y se
-        vuelve a sincronizar (útil en un botón «Refrescar»).
+    force: bool, default False
+        Si se pasa True se ignora la bandera en st.session_state y se
+        vuelve a sincronizar.
     """
+    # Verificar si ya se ejecutó (solo si no es forzado)
     if st.session_state.get("_synced") and not force:
         return
-    st.session_state["_synced"] = True
-    # Descargar cambios de Google Calendar -----------------------------
-    with st.spinner("Actualizando desde Google Calendar…"):
-        try:
-            _pull_google()
-        except Exception as exc:
-            # 🔧 MEJORAR MENSAJES DE ERROR
-            error_msg = str(exc)
-            
-            # Detectar errores comunes y dar mensajes más claros
-            if "Expecting property name" in error_msg or "JSON" in error_msg:
-                user_friendly_msg = "Error de autenticación con Google Calendar. Verificar API keys."
-            elif "403" in error_msg or "forbidden" in error_msg:
-                user_friendly_msg = "Sin permisos para acceder a Google Calendar. Verificar configuración."
-            elif "404" in error_msg:
-                user_friendly_msg = "Calendario no encontrado. Verificar CALENDAR_ID."
-            elif "timeout" in error_msg.lower() or "connection" in error_msg.lower():
-                user_friendly_msg = "Error de conexión con Google Calendar. Verificar internet."
-            else:
-                user_friendly_msg = f"Error sincronizando Google Calendar: {error_msg}"
-            
-            _toast(user_friendly_msg, "⚠️")
-            logger.error(f"❌ Error sync Google Calendar: {exc}")
-        else:
-            _toast("Google Calendar actualizado", "✅")
-
-    # Subir cambios locales y refrescar --------------------------------
-    with st.spinner("Sincronizando base de datos…"):
-        try:
-            _push_local()
-        except Exception as exc:
-            _toast(f"Error sincronizando base de datos: {exc}", "⚠️")
-            logger.error(f"❌ Error sync BD: {exc}")
-        else:
-            _toast("Base de datos actualizada", "✅")
     
-    # Google Sheets 
-
-    if force:
-        with st.spinner("Actualizando Google Sheets…"):
-            try:
-                get_accounting_df.clear()
-                get_accounting_df()
-            except Exception as exc:
-                _toast(f"Error sincronizando Google Sheets: {exc}", "⚠️")
-                logger.error(f"❌ Error sync Sheets: {exc}")
-            else:
-                _toast("Google Sheets actualizado", "✅")
-
     st.session_state["_synced"] = True
+    
+    # Usar force_manual_sync como función principal
+    with st.spinner("Sincronizando..."):
+        result = force_manual_sync()
+        
+        if result['success']:
+            # Mostrar mensajes de éxito basados en resultado
+            total_changes = result.get('imported', 0) + result.get('updated', 0) + result.get('deleted', 0)
+            rejected = len(result.get('rejected_events', []))
+            warnings = len(result.get('warning_events', []))
+            
+            if rejected > 0:
+                _toast(f"Sync completado con {rejected} eventos rechazados", "⚠️")
+            elif warnings > 0:
+                _toast(f"Sync completado con {warnings} advertencias", "⚠️")
+            elif total_changes > 0:
+                _toast(f"Sync completado: {total_changes} cambios", "✅")
+            else:
+                _toast("Sync completado sin cambios", "✅")
+        else:
+            _toast(f"Error en sync: {result.get('error', 'Unknown')}", "❌")
 
 # Auto-Sync Classes and Functions ------------------------------------------
 
@@ -200,7 +142,8 @@ class AutoSyncStats:
     interval_minutes: int = 5
     last_changes: Optional[Dict[str, int]] = None  
     last_changes_time: Optional[str] = None        
-    changes_notified: bool = True   
+    changes_notified: bool = True
+    _last_problems: Optional[str] = None    
 
 class SimpleAutoSync:
     """Auto-sync simple sin warnings de Streamlit"""
@@ -251,17 +194,23 @@ class SimpleAutoSync:
             if n_past > 0:
                 sync_db_to_calendar()
             
-            
             duration = time.time() - start_time
             
-            self.stats.total_syncs += 1
-            self.stats.successful_syncs += 1
-            self.stats.last_sync_time = dt.datetime.now().isoformat()
-            self.stats.last_sync_duration = duration
-            self.stats.last_error = None
+            _auto_sync.stats.total_syncs += 1
+            _auto_sync.stats.successful_syncs += 1
+            _auto_sync.stats.last_sync_time = dt.datetime.now().isoformat()
+            _auto_sync.stats.last_sync_duration = duration
+            _auto_sync.stats.last_error = None
 
-             # 🔧 GUARDAR PROBLEMAS automáticamente (solo si existen)
+            # 🔧 CRÍTICO: SIEMPRE guardar problemas del sync actual (incluso si está vacío)
             save_sync_problems(rejected_events, warning_events)
+            
+            # 🔧 LOGGING PRECISO para manual sync
+            total_problems = len(rejected_events) + len(warning_events)
+            if total_problems > 0:
+                print(f"🔧 Manual sync completado con problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
+            else:
+                print(f"✅ Manual sync completado sin problemas")
             
             return {
                 "success": True,
@@ -278,11 +227,13 @@ class SimpleAutoSync:
         except Exception as e:
             duration = time.time() - start_time
             
-            self.stats.total_syncs += 1
-            self.stats.failed_syncs += 1
-            self.stats.last_error = str(e)
+            _auto_sync.stats.total_syncs += 1
+            _auto_sync.stats.failed_syncs += 1
+            _auto_sync.stats.last_error = str(e)
 
-            clear_sync_problems()
+            # 🔧 LIMPIAR problemas en caso de error
+            save_sync_problems([], [])
+            print(f"❌ Error manual sync: {e}")
             
             return {
                 "success": False,
@@ -316,6 +267,8 @@ class SimpleAutoSync:
                     
                 # Detectar y guardar cambios para notificaciones
                 total_changes = imported + updated + deleted
+                total_problems = len(rejected_events) + len(warning_events)
+
                 if total_changes > 0:
                     # Hay cambios → guardar para notificación
                     self.stats.last_changes = {
@@ -330,21 +283,44 @@ class SimpleAutoSync:
                 else:
                     # Sin cambios → no notificar
                     self.stats.changes_notified = True
-
-                # 🔧 GUARDAR PROBLEMAS automáticamente (solo si existen)
-                if rejected_events or warning_events:
-                    save_sync_problems(rejected_events, warning_events)
-                    print(f"🚨 Auto-sync detectó problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
-                    
-                    # No limpiar problemas si no hay - pueden ser de sync anterior
                 
-                print(f"✅ Auto-sync OK en {duration:.1f}s: {imported}+{updated}+{deleted}")
+                # Crear estadísticas para auto-sync
+                sync_stats = {
+                    'imported': imported,
+                    'updated': updated,
+                    'deleted': deleted,
+                    'duration': duration,
+                    'past_updated': 0  # Auto-sync no actualiza past sessions
+                }
+                
+                # Guardar problemas automáticamente
+                save_sync_problems(rejected_events, warning_events)
+
+                # Log solo si hay cambios o es diferente al anterior
+                current_problems = f"{len(rejected_events)}+{len(warning_events)}"
+                if rejected_events or warning_events:
+                    if not hasattr(self.stats, '_last_problems') or self.stats._last_problems != current_problems:
+                        print(f"🚨 Auto-sync detectó problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
+                        self.stats._last_problems = current_problems
+                else:
+                    # Limpiar flag de problemas anteriores
+                    if hasattr(self.stats, '_last_problems'):
+                        delattr(self.stats, '_last_problems')
+                
+                # 🔧 LOGGING CONSISTENTE
+                if total_problems > 0:
+                    print(f"⚠️ Auto-sync completado con problemas en {duration:.1f}s: {imported}+{updated}+{deleted}")
+                else:
+                    print(f"✅ Auto-sync OK en {duration:.1f}s: {imported}+{updated}+{deleted}")
             
             except Exception as e:
                 self.stats.total_syncs += 1
                 self.stats.failed_syncs += 1
                 self.stats.last_error = str(e)
                 self.stats.changes_notified = True
+                
+                # 🔧 LIMPIAR problemas en caso de error
+                save_sync_problems([], [])
                 print(f"❌ Error auto-sync: {e}")
         
             # Esperar hasta próximo sync

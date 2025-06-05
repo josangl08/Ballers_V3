@@ -10,120 +10,66 @@ from typing import List, Dict, Any, Optional
 
 def save_sync_problems(rejected_events: List[Dict], warning_events: List[Dict]) -> None:
     """
-    Guarda problemas de sincronización ROBUSTAMENTE.
+    Guarda problemas de sincronización del sync ACTUAL.
+    🔧 FIX: Siempre reemplaza datos anteriores con datos del sync actual.
     """
     try:
-        # Solo guardar si hay problemas reales
-        if not rejected_events and not warning_events:
-            # Limpiar problemas previos si todo está OK
-            if 'sync_problems' in st.session_state:
-                del st.session_state['sync_problems']
-            print("🔍 No problems to save, cleared existing")
-            return
+        # 🔧 NUEVO: SIEMPRE guardar timestamp actual
+        current_timestamp = dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         
-        # Validar que los datos sean serializables
-        import json
-        
-        # Test serialización antes de guardar
-        test_data = {
+        # 🔧 NUEVO: SIEMPRE reemplazar datos (incluso si está vacío)
+        sync_data = {
             'rejected': rejected_events,
             'warnings': warning_events,
-            'timestamp': dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            'timestamp': current_timestamp,
             'seen': False
         }
         
-        # Verificar que se puede serializar a JSON
-        json.dumps(test_data, default=str)  # Test serialization
+        # Guardar en session_state
+        st.session_state['sync_problems'] = sync_data
         
-        # Si llegamos aquí, los datos son válidos
-        st.session_state['sync_problems'] = test_data
-        
-        print(f"🔍 SAVED: {len(rejected_events)} rejected, {len(warning_events)} warnings")
+        # Log solo si hay datos útiles
+        if rejected_events or warning_events:
+            print(f"💾 Sync problems saved: {len(rejected_events)} rejected, {len(warning_events)} warnings ({current_timestamp})")
+        else:
+            # Log de limpieza solo en debug
+            import os
+            if os.getenv("DEBUG", "False") == "True":
+                print(f"💾 Sync problems cleared ({current_timestamp})")
         
     except Exception as e:
-        print(f"🔍 ERROR saving sync_problems: {e}")
-        # Si falla guardar, al menos no crashear
+        print(f"❌ ERROR saving sync_problems: {e}")
         return
 
 
 def get_sync_problems() -> Optional[Dict[str, Any]]:
     """
     Obtiene problemas de sincronización guardados.
-    VERSIÓN ROBUSTA - manejo completo de errores
+    VERSIÓN UNIFICADA - cubre todos los casos de uso.
     """
     try:
-        # DEBUG: Ver qué hay exactamente en session_state
-        print(f"🔍 session_state keys: {list(st.session_state.keys())}")
-        
         # Verificar si existe sync_problems
         if 'sync_problems' not in st.session_state:
-            print("🔍 No sync_problems key found")
             return None
         
-        # Obtener el valor RAW
-        raw_problems = st.session_state['sync_problems']
-        print(f"🔍 Raw sync_problems type: {type(raw_problems)}")
-        print(f"🔍 Raw sync_problems value: {raw_problems}")
+        # Obtener el valor
+        problems = st.session_state['sync_problems']
         
-        # Validar que sea un dict
-        if not isinstance(raw_problems, dict):
-            print(f"🔍 sync_problems is not dict, is {type(raw_problems)}")
+        # Validar que sea un dict válido
+        if not isinstance(problems, dict):
             return None
         
-        # Verificar claves mínimas
-        if 'rejected' not in raw_problems or 'warnings' not in raw_problems:
-            print(f"🔍 Missing required keys. Available: {raw_problems.keys()}")
+        # Verificar claves mínimas requeridas
+        if 'rejected' not in problems or 'warnings' not in problems:
             return None
         
-        print(f"🔍 SUCCESS: Found {len(raw_problems.get('rejected', []))} rejected, {len(raw_problems.get('warnings', []))} warnings")
-        return raw_problems
+        return problems
         
     except Exception as e:
-        print(f"🔍 Exception in get_sync_problems: {e}")
-        print(f"🔍 Exception type: {type(e)}")
-        
-        # Si hay error, intentar limpiar datos corruptos
-        try:
-            if 'sync_problems' in st.session_state:
-                del st.session_state['sync_problems']
-                print("🔍 Cleared corrupted sync_problems")
-        except:
-            pass
-            
+        # Si hay error, limpiar datos corruptos y retornar None
+        if 'sync_problems' in st.session_state:
+            del st.session_state['sync_problems']
         return None
-
-def get_sync_problems_simple():
-    """Versión ultra-simple sin dependencias complicadas"""
-    
-    # Método 1: Desde session_state simple
-    try:
-        problems = st.session_state.get('sync_problems')
-        if problems and isinstance(problems, dict):
-            return problems
-    except:
-        pass
-    
-    # Método 2: Construir desde last_sync_result si existe
-    try:
-        if 'last_sync_result' in st.session_state:
-            result = st.session_state['last_sync_result']
-            if isinstance(result, dict):
-                return {
-                    'rejected': result.get('rejected_events', []),
-                    'warnings': result.get('warning_events', []),
-                    'timestamp': result.get('timestamp', ''),
-                    'seen': False
-                }
-    except:
-        pass
-    
-    # Método 3: Vacío pero válido
-    return {
-        'rejected': [],
-        'warnings': [],
-        'timestamp': '',
-        'seen': True
-    }
 
 def has_sync_problems() -> bool:
     """

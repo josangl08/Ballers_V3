@@ -5,15 +5,13 @@ from models import User
 import os
 import sys
 from controllers.db import get_db_session
+from common.utils import hash_password
 
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import DEBUG
 
-def hash_password(password):
-    """Convierte una contraseña en un hash SHA-256."""
-    return hashlib.sha256(password.encode()).hexdigest()
 
 def login_user(username, password):
     """Verifica credenciales de usuario y devuelve el objeto User si es válido."""

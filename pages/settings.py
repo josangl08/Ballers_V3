@@ -10,11 +10,9 @@ from controllers.sync import start_auto_sync, stop_auto_sync, get_auto_sync_stat
 from controllers.db import get_db_session 
 from controllers.sheets_controller import get_accounting_df
 from common.validation import validate_user_data
-from common.notifications import auto_cleanup_old_problems, show_sync_problems_compact, save_sync_problems
+from common.notifications import auto_cleanup_old_problems, get_sync_problems, clear_sync_problems
+from common.utils import hash_password
 
-def hash_password(password):
-    """Convierte una contraseña en un hash SHA-256."""
-    return hashlib.sha256(password.encode()).hexdigest()
 
 def save_profile_photo(uploaded_file, username):
     """Guarda la foto de perfil y devuelve la ruta."""
@@ -53,7 +51,8 @@ def create_user_form():
         # Información adicional
         phone = st.text_input("Telf")
         line = st.text_input("LINE ID")
-        date_of_birth = st.date_input("Date of Birth", value=None)
+        date_of_birth = st.date_input("Date of Birth", value=dt.date(2000, 1, 1), 
+            min_value=dt.date(1900, 1, 1),max_value=dt.date.today())
         profile_photo = st.file_uploader("Profile Picture", type=["jpg", "jpeg", "png"])
         
         # Información específica según el tipo de usuario
@@ -498,91 +497,157 @@ def delete_user():
 def system_settings():
     """Configuración del sistema (solo para administradores)."""
 
-    # 🔧 LIMPIAR problemas antiguos automáticamente (24 horas)
-    auto_cleanup_old_problems(max_age_hours=24)
+    # 🔧 LIMPIAR problemas antiguos automáticamente
+    auto_cleanup_old_problems(max_age_hours=2)
     
-    # Mostrar detalles si hay redirección (SIN expander anidado)
-    should_show_details = st.session_state.get("show_sync_details", False)
+    # 🔧 MOSTRAR DETALLES COMPLETOS si hay flag de redirección O problemas guardados
+    should_show_details = (
+        st.session_state.get("show_sync_details", False) or 
+        st.session_state.get("show_sync_problems_tab", False) or
+        bool(get_sync_problems())
+    )
     
     if should_show_details:
         
         with st.container():
-            st.subheader("Sync Problems & Monitoring")
+            st.subheader("🚨 Sync Results & Monitoring")
             
-            # 🎯 OBTENER datos de AMBAS fuentes
+            # Obtener datos de ambas fuentes
             result_data = None
             
-            # FUENTE 1: Manual sync (session_state)
+            # Fuente 1: Manual sync (session_state) - mas reciente
             if 'last_sync_result' in st.session_state:
                 result_data = st.session_state['last_sync_result']
-                st.info("Data from: Manual Sync")
+                st.info("📊 Data from: Manual Sync")
             
-            # FUENTE 2: Auto-sync problems (notifications)
+            # Fuente 2: Auto-sync problems (notifications) - si no hay manual
             if not result_data:
-                try:
-                    from common.notifications import get_sync_problems
-                    problems = get_sync_problems()
-                    
-                    if problems:
-                        # Convertir formato de get_sync_problems() a formato esperado
-                        result_data = {
-                            'imported': 0,  # No disponible en sync_problems
-                            'updated': 0,   # No disponible en sync_problems  
-                            'deleted': 0,   # No disponible en sync_problems
-                            'rejected_events': problems.get('rejected', []),
-                            'warning_events': problems.get('warnings', []),
-                            'duration': 0   # No disponible en sync_problems
-                        }
-                        st.info("Data from: Auto-sync Problems")
-                except Exception as e:
-                    st.error(f"Error obteining data from auto-sync: {e}")
+                problems = get_sync_problems()
+                if problems:
+                    # 🔧 USAR estadísticas guardadas si están disponibles
+                    stats = problems.get('stats', {})
+                    result_data = {
+                        'imported': stats.get('imported', 0),
+                        'updated': stats.get('updated', 0),
+                        'deleted': stats.get('deleted', 0),
+                        'past_updated': stats.get('past_updated', 0),
+                        'rejected_events': problems.get('rejected', []),
+                        'warning_events': problems.get('warnings', []),
+                        'duration': stats.get('duration', 0)
+                    }
+                    if stats:
+                        st.info("📊 Data from: Auto-sync (complete stats)")
+                    else:
+                        st.info("📊 Data from: Auto-sync (problems only)")
             
             # Mostrar datos si están disponibles
             if result_data:
-                # Estadísticas detalladas
+                # 📊 ESTADÍSTICAS DETALLADAS con métricas
+                imported = result_data.get('imported', 0)
+                updated = result_data.get('updated', 0)
+                deleted = result_data.get('deleted', 0)
+                past_updated = result_data.get('past_updated', 0)
                 rejected_events = result_data.get('rejected_events', [])
                 warning_events = result_data.get('warning_events', [])
+                duration = result_data.get('duration', 0)
                 
-                col1, col2, col3, col4, col5 = st.columns(5)
-                col1.metric("📥 Imported", result_data.get('imported', 0))
-                col2.metric("🔄 Updated", result_data.get('updated', 0))
-                col3.metric("🗑️ Deleted", result_data.get('deleted', 0))
+                # MÉTRICAS EN COLUMNAS
+                col1, col2, col3, col4, col5, col6 = st.columns(6)
+                col1.metric("📥 Imported", imported)
+                col2.metric("🔄 Updated", updated)
+                col3.metric("🗑️ Deleted", deleted)
                 col4.metric("🚫 Rejected", len(rejected_events))
                 col5.metric("⚠️ Warnings", len(warning_events))
+                if duration > 0:
+                    col6.metric("⏱️ Duration", f"{duration:.1f}s")
+                else:
+                    col6.metric("⏱️ Duration", "N/A")
                 
-                if result_data.get('duration'):
-                    st.info(f"⏱️ Duration: {result_data['duration']:.1f}s")
+                if past_updated > 0:
+                    st.info(f"📅 Additionally: {past_updated} past sessions marked as completed")
                 
-                # Mostrar eventos rechazados detallados
-                if rejected_events:
-                    st.subheader("🚫 Rejected Events - Details")
-                    for i, event in enumerate(rejected_events):
-                        with st.container():
-                            st.error(f"**{event['title']}** - {event['date']} {event['time']}")
-                            st.write(f"❌ **Problem**: {event['reason']}")
-                            st.write(f"💡 **Solution**: {event['suggestion']}")
-                            if i < len(rejected_events) - 1:
-                                st.markdown("---")
+                # 🎨 MENSAJE PRINCIPAL CON COLORES APROPIADOS (como sidebar)
+                total_changes = imported + updated + deleted
+                total_problems = len(rejected_events) + len(warning_events)
                 
-                # Mostrar warnings detallados
-                if warning_events:
-                    st.subheader("⚠️ Events with warnigns - Details")
-                    for i, event in enumerate(warning_events):
-                        with st.container():
-                            st.warning(f"**{event['title']}** - {event['date']} {event['time']}")
-                            for warning in event.get('warnings', []):
-                                st.write(f"⚠️ {warning}")
-                            st.write("✅ **Status**: Session imported successfully")
-                            if i < len(warning_events) - 1:
-                                st.markdown("---")
+                if len(rejected_events) > 0:
+                    # 🔴 ROJO: Hay eventos rechazados (crítico)
+                    st.error(f"🚫 Sync completed with {len(rejected_events)} rejected events")
+                    if total_changes > 0:
+                        st.error(f"📊 Changes: {total_changes} total ({imported} imported, {updated} updated, {deleted} deleted)")
+                    if len(warning_events) > 0:
+                        st.warning(f"⚠️ Additionally: {len(warning_events)} events with warnings")
+                        
+                elif len(warning_events) > 0:
+                    # 🟡 AMARILLO: Solo warnings (no crítico)
+                    st.warning(f"⚠️ Sync completed with {len(warning_events)} warnings")
+                    if total_changes > 0:
+                        st.warning(f"📊 Changes: {total_changes} total ({imported} imported, {updated} updated, {deleted} deleted)")
+                    else:
+                        st.warning("📊 No data changes")
+                        
+                elif total_changes > 0:
+                    # 🟢 VERDE: Hay cambios exitosos
+                    st.success(f"✅ Sync completed successfully with changes")
+                    st.success(f"📊 Changes: {total_changes} total ({imported} imported, {updated} updated, {deleted} deleted)")
+                    
+                else:
+                    # 🔵 AZUL: Sin cambios (todo en sync)
+                    st.info(f"ℹ️ Sync completed - no changes needed")
+                    st.info("📊 Database and Calendar are already in sync")
+                
+                # 📋 MOSTRAR DETALLES DE PROBLEMAS si existen
+                if rejected_events or warning_events:
+                    
+                    if rejected_events and warning_events:
+                        detail_tab1, detail_tab2 = st.tabs([f"🚫 Rejected ({len(rejected_events)})", f"⚠️ Warnings ({len(warning_events)})"])
+                    elif rejected_events:
+                        detail_tab1, = st.tabs([f"🚫 Rejected Events ({len(rejected_events)})"])
+                        detail_tab2 = None
+                    else:
+                        detail_tab2, = st.tabs([f"⚠️ Events with Warnings ({len(warning_events)})"])
+                        detail_tab1 = None
+                    
+                    if detail_tab1 and rejected_events:
+                        with detail_tab1:
+                            for i, event in enumerate(rejected_events):
+                                st.error(f"**{event['title']}** - {event['date']} {event['time']}")
+                                st.write(f"❌ **Problem**: {event['reason']}")
+                                st.write(f"💡 **Solution**: {event['suggestion']}")
+                                if i < len(rejected_events) - 1:
+                                    st.markdown("---")
+                    
+                    if detail_tab2 and warning_events:
+                        with detail_tab2:
+                            for i, event in enumerate(warning_events):
+                                st.warning(f"**{event['title']}** - {event['date']} {event['time']}")
+                                for w in event.get('warnings', []):
+                                    st.write(f"⚠️ {w}")
+                                st.write("✅ **Status**: Imported successfully")
+                                if i < len(warning_events) - 1:
+                                    st.markdown("---")
+                
+                # 🧹 BOTÓN PARA LIMPIAR
+                col1, col2, col3 = st.columns([1, 1, 1])
+                with col2:
+                    if st.button("🧹 Clear sync results", help="Mark all problems as resolved"):
+                        clear_sync_problems()
+                        if 'last_sync_result' in st.session_state:
+                            del st.session_state['last_sync_result']
+                        st.success("Sync results cleared")
+                        st.rerun()
             else:
-                st.info("No sync data available")
+                st.info("ℹ️ No recent sync data available")
         
         # Limpiar flag después de mostrar
-        st.session_state["show_sync_details"] = False
+        if "show_sync_details" in st.session_state:
+            st.session_state["show_sync_details"] = False
+        if "show_sync_problems_tab" in st.session_state:
+            st.session_state["show_sync_problems_tab"] = False
+            
         st.divider()
-        
 
+    # 📊 RESTO DE SYSTEM SETTINGS (mantener todo igual)
     st.subheader("Database/Googlesheets Management")
 
     col1, col2 = st.columns(2)
@@ -625,53 +690,56 @@ def system_settings():
             )
 
     with col2:
-        # Usar nueva función de sync manual
-        
+        # 🔧 BRING EVENTS con guardado de estadísticas para mostrar arriba
         if st.button("Bring events ← Google Calendar"):
             with st.spinner("Ejecutando sync manual..."):
                 result = force_manual_sync()
+                
                 if result['success']:
-                    # Mostrar estadísticas detalladas
-                    stats_msg = f"✅ Sync completed in {result['duration']:.1f}s"
-                    changes = [result.get('imported', 0), result.get('updated', 0), result.get('deleted', 0)]
-                    if any(changes):
-                        stats_msg += f" - {changes[0]} importadas, {changes[1]} actualizadas, {changes[2]} eliminadas"
-                    if result.get('past_updated', 0) > 0:
-                        stats_msg += f", {result['past_updated']} marcadas como completadas"
-                    
-                    
-                    # 🚫 EVENTOS RECHAZADOS - Mostrar al usuario
+                    duration = result['duration']
+                    imported = result.get('imported', 0)
+                    updated = result.get('updated', 0) 
+                    deleted = result.get('deleted', 0)
+                    past_updated = result.get('past_updated', 0)
                     rejected_events = result.get('rejected_events', [])
                     warning_events = result.get('warning_events', [])
-
-                    # Guardar problemas de forma persistente (solo si existen)
-                    save_sync_problems(rejected_events, warning_events)
                     
-                    # Determinar el tipo de mensaje principal
-                    if rejected_events or warning_events:
-                        # HAY PROBLEMAS - mostrar estadísticas pero sin balloons
-                        if rejected_events:
-                            st.warning(stats_msg)  # Warning porque hay problemas críticos
-                        else:
-                            st.success(stats_msg)  # Success porque funcionó, solo con advertencias
-
-                    # Los problemas se mostrarán automáticamente arriba en la próxima recarga
-                        st.info("⬆️ Ver problemas detectados arriba. Se guardarán hasta que los marques como vistos.")
-
+                    # 💾 GUARDAR resultado para mostrar arriba
+                    st.session_state['last_sync_result'] = result
+                    
+                    # Construir mensaje rápido
+                    changes = []
+                    if imported > 0:
+                        changes.append(f"{imported} imported")
+                    if updated > 0:
+                        changes.append(f"{updated} updated") 
+                    if deleted > 0:
+                        changes.append(f"{deleted} deleted")
+                    if past_updated > 0:
+                        changes.append(f"{past_updated} marked as completed")
+                        
+                    changes_text = ", ".join(changes) if changes else "no changes"
+                    
+                    # 🎨 MENSAJE RÁPIDO con colores apropiados
+                    total_problems = len(rejected_events) + len(warning_events)
+                    
+                    if len(rejected_events) > 0:
+                        st.error(f"⚠️ Sync completed with {len(rejected_events)} rejected events ({duration:.1f}s) | {changes_text}")
+                    elif len(warning_events) > 0:
+                        st.warning(f"⚠️ Sync completed with {len(warning_events)} warnings ({duration:.1f}s) | {changes_text}")
+                    elif imported + updated + deleted > 0:
+                        st.success(f"✅ Sync completed successfully ({duration:.1f}s) | {changes_text}")
                     else:
-                        # TODO PERFECTO - mensaje de éxito simple (no persistente)
-                        st.success(stats_msg)
-                        st.balloons()
-                        st.success("Todos los eventos sincronizados sin problemas!")
-                
+                        st.info(f"ℹ️ Sync completed - no changes ({duration:.1f}s)")
+                    
+                    # 🔄 FORZAR RERUN para mostrar estadísticas arriba
+                    st.session_state["show_sync_details"] = True
+                    st.rerun()
+                    
                 else:
-                    # Error en sync
-                    st.error(f"❌ Error durante sincronización: {result['error']}")
-                    # Limpiar problemas previos en caso de error
-                    from common.notifications import clear_sync_problems
-                    clear_sync_problems()
+                    st.error(f"❌ Sync failed: {result['error']}")
 
-    # Auto-Sync
+    # Auto-Sync (mantener código existente)
     st.subheader("Auto-Sync Management")
     
     if has_pending_notifications():
@@ -759,56 +827,28 @@ def system_settings():
                 st.error("Auto-sync ya está ejecutándose")
 
 
-
 def show_content():
     """Función principal para mostrar el contenido de la sección Settings."""
     st.markdown('<h3 class="section-title">Settings</h3>', unsafe_allow_html=True)
     
-    # Si hay flag de detalles, CAMBIAR ORDER de tabs para mostrar System primero
-    show_details = st.session_state.get("show_sync_details", False)
+    # System primero, Users segundo
     
-    if show_details:
-        # OPCIÓN A: Tabs en orden diferente
-        tab1, tab2 = st.tabs(["System", "Users"])  # System primero
+    tab1, tab2 = st.tabs(["System", "Users"])
+    
+    with tab1:  # System - Pestaña Principal
+        system_settings()
+    
+    with tab2:  # Users - Pestaña secundaria
+        user_tab1, user_tab2, user_tab3 = st.tabs(["Create User", "Edit User", "Delete User"])
         
-        with tab1:  # System 
-            system_settings()  # Aquí expandir automáticamente
-            
-        with tab2:  # Users
-            # Subtabs existentes...
-            user_tab1, user_tab2, user_tab3 = st.tabs(["Create User", "Edit User", "Delete User"])
-
-            with user_tab1:
-                create_user_form()
-
-            with user_tab2:
-                edit_any_user()
-
-            with user_tab3:
-                delete_user()
-            
-        # Limpiar flag después de mostrar
-        st.session_state["show_sync_details"] = False
-
-    else:
-        # Para administradores, mostrar todas las opciones con la nueva estructura
-        tab1, tab2 = st.tabs(["Users", "System"])
+        with user_tab1:
+            create_user_form()
         
-        with tab1:
-            # Subtabs dentro de Users
-            user_tab1, user_tab2, user_tab3 = st.tabs(["Create User", "Edit User", "Delete User"])
-            
-            with user_tab1:
-                create_user_form()
-            
-            with user_tab2:
-                edit_any_user()
+        with user_tab2:
+            edit_any_user()
 
-            with user_tab3:
-                delete_user()
-        
-        with tab2:
-            system_settings()
+        with user_tab3:
+            delete_user()
 
 if __name__ == "__main__":
     

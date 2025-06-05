@@ -789,18 +789,19 @@ def sync_calendar_to_db_with_feedback():
                         logger.warning(f"🚫 UPDATE RECHAZADO - Sesión #{ses.id}: {error_msg}")
                         continue  # No actualizar, saltar al siguiente evento
                     
+                    changed = False
+                    changes = []
+
                     # Si hay warnings, agregar a lista
-                    if warnings:
+                    if changed and warnings:
                         warning_events.append({
                             "title": f"{ses.coach.user.name} × {ses.player.user.name}",
                             "date": start_dt.strftime("%d/%m/%Y"),
                             "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
                             "warnings": warnings
                         })
+                        logger.warning(f"⚠️ SESIÓN ACTUALIZADA CON WARNINGS - #{ses.id}: {'; '.join(warnings)}") 
 
-                    changed = False
-                    changes = []
-                    
                     # Aplicar cambios del calendario
                     if ses.status != status:
                         changes.append(f"status: {ses.status.value} → {status.value}")
