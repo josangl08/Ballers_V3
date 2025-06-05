@@ -14,7 +14,7 @@ from controllers.sheets_controller import get_accounting_df
 from controllers.db import get_db_session
 from common.validation import validate_session_time
 from common.notifications import show_sync_problems_compact, get_sync_problems, get_sync_problems, mark_problems_as_seen, clear_sync_problems
-
+from common.menu import filter_sync_results_by_coach, get_coach_id_if_needed
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -39,35 +39,35 @@ def show_coach_sync_alerts():
     # Mostrar alerta compacta que no interfiera con tabs
     
     if rejected:
-        with st.expander("🚫 Problemas de Sincronización Detectados", expanded=False):
-            st.error(f"❌ {len(rejected)} eventos rechazados en la última sincronización")
+        with st.expander("🚫 Synchronisation Problems Detected", expanded=False):
+            st.error(f"❌ {len(rejected)} rejected events in the last synchronisation")
             
             # Mostrar solo el primero
             if rejected:
                 first = rejected[0]
-                st.write(f"**Ejemplo**: {first['title']} - {first.get('date', 'N/A')}")
-                st.write(f"**Problema**: {first['reason']}")
+                st.write(f"**Example**: {first['title']} - {first.get('date', 'N/A')}")
+                st.write(f"**Problem**: {first['reason']}")
             
             if len(rejected) > 1:
-                st.info(f"+ {len(rejected) - 1} eventos más")
+                st.info(f"+ {len(rejected) - 1} events more")
             
-            st.info("💡 **Solución**: Update Session in Google Calendar")
+            st.info("💡 **Solution**: Update Session in Google Calendar")
     
     elif warnings:
-        with st.expander("⚠️ Advertencias de Sincronización", expanded=False):
-            st.warning(f"⚠️ {len(warnings)} eventos importados con horarios no ideales")
+        with st.expander("⚠️ Synchronisation Warnings", expanded=False):
+            st.warning(f"⚠️ {len(warnings)} imported events at less than ideal times")
             
             # Mostrar solo el primero
             if warnings:
                 first = warnings[0]
-                st.write(f"**Ejemplo**: {first['title']} - {first.get('date', 'N/A')}")
+                st.write(f"**Exmple**: {first['title']} - {first.get('date', 'N/A')}")
                 if first.get('warnings'):
-                    st.write(f"**Advertencia**: {first['warnings'][0]}")
+                    st.write(f"**Warning**: {first['warnings'][0]}")
             
             if len(warnings) > 1:
                 st.info(f"+ {len(warnings) - 1} eventos más")
             
-            st.info("💡 **Nota**: Las sesiones se importaron correctamente pero tienen horarios fuera del rango recomendado (8:00-18:00).")
+            st.info("💡 **Note**: The sessions were imported correctly but have times outside the recommended range (8:00-18:00).")
     st.divider()
     
 def show_coach_calendar():
@@ -79,7 +79,7 @@ def show_coach_calendar():
     coach = db_session.query(Coach).join(User).filter(User.user_id == user_id).first()
     
     if not coach:
-        st.error("No se encontró información del coach.")
+        st.error("No coach information found.")
         db_session.close()
         return
     
@@ -141,8 +141,6 @@ def show_coach_calendar():
     
     # Mostrar calendario del coach
     show_calendar("", sessions, key="coach_cal")
-    
-    show_coach_sync_alerts()
 
     # Mostrar el listado de sesiones
     st.subheader("Sessions List")
@@ -195,7 +193,57 @@ def show_coach_calendar():
             },
             hide_index=True
         )
-    # Cerrar db_session
+    # Mostrar detalles inmediatamente si hay flag
+    if st.session_state.get("show_sync_details", False):
+        # Limpiar flag inmediatamente
+        st.session_state["show_sync_details"] = False
+        
+        with st.container():
+            if 'last_sync_result' in st.session_state:
+                result = st.session_state['last_sync_result']
+
+                coach_id = get_coach_id_if_needed()
+                if coach_id:
+                    # Filtrar resultado para mostrar solo eventos del coach
+                    result = filter_sync_results_by_coach(result, coach_id)
+                    st.info(f"Showing Events for Coach ID: {coach_id}")
+
+                rejected = result.get('rejected_events', [])
+                warnings = result.get('warning_events', [])
+                
+                # Estadísticas rápidas
+                col1, col2, col3, col4, col5, col6 = st.columns(6)
+                col1.metric("📥 Imported", result.get('imported', 0))
+                col2.metric("🔄 Updated", result.get('updated', 0))  
+                col3.metric("🗑️ Deleted", result.get('deleted', 0))
+                col4.metric("🚫 Rejected", len(result.get('rejected_events', [])))
+                col5.metric("⚠️ Warnings", len(result.get('warning_events', [])))
+                col6.metric("⏱️ Duration", f"{result.get('duration', 0):.1f}s")
+                
+                if rejected or warnings:
+                    
+                    if rejected:
+                        st.subheader("🚫 Rejected Events")
+                        for event in rejected:
+                            st.error(f"**{event['title']}** - {event['date']} {event['time']}")
+                            st.write(f"❌ **Problem**: {event['reason']}")
+                            st.write(f"💡 **Solution**: {event['suggestion']}")
+                            st.markdown("---")
+                            
+                    if warnings:
+                        st.subheader("⚠️ Events with Warnings")
+                        for event in warnings:
+                            st.warning(f"**{event['title']}** - {event['date']} {event['time']}")
+                            for w in event.get('warnings', []):
+                                st.write(f"⚠️ {w}")
+                            st.write("✅ **State**: Synced succesfully")
+                            st.markdown("---")
+                else:
+                    st.success("✅ No synchronisation problems")
+            else:
+                st.info("No sync data available")
+ 
+    # Cerrar sesión DB (código existente)
     db_session.close()
 
     # Configuracion común
@@ -215,9 +263,8 @@ def show_coach_calendar():
     if "end_hour_def" not in st.session_state:
         st.session_state["end_hour_def"] = dt.time(9, 0)
 
-    # -----------------------------------------------------------------
-    # 2. CREATE SESSION (solo jugador + fecha / hora)
-    # -----------------------------------------------------------------
+    #  Crear sesión (solo jugador + fecha / hora)
+
     with tab1:
         st.subheader("New Session")
 
@@ -286,9 +333,7 @@ def show_coach_calendar():
                     st.success("Session created successfully")
                     st.rerun()
 
-    # -----------------------------------------------------------------
-    # 3. EDIT / DELETE SESSION  (solo sus propias sesiones)
-    # -----------------------------------------------------------------
+    # Editar / Eliminar sesion  (solo sus propias sesiones)
     with tab2:
         st.subheader("Edit / Delete Session")
 
@@ -506,7 +551,7 @@ def show_financials():
 
 def show_sync_problems_dashboard():
     """Dashboard completo de problemas usando el sistema de notificaciones."""
-    st.subheader("🚨 Problemas de Sincronización")
+    st.subheader("🚨 Synchronisation Problems")
     
     # Mostrar problemas en modo dashboard (vista completa)
     problems_shown = show_sync_problems_compact(location="dashboard")

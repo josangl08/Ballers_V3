@@ -644,7 +644,7 @@ def sync_calendar_to_db_with_feedback():
             
             
             # Busqueda de sesion existente
-           
+
             ses = None
 
             # 1. Buscar por session_id en extended properties
@@ -659,7 +659,7 @@ def sync_calendar_to_db_with_feedback():
                 if ses:
                     logger.debug(f"✅ Encontrada por event_id: {ev_id[:8]}...")
 
-            # 3. BÚSQUEDA FUZZY como último recurso
+            # Busqueda Fuzzy como último recurso
             if not ses:
                 coach_id, player_id = _guess_ids(ev)
                 if coach_id and player_id:
@@ -775,6 +775,29 @@ def sync_calendar_to_db_with_feedback():
                 if calendar_wins:
                     logger.info(f"🔄 CALENDAR WINS - Sesión #{ses.id} ({conflict_reason})")
                     
+                    is_valid, error_msg, warnings = validate_session_for_import(start_dt, end_dt)
+    
+                    if not is_valid:
+                        # RECHAZAR update si es inválido
+                        rejected_events.append({
+                            "title": f"{ses.coach.user.name} × {ses.player.user.name}",
+                            "date": start_dt.strftime("%d/%m/%Y"),
+                            "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
+                            "reason": error_msg,
+                            "suggestion": "Corregir horarios en Google Calendar"
+                        })
+                        logger.warning(f"🚫 UPDATE RECHAZADO - Sesión #{ses.id}: {error_msg}")
+                        continue  # No actualizar, saltar al siguiente evento
+                    
+                    # Si hay warnings, agregar a lista
+                    if warnings:
+                        warning_events.append({
+                            "title": f"{ses.coach.user.name} × {ses.player.user.name}",
+                            "date": start_dt.strftime("%d/%m/%Y"),
+                            "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
+                            "warnings": warnings
+                        })
+
                     changed = False
                     changes = []
                     
@@ -920,7 +943,7 @@ def sync_calendar_to_db_with_feedback():
 
                 imported += 1
 
-        # DDetectar eliminaciones
+        # Detectar eliminaciones
 
         logger.info("🗑️ Verificando eventos eliminados...")
 

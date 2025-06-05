@@ -148,6 +148,11 @@ def main():
         # Si hay sesión, mostrar menú y contenido según selección
         selected_section = create_sidebar_menu()
         
+        # 🎯 VERIFICAR redirección forzada (necesario para que funcione)
+        if "force_section" in st.session_state:
+            selected_section = st.session_state["force_section"]
+            del st.session_state["force_section"]  # Limpiar inmediatamente
+        
         if selected_section:
             # Obtener la ruta del módulo para la sección seleccionada
             content_module_path = get_content_path(selected_section)
@@ -163,11 +168,9 @@ def main():
                     else:
                         st.error(f"El módulo {content_module_path} no tiene la función show_content")
                 except ModuleNotFoundError:
-                    st.error(f"No se encontró el módulo {content_module_path}. Asegúrate de crear la estructura de directorios correcta.")
+                    st.error(f"No se encontró el módulo {content_module_path}...")
                 except Exception as e:
                     st.error(f"Error al cargar el contenido: {str(e)}")
-                    if os.getenv("DEBUG", "False") == "True":
-                        st.exception(e)
             else:
                 st.warning("Sección no implementada")
                 

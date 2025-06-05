@@ -501,11 +501,87 @@ def system_settings():
     # 🔧 LIMPIAR problemas antiguos automáticamente (24 horas)
     auto_cleanup_old_problems(max_age_hours=24)
     
-    # 🔧 MOSTRAR problemas persistentes AL INICIO (solo si existen)
-    problems_shown = show_sync_problems_compact(location="settings")
+    # Mostrar detalles si hay redirección (SIN expander anidado)
+    should_show_details = st.session_state.get("show_sync_details", False)
     
-    if problems_shown:
-        st.divider()  # Separar problemas del resto del contenido
+    if should_show_details:
+        
+        with st.container():
+            st.subheader("Sync Problems & Monitoring")
+            
+            # 🎯 OBTENER datos de AMBAS fuentes
+            result_data = None
+            
+            # FUENTE 1: Manual sync (session_state)
+            if 'last_sync_result' in st.session_state:
+                result_data = st.session_state['last_sync_result']
+                st.info("Data from: Manual Sync")
+            
+            # FUENTE 2: Auto-sync problems (notifications)
+            if not result_data:
+                try:
+                    from common.notifications import get_sync_problems
+                    problems = get_sync_problems()
+                    
+                    if problems:
+                        # Convertir formato de get_sync_problems() a formato esperado
+                        result_data = {
+                            'imported': 0,  # No disponible en sync_problems
+                            'updated': 0,   # No disponible en sync_problems  
+                            'deleted': 0,   # No disponible en sync_problems
+                            'rejected_events': problems.get('rejected', []),
+                            'warning_events': problems.get('warnings', []),
+                            'duration': 0   # No disponible en sync_problems
+                        }
+                        st.info("Data from: Auto-sync Problems")
+                except Exception as e:
+                    st.error(f"Error obteining data from auto-sync: {e}")
+            
+            # Mostrar datos si están disponibles
+            if result_data:
+                # Estadísticas detalladas
+                rejected_events = result_data.get('rejected_events', [])
+                warning_events = result_data.get('warning_events', [])
+                
+                col1, col2, col3, col4, col5 = st.columns(5)
+                col1.metric("📥 Imported", result_data.get('imported', 0))
+                col2.metric("🔄 Updated", result_data.get('updated', 0))
+                col3.metric("🗑️ Deleted", result_data.get('deleted', 0))
+                col4.metric("🚫 Rejected", len(rejected_events))
+                col5.metric("⚠️ Warnings", len(warning_events))
+                
+                if result_data.get('duration'):
+                    st.info(f"⏱️ Duration: {result_data['duration']:.1f}s")
+                
+                # Mostrar eventos rechazados detallados
+                if rejected_events:
+                    st.subheader("🚫 Rejected Events - Details")
+                    for i, event in enumerate(rejected_events):
+                        with st.container():
+                            st.error(f"**{event['title']}** - {event['date']} {event['time']}")
+                            st.write(f"❌ **Problem**: {event['reason']}")
+                            st.write(f"💡 **Solution**: {event['suggestion']}")
+                            if i < len(rejected_events) - 1:
+                                st.markdown("---")
+                
+                # Mostrar warnings detallados
+                if warning_events:
+                    st.subheader("⚠️ Events with warnigns - Details")
+                    for i, event in enumerate(warning_events):
+                        with st.container():
+                            st.warning(f"**{event['title']}** - {event['date']} {event['time']}")
+                            for warning in event.get('warnings', []):
+                                st.write(f"⚠️ {warning}")
+                            st.write("✅ **Status**: Session imported successfully")
+                            if i < len(warning_events) - 1:
+                                st.markdown("---")
+            else:
+                st.info("No sync data available")
+        
+        # Limpiar flag después de mostrar
+        st.session_state["show_sync_details"] = False
+        st.divider()
+        
 
     st.subheader("Database/Googlesheets Management")
 
@@ -556,7 +632,7 @@ def system_settings():
                 result = force_manual_sync()
                 if result['success']:
                     # Mostrar estadísticas detalladas
-                    stats_msg = f"✅ Sync completado en {result['duration']:.1f}s"
+                    stats_msg = f"✅ Sync completed in {result['duration']:.1f}s"
                     changes = [result.get('imported', 0), result.get('updated', 0), result.get('deleted', 0)]
                     if any(changes):
                         stats_msg += f" - {changes[0]} importadas, {changes[1]} actualizadas, {changes[2]} eliminadas"
@@ -586,7 +662,7 @@ def system_settings():
                         # TODO PERFECTO - mensaje de éxito simple (no persistente)
                         st.success(stats_msg)
                         st.balloons()
-                        st.success("🎉 Todos los eventos sincronizados sin problemas!")
+                        st.success("Todos los eventos sincronizados sin problemas!")
                 
                 else:
                     # Error en sync
@@ -595,8 +671,8 @@ def system_settings():
                     from common.notifications import clear_sync_problems
                     clear_sync_problems()
 
-    # AAuto-Sync
-    st.subheader("🤖 Auto-Sync Management")
+    # Auto-Sync
+    st.subheader("Auto-Sync Management")
     
     if has_pending_notifications():
         st.info("🔔 Hay cambios pendientes de notificar del auto-sync")
@@ -688,25 +764,51 @@ def show_content():
     """Función principal para mostrar el contenido de la sección Settings."""
     st.markdown('<h3 class="section-title">Settings</h3>', unsafe_allow_html=True)
     
-  
-    # Para administradores, mostrar todas las opciones con la nueva estructura
-    tab1, tab2 = st.tabs(["Users", "System"])
+    # Si hay flag de detalles, CAMBIAR ORDER de tabs para mostrar System primero
+    show_details = st.session_state.get("show_sync_details", False)
     
-    with tab1:
-        # Subtabs dentro de Users
-        user_tab1, user_tab2, user_tab3 = st.tabs(["Create User", "Edit User", "Delete User"])
+    if show_details:
+        # OPCIÓN A: Tabs en orden diferente
+        tab1, tab2 = st.tabs(["System", "Users"])  # System primero
         
-        with user_tab1:
-            create_user_form()
-        
-        with user_tab2:
-            edit_any_user()
+        with tab1:  # System 
+            system_settings()  # Aquí expandir automáticamente
+            
+        with tab2:  # Users
+            # Subtabs existentes...
+            user_tab1, user_tab2, user_tab3 = st.tabs(["Create User", "Edit User", "Delete User"])
 
-        with user_tab3:
-            delete_user()
-    
-    with tab2:
-        system_settings()
+            with user_tab1:
+                create_user_form()
+
+            with user_tab2:
+                edit_any_user()
+
+            with user_tab3:
+                delete_user()
+            
+        # Limpiar flag después de mostrar
+        st.session_state["show_sync_details"] = False
+
+    else:
+        # Para administradores, mostrar todas las opciones con la nueva estructura
+        tab1, tab2 = st.tabs(["Users", "System"])
+        
+        with tab1:
+            # Subtabs dentro de Users
+            user_tab1, user_tab2, user_tab3 = st.tabs(["Create User", "Edit User", "Delete User"])
+            
+            with user_tab1:
+                create_user_form()
+            
+            with user_tab2:
+                edit_any_user()
+
+            with user_tab3:
+                delete_user()
+        
+        with tab2:
+            system_settings()
 
 if __name__ == "__main__":
     

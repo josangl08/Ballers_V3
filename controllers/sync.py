@@ -1,13 +1,7 @@
-# controllers/sync.py - ARCHIVO COMPLETO CORREGIDO
-
 from __future__ import annotations
-"""utils/sync.py — One‑shot bidirectional synchronisation helper.
 
-Import and call :pyfunc:`run_sync_once` **once** after el login en ``main.py``.
-Mantiene la coherencia entre BBDD y Google Calendar evitando bucles y
-re‑renderizados continuos gracias a Streamlit cache.
-"""
-import fcntl  # Para file locking
+import fcntl 
+import streamlit as st 
 import tempfile
 import os
 import threading
@@ -307,14 +301,10 @@ class SimpleAutoSync:
         while not self._stop_event.is_set():
             try:
                 start_time = time.time()
-                try:    
-                    # Ejecutar sync y capturar cambios
-                    imported, updated, deleted, rejected_events, warning_events = sync_calendar_to_db_with_feedback()
-                except ImportError:
-                        # Fallback a función normal si no existe la nueva
-                        imported, updated, deleted = sync_calendar_to_db()
-                        rejected_events, warning_events = [], []
 
+                # Ejecutar sync y capturar cambios
+                imported, updated, deleted, rejected_events, warning_events = sync_calendar_to_db_with_feedback()
+            
                 duration = time.time() - start_time
                     
                 # Actualizar estadísticas
@@ -324,7 +314,7 @@ class SimpleAutoSync:
                 self.stats.last_sync_duration = duration
                 self.stats.last_error = None
                     
-                # 🔔 NUEVO: Detectar y guardar cambios para notificaciones
+                # Detectar y guardar cambios para notificaciones
                 total_changes = imported + updated + deleted
                 if total_changes > 0:
                     # Hay cambios → guardar para notificación
@@ -384,7 +374,7 @@ def is_auto_sync_running() -> bool:
     """Verifica si auto-sync está ejecutándose"""
     return _auto_sync.stats.running
 
-# 🔔 FUNCIÓN para crear mensaje de toast inteligente
+# Funcion para crear mensaje de toast inteligente
 def _format_changes_message(imported: int, updated: int, deleted: int) -> tuple[str, str]:
     """
     Formatea mensaje de toast basado en tipos de cambios.
