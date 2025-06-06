@@ -266,21 +266,21 @@ class UserController:
             return False, f"Error creating user: {str(e)}", None
     
     def update_user(
-        self,
-        user_id: int,
-        name: Optional[str] = None,
-        username: Optional[str] = None,  # 🆕 AGREGAR username
-        email: Optional[str] = None,
-        phone: Optional[str] = None,
-        line: Optional[str] = None,
-        new_password: Optional[str] = None,
-        is_active: Optional[bool] = None,
-        new_user_type: Optional[str] = None,
-        profile_photo_file=None,
-        **profile_data
-    ) -> Tuple[bool, str]:
+    self,
+    user_id: int,
+    name: Optional[str] = None,
+    username: Optional[str] = None,
+    email: Optional[str] = None,
+    phone: Optional[str] = None,
+    line: Optional[str] = None,
+    new_password: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    new_user_type: Optional[str] = None,
+    profile_photo_file=None,
+    **profile_data
+) -> Tuple[bool, str]:
         """
-        Actualiza un usuario existente.
+        Actualiza un usuario existente
         """
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
@@ -293,7 +293,7 @@ class UserController:
             # Validar datos si se proporcionan
             if name or username or email:
                 current_name = name or user.name
-                current_username = username or user.username  # 🆕
+                current_username = username or user.username
                 current_email = email or user.email
                 is_valid, error_msg = self._validate_user_data(current_name, current_username, current_email)
                 if not is_valid:
@@ -312,7 +312,7 @@ class UserController:
             # Actualizar campos básicos
             if name is not None:
                 user.name = name
-            if username is not None:  # 🆕 AGREGAR actualización de username
+            if username is not None:
                 user.username = username
             if email is not None:
                 user.email = email
@@ -323,7 +323,37 @@ class UserController:
             if is_active is not None and hasattr(user, 'is_active'):
                 user.is_active = is_active
             
-            # ... resto del código igual ...
+            # 🆕 NUEVO: Actualizar foto de perfil
+            if profile_photo_file is not None:
+                try:
+                    # Eliminar foto anterior si no es la predeterminada
+                    if (user.profile_photo != "assets/profile_photos/default_profile.png" and 
+                        os.path.exists(user.profile_photo)):
+                        try:
+                            os.remove(user.profile_photo)
+                        except:
+                            pass  # Si no se puede eliminar, continuar
+                    
+                    # Guardar nueva foto
+                    new_photo_path = self._save_profile_photo(profile_photo_file, user.username)
+                    user.profile_photo = new_photo_path
+                    
+                except Exception as e:
+                    return False, f"Error updating profile photo: {str(e)}"
+            
+            # 🆕 NUEVO: Actualizar contraseña si se proporciona
+            if new_password:
+                user.password_hash = hash_password(new_password)
+            
+            # 🆕 NUEVO: Cambio de tipo de usuario si es necesario
+            if new_user_type and new_user_type != user.user_type.name:
+                success = self._change_user_type(user, new_user_type, profile_data)
+                if not success:
+                    self.db.rollback()
+                    return False, f"Error changing user type to {new_user_type}"
+            else:
+                # Actualizar perfil del tipo actual
+                self._update_user_profile(user, profile_data)
             
             self.db.commit()
             return True, f"User {user.name} updated successfully."

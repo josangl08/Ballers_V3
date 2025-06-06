@@ -3,7 +3,7 @@ import streamlit as st
 import datetime as dt
 from streamlit_option_menu import option_menu
 from common.login import logout
-from controllers.sync_coordinator import is_auto_sync_running, get_auto_sync_status, force_manual_sync, has_pending_notifications
+from controllers.sync_coordinator import is_auto_sync_running, get_auto_sync_status, force_manual_sync, _auto_sync
 from common.notifications import get_sync_problems
 
 def get_last_sync_stats():
@@ -279,10 +279,8 @@ def create_sidebar_menu():
         if st.button("📤 Log Out", key="logout_button", 
                 type="primary", use_container_width=True):
             
-            # 🎯 RESET AUTO-SYNC stats antes de logout
+            # Reset AUTO-SYNC stats antes de logout
             try:
-                from controllers.sync import _auto_sync  # Instancia global
-                
                 # Limpiar estadísticas del auto-sync
                 _auto_sync.stats.last_sync_time = None
                 _auto_sync.stats.last_sync_duration = 0
@@ -304,8 +302,8 @@ def create_sidebar_menu():
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             
-            st.session_state["show_logout_message"] = True
-            st.rerun()
+            # Usar función centralizada que limpia query params
+            logout()
 
     return selected
 

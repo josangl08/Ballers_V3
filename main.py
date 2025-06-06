@@ -3,6 +3,7 @@ import streamlit as st
 import importlib
 import os
 import logging
+import datetime as dt
 
 # Importar configuración
 from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE
@@ -93,7 +94,7 @@ def main():
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s'
         )
-    # INICIALIZAR BASE DE DATOS AL INICIO
+    # Inicializar base de datos
     try:
         if not initialize_database():
             st.error("❌ Error crítico: No se pudo inicializar la base de datos")

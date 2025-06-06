@@ -602,7 +602,24 @@ def create_session_with_calendar(
         )
 
 def update_session_with_calendar(session_id: int, **kwargs) -> tuple[bool, str]:
-    """Función de conveniencia para actualizar sesión con sincronización."""
+    """Función de conveniencia para actualizar sesión con sincronización - CORREGIDA."""
+    
+    # Convertir date + time a datetime antes de enviar al controller
+    if 'session_date' in kwargs and ('start_time' in kwargs or 'end_time' in kwargs):
+        session_date = kwargs.pop('session_date')  # Remover del kwargs
+        
+        if 'start_time' in kwargs:
+            start_time = kwargs.pop('start_time')
+            kwargs['start_time'] = dt.datetime.combine(session_date, start_time)
+        
+        if 'end_time' in kwargs:
+            end_time = kwargs.pop('end_time') 
+            kwargs['end_time'] = dt.datetime.combine(session_date, end_time)
+    
+    # 🔧 FIX: Convertir status string a enum si necesario
+    if 'status' in kwargs and isinstance(kwargs['status'], str):
+        kwargs['status'] = SessionStatus(kwargs['status'])
+    
     with SessionController() as controller:
         return controller.update_session(session_id, **kwargs)
 

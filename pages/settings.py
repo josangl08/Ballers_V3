@@ -28,8 +28,8 @@ def create_user_form():
             help="Select user type to see specific fields below"
         )
         
-        # From visual
-        with st.form("create_user_form", border=True):  #  Sin borde para integración
+        # Form visual
+        with st.form("create_user_form", clear_on_submit=True, border=True):  #  Sin borde para integración
             # Información básica
             st.markdown("#### Basic Information")
             col1, col2 = st.columns(2)
@@ -157,7 +157,7 @@ def edit_any_user():
         st.write(f"**E-mail:** {user_data['email']}")
     
     # Formulario de edición
-    with st.form("admin_edit_user_form"):
+    with st.form("admin_edit_user_form", clear_on_submit=True):
         
         col1, col2 = st.columns(2)
         with col1:

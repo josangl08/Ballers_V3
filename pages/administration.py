@@ -373,7 +373,7 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                 st.warning("⚠️ **Note**: This session has times outside the recommended range (8:00-18:00). "
                         "Consider rescheduling to a standard time slot.")
 
-            with st.form(f"edit_session_{selected_id}"):
+            with st.form(f"edit_session_{selected_id}", clear_on_submit=True):
                 col1, col2 = st.columns(2)
 
                 with col1:

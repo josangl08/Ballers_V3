@@ -27,7 +27,7 @@ def validate_session_time(session_date: dt.date, start_time: dt.time, end_time: 
     """
     # 1. Verificar que end_time > start_time
     if end_time <= start_time:
-        return False, "La hora de fin debe ser posterior a la hora de inicio."
+        return False, "The end time must be later than the start time.."
     
     # 2. Verificar horario de trabajo (8:00 - 18:00)
     WORK_START = dt.time(8, 0)
@@ -50,10 +50,10 @@ def validate_session_time(session_date: dt.date, start_time: dt.time, end_time: 
     duration = (end_dt - start_dt).total_seconds() / 60  # minutos
     
     if duration < 15:
-        return False, "The session should last at least 15 minutes."
+        return False, "The session should last at least 60 minutes."
     
     if duration > 120:  # 2 horas
-        return False, "The session cannot last more than 4 hours."
+        return False, "The session cannot last more than 2 hours."
     
     return True, ""
 
