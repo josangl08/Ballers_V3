@@ -29,7 +29,7 @@ class User(Base):
     line:           Mapped[Optional[str]]     = mapped_column(String, nullable=True)
     profile_photo:  Mapped[str]               = mapped_column(
         String,
-        default="assets/profiles/default_profile.png"
+        default="assets/profiles_photos/default_profile.png"
     )
     fecha_registro: Mapped[datetime]          = mapped_column(
         DateTime(timezone=True),

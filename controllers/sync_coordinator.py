@@ -1,5 +1,8 @@
-from __future__ import annotations
-
+# controllers/sync_coordinator.py
+"""
+Coordinador de sincronización - gestiona auto-sync, locks y estadísticas.
+Anteriormente: sync.py
+"""
 import fcntl 
 import streamlit as st 
 import tempfile
@@ -9,11 +12,11 @@ import time
 import datetime as dt
 from dataclasses import dataclass, asdict
 from typing import Optional, Dict, Any
-import streamlit as st
 import logging
+
 from common.notifications import save_sync_problems, clear_sync_problems
-from controllers.calendar_controller import sync_calendar_to_db, update_past_sessions, sync_db_to_calendar, sync_calendar_to_db_with_feedback
-from controllers.sheets_controller import get_accounting_df 
+from .calendar_sync_core import sync_calendar_to_db_with_feedback, sync_db_to_calendar
+from .session_controller import update_past_sessions
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +47,8 @@ def _release_sync_lock(lock_file):
 def _toast(msg: str, icon: str = "") -> None:
     """Muestra un mensaje flotante con duración extendida."""
     if hasattr(st, "toast"):
-        # 🔧 FIX: Aumentar duración de toast a 5 segundos
         st.toast(msg, icon=icon)
-        # Nota: Streamlit no permite configurar duración directamente,
-        # pero podemos mostrar también en sidebar para notificaciones importantes
         if "Auto-Sync" in msg and ("importada" in msg or "actualizada" in msg or "eliminada" in msg):
-            # Para cambios importantes, también mostrar en sidebar temporalmente
             if 'sync_notification' not in st.session_state:
                 st.session_state['sync_notification'] = msg
                 st.session_state['sync_notification_time'] = dt.datetime.now()
@@ -62,42 +61,12 @@ def _toast(msg: str, icon: str = "") -> None:
         else:
             st.info(msg)
 
-# — Pull de Google a BBDD ----------------------------------------------------
-#   TTL 300 s = 5 minutos                                                     
-# ---------------------------------------------------------------------------
-@st.cache_data(ttl=300, show_spinner=False)
-def _pull_google() -> None:
-    """Sincroniza BBDD ← Google Calendar."""
-    sync_calendar_to_db()
-
-# — Push de BBDD a Google Calendar + pull final -----------------------------
-def _push_local() -> None:
-    """Marca sesiones pasadas como *completed*, sube cambios y refresca."""
-    with st.spinner("🔄 Actualizando sesiones pasadas..."):
-        n = update_past_sessions()
-        if n:
-            st.info(f"✅ Marcadas {n} sesiones como completadas")
-        
-    with st.spinner("📤 Sincronizando cambios locales..."):
-        if n:
-            sync_db_to_calendar()
-            st.info("✅ Cambios enviados a Google Calendar")
-    
-    with st.spinner("📥 Descargando cambios de Calendar..."):
-        sync_calendar_to_db()
-        st.info("✅ Cambios descargados de Google Calendar")
-
+# — Funciones públicas simplificadas ----------------------------------------
 
 def run_sync_once(force: bool = False) -> None:
     """
     Ejecuta la sincronización completa usando force_manual_sync.
     Mantiene compatibilidad con interfaz anterior pero simplifica lógica.
-    
-    Parameters
-    ----------
-    force: bool, default False
-        Si se pasa True se ignora la bandera en st.session_state y se
-        vuelve a sincronizar.
     """
     # Verificar si ya se ejecutó (solo si no es forzado)
     if st.session_state.get("_synced") and not force:
@@ -128,7 +97,6 @@ def run_sync_once(force: bool = False) -> None:
 
 # Auto-Sync Classes and Functions ------------------------------------------
 
-    
 @dataclass
 class AutoSyncStats:
     """Estadísticas de auto-sync (simple)"""
@@ -152,7 +120,7 @@ class SimpleAutoSync:
         self.stats = AutoSyncStats()
         self.thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
-        self._sync_in_progress = False  # 🔧 Agregar flag interno
+        self._sync_in_progress = False
         
     def start(self, interval_minutes: int = 5) -> bool:
         """Inicia auto-sync"""
@@ -182,7 +150,7 @@ class SimpleAutoSync:
         return True
     
     def force_sync(self) -> Dict[str, Any]:
-        """🔧 FIX: Sync manual usando versión UI normal"""
+        """Sync manual usando versión UI normal"""
         start_time = time.time()
         
         try:
@@ -202,10 +170,10 @@ class SimpleAutoSync:
             _auto_sync.stats.last_sync_duration = duration
             _auto_sync.stats.last_error = None
 
-            # 🔧 CRÍTICO: SIEMPRE guardar problemas del sync actual (incluso si está vacío)
+            # CRÍTICO: SIEMPRE guardar problemas del sync actual (incluso si está vacío)
             save_sync_problems(rejected_events, warning_events)
             
-            # 🔧 LOGGING PRECISO para manual sync
+            # LOGGING PRECISO para manual sync
             total_problems = len(rejected_events) + len(warning_events)
             if total_problems > 0:
                 print(f"🔧 Manual sync completado con problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
@@ -231,7 +199,7 @@ class SimpleAutoSync:
             _auto_sync.stats.failed_syncs += 1
             _auto_sync.stats.last_error = str(e)
 
-            # 🔧 LIMPIAR problemas en caso de error
+            # LIMPIAR problemas en caso de error
             save_sync_problems([], [])
             print(f"❌ Error manual sync: {e}")
             
@@ -248,7 +216,7 @@ class SimpleAutoSync:
         return asdict(self.stats)       
 
     def _sync_loop(self):
-        """ Loop con detección de cambios para notificaciones"""
+        """Loop con detección de cambios para notificaciones"""
         while not self._stop_event.is_set():
             try:
                 start_time = time.time()
@@ -284,15 +252,6 @@ class SimpleAutoSync:
                     # Sin cambios → no notificar
                     self.stats.changes_notified = True
                 
-                # Crear estadísticas para auto-sync
-                sync_stats = {
-                    'imported': imported,
-                    'updated': updated,
-                    'deleted': deleted,
-                    'duration': duration,
-                    'past_updated': 0  # Auto-sync no actualiza past sessions
-                }
-                
                 # Guardar problemas automáticamente
                 save_sync_problems(rejected_events, warning_events)
 
@@ -307,7 +266,7 @@ class SimpleAutoSync:
                     if hasattr(self.stats, '_last_problems'):
                         delattr(self.stats, '_last_problems')
                 
-                # 🔧 LOGGING CONSISTENTE
+                # LOGGING CONSISTENTE
                 if total_problems > 0:
                     print(f"⚠️ Auto-sync completado con problemas en {duration:.1f}s: {imported}+{updated}+{deleted}")
                 else:
@@ -319,7 +278,7 @@ class SimpleAutoSync:
                 self.stats.last_error = str(e)
                 self.stats.changes_notified = True
                 
-                # 🔧 LIMPIAR problemas en caso de error
+                # LIMPIAR problemas en caso de error
                 save_sync_problems([], [])
                 print(f"❌ Error auto-sync: {e}")
         
@@ -350,7 +309,20 @@ def is_auto_sync_running() -> bool:
     """Verifica si auto-sync está ejecutándose"""
     return _auto_sync.stats.running
 
-# Funcion para crear mensaje de toast inteligente
+def has_pending_notifications() -> bool:
+    """Verifica si hay notificaciones pendientes"""
+    global _auto_sync
+    
+    # Verificar si los atributos existen antes de usarlos
+    if not hasattr(_auto_sync.stats, 'changes_notified'):
+        return False
+    if not hasattr(_auto_sync.stats, 'last_changes'):
+        return False
+        
+    return (not _auto_sync.stats.changes_notified and 
+            _auto_sync.stats.last_changes is not None)
+
+# Función para crear mensaje de toast inteligente
 def _format_changes_message(imported: int, updated: int, deleted: int) -> tuple[str, str]:
     """
     Formatea mensaje de toast basado en tipos de cambios.
@@ -386,7 +358,6 @@ def _format_changes_message(imported: int, updated: int, deleted: int) -> tuple[
     
     return message, icon
 
-# 🔔 FUNCIÓN pública para verificar y mostrar notificaciones
 def check_and_show_autosync_notifications():
     """
     Verifica si hay cambios pendientes de notificar y muestra toast.
@@ -415,27 +386,11 @@ def check_and_show_autosync_notifications():
             message, icon = _format_changes_message(imported, updated, deleted)
             
             if message:
-                # 🔔 REUTILIZAR función _toast existente
                 try:
                     _toast(message, icon)
                     print(f"🔔 Toast mostrado: {message}")
-                    
                 except Exception as e:
                     print(f"⚠️ Error mostrando toast: {e}")
         
         # Marcar como notificado (sin importar si tuvo éxito)
         _auto_sync.stats.changes_notified = True
-
-# 🔔 FUNCIÓN auxiliar para UI (opcional)
-def has_pending_notifications() -> bool:
-    """Verifica si hay notificaciones pendientes"""
-    global _auto_sync
-    
-    # Verificar si los atributos existen antes de usarlos
-    if not hasattr(_auto_sync.stats, 'changes_notified'):
-        return False
-    if not hasattr(_auto_sync.stats, 'last_changes'):
-        return False
-        
-    return (not _auto_sync.stats.changes_notified and 
-            _auto_sync.stats.last_changes is not None)

@@ -3,7 +3,7 @@ import streamlit as st
 import datetime as dt
 from streamlit_option_menu import option_menu
 from common.login import logout
-from controllers.sync import is_auto_sync_running, get_auto_sync_status, force_manual_sync
+from controllers.sync_coordinator import is_auto_sync_running, get_auto_sync_status, force_manual_sync, has_pending_notifications
 from common.notifications import get_sync_problems
 
 def get_last_sync_stats():

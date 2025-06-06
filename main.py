@@ -10,7 +10,7 @@ from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE
 # Importar módulos personalizados
 from common.login import login_page
 from common.menu import create_sidebar_menu, get_content_path
-from controllers.sync import run_sync_once, is_auto_sync_running, start_auto_sync
+from controllers.sync_coordinator import is_auto_sync_running, start_auto_sync
 from controllers.db import initialize_database 
 
 # Configuración de la página
@@ -189,7 +189,6 @@ def main():
             else:
                 st.warning("Sección no implementada")
                 
-       # run_sync_once()
             
 if __name__ == "__main__":
     main()

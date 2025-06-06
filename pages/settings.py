@@ -6,8 +6,8 @@ import os
 import shutil
 
 from controllers.user_controller import UserController, get_users_for_management, create_user_simple, update_user_simple, delete_user_simple, get_user_with_profile
-from controllers.calendar_controller import sync_db_to_calendar
-from controllers.sync import start_auto_sync, stop_auto_sync, get_auto_sync_status, force_manual_sync, is_auto_sync_running, has_pending_notifications
+from controllers.calendar_sync_core import sync_db_to_calendar
+from controllers.sync_coordinator import start_auto_sync, stop_auto_sync, get_auto_sync_status, force_manual_sync, is_auto_sync_running, has_pending_notifications
 from controllers.sheets_controller import get_accounting_df
 from common.notifications import auto_cleanup_old_problems, get_sync_problems, clear_sync_problems
 from models import UserType
@@ -17,18 +17,18 @@ def create_user_form():
     """Formulario con selector integrado visualmente."""
     st.subheader("Create New User")
     
-    # 🎨 CONTENEDOR PRINCIPAL que simula un form único
+    # Contenerdor Rpincipal que simula un form único
     with st.container(border=True):
         st.markdown("### 👤 User Information")
         
-        # === SELECTOR FUERA DEL FORM (pero dentro del contenedor) ===
+        # Stor fuera del form(pero dentro del contenedor)
         user_type = st.selectbox(
             "User Type*", 
             options=[t.name for t in UserType],
             help="Select user type to see specific fields below"
         )
         
-        # === FORM VISUAL SIN BORDE ===
+        # From visual
         with st.form("create_user_form", border=True):  #  Sin borde para integración
             # Información básica
             st.markdown("#### Basic Information")
@@ -54,7 +54,7 @@ def create_user_form():
                     min_value=dt.date(1900, 1, 1), max_value=dt.date.today())
                 profile_photo = st.file_uploader("Profile Picture", type=["jpg", "jpeg", "png"])
             
-            # === CAMPOS ESPECÍFICOS DINÁMICOS ===
+            # Campos especificos dinamicos
             if user_type == "coach":
                 st.markdown("#### 📢 Coach Information")
                 license_number = st.text_input("License Name", 
@@ -125,7 +125,7 @@ def edit_any_user():
     """Función para que los administradores editen cualquier usuario - MEJORADO."""
     st.subheader("Edit Users")
     
-    # 🔧 FIX: Usar nueva función sin lazy loading
+    # Usar nueva función sin lazy loading
     users_data = get_users_for_management()
     
     if not users_data:
@@ -139,7 +139,7 @@ def edit_any_user():
         format_func=lambda x: next((f"{u['Name']} ({u['Username']}, {u['User Type']})" for u in users_data if u["ID"] == x), "")
     )
     
-    # 🔧 FIX: Usar función que evita lazy loading
+    # Usar función que evita lazy loading
     user_data = get_user_with_profile(selected_user_id)
     if not user_data:
         st.error("Could not load the selected user.")
@@ -156,9 +156,9 @@ def edit_any_user():
         st.write(f"**User Type:** {user_data['user_type']}")
         st.write(f"**E-mail:** {user_data['email']}")
     
-    # 🔧 FIX: Formulario de edición con SUBMIT BUTTON
+    # Formulario de edición
     with st.form("admin_edit_user_form"):
-        # 🆕 AGREGAR campo USERNAME editable
+        
         col1, col2 = st.columns(2)
         with col1:
             name = st.text_input("Full Name", value=user_data["name"])
@@ -178,7 +178,7 @@ def edit_any_user():
             index=[t.name for t in UserType].index(user_data["user_type"])
         )
         
-        # 🆕 Información específica del perfil (dinámico)
+        # Información específica del perfil (dinámico)
         st.divider()
         st.subheader(f"{new_user_type} Specific Information")
         
@@ -235,7 +235,7 @@ def edit_any_user():
         st.subheader("Change Profile Picture")
         new_profile_photo = st.file_uploader("New Profile Picture", type=["jpg", "jpeg", "png"])
         
-        # 🔧 FIX: SUBMIT BUTTON (era lo que faltaba)
+    
         submit = st.form_submit_button("Save Changes", type="primary")
         
         if submit:
@@ -248,7 +248,7 @@ def edit_any_user():
             # Preparar datos para actualización
             update_data = {
                 'name': name,
-                'username': username,  # 🆕 INCLUIR username
+                'username': username,  
                 'email': email,
                 'phone': phone if phone else None,
                 'line': line if line else None,
@@ -259,7 +259,7 @@ def edit_any_user():
                 **profile_data
             }
             
-            # 🔧 FIX: Actualizar controller para manejar username
+            # Actualizar controller para manejar username
             success, message = update_user_simple(selected_user_id, **update_data)
             
             if success:
@@ -285,7 +285,7 @@ def delete_user():
         format_func=lambda x: next((f"{u['Name']} ({u['Username']}, {u['User Type']})" for u in users_data if u["ID"] == x), "")
     )
     
-    # 🔧 FIX: Usar get_user_with_profile en lugar de user_obj
+    # Usar get_user_with_profile en lugar de user_obj
     user_data = get_user_with_profile(selected_user_id)
     if not user_data:
         st.error("Could not load the selected user.")
@@ -295,7 +295,7 @@ def delete_user():
     col1, col2 = st.columns([1, 3])
     
     with col1:
-        st.image(user_data["profile_photo"], width=150)  # 🔧 FIX: usar user_data
+        st.image(user_data["profile_photo"], width=150)  
     
     with col2:
         st.write(f"**Username:** {user_data['username']}")
@@ -312,7 +312,7 @@ def delete_user():
             return
         
         # Usar controller para eliminar
-        success, message = delete_user_simple(user_data["user_id"])  # 🔧 FIX: usar user_data
+        success, message = delete_user_simple(user_data["user_id"])  
         
         if success:
             st.success(message)
@@ -332,7 +332,7 @@ def manage_user_status():
         st.info("No users available.")
         return
     
-    # 🆕 FILTRO POR TIPO DE USUARIO
+    # Filtro por tipo de usuario
     col1, col2 = st.columns([1, 1])
     with col1:
         user_types = ["All"] + [t.name for t in UserType]
@@ -356,7 +356,7 @@ def manage_user_status():
         st.info("No users match the selected filters.")
         return
     
-    # 🆕 TABLA VISUAL con colores e iconos
+    # Tabla con colores e iconos
     st.subheader("Users Overview")
     
     # Preparar datos para tabla
@@ -366,10 +366,10 @@ def manage_user_status():
         status_icon = "🟢" if user["Active_Bool"] else "🔴"
         status_text = f"{status_icon} {'Active' if user['Active_Bool'] else 'Inactive'}"
         
-        # 🎨 Iconos para tipo de usuario
+        # Iconos para tipo de usuario
         type_icons = {
-            "admin": "👑",
-            "coach": "🏃‍♂️", 
+            "admin": "🔑",
+            "coach": "📢", 
             "player": "⚽"
         }
         type_icon = type_icons.get(user["User Type"].lower(), "👤")
@@ -387,7 +387,7 @@ def manage_user_status():
     # Crear DataFrame
     df = pd.DataFrame(table_data)
     
-    # 🎨 Estilos por tipo de usuario
+    # Estilos por tipo de usuario
     def style_users(row):
         user_type = row["Type"].split()[1].lower()  # Extraer tipo sin icono
         if user_type == "admin":
@@ -416,13 +416,13 @@ def manage_user_status():
         use_container_width=True
     )
     
-    # 🆕 SELECTOR MEJORADO con iconos
+
     st.subheader("Change User Status")
     
     # Preparar opciones del selector con iconos
     selector_options = []
     for user in filtered_users:
-        status_icon = "🟢" if user["Active_Bool"] else "🔴"
+        status_icon = "✅" if user["Active_Bool"] else "❌"
         type_icon = type_icons.get(user["User Type"].lower(), "👤")
         
         label = f"{type_icon} {user['Name']} ({user['Username']}) {status_icon}"
@@ -440,7 +440,7 @@ def manage_user_status():
     if selected_user:
         current_status = "Active" if selected_user["Active_Bool"] else "Inactive"
         action = "Deactivate" if selected_user["Active_Bool"] else "Activate"
-        action_icon = "🔴" if selected_user["Active_Bool"] else "🟢"
+        action_icon = "❌" if selected_user["Active_Bool"] else "✅"
         
         # Mostrar información actual
         col1, col2 = st.columns([2, 1])

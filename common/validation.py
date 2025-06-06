@@ -166,13 +166,13 @@ def validate_session_for_import(start_dt: dt.datetime, end_dt: dt.datetime) -> T
         else:
             warnings.append(f"Very early start: {start_dt.time().strftime('%H:%M')} (limit: 6:00)")
     
-    if start_dt.time() >= RECOMMENDED_END:
+    if start_dt.time() > RECOMMENDED_END:
         if start_dt.time() <= EXTENDED_END:
             warnings.append(f"Late Start: {start_dt.time().strftime('%H:%M')} (recommended: 8:00-18:00)")
         else:
             warnings.append(f"Very late start: {start_dt.time().strftime('%H:%M')} (limit: 20:00)")
     
-    if end_dt.time() <= RECOMMENDED_START:
+    if end_dt.time() < RECOMMENDED_START:
         warnings.append(f"End very early: {end_dt.time().strftime('%H:%M')} (recommended: after 8:00)")
     
     if end_dt.time() > RECOMMENDED_END:

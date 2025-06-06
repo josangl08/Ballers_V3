@@ -6,12 +6,13 @@ import plotly.express as px
 import datetime as dt
 
 from controllers.player_controller import PlayerController, get_player_profile_data, get_players_for_list, update_player_notes_simple
-from controllers.session_controller import SessionController
+from controllers.session_controller import SessionController, get_sessions_for_display, format_sessions_for_table
 from controllers.internal_calendar import show_calendar
+from models import SessionStatus
 
 
 def show_player_profile(player_id=None):
-    """Muestra el perfil de un jugador específico - SIMPLIFICADO."""
+    """Muestra el perfil de un jugador específico"""
     
     # Obtener datos usando controller
     user_id = st.session_state.get("user_id") if st.session_state.get("user_type") == "player" else None
@@ -70,7 +71,6 @@ def show_player_profile(player_id=None):
         )
     
     # Filtro de estado
-    from models import SessionStatus
     status_values = [s.value for s in SessionStatus]
     status_filter = st.multiselect(
         "Status", 

@@ -231,7 +231,7 @@ class UserController:
         
         try:
             # Procesar foto de perfil
-            profile_photo_path = "assets/default_profile.png"
+            profile_photo_path = "assets/profile_photos/default_profile.png"
             if profile_photo_file:
                 profile_photo_path = self._save_profile_photo(profile_photo_file, username)
             
@@ -281,7 +281,6 @@ class UserController:
     ) -> Tuple[bool, str]:
         """
         Actualiza un usuario existente.
-        🆕 AGREGAR soporte para cambiar username
         """
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
@@ -300,7 +299,7 @@ class UserController:
                 if not is_valid:
                     return False, error_msg
             
-            # 🆕 Verificar username único si se está cambiando
+            # Verificar username único si se está cambiando
             if username and username != user.username:
                 if self.check_username_exists(username, exclude_user_id=user_id):
                     return False, "The username is already in use."
@@ -360,7 +359,7 @@ class UserController:
                 self.db.delete(user.admin_profile)
             
             # Eliminar foto de perfil si no es la predeterminada
-            if user.profile_photo != "assets/default_profile.png" and os.path.exists(user.profile_photo):
+            if user.profile_photo != "assets/profile_photos/default_profile.png" and os.path.exists(user.profile_photo):
                 try:
                     os.remove(user.profile_photo)
                 except:
@@ -554,7 +553,7 @@ def get_users_for_management(user_type_filter: Optional[str] = None) -> List[Dic
         
         return users_data
 
-# 🆕 AGREGAR función para obtener usuario individual con eager loading
+# Función para obtener usuario individual con eager loading
 def get_user_with_profile(user_id: int) -> Optional[Dict[str, Any]]:
     """
     Obtiene un usuario con todos sus datos de perfil cargados.

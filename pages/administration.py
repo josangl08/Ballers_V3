@@ -8,8 +8,19 @@ from typing import Optional, List
 import plotly.graph_objects as go
 from sqlalchemy import func, case
 
-from models import User, Coach, Session, SessionStatus, UserType
-from controllers.session_controller import SessionController, create_session_with_calendar, update_session_with_calendar, delete_session_with_calendar  # 🆕 NUEVO IMPORT
+from models import User, Coach, Session, SessionStatus, UserType, Player
+from controllers.session_controller import (
+    SessionController,
+    create_session_with_calendar,  
+    update_session_with_calendar,    
+    delete_session_with_calendar,  
+    get_coach_stats,              
+    get_sessions_for_display,     
+    format_sessions_for_table,    
+    get_available_coaches,        
+    get_available_players,        
+    get_sessions_for_editing  
+)        
 from controllers.internal_calendar import show_calendar
 from controllers.sheets_controller import get_accounting_df
 from controllers.db import get_db_session

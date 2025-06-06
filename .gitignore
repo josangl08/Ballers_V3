@@ -181,3 +181,4 @@ data/ballers_app.db
 data/ballers_app.db*
 *.db-journal
 assets/
+logs/
