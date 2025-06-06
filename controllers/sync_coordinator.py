@@ -20,7 +20,7 @@ from .session_controller import update_past_sessions
 
 logger = logging.getLogger(__name__)
 
-# Internal helpers -----------------------------------------------------------
+# Internal helpers
 
 SYNC_LOCK_FILE = os.path.join(tempfile.gettempdir(), "ballers_sync.lock")
 
@@ -43,7 +43,7 @@ def _release_sync_lock(lock_file):
                 os.remove(SYNC_LOCK_FILE)
         except:
             pass
-   
+
 def _toast(msg: str, icon: str = "") -> None:
     """Muestra un mensaje flotante con duración extendida."""
     if hasattr(st, "toast"):
@@ -61,7 +61,235 @@ def _toast(msg: str, icon: str = "") -> None:
         else:
             st.info(msg)
 
-# — Funciones públicas simplificadas ----------------------------------------
+
+# Lógica de sync
+
+def get_coach_id_if_needed() -> Optional[int]:
+    """Obtiene coach_id si el usuario actual es coach, None en caso contrario."""
+    user_type = st.session_state.get("user_type")
+    if user_type != "coach":
+        return None
+        
+    try:
+        from controllers.db import get_db_session
+        from models import Coach, User
+        
+        user_id = st.session_state.get("user_id")
+        db = get_db_session()
+        coach = db.query(Coach).join(User).filter(User.user_id == user_id).first()
+        db.close()
+        
+        return coach.coach_id if coach else None
+    except Exception:
+        return None
+
+
+def filter_sync_results_by_coach(result: Dict[str, Any], coach_id: int) -> Dict[str, Any]:
+    """Filtra resultados de sync para mostrar solo eventos del coach específico."""
+    if not result or not coach_id:
+        return result
+    
+    # Buscar con mayúscula y minúscula
+    coach_patterns = [
+        f"#C{coach_id}",  # Mayúscula: #C1
+        f"#c{coach_id}",  # Minúscula: #c1
+        f"coach {coach_id}",  # Texto: coach 1
+        f"Coach {coach_id}"   # Texto: Coach 1
+    ]
+    
+    def is_coach_event(title: str) -> bool:
+        """Verifica si un título pertenece al coach."""
+        if not title:
+            return False
+        title_lower = title.lower()
+        for pattern in coach_patterns:
+            if pattern.lower() in title_lower:
+                return True
+        return False
+    
+    coach_rejected = []
+    coach_warnings = []
+
+    # Filtrar eventos rechazados
+    for event in result.get('rejected_events', []):
+        if is_coach_event(event.get('title', '')):
+            coach_rejected.append(event)
+    
+    # Filtrar warnings
+    for event in result.get('warning_events', []):
+        if is_coach_event(event.get('title', '')):
+            coach_warnings.append(event)
+    
+    # Devolver resultado filtrado
+    filtered_result = result.copy()
+    filtered_result['rejected_events'] = coach_rejected
+    filtered_result['warning_events'] = coach_warnings
+    
+    return filtered_result
+
+
+def build_stats_from_manual_sync(result: Dict[str, Any]) -> Dict[str, Any]:
+    """Construye stats desde manual sync con filtrado por coach."""
+    # Aplicar filtrado por coach si es necesario
+    coach_id = get_coach_id_if_needed()
+    if coach_id:
+        result = filter_sync_results_by_coach(result, coach_id)
+    
+    return {
+        "imported": result.get('imported', 0),
+        "updated": result.get('updated', 0),
+        "deleted": result.get('deleted', 0),
+        "rejected": len(result.get('rejected_events', [])),
+        "warnings": len(result.get('warning_events', [])),
+        "sync_time": result.get('duration', 0)
+    }
+
+
+def build_stats_from_auto_sync(auto_status: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Construye stats desde auto-sync."""
+    from common.notifications import get_sync_problems
+    
+    # Stats de cambios
+    last_changes = auto_status.get('last_changes') or {}
+
+    problems = get_sync_problems()
+
+    rejected_count = 0
+    warnings_count = 0
+
+    if problems:
+        # 🔧 VERIFICAR que los datos sean recientes (últimos 2 minutos)
+        timestamp_str = problems.get('timestamp', '')
+        if timestamp_str:
+            try:
+                problem_time = dt.datetime.strptime(timestamp_str, "%d/%m/%Y %H:%M:%S")
+                current_time = dt.datetime.now()
+                age_minutes = (current_time - problem_time).total_seconds() / 60
+                
+                # Solo usar datos si son recientes (< 2 min)
+                if age_minutes < 2:
+                    rejected = problems.get('rejected', [])
+                    warnings = problems.get('warnings', [])
+                else:
+                    # Datos antiguos, usar listas vacías
+                    rejected = []
+                    warnings = []
+            except:
+                # Error parseando timestamp, usar datos como están
+                rejected = problems.get('rejected', [])
+                warnings = problems.get('warnings', [])
+        else:
+            rejected = problems.get('rejected', [])
+            warnings = problems.get('warnings', [])
+
+        # Filtrar por coach si es necesario
+        coach_id = get_coach_id_if_needed()
+        if coach_id:
+            temp_result = {
+                'rejected_events': rejected,
+                'warning_events': warnings
+            }
+            filtered_result = filter_sync_results_by_coach(temp_result, coach_id)
+            
+            rejected_count = len(filtered_result.get('rejected_events', []))
+            warnings_count = len(filtered_result.get('warning_events', []))
+        else:
+            rejected_count = len(rejected)
+            warnings_count = len(warnings)
+    
+    result = {
+        "imported": last_changes.get('imported', 0),
+        "updated": last_changes.get('updated', 0), 
+        "deleted": last_changes.get('deleted', 0),
+        "rejected": rejected_count,
+        "warnings": warnings_count,
+        "sync_time": auto_status.get('last_sync_duration', 0)
+    }
+    
+    return result
+
+
+def get_sync_stats_unified() -> Optional[Dict[str, Any]]:
+    """
+    Reemplaza la compleja get_last_sync_stats() de menu.py
+    """
+    # Evitar bucles infinitos
+    if getattr(st.session_state, '_reading_stats', False):
+        return None
+    
+    st.session_state._reading_stats = True
+    
+    try:
+        manual_stats = None
+        auto_stats = None
+        
+        # Fuente 1: Manual sync (más reciente)
+        if 'last_sync_result' in st.session_state:
+            result = st.session_state['last_sync_result']
+            timestamp = result.get('timestamp')
+            
+            if timestamp:
+                try:
+                    sync_time = dt.datetime.fromisoformat(timestamp)
+                    seconds_ago = (dt.datetime.now() - sync_time).total_seconds()
+                    
+                    if seconds_ago < 90:  # 90 segundos
+                        manual_stats = build_stats_from_manual_sync(result)
+                    else:
+                        # Auto-limpiar datos expirados
+                        del st.session_state['last_sync_result']
+                except Exception:
+                    # Si hay error, limpiar
+                    if 'last_sync_result' in st.session_state:
+                        del st.session_state['last_sync_result']
+        
+        # Fuente 2: Auto-sync - con validación
+        if not manual_stats:
+            try:
+                auto_status = get_auto_sync_status()
+                last_sync_time = auto_status.get('last_sync_time')
+                
+                # Verificar que auto-sync tenga datos válidos
+                if last_sync_time and auto_status.get('last_sync_duration', 0) > 0:
+                    last_sync = dt.datetime.fromisoformat(last_sync_time)
+                    time_since_sync = (dt.datetime.now() - last_sync).total_seconds()
+                    
+                    if time_since_sync < 300:  # 5 minutos
+                        auto_stats = build_stats_from_auto_sync(auto_status)
+                        
+                        # Validar que auto_stats tenga datos útiles
+                        if auto_stats:
+                            total_data = (auto_stats['imported'] + auto_stats['updated'] + 
+                                        auto_stats['deleted'] + auto_stats['rejected'] + 
+                                        auto_stats['warnings'])
+                            
+                            # Si auto-sync solo tiene duración pero no datos, ignorar
+                            if total_data == 0:
+                                auto_stats = None
+                                
+            except Exception:
+                auto_stats = None
+        
+        # Decidir cuál usar - priorizar manual si ambos tienen datos
+        if manual_stats and auto_stats:
+            manual_total = sum([manual_stats['imported'], manual_stats['updated'], 
+                manual_stats['deleted'], manual_stats['rejected'], 
+                manual_stats['warnings']])
+            auto_total = sum([auto_stats['imported'], auto_stats['updated'], 
+                auto_stats['deleted'], auto_stats['rejected'], 
+                auto_stats['warnings']])
+            
+            return manual_stats if manual_total >= auto_total else auto_stats
+        
+        return manual_stats or auto_stats
+    
+    finally:
+        # Limpiar flag siempre
+        if hasattr(st.session_state, '_reading_stats'):
+            del st.session_state._reading_stats
+
+
+# Funciones públicas
 
 def run_sync_once(force: bool = False) -> None:
     """
@@ -95,7 +323,7 @@ def run_sync_once(force: bool = False) -> None:
         else:
             _toast(f"Error en sync: {result.get('error', 'Unknown')}", "❌")
 
-# Auto-Sync Classes and Functions ------------------------------------------
+# Auto-Sync Clases y funciones
 
 @dataclass
 class AutoSyncStats:

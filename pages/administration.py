@@ -24,8 +24,8 @@ from controllers.session_controller import (
 from controllers.internal_calendar import show_calendar
 from controllers.sheets_controller import get_accounting_df
 from controllers.db import get_db_session
-from common.notifications import show_sync_problems_compact, get_sync_problems
-from common.menu import filter_sync_results_by_coach, get_coach_id_if_needed
+from common.notifications import get_sync_problems
+from controllers.sync_coordinator import filter_sync_results_by_coach, get_coach_id_if_needed
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -225,7 +225,7 @@ def show_coach_calendar():
 
 def show_session_management(coach_id: Optional[int] = None, is_admin: bool = True):
     """
-    🆕 NUEVA FUNCIÓN: Formularios unificados para crear/editar sesiones.
+    Formularios unificados para crear/editar sesiones.
     Elimina duplicación entre coach y admin.
     
     Args:
@@ -242,7 +242,7 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
         tab1, tab2 = st.tabs(["Create Session", "Edit Session"])
 
 
-        # TAB 1: CREAR SESIÓN (horarios estrictos)
+        # Tab 1: CREAR SESIÓN (horarios estrictos)
 
         with tab1:
             st.subheader("New Session")
@@ -296,7 +296,7 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                 submit = st.form_submit_button("Save Session")
 
                 if submit:
-                    # 🆕 Usar función wrapper con sincronización
+                    # Usar función wrapper con sincronización
                     if selected_coach_id is None:
                         st.error("Please select a coach")
                         return
@@ -317,12 +317,12 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                         st.error(message)
 
 
-        # TAB 2: EDITAR SESIÓN (horarios flexibles)
+        # Tab 2: EDITAR SESIÓN (horarios flexibles)
 
         with tab2:
             st.subheader("Edit / Delete Session")
 
-            # 🆕 Usar controller para obtener sesiones editables
+            # Usar controller para obtener sesiones editables
             session_descriptions = controller.get_sessions_for_editing(coach_id=coach_id)
 
             if not session_descriptions:
@@ -486,7 +486,7 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                     c1, c2 = st.columns(2)
                     
                     if c1.button("Delete", type="primary"):
-                        # 🆕 Usar función wrapper con sincronización
+                        # Usar función wrapper con sincronización
                         success, message = delete_session_with_calendar(selected_id)
                         
                         if "delete_candidate" in st.session_state:
