@@ -10,6 +10,7 @@ from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE
 
 # Importar módulos personalizados
 from common.login import login_page
+from controllers.auth_controller import AuthController
 from common.menu import create_sidebar_menu, get_content_path
 from controllers.sync_coordinator import is_auto_sync_running, start_auto_sync
 from controllers.db import initialize_database 
@@ -97,18 +98,25 @@ def main():
     # Inicializar base de datos
     try:
         if not initialize_database():
-            st.error("❌ Error crítico: No se pudo inicializar la base de datos")
-            st.info("💡 Soluciones sugeridas:")
-            st.info("1. Ejecuta `python data/check_database.py` para diagnosticar")
-            st.info("2. Verifica permisos de escritura en la carpeta `data/`")
-            st.info("3. Ejecuta `python data/seed_database.py` para recrear la BD")
+            st.error("❌ Critical error: Failed to initialise database")
+            st.info("💡 Suggested solutions:")
+            st.info("1. Run `python data/check_database.py` to diagnose")
+            st.info("2. Verify write permissions on the `data/` folder")
+            st.info("3. Run `python data/seed_database.py` to recreate the database")
             st.stop()
     except Exception as e:
-        st.error(f"❌ Error inicializando la aplicación: {str(e)}")
-        st.stop()
+            st.error(f"❌ Error initializing application: {str(e)}")
+            st.stop()
     
-    # Comprobar si ya hay un usuario en sesión antes de configurar la página
-    has_session = "user_id" in st.session_state
+    with AuthController() as auth:
+        # Intentar restaurar sesión desde URL si no hay sesión activa
+        if not auth.is_logged_in():
+            success, message = auth.restore_session_from_url()
+            if success:
+                print(f"Auto-login: {message}")
+        
+        # Verificar si hay sesión activa
+        has_session = auth.is_logged_in()
     
     # Cargar estilos
     load_css()
@@ -164,7 +172,7 @@ def main():
         # Si hay sesión, mostrar menú y contenido según selección
         selected_section = create_sidebar_menu()
         
-        # 🎯 VERIFICAR redirección forzada (necesario para que funcione)
+        # Verificar redirección forzada (necesario para que funcione)
         if "force_section" in st.session_state:
             selected_section = st.session_state["force_section"]
             del st.session_state["force_section"]  # Limpiar inmediatamente

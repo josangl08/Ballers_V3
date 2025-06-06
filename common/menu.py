@@ -5,11 +5,12 @@ from streamlit_option_menu import option_menu
 from common.login import logout
 from controllers.sync_coordinator import is_auto_sync_running, get_auto_sync_status, force_manual_sync, _auto_sync
 from common.notifications import get_sync_problems
+from controllers.auth_controller import clear_user_session
 
 def get_last_sync_stats():
     """Lee estadísticas con manejo robusto de errores"""
     
-    # 🔧 FIX: Agregar flag para evitar bucles infinitos
+    # Agregar flag para evitar bucles infinitos
     if hasattr(st.session_state, '_reading_stats') and st.session_state._reading_stats:
         return None  # Evitar bucle infinito
     
@@ -111,7 +112,7 @@ def show_sync_status_message(stats):
     has_warnings = stats['warnings'] > 0
     has_rejected = stats['rejected'] > 0
 
-     # Construir mensaje completo
+    # Construir mensaje completo
     message_parts = []
     message_parts.append(f"Sync: ⏱ {stats['sync_time']:.1f}s")
 
@@ -277,10 +278,12 @@ def create_sidebar_menu():
         
         # Botón de cerrar sesión
         if st.button("📤 Log Out", key="logout_button", 
-                type="primary", use_container_width=True):
+            type="primary", use_container_width=True):
             
-            # Reset AUTO-SYNC stats antes de logout
+            # 🎯 RESET AUTO-SYNC stats antes de logout
             try:
+                from controllers.sync_coordinator import _auto_sync
+                
                 # Limpiar estadísticas del auto-sync
                 _auto_sync.stats.last_sync_time = None
                 _auto_sync.stats.last_sync_duration = 0
@@ -292,18 +295,9 @@ def create_sidebar_menu():
             except Exception as e:
                 print(f"Warning: Could not clear auto-sync stats: {e}")
             
-            # Limpiar session_state sync data
-            sync_keys = ['last_sync_result', 'show_sync_details', 'show_details_sidebar', 'sync_problems']
-            for key in sync_keys:
-                if key in st.session_state:
-                    del st.session_state[key]
-            
-            # Logout general (código existente)
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            
-            # Usar función centralizada que limpia query params
-            logout()
+            # Usar controller para logout limpio
+            clear_user_session(show_message=True)
+            st.rerun()
 
     return selected
 
@@ -347,12 +341,12 @@ def build_stats_from_auto_sync(auto_status):
     
     # Stats de cambios
     last_changes = auto_status.get('last_changes') or {}
- 
+
     problems = get_sync_problems()
 
     rejected_count = 0
     warnings_count = 0
-  
+
     
     if problems:
         # 🔧 VERIFICAR que los datos sean recientes (últimos 2 minutos)

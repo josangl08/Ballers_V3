@@ -322,7 +322,7 @@ def delete_user():
 
 
 def manage_user_status():
-    """Gestiona activación/desactivación de usuarios - UI MEJORADA."""
+    """Gestiona activación/desactivación de usuarios"""
     st.subheader("User Status Management")
     
     # Obtener usuarios
@@ -339,7 +339,7 @@ def manage_user_status():
         selected_type = st.selectbox("Filter by User Type:", options=user_types)
     
     with col2:
-        status_filter = st.selectbox("Filter by Status:", options=["All", "Active", "Inactive"])
+        status_filter = st.selectbox("Filter by Status:", options=["All", "Active  🟢", "Inactive  🔴"])
     
     # Filtrar usuarios
     filtered_users = users_data

@@ -1,72 +1,28 @@
 # common/login.py
 import streamlit as st
-import hashlib
-from models import User
 import os
-import datetime as dt
 import sys
-from controllers.db import get_db_session
-from common.utils import hash_password
 
-def restore_session_from_url():
-    """Restaura sesión desde parámetros de URL."""
-    try:
-        # No restaurar si acabamos de hacer logout
-        if st.session_state.get("just_logged_out", False):
-            # Limpiar flag y parámetros
-            st.session_state.pop("just_logged_out", None)
-            st.query_params.clear()
-            return False
-        
-        if "auto_login" in st.query_params and "uid" in st.query_params:
-            user_id = int(st.query_params["uid"][0])
-            
-            # Verificar que el usuario existe y está activo
-            db_session = get_db_session()
-            user = db_session.query(User).filter_by(user_id=user_id).first()
-            db_session.close()
-            
-            if user and getattr(user, 'is_active', True):
-                # Restaurar datos de sesión
-                st.session_state["user_id"] = user.user_id
-                st.session_state["username"] = user.username
-                st.session_state["name"] = user.name
-                st.session_state["user_type"] = user.user_type.name
-                st.session_state["permit_level"] = user.permit_level
-                
-                return True
-                
-    except Exception as e:
-        print(f"Error restoring session: {e}")
-        # Limpiar parámetros inválidos
-        st.query_params.clear()
-    
-    return False
+from controllers.auth_controller import (
+    AuthController,
+    authenticate_user,
+    create_user_session,
+    restore_session_from_url,
+    clear_user_session
+)
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import DEBUG
 
 
-def login_user(username, password):
-    """Verifica credenciales de usuario y devuelve el objeto User si es válido."""
-    db_session = get_db_session()
-    hashed_password = hash_password(password)
-    
-    user = db_session.query(User).filter_by(
-        username=username, 
-        password_hash=hashed_password
-    ).first()
-    
-    db_session.close()
-    return user
-    
-    st.markdown(background_image_style, unsafe_allow_html=True)
 def login_page():
-    """Renderiza la página de login y gestiona la autenticación - CORREGIDA."""
+    """Renderiza la página de login - REFACTORIZADA CON CONTROLLER."""
     
-    # Verificar auto-login desde URL ANTES de mostrar UI
-    if restore_session_from_url():
+    # Verificar auto-login desde URL usando controller
+    success, message = restore_session_from_url()
+    if success:
+        print(f"Session restored: {message}")
         st.rerun()
         return True
     
@@ -74,11 +30,16 @@ def login_page():
     with col2:
         st.image("assets/ballers/logo_white.png", width=400)
 
-    # Comprobar si ya hay un usuario en sesión
-    if "user_id" in st.session_state and st.session_state["user_id"]:
-        st.success(f"You are already logged in as {st.session_state['username']}")
-        st.button("Log Out", on_click=logout)
-        return True
+    # Verificar si ya hay sesión activa usando controller
+    with AuthController() as auth:
+        if auth.is_logged_in():
+            user_data = auth.get_current_user_data()
+            if user_data:
+                st.success(f"You are already logged in as {user_data['username']}")
+            else:
+                st.success("You are already logged in")
+            st.button("Log Out", on_click=logout)
+            return True
     
     # Crear columnas para centrar el formulario
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -97,43 +58,24 @@ def login_page():
             submit_button = st.form_submit_button("Login", use_container_width=True)
             
             if submit_button:
-                if not username or not password:
-                    st.error("Please enter username and password")
-                    return False
-                    
-                user = login_user(username, password)
+                # Usar controller para autenticación
+                success, message, user = authenticate_user(username, password)
                 
-                if user:
-                    # Comprobar si el usuario está activo
-                    if hasattr(user, 'is_active') and not user.is_active:
-                        st.error("This user is deactivated. Contact an administrator.")
-                        return False
+                if success and user is not None:
+                    # Usar controller para crear sesión
+                    create_user_session(user, remember_me)
                     
-                    # Guardar información de usuario en la sesión
-                    st.session_state["user_id"] = user.user_id
-                    st.session_state["username"] = user.username
-                    st.session_state["name"] = user.name
-                    st.session_state["user_type"] = user.user_type.name
-                    st.session_state["permit_level"] = user.permit_level
-                    
-                    # Si "Remember me", agregar parámetros a URL
-                    if remember_me:
-                        st.query_params.update({
-                            "auto_login":"true",
-                            "uid":str(user.user_id)
-                        })
-                    
-                    st.success(f"¡Welcome, {user.name}!")
+                    st.success(message)
                     st.rerun()
                     return True
                 else:
-                    st.error("Incorrect username or password")
+                    st.error(message)
                     return False
         
-        # Botón "¿Olvidaste tu contraseña?" FUERA del form
-        forgot_password = st.button("Forgot your password??", use_container_width=True)
+        # Botón "¿Olvidaste tu contraseña?" fuera del form
+        forgot_password = st.button("Forgot your password?", use_container_width=True)
 
-        # Panel de recuperación FUERA del form
+        # Panel de recuperación fuera del form
         if forgot_password:
             st.session_state['show_forgot_password'] = True
             st.rerun()
@@ -143,7 +85,7 @@ def login_page():
             with st.container(border=True):
                 st.subheader("🔑 Password Recovery")
                 st.info("**Contact administrator to reset your password:**")
-                st.markdown("📧 **Email:** admin08@ballers.com")
+                st.markdown("📧 **Email:** admin@ballersapp.com")
                 st.markdown("📱 **Phone:** +34 XXX XXX XXX")
                 
                 recovery_email = st.text_input("Your registered email:")
@@ -161,20 +103,13 @@ def login_page():
                     if st.button("❌ Cancel", key="cancel_recovery"):
                         st.session_state['show_forgot_password'] = False
                         st.rerun()
-    
+
 
 def logout():
-    """Cierra la sesión del usuario."""
-    # Marcar que acabamos de hacer logout
-    st.session_state["just_logged_out"] = True
-    # Limpiar parámetros de URL
-    st.query_params.clear()
-
-    keys_to_delete = [key for key in st.session_state.keys() if key != "just_logged_out"]
-    for key in keys_to_delete:
-        del st.session_state[key]
-    st.success("You have successfully logged out")
+    """Cierra la sesión del usuario - REFACTORIZADA."""
+    clear_user_session(show_message=True)
     st.rerun()
+
 
 if __name__ == "__main__":
     login_page()
