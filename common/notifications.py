@@ -1,311 +1,199 @@
 # common/notifications.py
 """
-Sistema de notificaciones persistentes para problemas de sincronización.
-Solo muestra mensajes cuando hay problemas (rechazados o warnings).
+Sistema de notificaciones simplificado para problemas de sincronización.
+Ahora solo funciones de compatibilidad - la lógica está en NotificationController.
 """
-import streamlit as st
-import datetime as dt
 from typing import List, Dict, Any, Optional
+import streamlit as st
+from controllers.notification_controller import (
+    NotificationController,
+    save_sync_problems as _save_sync_problems,
+    get_sync_problems as _get_sync_problems,
+    clear_sync_problems as _clear_sync_problems,
+    auto_cleanup_old_problems as _auto_cleanup_old_problems
+)
 
+
+# ========================================================================
+# FUNCIONES PÚBLICAS DE COMPATIBILIDAD
+# ========================================================================
 
 def save_sync_problems(rejected_events: List[Dict], warning_events: List[Dict]) -> None:
     """
     Guarda problemas de sincronización del sync ACTUAL.
-    🔧 FIX: Siempre reemplaza datos anteriores con datos del sync actual.
+    🔄 REFACTORIZADO: Ahora usa NotificationController.
+    
+    Args:
+        rejected_events: Lista de eventos rechazados
+        warning_events: Lista de eventos con advertencias
     """
-    try:
-        # 🔧 NUEVO: SIEMPRE guardar timestamp actual
-        current_timestamp = dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        
-        # 🔧 NUEVO: SIEMPRE reemplazar datos (incluso si está vacío)
-        sync_data = {
-            'rejected': rejected_events,
-            'warnings': warning_events,
-            'timestamp': current_timestamp,
-            'seen': False
-        }
-        
-        # Guardar en session_state
-        st.session_state['sync_problems'] = sync_data
-        
-        # Log solo si hay datos útiles
-        if rejected_events or warning_events:
-            print(f"💾 Sync problems saved: {len(rejected_events)} rejected, {len(warning_events)} warnings ({current_timestamp})")
-        else:
-            # Log de limpieza solo en debug
-            import os
-            if os.getenv("DEBUG", "False") == "True":
-                print(f"💾 Sync problems cleared ({current_timestamp})")
-        
-    except Exception as e:
-        print(f"❌ ERROR saving sync_problems: {e}")
-        return
+    _save_sync_problems(rejected_events, warning_events)
 
 
 def get_sync_problems() -> Optional[Dict[str, Any]]:
     """
     Obtiene problemas de sincronización guardados.
-    VERSIÓN UNIFICADA - cubre todos los casos de uso.
-    """
-    try:
-        # Verificar si existe sync_problems
-        if 'sync_problems' not in st.session_state:
-            return None
-        
-        # Obtener el valor
-        problems = st.session_state['sync_problems']
-        
-        # Validar que sea un dict válido
-        if not isinstance(problems, dict):
-            return None
-        
-        # Verificar claves mínimas requeridas
-        if 'rejected' not in problems or 'warnings' not in problems:
-            return None
-        
-        return problems
-        
-    except Exception as e:
-        # Si hay error, limpiar datos corruptos y retornar None
-        if 'sync_problems' in st.session_state:
-            del st.session_state['sync_problems']
-        return None
-
-def has_sync_problems() -> bool:
-    """
-    Verifica si hay problemas de sincronización pendientes.
+    🔄 REFACTORIZADO: Ahora usa NotificationController.
     
     Returns:
-        True si hay problemas rechazados o warnings
+        Dict con problemas o None si no hay datos válidos
     """
-    problems = get_sync_problems()
-    if not problems:
-        return False
-    
-    return bool(problems.get('rejected') or problems.get('warnings'))
-
-
-def mark_problems_as_seen() -> None:
-    """
-    Marca los problemas como vistos por el usuario.
-    Útil para dashboard que muestra todos los detalles.
-    """
-    if 'sync_problems' in st.session_state:
-        st.session_state['sync_problems']['seen'] = True
+    return _get_sync_problems()
 
 
 def clear_sync_problems() -> None:
     """
     Limpia todos los problemas guardados.
+    🔄 REFACTORIZADO: Ahora usa NotificationController.
     """
-    keys_to_remove = [
-        'sync_problems',
-        'last_rejected_events', 
-        'last_warning_events', 
-        'last_sync_time'
-    ]
-    
-    for key in keys_to_remove:
-        if key in st.session_state:
-            del st.session_state[key]
-
-
-def show_sync_problems_compact(location: str = "settings") -> bool:
-    """
-    Muestra problemas de sync de forma compacta.
-    
-    Args:
-        location: Dónde se muestra ("settings", "sidebar", "dashboard")
-        
-    Returns:
-        True si se mostraron problemas, False si no hay
-    """
-    problems = get_sync_problems()
-    
-    if not problems:
-        return False
-    
-    rejected = problems.get('rejected', [])
-    warnings = problems.get('warnings', [])
-    timestamp = problems.get('timestamp', '')
-    
-    # Título con timestamp
-    title_suffix = f" ({timestamp})" if timestamp else ""
-    
-    # 🚫 EVENTOS RECHAZADOS (prioridad alta)
-    if rejected:
-        st.error(f"❌ {len(rejected)} eventos rechazados{title_suffix}")
-        
-        # Mostrar solo el primero en vista compacta
-        if location in ["settings", "sidebar"]:
-            first_rejected = rejected[0]
-            with st.expander(f"🚫 {first_rejected['title']}", expanded=False):
-                st.write(f"**📅 Fecha**: {first_rejected.get('date', 'N/A')}")
-                st.write(f"**🕐 Horario**: {first_rejected.get('time', 'N/A')}")
-                st.write(f"**❌ Problema**: {first_rejected['reason']}")
-                st.write(f"**💡 Solución**: {first_rejected['suggestion']}")
-            
-            if len(rejected) > 1:
-                st.info(f"+ {len(rejected) - 1} eventos rechazados más")
-        
-        # Vista completa para dashboard
-        elif location == "dashboard":
-            for i, event in enumerate(rejected):
-                with st.expander(f"🚫 {event['title']} - {event.get('date', 'N/A')}", expanded=(i==0)):
-                    col1, col2 = st.columns([3, 1])
-                    
-                    with col1:
-                        st.write(f"**📅 Fecha**: {event.get('date', 'N/A')}")
-                        st.write(f"**🕐 Horario**: {event.get('time', 'N/A')}")
-                        st.write(f"**❌ Problema**: {event['reason']}")
-                        st.write(f"**💡 Solución**: {event['suggestion']}")
-                    
-                    with col2:
-                        if st.button("🔗 Calendar", key=f"cal_rej_{i}", help="Abrir Google Calendar"):
-                            st.link_button("📅 Google Calendar", "https://calendar.google.com")
-    
-    # ⚠️ EVENTOS CON WARNINGS (solo si no hay rechazados o en dashboard)
-    elif warnings or location == "dashboard":
-        if warnings:
-            st.warning(f"⚠️ {len(warnings)} eventos con advertencias{title_suffix}")
-            
-            # Mostrar solo el primero en vista compacta
-            if location in ["settings", "sidebar"]:
-                first_warning = warnings[0]
-                with st.expander(f"⚠️ {first_warning['title']}", expanded=False):
-                    st.write(f"**📅 Fecha**: {first_warning.get('date', 'N/A')}")
-                    st.write(f"**🕐 Horario**: {first_warning.get('time', 'N/A')}")
-                    st.write("**⚠️ Advertencias**:")
-                    for warning in first_warning.get('warnings', []):
-                        st.write(f"• {warning}")
-                    st.info("💡 Sesión importada correctamente")
-                
-                if len(warnings) > 1:
-                    st.info(f"+ {len(warnings) - 1} eventos con advertencias más")
-            
-            # Vista completa para dashboard
-            elif location == "dashboard":
-                for i, event in enumerate(warnings):
-                    with st.expander(f"⚠️ {event['title']} - {event.get('date', 'N/A')}", expanded=False):
-                        st.write(f"**📅 Fecha**: {event.get('date', 'N/A')}")
-                        st.write(f"**🕐 Horario**: {event.get('time', 'N/A')}")
-                        st.write("**⚠️ Advertencias**:")
-                        for warning in event.get('warnings', []):
-                            st.write(f"• {warning}")
-                        st.info("💡 Sesión importada correctamente")
-    
-    # Botón para limpiar (solo en settings)
-    if location == "settings":
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col2:
-            if st.button("🧹 Marcar como visto", help="Ocultar estos problemas", key=f"clear_problems_{location}"):
-                clear_sync_problems()
-                st.rerun()
-    
-    # Link a dashboard completo (solo si no estamos ya en dashboard)
-    if location != "dashboard" and (rejected or warnings):
-        st.info("💡 **Tip**: Ve a Administration → 🚨 Sync Problems para gestionar todos los problemas.")
-    
-    return True
-
-
-def show_sidebar_alert() -> bool:
-    """
-    Muestra alerta compacta en sidebar.
-    Solo muestra si hay problemas sin ver.
-    
-    Returns:
-        True si se mostró alerta, False si no
-    """
-    problems = get_sync_problems()
-    
-    if not problems:
-        return False
-    
-    rejected = problems.get('rejected', [])
-    warnings = problems.get('warnings', [])
-    seen = problems.get('seen', False)
-    
-    # Solo mostrar alerta si no se han visto los problemas
-    if seen:
-        return False
-    
-    # 🚫 ALERTAS CRÍTICAS (rechazados) - prioridad
-    if rejected:
-        st.error(f"🚫 {len(rejected)} eventos rechazados")
-        if st.button("Ver detalles", key="sidebar_view_rejected", help="Ver eventos rechazados", use_container_width=True):
-            # Marcar como visto y redirigir
-            mark_problems_as_seen()
-            st.session_state['show_sync_problems_tab'] = True
-            st.rerun()
-        return True
-    
-    # ⚠️ ALERTAS DE WARNINGS (solo si no hay rechazados)
-    elif warnings:
-        st.warning(f"⚠️ {len(warnings)} eventos con advertencias")
-        if st.button("Ver advertencias", key="sidebar_view_warnings", help="Ver eventos con horarios no ideales", use_container_width=True):
-            # Marcar como visto y redirigir
-            mark_problems_as_seen()
-            st.session_state['show_sync_problems_tab'] = True
-            st.rerun()
-        return True
-    
-    return False
-
-
-def get_problems_summary() -> str:
-    """
-    Devuelve resumen textual de problemas para logs o mensajes.
-    
-    Returns:
-        String con resumen, vacío si no hay problemas
-    """
-    problems = get_sync_problems()
-    
-    if not problems:
-        return ""
-    
-    rejected = problems.get('rejected', [])
-    warnings = problems.get('warnings', [])
-    
-    parts = []
-    
-    if rejected:
-        parts.append(f"{len(rejected)} rechazados")
-    
-    if warnings:
-        parts.append(f"{len(warnings)} con advertencias")
-    
-    if parts:
-        return f"Problemas de sync: {', '.join(parts)}"
-    
-    return ""
+    _clear_sync_problems()
 
 
 def auto_cleanup_old_problems(max_age_hours: int = 24) -> None:
     """
     Limpia automáticamente problemas antiguos.
+    🔄 REFACTORIZADO: Ahora usa NotificationController.
     
     Args:
         max_age_hours: Máximo tiempo en horas para mantener problemas
     """
-    problems = get_sync_problems()
+    _auto_cleanup_old_problems(max_age_hours)
+
+
+# ========================================================================
+# FUNCIONES ADICIONALES PARA COMPATIBILIDAD TOTAL
+# ========================================================================
+
+def has_sync_problems() -> bool:
+    """
+    Verifica si hay problemas de sincronización pendientes.
+    🆕 NUEVA: Disponible a través del controller.
     
-    if not problems or not problems.get('timestamp'):
-        return
+    Returns:
+        True si hay problemas rechazados o warnings
+    """
+    controller = NotificationController()
+    return controller.has_problems()
+
+
+def get_problems_summary() -> str:
+    """
+    Devuelve resumen textual de problemas para logs o mensajes.
+    🆕 NUEVA: Disponible a través del controller.
     
-    try:
-        # Parsear timestamp guardado
-        problem_time = dt.datetime.strptime(problems['timestamp'], "%d/%m/%Y %H:%M:%S")
-        current_time = dt.datetime.now()
-        
-        # Calcular diferencia en horas
-        age_hours = (current_time - problem_time).total_seconds() / 3600
-        
-        # Limpiar si es muy antiguo
-        if age_hours > max_age_hours:
-            clear_sync_problems()
-            
-    except (ValueError, KeyError):
-        # Si hay error parseando timestamp, limpiar por seguridad
-        clear_sync_problems()
+    Returns:
+        String con resumen, vacío si no hay problemas
+    """
+    controller = NotificationController()
+    return controller.get_summary_text()
+
+
+def mark_problems_as_seen() -> None:
+    """
+    Marca los problemas como vistos por el usuario.
+    🆕 NUEVA: Útil para dashboard que muestra todos los detalles.
+    """
+    controller = NotificationController()
+    controller.mark_as_seen()
+
+
+# ========================================================================
+# FUNCIONES AVANZADAS PARA UI (NUEVAS CAPACIDADES)
+# ========================================================================
+
+def get_problems_for_sidebar() -> Optional[Dict[str, Any]]:
+    """
+    🆕 NUEVA: Obtiene problemas solo si son muy recientes (para sidebar).
+    
+    Returns:
+        Dict con datos para sidebar o None si no hay problemas recientes
+    """
+    from controllers.notification_controller import get_problems_for_display
+    return get_problems_for_display("sidebar")
+
+
+def get_problems_for_settings() -> Optional[Dict[str, Any]]:
+    """
+    🆕 NUEVA: Obtiene problemas para página de settings (más tolerante con edad).
+    
+    Returns:
+        Dict con datos para settings o None si no hay problemas
+    """
+    from controllers.notification_controller import get_problems_for_display
+    return get_problems_for_display("settings")
+
+
+def get_problems_for_dashboard() -> Optional[Dict[str, Any]]:
+    """
+    🆕 NUEVA: Obtiene problemas para dashboard completo.
+    
+    Returns:
+        Dict con datos completos para dashboard
+    """
+    from controllers.notification_controller import get_problems_for_display
+    return get_problems_for_display("dashboard")
+
+
+# ========================================================================
+# UTILITIES PARA DESARROLLO Y DEBUG
+# ========================================================================
+
+def get_notification_controller() -> NotificationController:
+    """
+    🆕 NUEVA: Acceso directo al controller para casos avanzados.
+    
+    Returns:
+        Instancia del NotificationController
+    """
+    from controllers.notification_controller import get_notification_controller
+    return get_notification_controller()
+
+
+def force_cleanup_all_notification_data() -> None:
+    """
+    🆕 NUEVA: Limpieza forzada de todos los datos (útil para desarrollo).
+    """
+    controller = NotificationController()
+    controller.clear_all()
+    print("🧹 All notification data force-cleaned")
+
+
+def get_notification_debug_info() -> Dict[str, Any]:
+    """
+    🆕 NUEVA: Información de debug sobre el estado de notificaciones.
+    
+    Returns:
+        Dict con información de debug
+    """
+    controller = NotificationController()
+    problems = controller.get_problems()
+    
+    if not problems:
+        return {
+            "status": "no_problems",
+            "has_data": False,
+            "storage_key_exists": controller.STORAGE_KEY in st.session_state
+        }
+    
+    return {
+        "status": "has_problems",
+        "has_data": True,
+        "rejected_count": len(problems.rejected),
+        "warnings_count": len(problems.warnings),
+        "total_count": problems.problem_count(),
+        "timestamp": problems.timestamp,
+        "age_minutes": problems.get_age_minutes(),
+        "seen": problems.seen,
+        "storage_key": controller.STORAGE_KEY
+    }
+
+
+# ========================================================================
+# BACKWARD COMPATIBILITY (si es necesario)
+# ========================================================================
+
+# Aliases para máxima compatibilidad si algún código los usa
+cleanup_old_problems = auto_cleanup_old_problems  # Alias
+get_problems = get_sync_problems  # Alias
+save_problems = save_sync_problems  # Alias
+clear_problems = clear_sync_problems  # Alias

@@ -13,10 +13,9 @@ from .sync_coordinator import get_sync_stats_unified, is_auto_sync_running
 class MenuController:
     """
     Controlador para el menú lateral - maneja configuración, estado y navegación.
-    Principio: Separar lógica de menú de la presentación UI.
     """
     
-    # 📋 Configuración estática de menús por tipo de usuario
+    # Configuración estática de menús por tipo de usuario
     MENU_CONFIG = {
         "player": {
             "options": ["Ballers"],
@@ -32,7 +31,7 @@ class MenuController:
         }
     }
     
-    # 🗺️ Mapeo de rutas de contenido
+    # Mapeo de rutas de contenido
     CONTENT_ROUTES = {
         "Ballers": "pages.ballers",
         "Administration": "pages.administration",
@@ -179,10 +178,6 @@ class MenuController:
         return menu_config["options"]
 
 
-# ========================================================================
-# FUNCIONES DE CONVENIENCIA (para mantener compatibilidad)
-# ========================================================================
-
 def get_menu_controller() -> MenuController:
     """
     Factory function para obtener instancia del MenuController.
@@ -217,10 +212,7 @@ def should_show_sync_area() -> bool:
     controller = get_menu_controller()
     return controller.should_show_sync_area()
 
-
-# ========================================================================
-# UTILIDADES PARA SYNC STATUS UI
-# ========================================================================
+# Utilidades para sync status
 
 def get_sync_status_for_ui() -> Optional[Dict]:
     """

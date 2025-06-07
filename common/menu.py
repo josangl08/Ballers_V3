@@ -4,20 +4,14 @@ import datetime as dt
 from streamlit_option_menu import option_menu
 from typing import Optional
 
-# 🆕 IMPORTAR el nuevo MenuController
-from controllers.menu_controller import (
-    MenuController,
-    get_sync_status_for_ui,
-    handle_sync_details_redirect
-)
+from controllers.menu_controller import MenuController, get_sync_status_for_ui, handle_sync_details_redirect
 from controllers.sync_coordinator import force_manual_sync
 from controllers.auth_controller import clear_user_session
 
 
 def show_sync_status_message(stats: dict) -> None:
     """
-    🎨 UI PURA - Muestra mensaje de sync con color apropiado.
-    Versión simplificada que solo maneja presentación.
+    Muestra mensaje de sync con color apropiado.
     """
     # Construir texto de estadísticas
     changes = []
@@ -45,7 +39,7 @@ def show_sync_status_message(stats: dict) -> None:
     
     message = " ".join(message_parts)
 
-    # 🎨 Mostrar con color apropiado
+    # Mostrar con color apropiado
     has_rejected = stats['rejected'] > 0
     has_warnings = stats['warnings'] > 0
     has_changes = stats['imported'] + stats['updated'] + stats['deleted'] > 0
@@ -67,9 +61,9 @@ def show_sync_status_message(stats: dict) -> None:
 
 def show_auto_sync_area() -> None:
     """
-    🎨 UI PURA - Área unificada de auto-sync usando MenuController.
+    Área unificada de auto-sync usando MenuController.
     """
-    # 🆕 Usar MenuController para obtener datos
+    # Usar MenuController para obtener datos
     sync_data = get_sync_status_for_ui()
     
     if not sync_data or not sync_data["show_sync_area"]:
@@ -104,12 +98,12 @@ def show_auto_sync_area() -> None:
 
 def create_sidebar_menu() -> str:
     """
-    🎨 UI PURA - Crea menú lateral usando MenuController para toda la lógica.
+    Crea menú lateral usando MenuController para toda la lógica.
     
     Returns:
         str: La sección seleccionada del menú.
     """
-    # 🆕 Crear instancia del controller
+    # Crear instancia del controller
     controller = MenuController()
     
     # Verificar si hay usuario logueado
@@ -181,8 +175,7 @@ def create_sidebar_menu() -> str:
 
 def get_content_path(section: str) -> Optional[str]:
     """
-    🗺️ ROUTING - Función de compatibilidad que usa MenuController.
-    Mantiene compatibilidad con main.py existente.
+    Función de compatibilidad que usa MenuController.
     
     Args:
         section: Sección seleccionada en el menú
