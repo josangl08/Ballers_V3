@@ -9,6 +9,7 @@ from controllers.player_controller import PlayerController, get_player_profile_d
 from controllers.session_controller import SessionController, get_sessions_for_display, format_sessions_for_table
 from controllers.internal_calendar import show_calendar
 from models import SessionStatus
+from controllers.validation_controller import ValidationController
 
 
 def show_player_profile(player_id=None):
@@ -78,8 +79,10 @@ def show_player_profile(player_id=None):
         default=status_values,
     )   
 
-    if end_date < start_date:
-        st.error("The 'To' date must be on or after the 'From' date.")
+    # 🔄 REFACTORIZADO: Usar ValidationController en lugar de duplicación
+    is_valid, error = ValidationController.validate_date_range(start_date, end_date)
+    if not is_valid:
+        st.error(error)
         return
 
     # Usar SessionController para obtener y formatear sesiones

@@ -1,7 +1,7 @@
 # controllers/auth_controller.py
 """
 Controlador para manejo de autenticación y sesiones.
-Centraliza toda la lógica de login, logout, persistencia y permisos.
+🔄 REFACTORIZADO: Usa ValidationController para validación de login fields
 """
 import streamlit as st
 import datetime as dt
@@ -11,12 +11,14 @@ from typing import Optional, Tuple, Dict, Any
 from models import User, UserType
 from controllers.db import get_db_session
 from common.utils import hash_password
+# 🆕 NUEVO: Import para eliminar duplicación de login validation
+from controllers.validation_controller import ValidationController
 
 
 class AuthController:
     """
     Controlador para operaciones de autenticación.
-    Principio: Separar lógica de autenticación de la UI.
+    🔄 REFACTORIZADO: Usa ValidationController para validaciones de login.
     """
     
     def __init__(self):
@@ -39,6 +41,7 @@ class AuthController:
     def authenticate_user(self, username: str, password: str) -> Tuple[bool, str, Optional[User]]:
         """
         Autentica un usuario con username y password.
+        🔄 REFACTORIZADO: Usa ValidationController para validación de login fields
         
         Args:
             username: Nombre de usuario
@@ -50,8 +53,10 @@ class AuthController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
         
-        if not username or not password:
-            return False, "Please enter username and password", None
+        # 🔄 REFACTORIZADO: Usar ValidationController para validar login fields
+        login_valid, login_error = ValidationController.validate_login_fields(username, password)
+        if not login_valid:
+            return False, login_error, None
         
         try:
             # Buscar usuario por username
@@ -65,6 +70,7 @@ class AuthController:
                 return False, "Incorrect username or password", None
             
             # Verificar si está activo
+            # 📝 NOTA: Mantenemos validación original por especificidad del mensaje
             if hasattr(user, 'is_active') and not user.is_active:
                 return False, "This user is deactivated. Contact an administrator.", None
             

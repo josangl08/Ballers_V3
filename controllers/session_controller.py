@@ -1,7 +1,7 @@
 # controllers/session_controller.py
 """
 Controlador para CRUD de sesiones.
-Maneja operaciones con sesiones independientes de la sincronización.
+🔄 REFACTORIZADO: Usa ValidationController para validaciones de existencia
 """
 import datetime as dt
 import logging
@@ -20,6 +20,8 @@ from .calendar_utils import (
 )
 from googleapiclient.errors import HttpError
 import os
+# 🆕 NUEVO: Import para eliminar duplicaciones de validación
+from controllers.validation_controller import ValidationController
 
 logger = logging.getLogger(__name__)
 CAL_ID = os.getenv("CALENDAR_ID")
@@ -28,7 +30,7 @@ CAL_ID = os.getenv("CALENDAR_ID")
 class SessionController:
     """
     Controlador para operaciones CRUD con sesiones.
-    Se enfoca en la lógica de negocio sin UI.
+    🔄 REFACTORIZADO: Usa ValidationController para validaciones de existencia.
     """
     
     def __init__(self):
@@ -109,6 +111,7 @@ class SessionController:
     ) -> tuple[bool, str, Optional[Session]]:
         """
         Crea una nueva sesión.
+        🔄 REFACTORIZADO: Usa ValidationController para validar coach/player existence
         
         Args:
             coach_id: ID del coach
@@ -126,14 +129,16 @@ class SessionController:
             raise RuntimeError("Controller debe usarse como context manager")
         
         try:
-            # Validar que coach y player existen
+            # 🔄 REFACTORIZADO: Usar ValidationController para coach/player existence
             coach = self.db.query(Coach).filter_by(coach_id=coach_id).first()
+            coach_valid, coach_error = ValidationController.validate_coach_exists(coach)
+            if not coach_valid:
+                return False, coach_error, None
+
             player = self.db.query(Player).filter_by(player_id=player_id).first()
-            
-            if not coach:
-                return False, f"Coach with ID {coach_id} not found", None
-            if not player:
-                return False, f"Player with ID {player_id} not found", None
+            player_valid, player_error = ValidationController.validate_player_exists(player)
+            if not player_valid:
+                return False, player_error, None
             
             # Crear sesión
             new_session = Session(
@@ -177,6 +182,7 @@ class SessionController:
     ) -> tuple[bool, str]:
         """
         Actualiza una sesión existente.
+        🔄 REFACTORIZADO: Usa ValidationController para validar session existence
         
         Args:
             session_id: ID de la sesión
@@ -188,9 +194,14 @@ class SessionController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
         
+        # 🔄 REFACTORIZADO: Usar ValidationController para session existence
         session = self.get_session_by_id(session_id)
-        if not session:
-            return False, "Session not found"
+        session_valid, session_error = ValidationController.validate_session_exists(session)
+        if not session_valid:
+            return False, session_error
+        
+        # Type hint para Pylance - después de validación, session no puede ser None
+        assert session is not None, "Session validated but is None"
         
         try:
             # Actualizar campos
@@ -222,6 +233,7 @@ class SessionController:
     def delete_session(self, session_id: int) -> tuple[bool, str]:
         """
         Elimina una sesión.
+        🔄 REFACTORIZADO: Usa ValidationController para validar session existence
         
         Args:
             session_id: ID de la sesión a eliminar
@@ -232,10 +244,15 @@ class SessionController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
         
+        # 🔄 REFACTORIZADO: Usar ValidationController para session existence
         session = self.get_session_by_id(session_id)
-        if not session:
-            return False, "Session not found"
+        session_valid, session_error = ValidationController.validate_session_exists(session)
+        if not session_valid:
+            return False, session_error
         
+        # Type hint para Pylance - después de validación, session no puede ser None
+        assert session is not None, "Session validated but is None"
+
         try:
             # Eliminar de Calendar si existe
             if session.calendar_event_id:
@@ -289,7 +306,7 @@ class SessionController:
             return 0
 
 
-    # Metodos privados para Google Calendar
+    # Metodos privados para Google Calendar (SIN CAMBIOS)
 
     
     def _push_session_to_calendar(self, session: Session) -> bool:

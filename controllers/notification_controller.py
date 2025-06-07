@@ -257,10 +257,6 @@ class NotificationController:
         }
 
 
-# ========================================================================
-# FUNCIONES DE CONVENIENCIA (compatibilidad con código existente)
-# ========================================================================
-
 def save_sync_problems(rejected_events: List[Dict], warning_events: List[Dict]) -> None:
     """
     Función de conveniencia para mantener compatibilidad.
@@ -313,10 +309,8 @@ def get_problems_summary() -> str:
     controller = NotificationController()
     return controller.get_summary_text()
 
+# Funciones avanzadas para UI
 
-# ========================================================================
-# FUNCIONES AVANZADAS PARA UI
-# ========================================================================
 
 def get_notification_controller() -> NotificationController:
     """

@@ -11,11 +11,17 @@ from controllers.sync_coordinator import start_auto_sync, stop_auto_sync, get_au
 from controllers.sheets_controller import get_accounting_df
 from common.notifications import auto_cleanup_old_problems, get_sync_problems, clear_sync_problems
 from models import UserType
+# 🆕 NUEVO: Import para eliminar duplicaciones
+from controllers.validation_controller import ValidationController
 
 
 def create_user_form():
     """Formulario con selector integrado visualmente."""
     st.subheader("Create New User")
+    
+    # Key dinámica para limpiar formulario solo en éxito
+    if "create_user_success_count" not in st.session_state:
+        st.session_state.create_user_success_count = 0
     
     # Contenerdor Rpincipal que simula un form único
     with st.container(border=True):
@@ -28,8 +34,8 @@ def create_user_form():
             help="Select user type to see specific fields below"
         )
         
-        # Form visual
-        with st.form("create_user_form", clear_on_submit=True, border=True):  #  Sin borde para integración
+        # Form visual con key dinámica
+        with st.form(f"create_user_form_{st.session_state.create_user_success_count}", clear_on_submit=False, border=True):
             # Información básica
             st.markdown("#### Basic Information")
             col1, col2 = st.columns(2)
@@ -85,9 +91,10 @@ def create_user_form():
             submit = st.form_submit_button("Create User", type="primary", use_container_width=True)
             
             if submit:
-                # Lógica de validación y creación...
-                if password != confirm_password:
-                    st.error("The passwords do not match.")
+                # Usar ValidationController para validar campos
+                is_valid, error = ValidationController.validate_password_match(password, confirm_password)
+                if not is_valid:
+                    st.error(error)
                     return
                 
                 # Preparar datos específicos
@@ -116,6 +123,8 @@ def create_user_form():
                 success, message = create_user_simple(user_data)
                 if success:
                     st.success(message)
+                    # Incrementar contador para limpiar formulario en próximo render
+                    st.session_state.create_user_success_count += 1
                     st.rerun()
                 else:
                     st.error(message)
@@ -124,6 +133,10 @@ def create_user_form():
 def edit_any_user():
     """Función para que los administradores editen cualquier usuario - MEJORADO."""
     st.subheader("Edit Users")
+    
+    # Key dinámica para limpiar formulario solo en éxito
+    if "edit_user_success_count" not in st.session_state:
+        st.session_state.edit_user_success_count = 0
     
     # Usar nueva función sin lazy loading
     users_data = get_users_for_management()
@@ -156,8 +169,8 @@ def edit_any_user():
         st.write(f"**User Type:** {user_data['user_type']}")
         st.write(f"**E-mail:** {user_data['email']}")
     
-    # Formulario de edición
-    with st.form("admin_edit_user_form", clear_on_submit=True):
+    # Formulario de edición con key dinámica
+    with st.form(f"admin_edit_user_form_{st.session_state.edit_user_success_count}", clear_on_submit=False):
         
         col1, col2 = st.columns(2)
         with col1:
@@ -239,10 +252,11 @@ def edit_any_user():
         submit = st.form_submit_button("Save Changes", type="primary")
         
         if submit:
-            # Validar contraseñas si se proporcionan
+            # Usar ValidationController para validar campos
             if new_password or confirm_password:
-                if new_password != confirm_password:
-                    st.error("The new passwords do not match.")
+                is_valid, error = ValidationController.validate_password_match(new_password, confirm_password)
+                if not is_valid:
+                    st.error(error)
                     return
             
             # Preparar datos para actualización
@@ -264,14 +278,19 @@ def edit_any_user():
             
             if success:
                 st.success(message)
+                # Incrementar contador para limpiar formulario en próximo render
+                st.session_state.edit_user_success_count += 1
                 st.rerun()
             else:
                 st.error(message)
 
 
 def delete_user():
-    """Function for admins to delete users - FIX APLICADO."""
+    """Function for admins to delete users"""
     st.subheader("Delete User")
+    
+    if "delete_user_success_count" not in st.session_state:
+        st.session_state.delete_user_success_count = 0
     
     users_data = get_users_for_management()
     
@@ -285,7 +304,7 @@ def delete_user():
         format_func=lambda x: next((f"{u['Name']} ({u['Username']}, {u['User Type']})" for u in users_data if u["ID"] == x), "")
     )
     
-    # Usar get_user_with_profile en lugar de user_obj
+    # Usar get_user_with_profile
     user_data = get_user_with_profile(selected_user_id)
     if not user_data:
         st.error("Could not load the selected user.")
@@ -304,11 +323,13 @@ def delete_user():
     
     # Confirmación de eliminación
     st.warning("Warning: This action cannot be undone!")
-    confirm_text = st.text_input("Type 'DELETE' to confirm:")
+    confirm_text = st.text_input("Type 'DELETE' to confirm:", key=f"delete_confirm_{st.session_state.delete_user_success_count}")
     
     if st.button("Delete User"):
-        if confirm_text != "DELETE":
-            st.error("Please type 'DELETE' to confirm.")
+        # Usar ValidationController en lugar de duplicación
+        is_valid, error = ValidationController.validate_deletion_confirmation(confirm_text, "DELETE")
+        if not is_valid:
+            st.error(error)
             return
         
         # Usar controller para eliminar
@@ -316,6 +337,7 @@ def delete_user():
         
         if success:
             st.success(message)
+            st.session_state.delete_user_success_count += 1
             st.rerun()
         else:
             st.error(message)
@@ -420,6 +442,12 @@ def manage_user_status():
     st.subheader("Change User Status")
     
     # Preparar opciones del selector con iconos
+    type_icons = {
+        "admin": "🔑",
+        "coach": "📢", 
+        "player": "⚽"
+    }
+    
     selector_options = []
     for user in filtered_users:
         status_icon = "✅" if user["Active_Bool"] else "❌"

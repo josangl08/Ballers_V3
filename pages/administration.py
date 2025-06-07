@@ -1,6 +1,7 @@
 # pages/administration.py
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import datetime as dt
 import os
 import sys
@@ -26,6 +27,8 @@ from controllers.sheets_controller import get_accounting_df
 from controllers.db import get_db_session
 from common.notifications import get_sync_problems
 from controllers.sync_coordinator import filter_sync_results_by_coach, get_coach_id_if_needed
+# 🆕 NUEVO: Import para eliminar duplicaciones de date range validation
+from controllers.validation_controller import ValidationController
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -123,8 +126,10 @@ def show_coach_calendar():
             key="coach_status_filter"
         )
         
-        if end_date < start_date:
-            st.error("The 'To' date must be on or after the 'From' date.")
+        # 🔄 REFACTORIZADO: Usar ValidationController para date range validation
+        is_valid, error = ValidationController.validate_date_range(start_date, end_date)
+        if not is_valid:
+            st.error(error)
             return
 
         # Usar controller para obtener sesiones
@@ -544,8 +549,10 @@ def show_all_sessions():
             index=0
         )
         
-        if end_date < start_date:
-            st.error("The 'To' date must be on or after the 'From' date.")
+        # 🔄 REFACTORIZADO: Usar ValidationController para date range validation
+        is_valid, error = ValidationController.validate_date_range(start_date, end_date)
+        if not is_valid:
+            st.error(error)
             return
 
         # Usar controller para obtener sesiones

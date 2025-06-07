@@ -14,14 +14,12 @@ from controllers.notification_controller import (
 )
 
 
-# ========================================================================
-# FUNCIONES PÚBLICAS DE COMPATIBILIDAD
-# ========================================================================
+# Funciones publicas
+
 
 def save_sync_problems(rejected_events: List[Dict], warning_events: List[Dict]) -> None:
     """
     Guarda problemas de sincronización del sync ACTUAL.
-    🔄 REFACTORIZADO: Ahora usa NotificationController.
     
     Args:
         rejected_events: Lista de eventos rechazados
@@ -33,7 +31,6 @@ def save_sync_problems(rejected_events: List[Dict], warning_events: List[Dict]) 
 def get_sync_problems() -> Optional[Dict[str, Any]]:
     """
     Obtiene problemas de sincronización guardados.
-    🔄 REFACTORIZADO: Ahora usa NotificationController.
     
     Returns:
         Dict con problemas o None si no hay datos válidos
@@ -44,7 +41,6 @@ def get_sync_problems() -> Optional[Dict[str, Any]]:
 def clear_sync_problems() -> None:
     """
     Limpia todos los problemas guardados.
-    🔄 REFACTORIZADO: Ahora usa NotificationController.
     """
     _clear_sync_problems()
 
@@ -52,7 +48,6 @@ def clear_sync_problems() -> None:
 def auto_cleanup_old_problems(max_age_hours: int = 24) -> None:
     """
     Limpia automáticamente problemas antiguos.
-    🔄 REFACTORIZADO: Ahora usa NotificationController.
     
     Args:
         max_age_hours: Máximo tiempo en horas para mantener problemas
@@ -60,14 +55,10 @@ def auto_cleanup_old_problems(max_age_hours: int = 24) -> None:
     _auto_cleanup_old_problems(max_age_hours)
 
 
-# ========================================================================
-# FUNCIONES ADICIONALES PARA COMPATIBILIDAD TOTAL
-# ========================================================================
 
 def has_sync_problems() -> bool:
     """
     Verifica si hay problemas de sincronización pendientes.
-    🆕 NUEVA: Disponible a través del controller.
     
     Returns:
         True si hay problemas rechazados o warnings
@@ -79,7 +70,6 @@ def has_sync_problems() -> bool:
 def get_problems_summary() -> str:
     """
     Devuelve resumen textual de problemas para logs o mensajes.
-    🆕 NUEVA: Disponible a través del controller.
     
     Returns:
         String con resumen, vacío si no hay problemas
@@ -91,19 +81,17 @@ def get_problems_summary() -> str:
 def mark_problems_as_seen() -> None:
     """
     Marca los problemas como vistos por el usuario.
-    🆕 NUEVA: Útil para dashboard que muestra todos los detalles.
     """
     controller = NotificationController()
     controller.mark_as_seen()
 
 
-# ========================================================================
-# FUNCIONES AVANZADAS PARA UI (NUEVAS CAPACIDADES)
-# ========================================================================
+# Funciones avanzadas para UI
+
 
 def get_problems_for_sidebar() -> Optional[Dict[str, Any]]:
     """
-    🆕 NUEVA: Obtiene problemas solo si son muy recientes (para sidebar).
+    Obtiene problemas solo si son muy recientes (para sidebar).
     
     Returns:
         Dict con datos para sidebar o None si no hay problemas recientes
@@ -114,7 +102,7 @@ def get_problems_for_sidebar() -> Optional[Dict[str, Any]]:
 
 def get_problems_for_settings() -> Optional[Dict[str, Any]]:
     """
-    🆕 NUEVA: Obtiene problemas para página de settings (más tolerante con edad).
+   Obtiene problemas para página de settings (más tolerante con edad).
     
     Returns:
         Dict con datos para settings o None si no hay problemas
@@ -125,7 +113,7 @@ def get_problems_for_settings() -> Optional[Dict[str, Any]]:
 
 def get_problems_for_dashboard() -> Optional[Dict[str, Any]]:
     """
-    🆕 NUEVA: Obtiene problemas para dashboard completo.
+    Obtiene problemas para dashboard completo.
     
     Returns:
         Dict con datos completos para dashboard
@@ -134,13 +122,12 @@ def get_problems_for_dashboard() -> Optional[Dict[str, Any]]:
     return get_problems_for_display("dashboard")
 
 
-# ========================================================================
-# UTILITIES PARA DESARROLLO Y DEBUG
-# ========================================================================
+# Utilidades para desarrollo y debug
+
 
 def get_notification_controller() -> NotificationController:
     """
-    🆕 NUEVA: Acceso directo al controller para casos avanzados.
+    Acceso directo al controller para casos avanzados.
     
     Returns:
         Instancia del NotificationController
@@ -151,7 +138,7 @@ def get_notification_controller() -> NotificationController:
 
 def force_cleanup_all_notification_data() -> None:
     """
-    🆕 NUEVA: Limpieza forzada de todos los datos (útil para desarrollo).
+    Limpieza forzada de todos los datos (útil para desarrollo).
     """
     controller = NotificationController()
     controller.clear_all()
@@ -160,7 +147,7 @@ def force_cleanup_all_notification_data() -> None:
 
 def get_notification_debug_info() -> Dict[str, Any]:
     """
-    🆕 NUEVA: Información de debug sobre el estado de notificaciones.
+    Información de debug sobre el estado de notificaciones.
     
     Returns:
         Dict con información de debug
@@ -188,9 +175,6 @@ def get_notification_debug_info() -> Dict[str, Any]:
     }
 
 
-# ========================================================================
-# BACKWARD COMPATIBILITY (si es necesario)
-# ========================================================================
 
 # Aliases para máxima compatibilidad si algún código los usa
 cleanup_old_problems = auto_cleanup_old_problems  # Alias
