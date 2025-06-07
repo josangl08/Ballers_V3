@@ -1,11 +1,11 @@
 # controllers/session_controller.py
 """
 Controlador para CRUD de sesiones.
-🔄 REFACTORIZADO: Usa ValidationController para validaciones de existencia
+Usa ValidationController para validaciones de existencia
 """
 import datetime as dt
 import logging
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Dict
 from sqlalchemy import func
 from sqlalchemy.orm import Session as SQLSession
 
@@ -20,7 +20,6 @@ from .calendar_utils import (
 )
 from googleapiclient.errors import HttpError
 import os
-# 🆕 NUEVO: Import para eliminar duplicaciones de validación
 from controllers.validation_controller import ValidationController
 
 logger = logging.getLogger(__name__)
@@ -30,7 +29,7 @@ CAL_ID = os.getenv("CALENDAR_ID")
 class SessionController:
     """
     Controlador para operaciones CRUD con sesiones.
-    🔄 REFACTORIZADO: Usa ValidationController para validaciones de existencia.
+    Usa ValidationController para validaciones de existencia.
     """
     
     def __init__(self):
@@ -46,10 +45,8 @@ class SessionController:
         if self.db:
             self.db.close()
 
-
     # Consultas y filtros
-
-    
+   
     def get_sessions(
         self,
         start: dt.datetime,
@@ -95,9 +92,7 @@ class SessionController:
         
         return self.db.query(Session).filter_by(id=session_id).first()
 
-
     # Operaciones CRUD
-
     
     def create_session(
         self,
@@ -111,7 +106,7 @@ class SessionController:
     ) -> tuple[bool, str, Optional[Session]]:
         """
         Crea una nueva sesión.
-        🔄 REFACTORIZADO: Usa ValidationController para validar coach/player existence
+        Usa ValidationController para validar coach/player existence
         
         Args:
             coach_id: ID del coach
@@ -129,7 +124,7 @@ class SessionController:
             raise RuntimeError("Controller debe usarse como context manager")
         
         try:
-            # 🔄 REFACTORIZADO: Usar ValidationController para coach/player existence
+            # Usar ValidationController para coach/player existence
             coach = self.db.query(Coach).filter_by(coach_id=coach_id).first()
             coach_valid, coach_error = ValidationController.validate_coach_exists(coach)
             if not coach_valid:
@@ -182,7 +177,7 @@ class SessionController:
     ) -> tuple[bool, str]:
         """
         Actualiza una sesión existente.
-        🔄 REFACTORIZADO: Usa ValidationController para validar session existence
+        Usa ValidationController para validar session existence
         
         Args:
             session_id: ID de la sesión
@@ -194,7 +189,7 @@ class SessionController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
         
-        # 🔄 REFACTORIZADO: Usar ValidationController para session existence
+        # Usar ValidationController para session existence
         session = self.get_session_by_id(session_id)
         session_valid, session_error = ValidationController.validate_session_exists(session)
         if not session_valid:
@@ -233,7 +228,7 @@ class SessionController:
     def delete_session(self, session_id: int) -> tuple[bool, str]:
         """
         Elimina una sesión.
-        🔄 REFACTORIZADO: Usa ValidationController para validar session existence
+        Usa ValidationController para validar session existence
         
         Args:
             session_id: ID de la sesión a eliminar
@@ -244,7 +239,7 @@ class SessionController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
         
-        # 🔄 REFACTORIZADO: Usar ValidationController para session existence
+        # Usar ValidationController para session existence
         session = self.get_session_by_id(session_id)
         session_valid, session_error = ValidationController.validate_session_exists(session)
         if not session_valid:
@@ -306,20 +301,32 @@ class SessionController:
             return 0
 
 
-    # Metodos privados para Google Calendar (SIN CAMBIOS)
+    # Metodos privados para Google Calendar
 
     
     def _push_session_to_calendar(self, session: Session) -> bool:
-        """Crea evento en Google Calendar."""
+        """
+        Crea evento en Google Calendar.
+        🔧 CORREGIDO: Actualiza correctamente los campos de tracking después de creación exitosa.
+        """
         try:
+            from .calendar_utils import build_calendar_event_body, update_session_tracking
+            
             body = build_calendar_event_body(session)
             event = calendar().events().insert(
                 calendarId=CAL_ID, 
                 body=body
             ).execute()
             
+            # Actualizar calendar_event_id
             session.calendar_event_id = event["id"]
-            session.is_dirty = False
+            
+            # Actualizar campos de tracking después de creación exitosa
+            update_session_tracking(session)
+            
+            # Commitear los cambios en BD
+            self.db.add(session)
+            self.db.commit()
             
             logger.info(f"📤 Sesión #{session.id} creada en Calendar (evento {event['id'][:8]}...)")
             return True
@@ -329,12 +336,17 @@ class SessionController:
             return False
     
     def _update_session_in_calendar(self, session: Session) -> bool:
-        """Actualiza evento existente en Google Calendar."""
+        """
+        Actualiza evento existente en Google Calendar.
+        🔧 CORREGIDO: Actualiza correctamente los campos de tracking después de actualización exitosa.
+        """
         if not session.calendar_event_id:
             # Si no tiene event_id, crear nuevo
             return self._push_session_to_calendar(session)
         
         try:
+            from .calendar_utils import build_calendar_event_body, update_session_tracking
+            
             body = build_calendar_event_body(session)
             calendar().events().patch(
                 calendarId=CAL_ID,
@@ -342,8 +354,14 @@ class SessionController:
                 body=body
             ).execute()
             
-            session.is_dirty = False
-            logger.info(f"📤 Sesión #{session.id} actualizada en Calendar")
+            # 🔧 CRÍTICO: Actualizar campos de tracking después de actualización exitosa
+            update_session_tracking(session)
+            
+            # 🔧 CRÍTICO: Commitear los cambios en BD
+            self.db.add(session)
+            self.db.commit()
+            
+            logger.info(f"📤 Sesión #{session.id} actualizada en Calendar exitosamente")
             return True
             
         except HttpError as e:
@@ -538,12 +556,9 @@ class SessionController:
     def _session_needs_update(self, session: Session) -> bool:
         """Método que faltaba - movido desde calendar_utils."""
         # Importar la función desde calendar_utils
-        from .calendar_utils import session_needs_update
         return session_needs_update(session)
     
-# ========================================================================
-# FUNCIONES DE CONVENIENCIA (compatibilidad con código existente)
-# ========================================================================
+
 
 def get_sessions(
     start: dt.datetime,
@@ -603,7 +618,7 @@ def create_session_with_calendar(
 ) -> tuple[bool, str, Optional[Session]]:
     """Función de conveniencia para crear sesión con sincronización."""
     
-    # 🔧 COMBINAR date + time para crear datetimes
+    # Combinar date + time para crear datetimes
     start_datetime = dt.datetime.combine(session_date, start_time)
     end_datetime = dt.datetime.combine(session_date, end_time)
     

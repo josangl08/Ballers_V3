@@ -1,24 +1,22 @@
 # controllers/auth_controller.py
 """
 Controlador para manejo de autenticación y sesiones.
-🔄 REFACTORIZADO: Usa ValidationController para validación de login fields
+Usa ValidationController para validación de login fields
 """
 import streamlit as st
 import datetime as dt
-import hashlib
 from typing import Optional, Tuple, Dict, Any
 
-from models import User, UserType
+from models import User
 from controllers.db import get_db_session
 from common.utils import hash_password
-# 🆕 NUEVO: Import para eliminar duplicación de login validation
 from controllers.validation_controller import ValidationController
 
 
 class AuthController:
     """
     Controlador para operaciones de autenticación.
-    🔄 REFACTORIZADO: Usa ValidationController para validaciones de login.
+    Usa ValidationController para validaciones de login.
     """
     
     def __init__(self):
@@ -41,7 +39,7 @@ class AuthController:
     def authenticate_user(self, username: str, password: str) -> Tuple[bool, str, Optional[User]]:
         """
         Autentica un usuario con username y password.
-        🔄 REFACTORIZADO: Usa ValidationController para validación de login fields
+        Usa ValidationController para validación de login fields
         
         Args:
             username: Nombre de usuario
@@ -53,7 +51,7 @@ class AuthController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
         
-        # 🔄 REFACTORIZADO: Usar ValidationController para validar login fields
+        # Usar ValidationController para validar login fields
         login_valid, login_error = ValidationController.validate_login_fields(username, password)
         if not login_valid:
             return False, login_error, None
@@ -70,7 +68,7 @@ class AuthController:
                 return False, "Incorrect username or password", None
             
             # Verificar si está activo
-            # 📝 NOTA: Mantenemos validación original por especificidad del mensaje
+            # Mantenemos validación original por especificidad del mensaje
             if hasattr(user, 'is_active') and not user.is_active:
                 return False, "This user is deactivated. Contact an administrator.", None
             
@@ -104,9 +102,7 @@ class AuthController:
         
         return None
 
-
     # Gestión de sesiones
-
     
     def create_session(self, user: User, remember_me: bool = False) -> Dict[str, Any]:
         """
@@ -203,10 +199,8 @@ class AuthController:
         if show_message:
             st.success("Has cerrado sesión correctamente")
 
-
     # Validaciones y permisos
-
-    
+ 
     def is_logged_in(self) -> bool:
         """Verifica si hay una sesión activa."""
         return "user_id" in st.session_state and st.session_state["user_id"]
@@ -292,10 +286,6 @@ class AuthController:
         
         return True
 
-
-# ========================================================================
-# FUNCIONES DE CONVENIENCIA (compatibilidad con código existente)
-# ========================================================================
 
 def authenticate_user(username: str, password: str) -> Tuple[bool, str, Optional[User]]:
     """Función de conveniencia para mantener compatibilidad."""

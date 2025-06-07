@@ -6,7 +6,7 @@ import plotly.express as px
 import datetime as dt
 
 from controllers.player_controller import PlayerController, get_player_profile_data, get_players_for_list, update_player_notes_simple
-from controllers.session_controller import SessionController, get_sessions_for_display, format_sessions_for_table
+from controllers.session_controller import SessionController
 from controllers.internal_calendar import show_calendar
 from models import SessionStatus
 from controllers.validation_controller import ValidationController
@@ -79,7 +79,7 @@ def show_player_profile(player_id=None):
         default=status_values,
     )   
 
-    # 🔄 REFACTORIZADO: Usar ValidationController en lugar de duplicación
+    # Usar ValidationController en lugar de duplicación
     is_valid, error = ValidationController.validate_date_range(start_date, end_date)
     if not is_valid:
         st.error(error)

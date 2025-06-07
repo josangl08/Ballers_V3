@@ -8,7 +8,7 @@ import logging
 import time
 import os
 import re
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Optional
 from sqlalchemy import func
 from googleapiclient.errors import HttpError
 
@@ -16,7 +16,7 @@ from models import Session, SessionStatus, Coach, Player, User
 from .session_controller import SessionController
 from controllers.db import get_db_session
 from controllers.google_client import calendar
-from common.validation import validate_session_for_import
+from controllers.validation_controller import validate_session_for_import
 from .calendar_utils import (
     calculate_session_hash,
     calculate_event_hash,
@@ -100,9 +100,9 @@ def guess_coach_player_ids(event: dict) -> Tuple[Optional[int], Optional[int]]:
     
     # 3) FALLBACK: Solo IDs tradicionales #C #P (anywhere en título)
     cid = (extract_id_from_text(summary, r"#C(\d+)") or
-           extract_id_from_text(summary, r"Coach[#\s]*(\d+)"))
+            extract_id_from_text(summary, r"Coach[#\s]*(\d+)"))
     pid = (extract_id_from_text(summary, r"#P(\d+)") or
-           extract_id_from_text(summary, r"Player[#\s]*(\d+)"))
+            extract_id_from_text(summary, r"Player[#\s]*(\d+)"))
     if cid and pid:
         return cid, pid
 
@@ -627,7 +627,7 @@ def sync_calendar_to_db() -> Tuple[int, int, int]:
 def sync_db_to_calendar() -> Tuple[int, int]:
     """
     Sincroniza sesiones de BD hacia Google Calendar.
-    VERSIÓN OPTIMIZADA: Solo actualiza sesiones que realmente han cambiado.
+    🔧 CORREGIDO: Ahora respeta correctamente session_needs_update() y no actualiza innecesariamente.
     
     Returns:
         Tuple (pushed, updated)
@@ -643,16 +643,32 @@ def sync_db_to_calendar() -> Tuple[int, int]:
                 success = controller._push_session_to_calendar(ses)
                 if success:
                     pushed += 1
-            elif session_needs_update(ses):
-                # Verificar si necesita actualización
-                success = controller._update_session_in_calendar(ses)
-                if success:
-                    updated += 1
+                    logger.info(f"📤 NUEVO: Sesión #{ses.id} creada en Calendar")
             else:
-                skipped += 1
-                logger.debug(f"⏭️ Sesión #{ses.id} - sin cambios, skip update")
+                # 🔧 FIX: VERIFICAR SI REALMENTE NECESITA ACTUALIZACIÓN
+                if session_needs_update(ses):
+                    # Solo actualizar si realmente hay cambios
+                    success = controller._update_session_in_calendar(ses)
+                    if success:
+                        updated += 1
+                        logger.info(f"🔄 ACTUALIZADA: Sesión #{ses.id} actualizada en Calendar")
+                    else:
+                        logger.warning(f"❌ FALLO: Sesión #{ses.id} falló al actualizar")
+                else:
+                    skipped += 1
+                    logger.debug(f"⏭️ OMITIDA: Sesión #{ses.id} sin cambios")
 
-        logger.info(f"📊 Push completado: {pushed} creadas, {updated} actualizadas, {skipped} omitidas")
+        # 🔧 MEJORADO: Log más detallado
+        total_processed = pushed + updated + skipped
+        logger.info(f"📊 Push BD→Calendar completado:")
+        logger.info(f"   📤 {pushed} sesiones NUEVAS creadas")
+        logger.info(f"   🔄 {updated} sesiones ACTUALIZADAS")  
+        logger.info(f"   ⏭️ {skipped} sesiones OMITIDAS (sin cambios)")
+        logger.info(f"   📋 {total_processed} sesiones procesadas")
+        
+        if updated > 10:
+            logger.warning(f"⚠️ ADVERTENCIA: {updated} sesiones actualizadas - investigar por qué necesitan update")
+
         return pushed, updated
 
 

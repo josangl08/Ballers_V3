@@ -1,34 +1,28 @@
 # pages/administration.py
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import datetime as dt
 import os
 import sys
 from typing import Optional, List
-import plotly.graph_objects as go
 from sqlalchemy import func, case
 
-from models import User, Coach, Session, SessionStatus, UserType, Player
-from controllers.session_controller import (
-    SessionController,
-    create_session_with_calendar,  
-    update_session_with_calendar,    
-    delete_session_with_calendar,  
-    get_coach_stats,              
-    get_sessions_for_display,     
-    format_sessions_for_table,    
-    get_available_coaches,        
-    get_available_players,        
-    get_sessions_for_editing  
-)        
+from models import User, Coach, Session, SessionStatus, UserType
+from controllers.session_controller import SessionController, create_session_with_calendar, update_session_with_calendar, delete_session_with_calendar        
 from controllers.internal_calendar import show_calendar
 from controllers.sheets_controller import get_accounting_df
 from controllers.db import get_db_session
 from common.notifications import get_sync_problems
 from controllers.sync_coordinator import filter_sync_results_by_coach, get_coach_id_if_needed
-# 🆕 NUEVO: Import para eliminar duplicaciones de date range validation
-from controllers.validation_controller import ValidationController
+from controllers.validation_controller import (
+    ValidationController,
+    validate_session_form_data,
+    validate_coach_selection_safe,
+    validate_player_selection_safe,
+    get_create_session_hours,
+    get_edit_session_hours,
+    check_session_time_recommendation
+)
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -126,7 +120,7 @@ def show_coach_calendar():
             key="coach_status_filter"
         )
         
-        # 🔄 REFACTORIZADO: Usar ValidationController para date range validation
+        # Usar ValidationController para date range validation
         is_valid, error = ValidationController.validate_date_range(start_date, end_date)
         if not is_valid:
             st.error(error)
@@ -231,7 +225,7 @@ def show_coach_calendar():
 def show_session_management(coach_id: Optional[int] = None, is_admin: bool = True):
     """
     Formularios unificados para crear/editar sesiones.
-    Elimina duplicación entre coach y admin.
+    🔄 REFACTORIZADO: Usa ValidationController para TODA la lógica de horarios y validaciones.
     
     Args:
         coach_id: Si se especifica, restringe a sesiones de ese coach
@@ -246,15 +240,12 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
         
         tab1, tab2 = st.tabs(["Create Session", "Edit Session"])
 
-
-        # Tab 1: CREAR SESIÓN (horarios estrictos)
-
+        # Tab 1: CREAR SESIÓN
         with tab1:
             st.subheader("New Session")
 
-            # 🔧 Horarios estrictos para CREAR sesiones nuevas
-            hours_start_create = [dt.time(h, 0) for h in range(8, 19)]  # 8:00-18:00
-            hours_end_create = [dt.time(h, 0) for h in range(9, 20)]    # 9:00-19:00
+            # Usar ValidationController para horarios
+            hours_start_create, hours_end_create = get_create_session_hours()
 
             with st.form("session_form", clear_on_submit=True):
                 col1, col2 = st.columns(2)
@@ -301,14 +292,38 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                 submit = st.form_submit_button("Save Session")
 
                 if submit:
-                    # Usar función wrapper con sincronización
-                    if selected_coach_id is None:
-                        st.error("Please select a coach")
+                    # Usar validaciones seguras de ValidationController
+                    coach_valid, coach_error, safe_coach_id = validate_coach_selection_safe(selected_coach_id)
+                    if not coach_valid:
+                        st.error(coach_error)
                         return
-                        
-                    success, message, new_session = create_session_with_calendar(
-                        coach_id=selected_coach_id,
-                        player_id=player_id,
+                    
+                    player_valid, player_error, safe_player_id = validate_player_selection_safe(player_id)
+                    if not player_valid:
+                        st.error(player_error)
+                        return
+                    
+                    # 🔧 FIX: Assert para Pylance - después de validación exitosa, no pueden ser None
+                    assert safe_coach_id is not None, "Coach ID validated but is None"
+                    assert safe_player_id is not None, "Player ID validated but is None"
+                    
+                    # Validar formulario completo
+                    form_valid, form_error = validate_session_form_data(
+                        coach_id=safe_coach_id,
+                        player_id=safe_player_id,
+                        session_date=session_date,
+                        start_time=start_time,
+                        end_time=end_time
+                    )
+                    
+                    if not form_valid:
+                        st.error(form_error)
+                        return
+                    
+                    # Crear sesión (usar valores seguros)
+                    success, message, _ = create_session_with_calendar(  # 🔧 FIX: No usar new_session
+                        coach_id=safe_coach_id,
+                        player_id=safe_player_id,
                         session_date=session_date,
                         start_time=start_time,
                         end_time=end_time,
@@ -321,9 +336,7 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                     else:
                         st.error(message)
 
-
-        # Tab 2: EDITAR SESIÓN (horarios flexibles)
-
+        # Tab 2: EDITAR SESIÓN
         with tab2:
             st.subheader("Edit / Delete Session")
 
@@ -344,39 +357,19 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
             # Obtener sesión seleccionada
             session = controller.db.get(Session, selected_id)
 
-            # 🔧 HORARIOS FLEXIBLES para editar (adaptarse a sesiones existentes)
-            def get_flexible_hours(existing_time: dt.time, base_hours: List[dt.time]) -> List[dt.time]:
-                """
-                Crea lista de horarios que incluye el horario existente si no está en el rango base.
-                """
-                if existing_time in base_hours:
-                    return base_hours
-                
-                # Si el horario existente está fuera del rango, ampliarlo
-                all_hours = [dt.time(h, 0) for h in range(6, 23)]  # 6:00-22:00
-                if existing_time in all_hours:
-                    return all_hours
-                
-                # Si está completamente fuera, agregarlo manualmente
-                extended_hours = base_hours + [existing_time]
-                return sorted(extended_hours)
+            # Usar ValidationController para horarios flexibles
+            hours_start_edit, hours_end_edit = get_edit_session_hours(
+                existing_start=session.start_time.time(),
+                existing_end=session.end_time.time()
+            )
 
-            # Horarios base preferidos (8:00-18:00)
-            base_start = [dt.time(h, 0) for h in range(8, 19)]
-            base_end = [dt.time(h, 0) for h in range(9, 20)]
+            # Usar ValidationController para verificar horarios recomendados
+            is_recommended, warning_msg = check_session_time_recommendation(
+                session.start_time.time(), session.end_time.time()
+            )
             
-            # Horarios flexibles adaptados a la sesión actual
-            hours_start_edit = get_flexible_hours(session.start_time.time(), base_start)
-            hours_end_edit = get_flexible_hours(session.end_time.time(), base_end)
-
-            # 🔧 Mostrar advertencia si está fuera del horario recomendado
-            if (session.start_time.time() < dt.time(8, 0) or 
-                session.start_time.time() >= dt.time(18, 0) or
-                session.end_time.time() <= dt.time(9, 0) or 
-                session.end_time.time() > dt.time(19, 0)):
-                
-                st.warning("⚠️ **Note**: This session has times outside the recommended range (8:00-18:00). "
-                        "Consider rescheduling to a standard time slot.")
+            if not is_recommended:
+                st.warning(warning_msg)
 
             with st.form(f"edit_session_{selected_id}", clear_on_submit=True):
                 col1, col2 = st.columns(2)
@@ -408,36 +401,34 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                     )
 
                 with col2:
-                    # Validar fecha para el date_input
+                    # Usar ValidationController para fechas
                     current_date = session.start_time.date()
-                    min_date = dt.date.today()
-                    max_date = dt.date.today() + dt.timedelta(days=90)
-                    
-                    # Si la fecha actual está fuera del rango, usar fecha válida
-                    if current_date < min_date or current_date > max_date:
-                        display_date = dt.date.today()
-                    else:
-                        display_date = current_date
+                    date_valid, date_error, display_date = ValidationController.validate_date_within_allowed_range(
+                        current_date
+                    )
+
+                    if not date_valid:
+                        st.warning(f"⚠️ Session date issue: {date_error}")
 
                     session_date = st.date_input(
                         "Date",
                         value=display_date,
-                        min_value=min_date,
-                        max_value=max_date
+                        min_value=dt.date.today(),
+                        max_value=dt.date.today() + dt.timedelta(days=90)
                     )
 
-                    # Usar horarios flexibles con índices seguros
-                    try:
-                        start_index = hours_start_edit.index(session.start_time.time())
-                    except ValueError:
-                        start_index = 0  # Fallback al primer horario disponible
-                        st.error(f"⚠️ Original start time {session.start_time.time().strftime('%H:%M')} not available, defaulting to {hours_start_edit[0].strftime('%H:%M')}")
+                    # Usar ValidationController para índices de horarios
+                    start_valid, start_error, start_index = ValidationController.validate_time_index_in_list(
+                        session.start_time.time(), hours_start_edit, "start time"
+                    )
+                    if not start_valid:
+                        st.warning(f"⚠️ {start_error}")
 
-                    try:
-                        end_index = hours_end_edit.index(session.end_time.time())
-                    except ValueError:
-                        end_index = 0  # Fallback al primer horario disponible
-                        st.error(f"⚠️ Original end time {session.end_time.time().strftime('%H:%M')} not available, defaulting to {hours_end_edit[0].strftime('%H:%M')}")
+                    end_valid, end_error, end_index = ValidationController.validate_time_index_in_list(
+                        session.end_time.time(), hours_end_edit, "end time"
+                    )
+                    if not end_valid:
+                        st.warning(f"⚠️ {end_error}")
 
                     start_time = st.selectbox(
                         "Start hour",
@@ -461,11 +452,35 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                 del_clicked = col_del.form_submit_button("Delete", type="secondary")
 
                 if save_clicked:
-                    # Usar función wrapper con sincronización
+                    # Validar antes de actualizar
+                    coach_valid, coach_error, safe_coach_id = validate_coach_selection_safe(new_coach_id)
+                    if not coach_valid:
+                        st.error(coach_error)
+                        return
+                    
+                    player_valid, player_error, safe_player_id = validate_player_selection_safe(new_player_id)
+                    if not player_valid:
+                        st.error(player_error)
+                        return
+                    
+                    # Validar formulario completo
+                    update_valid, update_error = validate_session_form_data(
+                        coach_id=safe_coach_id,
+                        player_id=safe_player_id,
+                        session_date=session_date,
+                        start_time=start_time,
+                        end_time=end_time
+                    )
+                    
+                    if not update_valid:
+                        st.error(update_error)
+                        return
+                    
+                    # Actualizar sesión (usar valores seguros)
                     success, message = update_session_with_calendar(
                         session_id=selected_id,
-                        coach_id=new_coach_id,
-                        player_id=new_player_id,
+                        coach_id=safe_coach_id,
+                        player_id=safe_player_id,
                         session_date=session_date,
                         start_time=start_time,
                         end_time=end_time,
@@ -483,7 +498,7 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                     # Marcar para confirmación
                     st.session_state["delete_candidate"] = selected_id
 
-            # Diálogo de confirmación de eliminación
+            # Diálogo de confirmación de eliminación (sin cambios)
             if st.session_state.get("delete_candidate") == selected_id:
                 @st.dialog("Confirm delete")
                 def confirm_delete():
@@ -491,7 +506,6 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                     c1, c2 = st.columns(2)
                     
                     if c1.button("Delete", type="primary"):
-                        # Usar función wrapper con sincronización
                         success, message = delete_session_with_calendar(selected_id)
                         
                         if "delete_candidate" in st.session_state:
@@ -549,7 +563,7 @@ def show_all_sessions():
             index=0
         )
         
-        # 🔄 REFACTORIZADO: Usar ValidationController para date range validation
+        # Usar ValidationController para date range validation
         is_valid, error = ValidationController.validate_date_range(start_date, end_date)
         if not is_valid:
             st.error(error)

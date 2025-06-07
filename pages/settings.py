@@ -11,7 +11,6 @@ from controllers.sync_coordinator import start_auto_sync, stop_auto_sync, get_au
 from controllers.sheets_controller import get_accounting_df
 from common.notifications import auto_cleanup_old_problems, get_sync_problems, clear_sync_problems
 from models import UserType
-# 🆕 NUEVO: Import para eliminar duplicaciones
 from controllers.validation_controller import ValidationController
 
 
@@ -438,7 +437,6 @@ def manage_user_status():
         use_container_width=True
     )
     
-
     st.subheader("Change User Status")
     
     # Preparar opciones del selector con iconos
@@ -487,9 +485,8 @@ def manage_user_status():
                 else:
                     st.error(message)
 
-
 def system_settings():
-    """Configuración del sistema - MANTIENE FUNCIONALIDAD EXISTENTE."""
+    """Configuración del sistema"""
     # Limpiar problemas antiguos automáticamente
     auto_cleanup_old_problems(max_age_hours=2)
     
@@ -624,7 +621,7 @@ def system_settings():
             
         st.divider()
 
-    # 📊 RESTO DE SYSTEM SETTINGS
+    # Resto de system settings
     st.subheader("Database/Googlesheets Management")
 
     col1, col2 = st.columns(2)

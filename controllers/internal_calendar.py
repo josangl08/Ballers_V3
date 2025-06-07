@@ -26,7 +26,6 @@ def _to_event(s: Session) -> dict:
         "color":  HEX[s.status.value],
     }
 
-
 def show_calendar(title: str, sessions, *, height: int = 650,
                   editable: bool = False, key: str = "calendar") -> None:
 

@@ -4,11 +4,8 @@ Controlador para manejo del menú lateral y navegación.
 Separa la lógica del menú de la presentación UI.
 """
 import streamlit as st
-from typing import Dict, List, Optional, Tuple
-
-# Importar funciones de sync desde sync_coordinator
+from typing import Dict, List, Optional
 from .sync_coordinator import get_sync_stats_unified, is_auto_sync_running
-
 
 class MenuController:
     """

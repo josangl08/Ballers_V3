@@ -9,7 +9,6 @@ import re
 import logging
 from zoneinfo import ZoneInfo
 from typing import Optional
-
 from models import Session, SessionStatus
 
 logger = logging.getLogger(__name__)

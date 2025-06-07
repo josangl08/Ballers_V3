@@ -3,17 +3,15 @@ import streamlit as st
 import importlib
 import os
 import logging
-import datetime as dt
 
-# Importar configuración
-from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE
-
-# Importar módulos personalizados
 from common.login import login_page
 from controllers.auth_controller import AuthController
 from common.menu import create_sidebar_menu, get_content_path
 from controllers.sync_coordinator import is_auto_sync_running, start_auto_sync
 from controllers.db import initialize_database 
+
+# Importar configuración
+from config import STYLES_DIR, APP_NAME, APP_ICON, CSS_FILE
 
 # Configuración de la página
 st.set_page_config(

@@ -7,7 +7,6 @@ import datetime as dt
 import os
 import shutil
 from typing import List, Optional, Tuple, Dict, Any
-from sqlalchemy.orm import Session as SQLSession, joinedload
 
 from models import User, UserType, Coach, Player, Admin
 from controllers.db import get_db_session
@@ -39,7 +38,7 @@ class UserController:
     def _validate_user_data(self, name: str, username: str, email: str, password: Optional[str] = None) -> Tuple[bool, str]:
         """
         Validación básica de datos de usuario (independiente de Streamlit).
-        Para validación completa, usar common.validation en la capa de UI.
+
         """
         # Validar campos obligatorios
         if not name or not name.strip():

@@ -4,21 +4,44 @@ Controlador central de validaciones para la aplicación Ballers.
 Centraliza TODAS las validaciones eliminando duplicaciones masivas.
 """
 import datetime as dt
-import os
 import re
-from typing import Tuple, Optional, List, Dict, Any, Union
-from config import WORK_HOURS_FLEXIBLE, WORK_HOURS_STRICT, SESSION_DURATION
+from typing import Tuple, Optional, List, Union, Any
 
+# CONFIGURACIÓN DE HORARIOS CENTRALIZADOS (movido desde administration.py)
+# ========================================================================
 
+class ScheduleConfig:
+    """Configuración centralizada de horarios para formularios."""
+    
+    # Horarios ESTRICTOS para CREAR sesiones
+    CREATE_START_HOUR_MIN = 8   # 8:00
+    CREATE_START_HOUR_MAX = 18  # último inicio: 18:00
+    CREATE_END_HOUR_MIN = 9     # 9:00  
+    CREATE_END_HOUR_MAX = 19    # último fin: 19:00
+    
+    # Horarios BASE para EDITAR (recomendados)
+    EDIT_BASE_START_MIN = 8     # 8:00
+    EDIT_BASE_START_MAX = 18    # 18:00
+    EDIT_BASE_END_MIN = 9       # 9:00
+    EDIT_BASE_END_MAX = 19      # 19:00
+    
+    # Horarios EXTENDIDOS para EDITAR (permitidos con advertencia)
+    EDIT_EXTENDED_START_MIN = 6   # 6:00
+    EDIT_EXTENDED_START_MAX = 22  # 22:00  
+    EDIT_EXTENDED_END_MIN = 7     # 7:00
+    EDIT_EXTENDED_END_MAX = 23    # 23:00
+    
+    # Horarios RECOMENDADOS (para advertencias)
+    RECOMMENDED_START = dt.time(8, 0)
+    RECOMMENDED_END = dt.time(19, 0)  # 🔧 FIX: 19:00 es válido
+    
 class ValidationController:
     """
     Controlador central para TODAS las validaciones de la aplicación.
     Elimina duplicaciones y centraliza lógica de validación.
     """
     
-    # ========================================================================
-    # VALIDACIONES DE USUARIO (consolidadas desde user_controller.py y settings.py)
-    # ========================================================================
+    # Validaciones de usuario
     
     @staticmethod
     def validate_user_fields(
@@ -28,8 +51,7 @@ class ValidationController:
         password: Optional[str] = None
     ) -> Tuple[bool, str]:
         """
-        Validación UNIFICADA de campos básicos de usuario.
-        Reemplaza: user_controller._validate_user_data() y validation.validate_user_data()
+        Validación unificada de campos básicos de usuario.
         
         Args:
             name: Nombre completo
@@ -71,7 +93,6 @@ class ValidationController:
     def validate_email_format(email: str) -> bool:
         """
         Validación unificada de formato de email.
-        Reemplaza validaciones dispersas en settings.py, user_controller.py, validation.py
         """
         if not email:
             return False
@@ -88,7 +109,6 @@ class ValidationController:
     def validate_username_format(username: str) -> Tuple[bool, str]:
         """
         Validación unificada de formato de username.
-        Reemplaza validaciones en user_controller.py y validation.py
         """
         if not username:
             return False, "The username is required."
@@ -131,9 +151,7 @@ class ValidationController:
             return False, "The passwords do not match."
         return True, ""
     
-    # ========================================================================
-    # VALIDACIONES DE SESIONES (consolidadas desde validation.py y administration.py)
-    # ========================================================================
+    # Validaciones de sesiones
     
     @staticmethod
     def validate_session_time_strict(
@@ -142,8 +160,7 @@ class ValidationController:
         end_time: dt.time
     ) -> Tuple[bool, str]:
         """
-        Validación ESTRICTA de horarios para CREAR sesiones nuevas.
-        Reemplaza: validation.validate_session_time() con horarios estrictos
+        Validación estricta de horarios para Crear sesiones nuevas.
         
         Returns:
             Tuple[bool, str]: (is_valid, error_message)
@@ -178,7 +195,6 @@ class ValidationController:
     ) -> Tuple[bool, str, List[str]]:
         """
         Validación FLEXIBLE de horarios para IMPORTS de Google Calendar.
-        Reemplaza: validation.validate_session_for_import()
         
         Returns:
             Tuple[bool, str, List[str]]: (is_valid, error_message, warnings_list)
@@ -197,8 +213,8 @@ class ValidationController:
         if duration_minutes > 180:  # 3 horas
             return False, f"Excessive duration: {duration_minutes/60:.1f} hours (maximum: 3h)", warnings
         
-        if duration_minutes < 1:
-            return False, f"Duration too short: {int(duration_minutes)} min (minimum: 1 min)", warnings
+        if duration_minutes < 45:
+            return False, f"Duration too short: {int(duration_minutes)} min (minimum: 45 min)", warnings
         
         # ⚠️ WARNINGS (permiten pero alertan)
         warnings.extend(ValidationController._check_time_warnings(start_dt, end_dt))
@@ -229,16 +245,16 @@ class ValidationController:
                 return False, "The session cannot last more than 2 hours."
         else:
             # Modo flexible para imports
-            if duration_minutes < 15:
+            if duration_minutes < 45:
                 return False, "The session should last at least 15 minutes."
             if duration_minutes > 180:
                 return False, "The session cannot last more than 3 hours."
         
         return True, ""
     
-    # ========================================================================
-    # VALIDACIONES DE FECHAS (consolidadas desde ballers.py y administration.py)
-    # ========================================================================
+
+    # Validaciones de fechas
+
     
     @staticmethod
     def validate_date_range(start_date: dt.date, end_date: dt.date) -> Tuple[bool, str]:
@@ -265,10 +281,8 @@ class ValidationController:
                 return False, "The date must be in the future."
         
         return True, ""
-    
-    # ========================================================================
-    # VALIDACIONES DE AUTENTICACIÓN (consolidadas desde auth_controller.py)
-    # ========================================================================
+ 
+    # Validaciones de autentificacion
     
     @staticmethod
     def validate_login_fields(username: str, password: str) -> Tuple[bool, str]:
@@ -284,9 +298,7 @@ class ValidationController:
         
         return True, ""
     
-    # ========================================================================
-    # VALIDACIONES DE ARCHIVOS (consolidadas desde settings.py y user_controller.py)
-    # ========================================================================
+    # Validaciones de archivos
     
     @staticmethod
     def validate_profile_photo(uploaded_file) -> Tuple[bool, str]:
@@ -312,10 +324,8 @@ class ValidationController:
         
         return True, ""
     
-    # ========================================================================
-    # VALIDACIONES DE EXISTENCIA EN BD (consolidadas desde session_controller.py)
-    # ========================================================================
-    
+    # Validaciones de existencia en BD
+
     @staticmethod
     def validate_user_exists_and_active(user, user_type: str = "user") -> Tuple[bool, str]:
         """
@@ -346,9 +356,7 @@ class ValidationController:
             return False, "Session not found"
         return True, ""
     
-    # ========================================================================
-    # VALIDACIONES DE CONFIRMACIÓN (consolidadas desde settings.py)
-    # ========================================================================
+    # Validaciones de confirmacion
     
     @staticmethod
     def validate_deletion_confirmation(confirm_text: str, expected: str = "DELETE") -> Tuple[bool, str]:
@@ -360,9 +368,8 @@ class ValidationController:
             return False, f"Please type '{expected}' to confirm."
         return True, ""
     
-    # ========================================================================
-    # MÉTODOS PRIVADOS DE APOYO
-    # ========================================================================
+
+    # Métodos privados de apoyo
     
     @staticmethod
     def _check_time_warnings(start_dt: dt.datetime, end_dt: dt.datetime) -> List[str]:
@@ -370,9 +377,9 @@ class ValidationController:
         warnings = []
         
         RECOMMENDED_START = dt.time(8, 0)
-        RECOMMENDED_END = dt.time(18, 0)
+        RECOMMENDED_END = dt.time(19, 0)
         EXTENDED_START = dt.time(6, 0)
-        EXTENDED_END = dt.time(20, 0)
+        EXTENDED_END = dt.time(21, 0)
         
         # Warnings para horarios tempranos/tardíos
         if start_dt.time() < RECOMMENDED_START:
@@ -386,6 +393,17 @@ class ValidationController:
                 warnings.append(f"Late start: {start_dt.time().strftime('%H:%M')} (recommended: 8:00-18:00)")
             else:
                 warnings.append(f"Very late start: {start_dt.time().strftime('%H:%M')} (limit: 20:00)")
+
+        if end_dt.time() < RECOMMENDED_START:
+            if end_dt.time() >= EXTENDED_START:
+                warnings.append(f"Early end: {start_dt.time().strftime('%H:%M')} (recommended: 9:00-19:00)")
+            else:
+                warnings.append(f"Very early end: {start_dt.time().strftime('%H:%M')} (limit: 7:00)")
+        if end_dt.time() > RECOMMENDED_END:
+            if end_dt.time() <= EXTENDED_END:
+                warnings.append(f"Late end: {start_dt.time().strftime('%H:%M')} (recommended: 9:00-19:00)")
+            else:
+                warnings.append(f"Very late end: {start_dt.time().strftime('%H:%M')} (limit: 21:00)")
         
         return warnings
     
@@ -413,11 +431,340 @@ class ValidationController:
             warnings.append(f"Weekend session: {day_names[weekday]}")
         
         return warnings
+    @staticmethod
+    def validate_coach_selection(coach_id: Optional[int]) -> Tuple[bool, str]:
+        """
+        Validación de selección de coach en formularios.
+        Reemplaza validación manual en administration.py
+        """
+        if coach_id is None:
+            return False, "Please select a coach"
+        return True, ""
 
+    @staticmethod  
+    def validate_player_selection(player_id: Optional[int]) -> Tuple[bool, str]:
+        """
+        Validación de selección de player en formularios.
+        """
+        if player_id is None:
+            return False, "Please select a player"
+        return True, ""
 
-# ========================================================================
-# FUNCIONES DE CONVENIENCIA (compatibilidad con código existente)
-# ========================================================================
+    @staticmethod
+    def validate_date_within_allowed_range(
+        date: dt.date, 
+        min_date: Optional[dt.date] = None, 
+        max_date: Optional[dt.date] = None
+    ) -> Tuple[bool, str, dt.date]:
+        """
+        Validación de fecha dentro de rango permitido.
+        Reemplaza validación manual en administration.py
+        
+        Args:
+            date: Fecha a validar
+            min_date: Fecha mínima permitida (por defecto: hoy)
+            max_date: Fecha máxima permitida (por defecto: hoy + 90 días)
+            
+        Returns:
+            Tuple[bool, str, dt.date]: (is_valid, error_message, corrected_date)
+        """
+        if min_date is None:
+            min_date = dt.date.today()
+        if max_date is None:
+            max_date = dt.date.today() + dt.timedelta(days=90)
+        
+        if date < min_date:
+            return False, f"Date cannot be before {min_date.strftime('%d/%m/%Y')}", min_date
+        elif date > max_date:
+            return False, f"Date cannot be after {max_date.strftime('%d/%m/%Y')}", max_date
+        
+        return True, "", date
+
+    @staticmethod
+    def validate_time_index_in_list(
+        time_value: dt.time, 
+        available_times: List[dt.time],
+        field_name: str = "time"
+    ) -> Tuple[bool, str, int]:
+        """
+        Validación de tiempo en lista de horarios disponibles.
+        Reemplaza validación manual try/except en administration.py
+        
+        Args:
+            time_value: Tiempo a buscar
+            available_times: Lista de tiempos disponibles
+            field_name: Nombre del campo para el mensaje de error
+            
+        Returns:
+            Tuple[bool, str, int]: (is_valid, error_message, safe_index)
+        """
+        try:
+            index = available_times.index(time_value)
+            return True, "", index
+        except ValueError:
+            # Buscar el tiempo más cercano como fallback
+            closest_index = 0
+            if available_times:
+                closest_time = min(available_times, key=lambda t: abs(
+                    (dt.datetime.combine(dt.date.today(), t) - 
+                    dt.datetime.combine(dt.date.today(), time_value)).total_seconds()
+                ))
+                closest_index = available_times.index(closest_time)
+            
+            error_msg = (f"{field_name.capitalize()} {time_value.strftime('%H:%M')} not available. "
+                        f"Using closest available: {available_times[closest_index].strftime('%H:%M')}")
+            
+            return False, error_msg, closest_index
+
+    @staticmethod
+    def validate_session_form_data(
+        coach_id: Optional[int],
+        player_id: Optional[int], 
+        session_date: dt.date,
+        start_time: dt.time,
+        end_time: dt.time
+    ) -> Tuple[bool, str]:
+        """
+        Validación completa de formulario de sesión.
+        Combina múltiples validaciones en una sola función.
+        
+        Returns:
+            Tuple[bool, str]: (is_valid, error_message)
+        """
+        # Validar selecciones
+        coach_valid, coach_error = ValidationController.validate_coach_selection(coach_id)
+        if not coach_valid:
+            return False, coach_error
+        
+        player_valid, player_error = ValidationController.validate_player_selection(player_id)
+        if not player_valid:
+            return False, player_error
+        
+        # Validar fecha
+        date_valid, date_error, _ = ValidationController.validate_date_within_allowed_range(session_date)
+        if not date_valid:
+            return False, date_error
+        
+        # Validar horarios
+        time_valid, time_error = ValidationController.validate_session_time_strict(
+            session_date, start_time, end_time
+        )
+        if not time_valid:
+            return False, time_error
+        
+        return True, ""
+    
+    # Generación de horarios para sesiones
+    
+    @staticmethod
+    def get_create_session_hours() -> Tuple[List[dt.time], List[dt.time]]:
+        """
+        Obtiene horarios ESTRICTOS para crear sesiones nuevas.
+        Reemplaza la lógica duplicada en administration.py
+        
+        Returns:
+            Tuple[List[dt.time], List[dt.time]]: (start_hours, end_hours)
+        """
+        start_hours = [dt.time(h, 0) for h in range(
+            ScheduleConfig.CREATE_START_HOUR_MIN, 
+            ScheduleConfig.CREATE_START_HOUR_MAX + 1
+        )]
+        
+        end_hours = [dt.time(h, 0) for h in range(
+            ScheduleConfig.CREATE_END_HOUR_MIN, 
+            ScheduleConfig.CREATE_END_HOUR_MAX + 1
+        )]
+        
+        return start_hours, end_hours
+
+    @staticmethod  
+    def get_edit_session_hours(
+        existing_start: Optional[dt.time] = None,
+        existing_end: Optional[dt.time] = None
+    ) -> Tuple[List[dt.time], List[dt.time]]:
+        """
+        Obtiene horarios FLEXIBLES para editar sesiones existentes.
+        Incluye horarios extendidos si la sesión actual los necesita.
+        Reemplaza get_flexible_hours() de administration.py
+        
+        Args:
+            existing_start: Hora actual de inicio (opcional)
+            existing_end: Hora actual de fin (opcional)
+            
+        Returns:
+            Tuple[List[dt.time], List[dt.time]]: (start_hours, end_hours)
+        """
+        # Horarios base recomendados
+        base_start = [dt.time(h, 0) for h in range(
+            ScheduleConfig.EDIT_BASE_START_MIN,
+            ScheduleConfig.EDIT_BASE_START_MAX + 1
+        )]
+        
+        base_end = [dt.time(h, 0) for h in range(
+            ScheduleConfig.EDIT_BASE_END_MIN,
+            ScheduleConfig.EDIT_BASE_END_MAX + 1
+        )]
+        
+        # Si no hay horarios existentes, usar base
+        if not existing_start and not existing_end:
+            return base_start, base_end
+        
+        # Función helper para extender horarios si es necesario
+        def extend_hours_if_needed(current_time: Optional[dt.time], base_hours: List[dt.time], is_start: bool) -> List[dt.time]:
+            if not current_time or current_time in base_hours:
+                return base_hours
+            
+            # Generar horarios extendidos
+            if is_start:
+                extended = [dt.time(h, 0) for h in range(
+                    ScheduleConfig.EDIT_EXTENDED_START_MIN,
+                    ScheduleConfig.EDIT_EXTENDED_START_MAX + 1
+                )]
+            else:
+                extended = [dt.time(h, 0) for h in range(
+                    ScheduleConfig.EDIT_EXTENDED_END_MIN,
+                    ScheduleConfig.EDIT_EXTENDED_END_MAX + 1
+                )]
+            
+            # Si está en extendidos, usar extendidos
+            if current_time in extended:
+                return extended
+            
+            # Si está completamente fuera, agregarlo manualmente
+            combined = base_hours + [current_time]
+            return sorted(combined)
+        
+        # Extender horarios si es necesario
+        final_start = extend_hours_if_needed(existing_start, base_start, True)
+        final_end = extend_hours_if_needed(existing_end, base_end, False)
+        
+        return final_start, final_end
+
+    @staticmethod
+    def check_session_time_recommendation(start_time: dt.time, end_time: dt.time) -> Tuple[bool, str]:
+        """
+        Verifica si los horarios están dentro del rango recomendado.
+        Reemplaza la validación manual en administration.py
+        
+        Args:
+            start_time: Hora de inicio
+            end_time: Hora de fin
+            
+        Returns:
+            Tuple[bool, str]: (is_recommended, warning_message)
+        """
+        issues = []
+        
+        if start_time < ScheduleConfig.RECOMMENDED_START:
+            issues.append(f"start time {start_time.strftime('%H:%M')} is early")
+        
+        if start_time >= dt.time(18, 0):  # 18:00 o después para inicio es tarde
+            issues.append(f"start time {start_time.strftime('%H:%M')} is late")
+        
+        if end_time <= dt.time(9, 0):  # 9:00 o antes para fin es muy temprano
+            issues.append(f"end time {end_time.strftime('%H:%M')} is very early")
+        
+        if end_time > ScheduleConfig.RECOMMENDED_END:
+            issues.append(f"end time {end_time.strftime('%H:%M')} is late")
+        
+        if issues:
+            warning = (f"⚠️ **Note**: This session has {', '.join(issues)} "
+                    f"(recommended: {ScheduleConfig.RECOMMENDED_START.strftime('%H:%M')}-"
+                    f"{ScheduleConfig.RECOMMENDED_END.strftime('%H:%M')}). "
+                    "Consider rescheduling to a standard time slot.")
+            return False, warning
+        
+        return True, ""
+
+    @staticmethod
+    def validate_coach_selection_safe(coach_id: Union[int, None, Any]) -> Tuple[bool, str, Optional[int]]:
+        """
+        Validación SEGURA de coach que maneja tipos Unknown/Any de Pylance.
+        🔧 FIX: Arreglado problema de tipos con len()
+        
+        Args:
+            coach_id: ID del coach (puede ser None, int, o Unknown)
+            
+        Returns:
+            Tuple[bool, str, Optional[int]]: (is_valid, error_message, safe_coach_id)
+        """
+        # Verificar None o valores vacíos
+        if coach_id is None:
+            return False, "Please select a coach", None
+        
+        # Verificar strings vacíos (solo si es string)
+        if isinstance(coach_id, str):
+            if coach_id.strip() == "":
+                return False, "Please select a coach", None
+            # Intentar convertir string a int
+            try:
+                coach_id = int(coach_id)
+            except (ValueError, TypeError):
+                return False, "Invalid coach selection format", None
+        
+        # Verificar listas vacías (solo si tiene __len__ y no es int)
+        if hasattr(coach_id, '__len__') and not isinstance(coach_id, (int, str)):
+            try:
+                if len(coach_id) == 0:  # type: ignore
+                    return False, "Please select a coach", None
+            except TypeError:
+                pass  # Si falla len(), continuar con la validación normal
+        
+        # Intentar convertir a int si no es int ya
+        try:
+            if not isinstance(coach_id, int):
+                coach_id = int(coach_id)
+            
+            if coach_id <= 0:
+                return False, "Invalid coach selection", None
+                
+            return True, "", coach_id
+            
+        except (ValueError, TypeError):
+            return False, "Invalid coach selection format", None
+
+    @staticmethod
+    def validate_player_selection_safe(player_id: Union[int, None, Any]) -> Tuple[bool, str, Optional[int]]:
+        """
+        Validación SEGURA de player que maneja tipos Unknown/Any de Pylance.
+        🔧 FIX: Arreglado problema de tipos con len()
+        """
+        # Verificar None o valores vacíos
+        if player_id is None:
+            return False, "Please select a player", None
+        
+        # Verificar strings vacíos (solo si es string)
+        if isinstance(player_id, str):
+            if player_id.strip() == "":
+                return False, "Please select a player", None
+            # Intentar convertir string a int
+            try:
+                player_id = int(player_id)
+            except (ValueError, TypeError):
+                return False, "Invalid player selection format", None
+        
+        # Verificar listas vacías (solo si tiene __len__ y no es int)
+        if hasattr(player_id, '__len__') and not isinstance(player_id, (int, str)):
+            try:
+                if len(player_id) == 0:  # type: ignore
+                    return False, "Please select a player", None
+            except TypeError:
+                pass  # Si falla len(), continuar con la validación normal
+        
+        # Intentar convertir a int si no es int ya
+        try:
+            if not isinstance(player_id, int):
+                player_id = int(player_id)
+            
+            if player_id <= 0:
+                return False, "Invalid player selection", None
+                
+            return True, "", player_id
+            
+        except (ValueError, TypeError):
+            return False, "Invalid player selection format", None
+    
+
 
 def validate_user_data(name: str, username: str, email: str, password: Optional[str] = None) -> Tuple[bool, str]:
     """Función de conveniencia - mantiene compatibilidad con validation.py"""
@@ -435,3 +782,44 @@ def validate_session_datetime(start_dt: dt.datetime, end_dt: dt.datetime) -> Tup
     """Función de conveniencia - mantiene compatibilidad con validation.py"""
     is_valid, error, _ = ValidationController.validate_session_time_flexible(start_dt, end_dt)
     return is_valid, error
+def validate_coach_selection(coach_id: Optional[int]) -> Tuple[bool, str]:
+    """Función de conveniencia para validación de coach."""
+    return ValidationController.validate_coach_selection(coach_id)
+
+def validate_player_selection(player_id: Optional[int]) -> Tuple[bool, str]:
+    """Función de conveniencia para validación de player.""" 
+    return ValidationController.validate_player_selection(player_id)
+
+def validate_session_form_data(
+    coach_id: Optional[int],
+    player_id: Optional[int], 
+    session_date: dt.date,
+    start_time: dt.time,
+    end_time: dt.time
+) -> Tuple[bool, str]:
+    """Función de conveniencia para validación completa de formulario."""
+    return ValidationController.validate_session_form_data(
+        coach_id, player_id, session_date, start_time, end_time
+    )
+def get_create_session_hours() -> Tuple[List[dt.time], List[dt.time]]:
+    """Función de conveniencia para horarios de crear sesión."""
+    return ValidationController.get_create_session_hours()
+
+def get_edit_session_hours(
+    existing_start: Optional[dt.time] = None,
+    existing_end: Optional[dt.time] = None
+) -> Tuple[List[dt.time], List[dt.time]]:
+    """Función de conveniencia para horarios de editar sesión."""
+    return ValidationController.get_edit_session_hours(existing_start, existing_end)
+
+def check_session_time_recommendation(start_time: dt.time, end_time: dt.time) -> Tuple[bool, str]:
+    """Función de conveniencia para verificar horarios recomendados."""
+    return ValidationController.check_session_time_recommendation(start_time, end_time)
+
+def validate_coach_selection_safe(coach_id: Union[int, None, Any]) -> Tuple[bool, str, Optional[int]]:
+    """Función de conveniencia para validación segura de coach."""
+    return ValidationController.validate_coach_selection_safe(coach_id)
+
+def validate_player_selection_safe(player_id: Union[int, None, Any]) -> Tuple[bool, str, Optional[int]]:
+    """Función de conveniencia para validación segura de player."""
+    return ValidationController.validate_player_selection_safe(player_id)

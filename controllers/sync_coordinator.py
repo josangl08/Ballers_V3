@@ -14,7 +14,7 @@ from dataclasses import dataclass, asdict
 from typing import Optional, Dict, Any
 import logging
 
-from common.notifications import save_sync_problems, clear_sync_problems
+from common.notifications import save_sync_problems
 from .calendar_sync_core import sync_calendar_to_db_with_feedback, sync_db_to_calendar
 from .session_controller import update_past_sessions
 

@@ -23,14 +23,11 @@ class Session(Base):
     coach_id:    Mapped[int]               = mapped_column(ForeignKey("coaches.coach_id"), nullable=False)
     player_id:   Mapped[int]               = mapped_column(ForeignKey("players.player_id"), nullable=False)
 
-    start_time:  Mapped[datetime]          = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc)
-    )
+    start_time:  Mapped[datetime]          = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc))
     end_time:    Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     status:      Mapped[SessionStatus]     = mapped_column(Enum(SessionStatus, native_enum=False),
-                                                           default=SessionStatus.SCHEDULED)
+                                                            default=SessionStatus.SCHEDULED)
     notes:       Mapped[Optional[str]]      = mapped_column(String, nullable=True)
     created_at:  Mapped[datetime]           = mapped_column(
         DateTime(timezone=True),
