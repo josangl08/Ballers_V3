@@ -10,8 +10,8 @@ import os
 import threading
 import time
 import datetime as dt
-from dataclasses import dataclass, asdict
-from typing import Optional, Dict, Any
+from dataclasses import dataclass, asdict, field
+from typing import Optional, Dict, Any, List
 import logging
 
 from common.notifications import save_sync_problems
@@ -146,58 +146,31 @@ def build_stats_from_manual_sync(result: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def build_stats_from_auto_sync(auto_status: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Construye stats desde auto-sync."""
-    from common.notifications import get_sync_problems
+    """Construye stats desde auto-sync usando datos internos de AutoSyncStats."""
     
     # Stats de cambios
     last_changes = auto_status.get('last_changes') or {}
-
-    problems = get_sync_problems()
-
-    rejected_count = 0
-    warnings_count = 0
-
-    if problems:
-        # 🔧 VERIFICAR que los datos sean recientes (últimos 2 minutos)
-        timestamp_str = problems.get('timestamp', '')
-        if timestamp_str:
-            try:
-                problem_time = dt.datetime.strptime(timestamp_str, "%d/%m/%Y %H:%M:%S")
-                current_time = dt.datetime.now()
-                age_minutes = (current_time - problem_time).total_seconds() / 60
-                
-                # Solo usar datos si son recientes (< 2 min)
-                if age_minutes < 2:
-                    rejected = problems.get('rejected', [])
-                    warnings = problems.get('warnings', [])
-                else:
-                    # Datos antiguos, usar listas vacías
-                    rejected = []
-                    warnings = []
-            except:
-                # Error parseando timestamp, usar datos como están
-                rejected = problems.get('rejected', [])
-                warnings = problems.get('warnings', [])
-        else:
-            rejected = problems.get('rejected', [])
-            warnings = problems.get('warnings', [])
-
-        # Filtrar por coach si es necesario
-        coach_id = get_coach_id_if_needed()
-        if coach_id:
-            temp_result = {
-                'rejected_events': rejected,
-                'warning_events': warnings
-            }
-            filtered_result = filter_sync_results_by_coach(temp_result, coach_id)
-            
-            rejected_count = len(filtered_result.get('rejected_events', []))
-            warnings_count = len(filtered_result.get('warning_events', []))
-        else:
-            rejected_count = len(rejected)
-            warnings_count = len(warnings)
     
-    result = {
+    # Obtener problemas directamente de AutoSyncStats
+    rejected_events = auto_status.get('last_rejected_events', [])
+    warning_events = auto_status.get('last_warning_events', [])
+    
+    
+    # Filtrar por coach si es necesario
+    coach_id = get_coach_id_if_needed()
+    if coach_id:
+        temp_result = {
+            'rejected_events': rejected_events,
+            'warning_events': warning_events
+        }
+        filtered_result = filter_sync_results_by_coach(temp_result, coach_id)
+        rejected_count = len(filtered_result.get('rejected_events', []))
+        warnings_count = len(filtered_result.get('warning_events', []))
+    else:
+        rejected_count = len(rejected_events)
+        warnings_count = len(warning_events)
+    
+    return {
         "imported": last_changes.get('imported', 0),
         "updated": last_changes.get('updated', 0), 
         "deleted": last_changes.get('deleted', 0),
@@ -205,8 +178,6 @@ def build_stats_from_auto_sync(auto_status: Dict[str, Any]) -> Optional[Dict[str
         "warnings": warnings_count,
         "sync_time": auto_status.get('last_sync_duration', 0)
     }
-    
-    return result
 
 
 def get_sync_stats_unified() -> Optional[Dict[str, Any]]:
@@ -256,7 +227,7 @@ def get_sync_stats_unified() -> Optional[Dict[str, Any]]:
                     
                     if time_since_sync < 300:  # 5 minutos
                         auto_stats = build_stats_from_auto_sync(auto_status)
-                        
+
                         # Validar que auto_stats tenga datos útiles
                         if auto_stats:
                             total_data = (auto_stats['imported'] + auto_stats['updated'] + 
@@ -340,6 +311,9 @@ class AutoSyncStats:
     last_changes_time: Optional[str] = None        
     changes_notified: bool = True
     _last_problems: Optional[str] = None    
+    last_rejected_events: List[Dict[str, Any]] = field(default_factory=list)
+    last_warning_events: List[Dict[str, Any]] = field(default_factory=list)
+    problems_timestamp: Optional[str] = None
 
 class SimpleAutoSync:
     """Auto-sync simple sin warnings de Streamlit"""
@@ -460,7 +434,15 @@ class SimpleAutoSync:
                 self.stats.last_sync_time = dt.datetime.now().isoformat()
                 self.stats.last_sync_duration = duration
                 self.stats.last_error = None
-                    
+
+                # Guardar problemas en AutoSyncStats
+                self.stats.last_rejected_events = rejected_events
+                self.stats.last_warning_events = warning_events
+                self.stats.problems_timestamp = dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S") 
+
+                # Guardar también en session_state para página de settings
+                save_sync_problems(rejected_events, warning_events)
+
                 # Detectar y guardar cambios para notificaciones
                 total_changes = imported + updated + deleted
                 total_problems = len(rejected_events) + len(warning_events)
@@ -473,28 +455,24 @@ class SimpleAutoSync:
                         "deleted": deleted
                     }
                     self.stats.last_changes_time = dt.datetime.now().isoformat()
-                    self.stats.changes_notified = False  # Marcar como pendiente de notificar
-                        
+                    self.stats.changes_notified = False  # Marcar como pendiente de notificar    
                     print(f"🔔 Auto-sync detectó cambios: {imported}+{updated}+{deleted}")
                 else:
                     # Sin cambios → no notificar
+                    self.stats.last_changes = {"imported": 0, "updated": 0, "deleted": 0}
                     self.stats.changes_notified = True
                 
-                # Guardar problemas automáticamente
-                save_sync_problems(rejected_events, warning_events)
 
                 # Log solo si hay cambios o es diferente al anterior
                 current_problems = f"{len(rejected_events)}+{len(warning_events)}"
                 if rejected_events or warning_events:
-                    if not hasattr(self.stats, '_last_problems') or self.stats._last_problems != current_problems:
+                    if self.stats._last_problems != current_problems:
                         print(f"🚨 Auto-sync detectó problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
                         self.stats._last_problems = current_problems
                 else:
-                    # Limpiar flag de problemas anteriores
-                    if hasattr(self.stats, '_last_problems'):
-                        delattr(self.stats, '_last_problems')
+                    self.stats._last_problems = None
                 
-                # LOGGING CONSISTENTE
+                # Loggings consistentes
                 if total_problems > 0:
                     print(f"⚠️ Auto-sync completado con problemas en {duration:.1f}s: {imported}+{updated}+{deleted}")
                 else:
@@ -506,7 +484,9 @@ class SimpleAutoSync:
                 self.stats.last_error = str(e)
                 self.stats.changes_notified = True
                 
-                # LIMPIAR problemas en caso de error
+                # Limpiar problemas en caso de error
+                self.stats.last_rejected_events = []
+                self.stats.last_warning_events = []
                 save_sync_problems([], [])
                 print(f"❌ Error auto-sync: {e}")
         

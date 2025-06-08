@@ -511,19 +511,25 @@ def system_settings():
             if not result_data:
                 problems = get_sync_problems()
                 if problems:
-                    stats = problems.get('stats', {})
-                    result_data = {
-                        'imported': stats.get('imported', 0),
-                        'updated': stats.get('updated', 0),
-                        'deleted': stats.get('deleted', 0),
-                        'past_updated': stats.get('past_updated', 0),
-                        'rejected_events': problems.get('rejected', []),
-                        'warning_events': problems.get('warnings', []),
-                        'duration': stats.get('duration', 0)
-                    }
-                    if stats:
-                        st.info("📊 Data from: Auto-sync (complete stats)")
+                    # Si tiene stats del fallback, usarlos
+                    if 'stats' in problems:
+                        result_data = {
+                            'imported': problems['stats']['imported'],
+                            'updated': problems['stats']['updated'],
+                            'deleted': problems['stats']['deleted'],
+                            'rejected_events': problems['rejected'],
+                            'warning_events': problems['warnings'],
+                            'duration': problems['stats']['duration']  # ← DURACIÓN INCLUIDA
+                        }
+                        st.info("📊 Data from: Auto-sync (AutoSyncStats)")
                     else:
+                        # Fallback tradicional sin stats
+                        result_data = {
+                            'imported': 0, 'updated': 0, 'deleted': 0,
+                            'rejected_events': problems['rejected'],
+                            'warning_events': problems['warnings'],
+                            'duration': 0
+                        }
                         st.info("📊 Data from: Auto-sync (problems only)")
             
             if result_data:
@@ -785,7 +791,7 @@ def system_settings():
                 st.rerun()
             else:
                 st.error("Auto-sync is already running")
-
+                
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Settings."""
