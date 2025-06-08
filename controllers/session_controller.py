@@ -6,9 +6,8 @@ Usa ValidationController para validaciones de existencia
 import datetime as dt
 import logging
 from typing import List, Optional, Dict
-from sqlalchemy import func
 from sqlalchemy.orm import Session as SQLSession
-
+from zoneinfo import ZoneInfo
 from models import Session, SessionStatus, Coach, Player, User
 from controllers.db import get_db_session
 from controllers.google_client import calendar
@@ -275,7 +274,9 @@ class SessionController:
             raise RuntimeError("Controller debe usarse como context manager")
         
         try:
-            now = dt.datetime.now(dt.timezone.utc)
+            
+            madrid_tz = ZoneInfo("Europe/Madrid")
+            now = dt.datetime.now(madrid_tz)
             sessions_to_update = self.db.query(Session).filter(
                 Session.status == SessionStatus.SCHEDULED,
                 Session.end_time <= now
@@ -310,7 +311,6 @@ class SessionController:
         🔧 CORREGIDO: Actualiza correctamente los campos de tracking después de creación exitosa.
         """
         try:
-            from .calendar_utils import build_calendar_event_body, update_session_tracking
             
             body = build_calendar_event_body(session)
             event = calendar().events().insert(

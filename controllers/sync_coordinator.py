@@ -3,10 +3,8 @@
 Coordinador de sincronización - gestiona auto-sync, locks y estadísticas.
 Anteriormente: sync.py
 """
-import fcntl 
+
 import streamlit as st 
-import tempfile
-import os
 import threading
 import time
 import datetime as dt
@@ -21,28 +19,6 @@ from .session_controller import update_past_sessions
 logger = logging.getLogger(__name__)
 
 # Internal helpers
-
-SYNC_LOCK_FILE = os.path.join(tempfile.gettempdir(), "ballers_sync.lock")
-
-def _acquire_sync_lock():
-    """Adquiere lock de archivo para sync exclusivo"""
-    try:
-        lock_file = open(SYNC_LOCK_FILE, 'w')
-        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return lock_file
-    except (IOError, OSError):
-        return None
-
-def _release_sync_lock(lock_file):
-    """Libera lock de archivo"""
-    if lock_file:
-        try:
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
-            lock_file.close()
-            if os.path.exists(SYNC_LOCK_FILE):
-                os.remove(SYNC_LOCK_FILE)
-        except:
-            pass
 
 def _toast(msg: str, icon: str = "") -> None:
     """Muestra un mensaje flotante con duración extendida."""
@@ -323,6 +299,7 @@ class SimpleAutoSync:
         self.thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._sync_in_progress = False
+        self._stats_lock = threading.Lock()  # ← AÑADIR
         
     def start(self, interval_minutes: int = 5) -> bool:
         """Inicia auto-sync"""
@@ -378,9 +355,9 @@ class SimpleAutoSync:
             # LOGGING PRECISO para manual sync
             total_problems = len(rejected_events) + len(warning_events)
             if total_problems > 0:
-                print(f"🔧 Manual sync completado con problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
+                logger.warning(f"🔧 Manual sync completado con problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
             else:
-                print(f"✅ Manual sync completado sin problemas")
+                logger.info(f"✅ Manual sync completado sin problemas")
             
             return {
                 "success": True,
@@ -403,7 +380,7 @@ class SimpleAutoSync:
 
             # LIMPIAR problemas en caso de error
             save_sync_problems([], [])
-            print(f"❌ Error manual sync: {e}")
+            logger.error(f"❌ Error manual sync: {e}")
             
             return {
                 "success": False,
@@ -415,7 +392,8 @@ class SimpleAutoSync:
     
     def get_status(self) -> Dict[str, Any]:
         """Estado actual"""
-        return asdict(self.stats)       
+        with self._stats_lock:
+            return asdict(self.stats)       
 
     def _sync_loop(self):
         """Loop con detección de cambios para notificaciones"""
@@ -456,27 +434,26 @@ class SimpleAutoSync:
                     }
                     self.stats.last_changes_time = dt.datetime.now().isoformat()
                     self.stats.changes_notified = False  # Marcar como pendiente de notificar    
-                    print(f"🔔 Auto-sync detectó cambios: {imported}+{updated}+{deleted}")
+                    logger.info(f"🔔 Auto-sync detectó cambios: {imported}+{updated}+{deleted}")
                 else:
                     # Sin cambios → no notificar
                     self.stats.last_changes = {"imported": 0, "updated": 0, "deleted": 0}
                     self.stats.changes_notified = True
-                
-
+            
                 # Log solo si hay cambios o es diferente al anterior
                 current_problems = f"{len(rejected_events)}+{len(warning_events)}"
                 if rejected_events or warning_events:
                     if self.stats._last_problems != current_problems:
-                        print(f"🚨 Auto-sync detectó problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
+                        logger.warning(f"🚨 Auto-sync detectó problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
                         self.stats._last_problems = current_problems
                 else:
                     self.stats._last_problems = None
                 
                 # Loggings consistentes
                 if total_problems > 0:
-                    print(f"⚠️ Auto-sync completado con problemas en {duration:.1f}s: {imported}+{updated}+{deleted}")
+                    logger.warning(f"⚠️ Auto-sync completado con problemas en {duration:.1f}s: {imported}+{updated}+{deleted}")
                 else:
-                    print(f"✅ Auto-sync OK en {duration:.1f}s: {imported}+{updated}+{deleted}")
+                    logger.info(f"✅ Auto-sync OK en {duration:.1f}s: {imported}+{updated}+{deleted}")
             
             except Exception as e:
                 self.stats.total_syncs += 1
@@ -488,7 +465,7 @@ class SimpleAutoSync:
                 self.stats.last_rejected_events = []
                 self.stats.last_warning_events = []
                 save_sync_problems([], [])
-                print(f"❌ Error auto-sync: {e}")
+                logger.error(f"❌ Error auto-sync: {e}")
         
             # Esperar hasta próximo sync
             self._stop_event.wait(timeout=self.stats.interval_minutes * 60)
@@ -531,74 +508,17 @@ def has_pending_notifications() -> bool:
             _auto_sync.stats.last_changes is not None)
 
 # Función para crear mensaje de toast inteligente
-def _format_changes_message(imported: int, updated: int, deleted: int) -> tuple[str, str]:
-    """
-    Formatea mensaje de toast basado en tipos de cambios.
-    Returns: (message, icon)
-    """
-    changes = []
-    
-    if imported > 0:
-        changes.append(f"{imported} importada{'s' if imported != 1 else ''}")
-    if updated > 0:
-        changes.append(f"{updated} actualizada{'s' if updated != 1 else ''}")
-    if deleted > 0:
-        changes.append(f"{deleted} eliminada{'s' if deleted != 1 else ''}")
-    
-    if not changes:
-        return "", ""
-    
-    # Crear mensaje descriptivo
-    if len(changes) == 1:
-        message = f"🔄 Auto-Sync: {changes[0]}"
-    elif len(changes) == 2:
-        message = f"🔄 Auto-Sync: {changes[0]} y {changes[1]}"
-    else:
-        message = f"🔄 Auto-Sync: {', '.join(changes[:-1])} y {changes[-1]}"
-    
-    # Elegir icono apropiado
-    if deleted > 0:
-        icon = "🗑️"  # Prioridad a eliminaciones
-    elif imported > 0:
-        icon = "📥"  # Importaciones
-    else:
-        icon = "🔄"  # Solo actualizaciones
-    
-    return message, icon
-
-def check_and_show_autosync_notifications():
-    """
-    Verifica si hay cambios pendientes de notificar y muestra toast.
-    Llamar desde sidebar o UI principal.
-    """
-    global _auto_sync
-    
-    # Verificar si hay cambios pendientes
-    if (hasattr(_auto_sync.stats, 'changes_notified') and 
-        not _auto_sync.stats.changes_notified and 
-        hasattr(_auto_sync.stats, 'last_changes') and
-        _auto_sync.stats.last_changes and 
-        hasattr(_auto_sync.stats, 'last_changes_time') and
-        _auto_sync.stats.last_changes_time):
+def show_toast_if_needed(self):
+    """Muestra toast si hay cambios pendientes"""
+    if (self.stats.last_changes and 
+        not getattr(self.stats, 'toast_shown', True)):
         
-        # Obtener detalles de cambios
-        changes = _auto_sync.stats.last_changes
-        imported = changes.get("imported", 0)
-        updated = changes.get("updated", 0) 
-        deleted = changes.get("deleted", 0)
+        changes = self.stats.last_changes
+        total = sum(changes.values())
         
-        # Verificar que realmente hay cambios
-        total_changes = imported + updated + deleted
-        if total_changes > 0:
-            # Crear y mostrar notificación
-            message, icon = _format_changes_message(imported, updated, deleted)
-            
-            if message:
-                try:
-                    _toast(message, icon)
-                    print(f"🔔 Toast mostrado: {message}")
-                except Exception as e:
-                    print(f"⚠️ Error mostrando toast: {e}")
-        
-        # Marcar como notificado (sin importar si tuvo éxito)
-        _auto_sync.stats.changes_notified = True
+        if total > 0:
+            try:
+                _toast(f"Auto-Sync: {total} cambios", "✅")
+                self.stats.toast_shown = True  # ← Usar campo simple
+            except:
+                pass

@@ -265,12 +265,12 @@ def status_from_color(color: str) -> SessionStatus:
     cid = str(color)
 
     # Todos los rojos → canceled
-    red_ids = {"11", "6", "5"}
+    red_ids = {"11", "6"}
     if cid in red_ids:
         return SessionStatus.CANCELED
 
     # Todos los verdes → completed
-    green_ids = {"2", "10", "12", "13"}
+    green_ids = {"2", "10"}
     if cid in green_ids:
         return SessionStatus.COMPLETED
 

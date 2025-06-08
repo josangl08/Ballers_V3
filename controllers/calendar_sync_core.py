@@ -120,9 +120,24 @@ def patch_event_after_import(session: Session, event_id: str):
         
         props = current_event.get("extendedProperties", {}).get("private", {})
         session_id_in_event = props.get("session_id")
+        current_color = current_event.get("colorId", "9")
+
+        # Verificar si necesita actualización
+        needs_update = False
+
+        # Si no tiene session_id correcto
+        if session_id_in_event != str(session.id):
+            needs_update = True
+        
+        # Si tiene color desconocido, normalizarlo
+        from config import CALENDAR_COLORS
+        valid_colors = [v["google"] for v in CALENDAR_COLORS.values()]
+        if current_color not in valid_colors:
+            needs_update = True
+            logger.info(f"🎨 Color desconocido {current_color} → normalizando a scheduled")
         
         # Si ya tiene el session_id correcto, no hacer nada
-        if session_id_in_event == str(session.id):
+        if not needs_update:
             logger.debug(f"✅ Evento {event_id[:8]}... ya tiene datos correctos")
             return
         
@@ -132,8 +147,13 @@ def patch_event_after_import(session: Session, event_id: str):
             coach_name = db.query(User.name).join(Coach).filter(Coach.coach_id == session.coach_id).scalar()
             player_name = db.query(User.name).join(Player).filter(Player.player_id == session.player_id).scalar()
 
+            # Determinar color correcto basado en estado de sesión
+            COLOR = {k: v["google"] for k, v in CALENDAR_COLORS.items()}
+            correct_color = COLOR[session.status.value]
+
             patch_body = {
                 "summary": f"Session: {coach_name} × {player_name}  #C{session.coach_id} #P{session.player_id}",
+                "colorId": correct_color,  # Normalizar color
                 "extendedProperties": {
                     "private": {
                         "session_id": str(session.id),
