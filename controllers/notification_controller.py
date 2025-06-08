@@ -8,8 +8,6 @@ import datetime as dt
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
-
-
 @dataclass
 class SyncProblemsData:
     """

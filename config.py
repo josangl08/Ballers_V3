@@ -26,7 +26,7 @@ CSS_FILE = os.path.join(STYLES_DIR, "style.css")  # Añadido: ruta completa al C
 
 # Configuración de la aplicación Streamlit
 APP_NAME = "Ballers App"
-APP_ICON = "assets/ballers/isotipo_white.png"  # Cambiado a ruta relativa
+APP_ICON = "assets/ballers/favicon.ico"  # Cambiado a ruta relativa
 
 # API Keys y configuraciones externas (desde variables de entorno)
 CALENDAR_API_KEY = os.getenv("CALENDAR_API_KEY", "")

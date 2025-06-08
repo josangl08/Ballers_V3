@@ -8,7 +8,6 @@ import re
 from typing import Tuple, Optional, List, Union, Any
 
 # CONFIGURACIÓN DE HORARIOS CENTRALIZADOS (movido desde administration.py)
-# ========================================================================
 
 class ScheduleConfig:
     """Configuración centralizada de horarios para formularios."""

@@ -5,7 +5,6 @@ Separa la lógica CRUD de usuarios de las páginas de UI.
 """
 import datetime as dt
 import os
-import shutil
 from typing import List, Optional, Tuple, Dict, Any
 
 from models import User, UserType, Coach, Player, Admin

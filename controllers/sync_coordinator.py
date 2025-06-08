@@ -12,7 +12,7 @@ from dataclasses import dataclass, asdict, field
 from typing import Optional, Dict, Any, List
 import logging
 
-from common.notifications import save_sync_problems
+from controllers.notification_controller import save_sync_problems
 from .calendar_sync_core import sync_calendar_to_db_with_feedback, sync_db_to_calendar
 from .session_controller import update_past_sessions
 
@@ -350,6 +350,7 @@ class SimpleAutoSync:
             _auto_sync.stats.last_error = None
 
             # CRÍTICO: SIEMPRE guardar problemas del sync actual (incluso si está vacío)
+            
             save_sync_problems(rejected_events, warning_events)
             
             # LOGGING PRECISO para manual sync
@@ -420,6 +421,7 @@ class SimpleAutoSync:
 
                 # Guardar también en session_state para página de settings
                 save_sync_problems(rejected_events, warning_events)
+
 
                 # Detectar y guardar cambios para notificaciones
                 total_changes = imported + updated + deleted

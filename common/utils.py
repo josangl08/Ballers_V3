@@ -6,7 +6,6 @@ import hashlib
 import datetime as dt
 from typing import Optional
 
-
 def hash_password(password: str) -> str:
     """
     Convierte una contraseña en un hash SHA-256.

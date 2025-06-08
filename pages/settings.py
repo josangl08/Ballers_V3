@@ -9,7 +9,7 @@ from controllers.user_controller import UserController, get_users_for_management
 from controllers.calendar_sync_core import sync_db_to_calendar
 from controllers.sync_coordinator import start_auto_sync, stop_auto_sync, get_auto_sync_status, force_manual_sync, is_auto_sync_running, has_pending_notifications
 from controllers.sheets_controller import get_accounting_df
-from common.notifications import auto_cleanup_old_problems, get_sync_problems, clear_sync_problems
+from controllers.notification_controller import auto_cleanup_old_problems, get_sync_problems, clear_sync_problems
 from models import UserType
 from controllers.validation_controller import ValidationController
 

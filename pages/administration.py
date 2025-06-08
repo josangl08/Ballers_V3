@@ -4,15 +4,13 @@ import pandas as pd
 import datetime as dt
 import os
 import sys
-from typing import Optional, List
-from sqlalchemy import func, case
+from typing import Optional
 
-from models import User, Coach, Session, SessionStatus, UserType
+from models import User, Coach, Session, SessionStatus
 from controllers.session_controller import SessionController, create_session_with_calendar, update_session_with_calendar, delete_session_with_calendar        
 from controllers.internal_calendar import show_calendar
 from controllers.sheets_controller import get_accounting_df
-from controllers.db import get_db_session
-from common.notifications import get_sync_problems
+from controllers.notification_controller import get_sync_problems
 from controllers.sync_coordinator import filter_sync_results_by_coach, get_coach_id_if_needed
 from controllers.validation_controller import (
     ValidationController,
@@ -662,130 +660,14 @@ def show_financials():
     st.line_chart(monthly_summary.set_index("Mes")["Balance acumulado"])
 
 
-def show_user_management():
-    """Muestra gestión de usuarios - SE MANTIENE IGUAL (lo tocaremos después)"""
-    db_session = get_db_session()
-    
-    st.subheader("User Management")
-    
-    user_types = ["All"] + [t.name for t in UserType]
-    selected_type = st.selectbox("User Type:", options=user_types)
-    
-    query = db_session.query(User)
-    
-    if selected_type != "All":
-        query = query.filter(User.user_type == UserType[selected_type])
-    
-    users = query.order_by(User.name).all()
-    
-    if not users:
-        st.info("There are no users that match the filters.")
-        db_session.close()
-        return
-    
-    stats_sq = (
-        db_session.query(
-            Session.coach_id.label("uid"),
-            func.sum(case((Session.status == SessionStatus.COMPLETED, 1), else_=0)).label("comp"),
-            func.sum(case((Session.status == SessionStatus.SCHEDULED, 1), else_=0)).label("prog"),
-            func.sum(case((Session.status == SessionStatus.CANCELED,  1), else_=0)).label("canc"),
-        )
-        .group_by(Session.coach_id)
-        .subquery()
-    )
-    
-    users_data = []
-    for user in users:
-        is_active = getattr(user, 'is_active', True)
-        comp = prog = canc = 0
-        if user.user_type == UserType.coach:
-            row = db_session.query(stats_sq).filter(stats_sq.c.uid == user.coach_profile.coach_id).first()
-            if row:
-                comp, prog, canc = row.comp, row.prog, row.canc
-        users_data.append({
-            "ID": user.user_id,
-            "Name": user.name,
-            "Username": user.username,
-            "Email": user.email,
-            "User Type": user.user_type.name,
-            "Comp": comp,
-            "Prog": prog,
-            "Canc": canc,
-            "Active": "Sí" if is_active else "No",
-            "user_obj": user
-        })
-    
-    df = pd.DataFrame(users_data)
-    user_objects = df.pop("user_obj").reset_index(drop=True)
-    
-    def style_users(row):
-        if row["User Type"] == "admin":
-            return ["background-color: rgba(244, 67, 54, 0.2)"] * len(row)
-        elif row["User Type"] == "coach":
-            return ["background-color: rgba(255, 193, 7, 0.2)"] * len(row)
-        elif row["User Type"] == "player":
-            return ["background-color: rgba(76, 175, 80, 0.2)"] * len(row)
-        return [""] * len(row)
-
-    styled_df = df.style.apply(style_users, axis=1)
-
-    st.dataframe(
-        styled_df,
-        column_config={
-            "ID": st.column_config.NumberColumn(width="small"),
-            "Name": st.column_config.TextColumn(width="medium"),
-            "Username": st.column_config.TextColumn(width="medium"),
-            "Email": st.column_config.TextColumn(width="medium"),
-            "User Type": st.column_config.TextColumn(width="small"),
-            "Comp":  st.column_config.NumberColumn("Completadas", width="small"),
-            "Prog":  st.column_config.NumberColumn("Programadas", width="small"),
-            "Canc":  st.column_config.NumberColumn("Canceladas", width="small"),
-            "Activo": st.column_config.TextColumn(width="small")
-        },
-        hide_index=True
-    )
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        user_to_toggle = st.selectbox(
-            "Select user to activate/deactivate:",
-            options=[u["ID"] for u in users_data],
-            format_func=lambda x: f"{next((u['Name'] for u in users_data if u['ID'] == x), '')} ({next((u['Username'] for u in users_data if u['ID'] == x), '')})"
-        )
-        
-        user_idx = next((i for i, u in enumerate(users_data) if u["ID"] == user_to_toggle), None)
-        if user_idx is not None:
-            user = user_objects.iloc[user_idx]
-            
-            if hasattr(user, 'is_active'):
-                toggle_label = "Deactivate" if user.is_active else "Activar"
-                if st.button(f"{toggle_label} User"):
-                    user.is_active = not user.is_active
-                    db_session.commit()
-                    st.success(f"User {toggle_label.lower()} deactivated successfully")
-                    st.rerun()
-            else:
-                st.info("The user object does not have the 'is_active' field.")
-    
-    with col2:
-        st.write("Create new user")
-        st.write("Use the configuration page to create users")
-    
-    db_session.close()
-
-
 def show_admin_dashboard():
     """Panel de administración para administradores."""
-    tab1, tab2, tab3 = st.tabs(["Sessions", "Users", "Financials"])
+    tab1, tab2 = st.tabs(["Sessions", "Financials"])
     
     with tab1:
         show_all_sessions()
     
     with tab2:
-        show_user_management()
-    
-    with tab3:
         show_financials()
 
 

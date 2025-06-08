@@ -8,7 +8,6 @@ from controllers.menu_controller import MenuController, get_sync_status_for_ui, 
 from controllers.sync_coordinator import force_manual_sync
 from controllers.auth_controller import clear_user_session
 
-
 def show_sync_status_message(stats: dict) -> None:
     """
     Muestra mensaje de sync con color apropiado.
