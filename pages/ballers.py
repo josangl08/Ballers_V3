@@ -10,6 +10,9 @@ from controllers.session_controller import SessionController
 from controllers.internal_calendar import show_calendar
 from models import SessionStatus
 from controllers.validation_controller import ValidationController
+from controllers.export_controller import generate_player_pdf
+from common.export import create_download_link, show_export_success_message, show_export_error_message
+from common.export import trigger_browser_print
 
 
 def show_player_profile(player_id=None):
@@ -28,8 +31,8 @@ def show_player_profile(player_id=None):
     stats = profile_data["stats"]
     test_results = profile_data["test_results"]
     
-    # Mostrar información del perfil
-    col1, col2 = st.columns([1, 3])
+    # Mostrar información del perfil con botones de exportar
+    col1, col2, col3 = st.columns([1, 3, 1])
     
     with col1:
         st.image(user.profile_photo, width=200)
@@ -48,6 +51,20 @@ def show_player_profile(player_id=None):
         st.write(f"**Enrollment Sessions:** {player.enrolment}")
         st.write(f"**Next Session:** {stats['next_session']}")
 
+    with col3:
+        # Botones de exportar e imprimir (uno encima del otro)
+        export_clicked = st.button("📄 PDF", key="player_export", help="Export player profile to PDF", use_container_width=True)
+        print_clicked = st.button("🖨️ Print", key="player_print", help="Print player profile", use_container_width=True)
+        
+        
+        # Manejar impresión
+        if print_clicked: 
+            trigger_browser_print()
+
+# Manejar exportación a PDF
+    if export_clicked:
+        _handle_player_export(player, user)
+            
     st.divider()
 
     # Métricas usando stats calculadas
@@ -64,11 +81,13 @@ def show_player_profile(player_id=None):
         start_date = st.date_input(
             "From", 
             value=dt.datetime.now().date() - dt.timedelta(days=7),
+            key="player_start_date"
         )
     with col2:
         end_date = st.date_input(
             "To", 
             value=dt.datetime.now().date() + dt.timedelta(days=7),
+            key="player_end_date"
         )
     
     # Filtro de estado
@@ -77,6 +96,7 @@ def show_player_profile(player_id=None):
         "Status", 
         options=status_values,
         default=status_values,
+        key="player_status_filter"
     )   
 
     # Usar ValidationController en lugar de duplicación
@@ -150,8 +170,12 @@ def show_player_profile(player_id=None):
             selected_metrics = st.multiselect(
                 "Select metrics for visualization", 
                 options=metrics_list,
-                default=metrics_list[:3]
+                default=metrics_list[:3],
+                key="player_selected_metrics"
             )
+            
+            # Guardar métricas seleccionadas en session_state para exportación
+            st.session_state['selected_metrics'] = selected_metrics
             
             if selected_metrics:
                 fig = px.line(
@@ -265,6 +289,40 @@ def show_content():
         else:
             # Mostrar lista de jugadores
             show_player_list()
+
+
+def _handle_player_export(player, user):
+    """Maneja la exportación del perfil de jugador a PDF."""
+    try:
+        # Obtener filtros actuales de la sesión
+        start_date = st.session_state.get("player_start_date", dt.date.today() - dt.timedelta(days=7))
+        end_date = st.session_state.get("player_end_date", dt.date.today() + dt.timedelta(days=7))
+        status_filter = st.session_state.get("player_status_filter", [s.value for s in SessionStatus])
+        
+        # Obtener métricas seleccionadas para el gráfico (si hay alguna selección activa)
+        # Si no hay selección activa, usar las primeras 3 métricas por defecto
+        selected_metrics = getattr(st.session_state, 'selected_metrics', None)
+        if not selected_metrics:
+            from controllers.player_controller import PlayerController
+            with PlayerController() as controller:
+                available_metrics = controller.get_test_metrics_list()
+                selected_metrics = available_metrics[:3] if available_metrics else []
+        
+        # Generar PDF
+        buffer, filename = generate_player_pdf(
+            player_id=player.player_id,
+            start_date=start_date,
+            end_date=end_date,
+            status_filter=status_filter,
+            selected_metrics=selected_metrics
+        )
+        
+        # Mostrar enlace de descarga
+        create_download_link(buffer, filename, f"📄 Download {user.name} Report")
+        show_export_success_message(filename)
+        
+    except Exception as e:
+        show_export_error_message(str(e))
 
 
 if __name__ == "__main__":

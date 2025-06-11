@@ -21,6 +21,8 @@ from controllers.validation_controller import (
     get_edit_session_hours,
     check_session_time_recommendation
 )
+from controllers.export_controller import generate_sessions_pdf, generate_financials_pdf
+from common.export import create_download_link, show_export_success_message, show_export_error_message, trigger_browser_print
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -93,8 +95,9 @@ def show_coach_calendar():
         c2.metric("Completed", stats["completed"])
         c3.metric("Canceled", stats["canceled"])
         
+        
         st.subheader(f"Calendar of {coach.user.name}")
-
+        
         # Filtros de fecha - UI solo
         col1, col2 = st.columns(2)
         with col1:
@@ -123,6 +126,22 @@ def show_coach_calendar():
         if not is_valid:
             st.error(error)
             return
+        # Título con botones de exportar e imprimir
+        col_title, col_export = st.columns([3, 1])
+        with col_title:
+            st.subheader("")
+        with col_export:
+            col_exp, col_print = st.columns(2)
+            with col_exp:
+                export_clicked = st.button("📄 PDF", key="coach_export", help="Export sessions to PDF")
+            with col_print:
+                print_clicked = st.button("🖨️ Print", key="coach_print", help="Print sessions")
+        # Manejar exportación e impresión
+        if export_clicked:
+            _handle_sessions_export(start_date, end_date, coach.coach_id, status_filter, "coach", coach.user.name)
+        
+        if print_clicked:
+            trigger_browser_print()
 
         # Usar controller para obtener sesiones
         sessions = controller.get_sessions_for_display(
@@ -526,8 +545,10 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
 
 def show_all_sessions():
     """Muestra todas las sesiones para los administradores - SIMPLIFICADO."""
+    # Título con botones de exportar e imprimir
+  
     st.subheader("Sessions Calendar")
-    
+   
     with SessionController() as controller:
         # Filtros de UI
         col1, col2 = st.columns(2)
@@ -566,6 +587,23 @@ def show_all_sessions():
         if not is_valid:
             st.error(error)
             return
+        
+        col_title, col_export = st.columns([3, 1])
+        with col_title:
+            st.subheader("")
+        with col_export:
+            col_exp, col_print = st.columns(2)
+            with col_exp:
+                export_clicked = st.button("📄 PDF", key="admin_sessions_export", help="Export sessions to PDF")
+            with col_print:
+                print_clicked = st.button("🖨️ Print", key="admin_sessions_print", help="Print sessions")
+
+        # Manejar exportación e impresión
+        if export_clicked:
+            _handle_sessions_export(start_date, end_date, selected_coach, status_filter, "admin", "Sessions")
+        
+        if print_clicked:
+            trigger_browser_print()
 
         # Usar controller para obtener sesiones
         sessions = controller.get_sessions_for_display(
@@ -615,11 +653,27 @@ def show_all_sessions():
 
 
 def show_financials():
-    """Muestra datos financieros - SE MANTIENE IGUAL"""
+    """Muestra datos financieros - CON BOTONES DE EXPORTAR E IMPRIMIR"""
+    # Título con botones de exportar e imprimir
+    col_title, col_export = st.columns([3, 1])
+    with col_title:
+        st.subheader("Financials (Google Sheets)")
+    with col_export:
+        col_exp, col_print = st.columns(2)
+        with col_exp:
+            export_clicked = st.button("📄 PDF", key="financials_export", help="Export financials to PDF")
+        with col_print:
+            print_clicked = st.button("🖨️ Print", key="financials_print", help="Print financials")
+    
+    # Manejar exportación e impresión
+    if export_clicked:
+        _handle_financials_export()
+    
+    if print_clicked:
+        trigger_browser_print()
+    
     df = get_accounting_df()
     df_no_total = df.iloc[:-1].copy()
-
-    st.subheader("Financials (Google Sheets)")
     st.dataframe(df_no_total, hide_index=True)
 
     total_gastos = df_no_total["Gastos"].sum()
@@ -683,6 +737,41 @@ def show_content():
         show_coach_calendar()
     else:
         st.error("No tienes permisos para acceder a esta sección.")
+
+
+def _handle_sessions_export(start_date, end_date, coach_id, status_filter, user_type, user_name):
+    """Maneja la exportación de sesiones a PDF."""
+    try:
+        buffer, filename = generate_sessions_pdf(
+            start_date=start_date,
+            end_date=end_date,
+            coach_id=coach_id,
+            status_filter=status_filter,
+            user_type=user_type,
+            user_name=user_name
+        )
+        
+        create_download_link(buffer, filename, "📄 Download Sessions Report")
+        show_export_success_message(filename)
+        
+    except Exception as e:
+        show_export_error_message(str(e))
+
+
+def _handle_financials_export():
+    """Maneja la exportación de finanzas a PDF."""
+    try:
+        # Para finanzas, usar rango amplio para incluir todos los datos
+        start_date = dt.date(2020, 1, 1)  # Fecha muy antigua para incluir todo
+        end_date = dt.date.today()
+        
+        buffer, filename = generate_financials_pdf(start_date, end_date)
+        
+        create_download_link(buffer, filename, "📄 Download Financial Report")
+        show_export_success_message(filename)
+        
+    except Exception as e:
+        show_export_error_message(str(e))
 
 
 if __name__ == "__main__":
