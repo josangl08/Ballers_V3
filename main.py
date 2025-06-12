@@ -142,7 +142,7 @@ def main():
     
     # Cargar estilos
     load_css()
-    
+    debug_remember_me()
     # Si no hay sesión, ocultar completamente el sidebar
     if not has_session:
         # Aplicar estilo para ocultar completamente el sidebar
