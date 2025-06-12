@@ -10,20 +10,46 @@ load_dotenv()
 
 def get_config_value(key, default=None):
     """
-    Obtiene valor de configuración desde múltiples fuentes:
-    1. Streamlit secrets (para despliegue)
-    2. Variables de entorno (para local)
-    3. Valor por defecto
+    Obtiene valor de configuración desde múltiples fuentes con debug mejorado.
     """
-    # Intentar obtener desde Streamlit secrets (despliegue)
-    try:
-        if hasattr(st, 'secrets') and key in st.secrets:
-            return st.secrets[key]
-    except:
-        pass
+    # Debug: mostrar qué se está buscando
+    if os.getenv("DEBUG") == "True":
+        print(f"🔍 Buscando configuración para: {key}")
     
-    # Intentar obtener desde variables de entorno (local)
-    return os.getenv(key, default)
+    # 1. Intentar obtener desde Streamlit secrets (despliegue)
+    try:
+        if hasattr(st, 'secrets'):
+            # Verificar si la key existe directamente en secrets
+            if key in st.secrets:
+                value = st.secrets[key]
+                if os.getenv("DEBUG") == "True":
+                    print(f"✅ Encontrado en st.secrets: {key} = {str(value)[:50]}...")
+                return value
+            
+            # Para debug: mostrar todas las keys disponibles
+            if os.getenv("DEBUG") == "True":
+                try:
+                    available_keys = list(st.secrets.keys()) if hasattr(st.secrets, 'keys') else []
+                    print(f"📋 Keys disponibles en secrets: {available_keys}")
+                except:
+                    print("⚠️ No se pudieron listar las keys de secrets")
+                    
+    except Exception as e:
+        if os.getenv("DEBUG") == "True":
+            print(f"⚠️ Error accediendo a st.secrets para {key}: {e}")
+    
+    # 2. Intentar obtener desde variables de entorno (local)
+    env_value = os.getenv(key, default)
+    if env_value != default:
+        if os.getenv("DEBUG") == "True":
+            print(f"✅ Encontrado en env: {key} = {str(env_value)[:50]}...")
+        return env_value
+    
+    # 3. Usar valor por defecto
+    if os.getenv("DEBUG") == "True":
+        print(f"❌ No encontrado {key}, usando default: {default}")
+    
+    return default
 
 # Directorios base del proyecto
 BASE_DIR = Path(__file__).parent
@@ -48,26 +74,38 @@ APP_ICON = "assets/ballers/favicon.ico"
 
 # Configuración de Google Services
 def get_google_service_account_info():
-    """Obtiene información de la cuenta de servicio de Google."""
+    """Obtiene información de la cuenta de servicio de Google con debug."""
     try:
         # Para despliegue en Streamlit Cloud
         if hasattr(st, 'secrets') and 'google' in st.secrets:
+            if os.getenv("DEBUG") == "True":
+                print("✅ Credenciales Google encontradas en st.secrets")
             return dict(st.secrets['google'])
-    except:
-        pass
+    except Exception as e:
+        if os.getenv("DEBUG") == "True":
+            print(f"⚠️ Error obteniendo credenciales Google de secrets: {e}")
     
     # Para desarrollo local - usar archivo JSON
     google_sa_path = get_config_value("GOOGLE_SA_PATH")
     if google_sa_path and os.path.exists(google_sa_path):
         import json
         with open(google_sa_path, 'r') as f:
+            if os.getenv("DEBUG") == "True":
+                print(f"✅ Credenciales Google cargadas desde archivo: {google_sa_path}")
             return json.load(f)
     
+    if os.getenv("DEBUG") == "True":
+        print("❌ No se pudieron cargar credenciales de Google")
     return None
 
-# IDs de Google Services
+# IDs de Google Services con debug
 CALENDAR_ID = get_config_value("CALENDAR_ID", "")
 ACCOUNTING_SHEET_ID = get_config_value("ACCOUNTING_SHEET_ID", "")
+
+# Debug: verificar IDs críticos
+if os.getenv("DEBUG") == "True":
+    print(f"📅 CALENDAR_ID configurado: {'✅' if CALENDAR_ID else '❌'}")
+    print(f"📊 ACCOUNTING_SHEET_ID configurado: {'✅' if ACCOUNTING_SHEET_ID else '❌'}")
 
 # Configuración de la aplicación
 DEBUG = get_config_value("DEBUG", "False") == "True"
@@ -121,5 +159,5 @@ if DEBUG:
     print(f"🔧 Configuración cargada:")
     print(f"   - Entorno: {ENVIRONMENT}")
     print(f"   - Base de datos: {DATABASE_PATH}")
-    print(f"   - Calendar ID: {CALENDAR_ID[:20]}..." if CALENDAR_ID else "   - Calendar ID: No configurado")
-    print(f"   - Sheets ID: {ACCOUNTING_SHEET_ID[:20]}..." if ACCOUNTING_SHEET_ID else "   - Sheets ID: No configurado")
+    print(f"   - Calendar ID: {CALENDAR_ID[:20]}..." if CALENDAR_ID else "   - Calendar ID: ❌ No configurado")
+    print(f"   - Sheets ID: {ACCOUNTING_SHEET_ID[:20]}..." if ACCOUNTING_SHEET_ID else "   - Sheets ID: ❌ No configurado")
