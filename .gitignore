@@ -181,6 +181,7 @@ data/google_service_account.json
 #data/ballers_app.db
 #data/ballers_app.db*
 *.db-journal
-assets/
+assets/ballers
+assets/profile_photos
 logs/
 backups/
