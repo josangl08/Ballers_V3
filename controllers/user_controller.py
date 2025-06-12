@@ -6,7 +6,7 @@ Separa la lógica CRUD de usuarios de las páginas de UI.
 import datetime as dt
 import os
 from typing import List, Optional, Tuple, Dict, Any
-
+from sqlalchemy.orm import joinedload
 from models import User, UserType, Coach, Player, Admin
 from controllers.db import get_db_session
 from common.utils import hash_password
@@ -95,7 +95,6 @@ class UserController:
         
         return file_path
     
-
     # Consultas y obtencion de datos
     
     def get_all_users(self) -> List[User]:
@@ -177,9 +176,7 @@ class UserController:
         
         return query.first() is not None
     
-
     # Operaciones CRUD
-
     
     def create_user(
         self,
@@ -321,7 +318,7 @@ class UserController:
             if is_active is not None and hasattr(user, 'is_active'):
                 user.is_active = is_active
             
-            # 🆕 NUEVO: Actualizar foto de perfil
+            # Actualizar foto de perfil
             if profile_photo_file is not None:
                 try:
                     # Eliminar foto anterior si no es la predeterminada
@@ -339,11 +336,11 @@ class UserController:
                 except Exception as e:
                     return False, f"Error updating profile photo: {str(e)}"
             
-            # 🆕 NUEVO: Actualizar contraseña si se proporciona
+            # Actualizar contraseña si se proporciona
             if new_password:
                 user.password_hash = hash_password(new_password)
             
-            # 🆕 NUEVO: Cambio de tipo de usuario si es necesario
+            # Cambio de tipo de usuario si es necesario
             if new_user_type and new_user_type != user.user_type.name:
                 success = self._change_user_type(user, new_user_type, profile_data)
                 if not success:
@@ -434,10 +431,8 @@ class UserController:
         except Exception as e:
             self.db.rollback()
             return False, f"Error changing user status: {str(e)}"
-    
 
     # Metodos privados para perfiles
-
     
     def _create_user_profile(self, user: User, user_type: str, profile_data: Dict[str, Any]) -> bool:
         """Crea el perfil específico según el tipo de usuario."""
@@ -533,7 +528,6 @@ class UserController:
 def get_users_for_management(user_type_filter: Optional[str] = None) -> List[Dict[str, Any]]:
     """Función con nombres de claves ESTANDARIZADOS"""
     with UserController() as controller:
-        from sqlalchemy.orm import joinedload
         
         if user_type_filter and user_type_filter != "All":
             users = controller.db.query(User).options(
@@ -588,7 +582,6 @@ def get_user_with_profile(user_id: int) -> Optional[Dict[str, Any]]:
     Evita problemas de lazy loading.
     """
     with UserController() as controller:
-        from sqlalchemy.orm import joinedload
         
         user = controller.db.query(User).options(
             joinedload(User.coach_profile),

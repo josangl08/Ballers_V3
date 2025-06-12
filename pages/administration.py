@@ -242,7 +242,7 @@ def show_coach_calendar():
 def show_session_management(coach_id: Optional[int] = None, is_admin: bool = True):
     """
     Formularios unificados para crear/editar sesiones.
-    🔄 REFACTORIZADO: Usa ValidationController para TODA la lógica de horarios y validaciones.
+    Usa ValidationController para TODA la lógica de horarios y validaciones.
     
     Args:
         coach_id: Si se especifica, restringe a sesiones de ese coach
@@ -546,9 +546,9 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
 def show_all_sessions():
     """Muestra todas las sesiones para los administradores - SIMPLIFICADO."""
     # Título con botones de exportar e imprimir
-  
+
     st.subheader("Sessions Calendar")
-   
+
     with SessionController() as controller:
         # Filtros de UI
         col1, col2 = st.columns(2)

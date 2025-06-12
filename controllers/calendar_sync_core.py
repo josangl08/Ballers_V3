@@ -39,7 +39,7 @@ LOCAL_TZ = dt.timezone(dt.timedelta(hours=2))  # Madrid timezone simplificado
 
 def guess_coach_player_ids(event: dict) -> Tuple[Optional[int], Optional[int]]:
     """
-    ESTRATEGIA HÍBRIDA INTELIGENTE para extraer coach_id y player_id:
+    Estrategia para extraer coach_id y player_id:
     1) Extended properties (automático)
     2) Parsing híbrido: nombres + IDs opcionales  
     3) Solo nombres (fuzzy)
@@ -47,7 +47,7 @@ def guess_coach_player_ids(event: dict) -> Tuple[Optional[int], Optional[int]]:
     """
     props = event.get("extendedProperties", {}).get("private", {})
     
-    # 1) Extended properties (solo si válidos)
+    # Extended properties (solo si válidos)
     cid = safe_int(props.get("coach_id"))
     pid = safe_int(props.get("player_id"))
     if cid and pid and cid < 100 and pid < 100:
@@ -55,7 +55,7 @@ def guess_coach_player_ids(event: dict) -> Tuple[Optional[int], Optional[int]]:
 
     summary = event.get("summary", "") or ""
     
-    # 2) PARSING HÍBRIDO: nombres + IDs opcionales
+    # Parsing híbrido: nombres + IDs opcionales
     # Limpiar prefijo "Sesión:" / "Session:"
     summary_clean = re.sub(r'^(?:sesión|session)[:\-]\s*', '', summary, flags=re.IGNORECASE)
     
@@ -68,7 +68,7 @@ def guess_coach_player_ids(event: dict) -> Tuple[Optional[int], Optional[int]]:
         
         coach_id = player_id = None
         
-        # ANALIZAR LADO COACH (izquierda)
+        # Analizar coach (izquierda)
         coach_id_match = re.search(r"#[Cc](\d+)", left_part)
         if coach_id_match:
             # Hay ID explícito → usarlo
@@ -81,7 +81,7 @@ def guess_coach_player_ids(event: dict) -> Tuple[Optional[int], Optional[int]]:
             if coach_obj:
                 coach_id = coach_obj.coach_id
         
-        # ANALIZAR LADO PLAYER (derecha)  
+        # Analizar Player (derecha)  
         player_id_match = re.search(r"#[Pp](\d+)", right_part)
         if player_id_match:
             # Hay ID explícito → usarlo
@@ -98,7 +98,7 @@ def guess_coach_player_ids(event: dict) -> Tuple[Optional[int], Optional[int]]:
         if coach_id and player_id:
             return coach_id, player_id
     
-    # 3) FALLBACK: Solo IDs tradicionales #C #P (anywhere en título)
+    # Fallback: Solo IDs tradicionales #C #P (anywhere en título)
     cid = (extract_id_from_text(summary, r"#C(\d+)") or
             extract_id_from_text(summary, r"Coach[#\s]*(\d+)"))
     pid = (extract_id_from_text(summary, r"#P(\d+)") or
@@ -112,7 +112,7 @@ def guess_coach_player_ids(event: dict) -> Tuple[Optional[int], Optional[int]]:
 def patch_event_after_import(session: Session, event_id: str):
     """
     Parcha un evento importado: añade IDs y formatea el título.
-    OPTIMIZADO: Solo si realmente es necesario.
+    Solo si realmente es necesario.
     """
     try:
         # Verificar si el evento ya tiene los datos correctos
@@ -130,7 +130,6 @@ def patch_event_after_import(session: Session, event_id: str):
             needs_update = True
         
         # Si tiene color desconocido, normalizarlo
-        from config import CALENDAR_COLORS
         valid_colors = [v["google"] for v in CALENDAR_COLORS.values()]
         if current_color not in valid_colors:
             needs_update = True
@@ -302,16 +301,16 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                         db.flush()
 
             if ses:
-                # SESIÓN EXISTENTE - verificar cambios
+                # Sesión existente - verificar cambios
                 
-                # 1. Verificar si event_id coincide
+                # Verificar si event_id coincide
                 if ses.calendar_event_id != ev_id:
                     logger.debug(f"🔗 Actualizando event_id: {ses.calendar_event_id} → {ev_id}")
                     ses.calendar_event_id = ev_id
                     db.add(ses)
                     db.flush()
 
-                # 2. HASH COMPARISON - Prioridad máxima
+                # HASH COMPARISON - Prioridad máxima
                 current_hash = ses.sync_hash or ""
                 
                 # Si no tiene hash, calcularlo ahora (sesión antigua)
@@ -324,16 +323,16 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                 
                 logger.debug(f"🔍 Hash check Sesión #{ses.id}: BD='{current_hash[:8]}...' vs Event='{event_hash[:8]}...'")
                 
-                # 3. Si hashes coinciden → NO HAY CAMBIOS REALES
+                #  Si hashes coinciden → No hay cambios reales
                 if current_hash == event_hash:
                     logger.debug(f"✅ Sesión #{ses.id} - hashes coinciden, sin cambios")
                     continue
                 
-                # 4. HASHES DIFERENTES → Hay cambios reales, decidir quién gana
+                # Hashes diferentes → Hay cambios reales, decidir quién gana
                 
-                # 4a. Verificar si sesión está marcada como dirty (cambios locales pendientes)
+                # Verificar si sesión está marcada como dirty (cambios locales pendientes)
                 if hasattr(ses, 'is_dirty') and ses.is_dirty:
-                    # Sesión local tiene cambios pendientes → APP WINS
+                    # Sesión local tiene cambios pendientes → APP wins
                     logger.info(f"🔄 APP WINS - Sesión #{ses.id} (cambios locales pendientes)")
                     logger.info(f"📝 BD→CALENDAR: Forzando actualización de evento desde sesión #{ses.id}")
                     
@@ -349,7 +348,7 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
 
                     continue
                 
-                # 4b. Análisis de timestamps (solo como tiebreaker)
+                # Análisis de timestamps (solo como tiebreaker)
                 event_updated_str = ev.get("updated") or ev.get("created") or ""
                 event_updated = None
                 session_updated = ses.updated_at or ses.created_at
@@ -369,7 +368,7 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                         time_diff = (session_updated - event_updated).total_seconds()
                         time_diff_abs = abs(time_diff)
 
-                        # Solo usar timestamps para DIFERENCIAS SIGNIFICATIVAS (>10 segundos)
+                        # Solo usar timestamps para diferencais significativas (>10 segundos)
                         if time_diff_abs <= 10:  
                             logger.debug(f"✅ Sesión #{ses.id} - diferencia mínima ({int(time_diff)}s), sin cambios")
                             continue  
@@ -390,14 +389,14 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                     calendar_wins = True
                     conflict_reason = "no_timestamps"
                     
-                # 5. APLICAR RESOLUCIÓN
+                # Aplicar resolucion
                 if calendar_wins:
                     logger.info(f"🔄 CALENDAR WINS - Sesión #{ses.id} ({conflict_reason})")
                     
                     is_valid, error_msg, warnings = validate_session_for_import(start_dt, end_dt)
     
                     if not is_valid:
-                        # RECHAZAR update si es inválido
+                        # Recahzar update si es inválido
                         rejected_events.append({
                             "title": f"{ses.coach.user.name} × {ses.player.user.name}",
                             "date": start_dt.strftime("%d/%m/%Y"),
@@ -456,7 +455,7 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                         logger.debug(f"✅ Sesión #{ses.id} sin cambios después de análisis")
                         
                 else:
-                    # APP WINS - actualizar Calendar desde BD
+                    # APP wins - actualizar Calendar desde BD
                     logger.info(f"🔄 APP WINS - Sesión #{ses.id} ({conflict_reason})")
                     logger.info(f"📝 BD→CALENDAR: Forzando actualización de evento desde sesión #{ses.id}")
                     
@@ -471,7 +470,7 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                         db.add(ses)
                     
             else:
-                # CREAR NUEVA SESIÓN CON VALIDACIÓN
+                # Crear nueva sesion con validación
                 logger.info(f"🆕 Creando sesión nueva: {ev.get('summary', 'Sin título')}")
                 coach_id, player_id = guess_coach_player_ids(ev)
                 
@@ -486,7 +485,7 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                     logger.warning(f"⚠️ No se pudo mapear evento - coach_id: {coach_id}, player_id: {player_id}")
                     continue
 
-                # VALIDAR QUE COACH Y PLAYER EXISTEN EN BD
+                # Validar que coach y player exiten en bd
                 coach_exists = db.query(Coach).filter(Coach.coach_id == coach_id).first()
                 player_exists = db.query(Player).filter(Player.player_id == player_id).first()
                 
@@ -512,11 +511,11 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                     logger.warning(f"⚠️ Player ID {player_id} no existe en BD - ignorando evento")
                     continue
                 
-                # VALIDACIÓN FLEXIBLE CON FEEDBACK AL USUARIO
+                # VAalidacion flexible con feedback al usuario
                 is_valid, error_msg, warnings = validate_session_for_import(start_dt, end_dt)
                 
                 if not is_valid:
-                    # RECHAZADO - feedback al usuario
+                    # Rechazado - feedback al usuario
                     rejected_events.append({
                         "title": ev.get("summary", "Sin título"),
                         "date": start_dt.strftime("%d/%m/%Y"),
@@ -527,7 +526,7 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                     logger.error(f"❌ EVENTO RECHAZADO - {ev.get('summary', 'Sin título')}: {error_msg}")
                     continue
                 
-                # IMPORTADO - verificar si tiene warnings
+                # Verificar si tiene warnings
                 if warnings:
                     warning_events.append({
                         "title": ev.get("summary", "Sin título"),
@@ -573,10 +572,10 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
             Session.start_time <= win_end
         ).all()
 
-        # Crear dict de sesiones EN LA VENTANA
+        # Crear dict de sesiones en la ventana
         window_sessions = {s.calendar_event_id: s for s in sessions_in_window}
 
-        # Candidatos: event_ids de BD que NO aparecieron en la búsqueda de Calendar
+        # Candidatos: event_ids de BD que no aparecieron en la búsqueda de Calendar
         elimination_candidates = [
             ev_id for ev_id in window_sessions.keys() 
             if ev_id not in seen_ev_ids
@@ -615,7 +614,7 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
         return imported, updated, deleted, rejected_events, warning_events
         
     except Exception as e:
-        # MEJORAR LOGGING DE ERRORES
+        # Logging de errores
         if "403" in str(e):
             logger.error("❌ ERROR 403: Sin permisos para Google Calendar - verificar API keys")
         elif "404" in str(e):
@@ -647,7 +646,7 @@ def sync_calendar_to_db() -> Tuple[int, int, int]:
 def sync_db_to_calendar() -> Tuple[int, int]:
     """
     Sincroniza sesiones de BD hacia Google Calendar.
-    🔧 CORREGIDO: Ahora respeta correctamente session_needs_update() y no actualiza innecesariamente.
+    Ahora respeta correctamente session_needs_update() y no actualiza innecesariamente.
     
     Returns:
         Tuple (pushed, updated)
@@ -665,7 +664,7 @@ def sync_db_to_calendar() -> Tuple[int, int]:
                     pushed += 1
                     logger.info(f"📤 NUEVO: Sesión #{ses.id} creada en Calendar")
             else:
-                # 🔧 FIX: VERIFICAR SI REALMENTE NECESITA ACTUALIZACIÓN
+                # Verificar si necesita actualizacion
                 if session_needs_update(ses):
                     # Solo actualizar si realmente hay cambios
                     success = controller._update_session_in_calendar(ses)
@@ -678,7 +677,7 @@ def sync_db_to_calendar() -> Tuple[int, int]:
                     skipped += 1
                     logger.debug(f"⏭️ OMITIDA: Sesión #{ses.id} sin cambios")
 
-        # 🔧 MEJORADO: Log más detallado
+        # Log detallado
         total_processed = pushed + updated + skipped
         logger.info(f"📊 Push BD→Calendar completado:")
         logger.info(f"   📤 {pushed} sesiones NUEVAS creadas")

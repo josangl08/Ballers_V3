@@ -6,10 +6,13 @@ Funciones puras sin dependencias externas.
 import hashlib
 import datetime as dt
 import re
+from unidecode import unidecode
 import logging
 from zoneinfo import ZoneInfo
 from typing import Optional
-from models import Session, SessionStatus
+from models import Session, SessionStatus, User
+from controllers.db import get_db_session
+from config import CALENDAR_COLORS
 
 logger = logging.getLogger(__name__)
 LOCAL_TZ = ZoneInfo("Europe/Madrid")
@@ -32,7 +35,7 @@ def format_time_local(dt_obj: Optional[dt.datetime]) -> str:
 def normalize_datetime_for_hash(dt_obj) -> str:
     """
     Normaliza datetime para hash: convierte a UTC y quita timezone info
-    MEJORADO: Maneja correctamente datetime naive desde timezone local
+   Maneja correctamente datetime naive desde timezone local
     """
     if dt_obj is None:
         return ""
@@ -130,7 +133,7 @@ def calculate_event_hash(event_data: dict) -> str:
 
 def build_calendar_event_body(session: Session) -> dict:
     """Devuelve el diccionario body que Calendar API espera."""
-    from config import CALENDAR_COLORS
+
     COLOR = {k: v["google"] for k, v in CALENDAR_COLORS.items()}
     
     return {
@@ -168,24 +171,24 @@ def update_session_tracking(session: Session):
 
 def session_has_real_changes(session: Session) -> bool:
     """Verifica si una sesión tiene cambios REALES que justifiquen update"""
-    # 1. Si está marcada como dirty → hay cambios
+    # Si está marcada como dirty → hay cambios
     if hasattr(session, 'is_dirty') and session.is_dirty:
         logger.debug(f"🔄 Sesión #{session.id} marcada como dirty")
         return True
     
-    # 2. Si no tiene hash → primera vez
+    # Si no tiene hash → primera vez
     if not session.sync_hash:
         logger.debug(f"🔄 Sesión #{session.id} sin hash - primera sincronización")
         return True
     
-    # 3. Comparar hash actual vs. guardado
+    # Comparar hash actual vs. guardado
     current_hash = calculate_session_hash(session)
     
     if session.sync_hash != current_hash:
         logger.debug(f"🔄 Sesión #{session.id} hash cambió: {session.sync_hash[:8]}... → {current_hash[:8]}...")
         return True
     
-    # 4. Sin cambios reales
+    # Sin cambios reales
     logger.debug(f"✅ Sesión #{session.id} - sin cambios reales")
     return False
 
@@ -223,7 +226,6 @@ def safe_int(value):
 
 def normalize_text(text: str) -> str:
     """Pasa a minúsculas, quita tildes y unifica espacios."""
-    from unidecode import unidecode
     return re.sub(r"\s+", " ", unidecode(text or "").strip().lower())
 
 
@@ -239,8 +241,6 @@ def find_unique_user(model_class, name_norm: str):
     normaliza user.name y devuelve el único que coincide con name_norm.
     Si hay 0 o >1, devuelve None.
     """
-    from controllers.db import get_db_session
-    from models import User
     
     db = get_db_session()
     try:

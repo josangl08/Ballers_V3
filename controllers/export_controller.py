@@ -8,21 +8,20 @@ import os
 import datetime as dt
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
-from typing import List, Dict, Any, Optional, Tuple
+import calendar
+from typing import List, Optional, Tuple
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter, A4, landscape
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
-import base64
+from reportlab.lib.enums import TA_CENTER
 
-from models import Session, SessionStatus, TestResult, User, Player, Coach
+from sqlalchemy.orm import joinedload
+from models import Session, SessionStatus, TestResult, Player, Coach
 from controllers.db import get_db_session
 from controllers.player_controller import get_player_profile_data
-from controllers.session_controller import SessionController
 from controllers.sheets_controller import get_accounting_df
 
 
@@ -99,7 +98,6 @@ class ExportController:
         # Obtener sesiones filtradas con eager loading
         db = get_db_session()
         try:
-            from sqlalchemy.orm import joinedload
             
             sessions_query = db.query(Session).options(
                 joinedload(Session.coach).joinedload(Coach.user),
@@ -278,7 +276,6 @@ class ExportController:
         # Obtener sesiones con eager loading
         db = get_db_session()
         try:
-            from sqlalchemy.orm import joinedload
             
             query = db.query(Session).options(
                 joinedload(Session.coach).joinedload(Coach.user),
@@ -736,7 +733,7 @@ class ExportController:
     
     def _create_month_view_table(self, sessions: List[Session], start_date: dt.date, end_date: dt.date) -> Table:
         """Crea tabla tipo mes: calendario con días en celdas."""
-        import calendar
+
         
         # Usar el mes de start_date como referencia
         year = start_date.year
@@ -820,59 +817,17 @@ class ExportController:
         ]))
         
         return table
-        """Crea gráfico de balance financiero usando matplotlib."""
-        # Preparar datos mensuales
-        fecha_col = df_no_total.columns[0]
-        df_copy = df_no_total.copy()
-        df_copy[fecha_col] = pd.to_datetime(df_copy[fecha_col], errors='coerce')
-        df_copy["Mes"] = df_copy[fecha_col].dt.to_period("M").astype(str)
-        
-        monthly_summary = df_copy.groupby("Mes").agg({
-            "Ingresos": "sum",
-            "Gastos": "sum"
-        }).reset_index()
-        
-        monthly_summary["Balance mensual"] = monthly_summary["Ingresos"] - monthly_summary["Gastos"]
-        monthly_summary["Balance acumulado"] = monthly_summary["Balance mensual"].cumsum()
-        
-        plt.figure(figsize=(12, 6))
-        plt.style.use('default')
-        
-        # Crear gráfico de línea
-        plt.plot(monthly_summary["Mes"], monthly_summary["Balance acumulado"], 
-                marker='o', color='#1E88E5', linewidth=3, markersize=8)
-        
-        plt.title('Cumulative Balance Evolution', fontsize=14, fontweight='bold')
-        plt.xlabel('Month', fontsize=12)
-        plt.ylabel('Balance (€)', fontsize=12)
-        plt.grid(True, alpha=0.3)
-        plt.xticks(rotation=45)
-        
-        # Formatear eje Y con euros
-        ax = plt.gca()
-        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'€{x:,.0f}'))
-        
-        plt.tight_layout()
-        
-        # Guardar en buffer
-        buffer = io.BytesIO()
-        plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
-        buffer.seek(0)
-        plt.close()
-        
-        return buffer
-
 
 # Funciones de conveniencia
 def generate_player_pdf(player_id: int, start_date: dt.date, end_date: dt.date, 
-                       status_filter: List[str], selected_metrics: List[str]) -> Tuple[io.BytesIO, str]:
+                    status_filter: List[str], selected_metrics: List[str]) -> Tuple[io.BytesIO, str]:
     """Función de conveniencia para generar PDF de jugador."""
     controller = ExportController()
     return controller.generate_player_report(player_id, start_date, end_date, status_filter, selected_metrics)
 
 def generate_sessions_pdf(start_date: dt.date, end_date: dt.date, coach_id: Optional[int] = None,
-                         status_filter: List[str] = [], user_type: str = "admin", 
-                         user_name: str = "Sessions") -> Tuple[io.BytesIO, str]:
+                        status_filter: List[str] = [], user_type: str = "admin", 
+                        user_name: str = "Sessions") -> Tuple[io.BytesIO, str]:
     """Función de conveniencia para generar PDF de sesiones."""
     controller = ExportController()
     return controller.generate_sessions_report(start_date, end_date, coach_id, status_filter, user_type, user_name)

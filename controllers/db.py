@@ -21,6 +21,9 @@ def initialize_database() -> bool:
     
     try:
         if _engine is None:
+            if not DATABASE_PATH or not isinstance(DATABASE_PATH, str):
+                raise ValueError("DATABASE_PATH must be a valid string path")
+                
             _engine = create_engine(f"sqlite:///{DATABASE_PATH}")
             
             # Solo crear tablas si la base de datos no existe o está vacía
@@ -61,8 +64,7 @@ def get_db_session() -> SQLAlchemySession:
                 "Verifica que el archivo de configuración y los permisos sean correctos."
             )
     
-    # Esta verificación nunca debería fallar después de initialize_database() exitoso,
-    # pero la incluimos para satisfacer a Pylance
+   # Para satisfacer a Pylance
     if _Session is None:
         raise RuntimeError("Error crítico: _Session sigue siendo None después de la inicialización")
     
@@ -86,10 +88,11 @@ def get_database_info() -> dict:
     Returns:
         dict: Información sobre la base de datos
     """
+    exists = os.path.exists(DATABASE_PATH) if DATABASE_PATH else False
     return {
         "database_path": DATABASE_PATH,
-        "exists": os.path.exists(DATABASE_PATH),
-        "size_bytes": os.path.getsize(DATABASE_PATH) if os.path.exists(DATABASE_PATH) else 0,
+        "exists": exists,
+        "size_bytes": os.path.getsize(DATABASE_PATH) if (exists and DATABASE_PATH) else 0,
         "is_initialized": _Session is not None,
         "engine_active": _engine is not None
     }

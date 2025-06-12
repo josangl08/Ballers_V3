@@ -15,6 +15,7 @@ from common.export import create_download_link, show_export_success_message, sho
 from common.export import trigger_browser_print
 
 
+
 def show_player_profile(player_id=None):
     """Muestra el perfil de un jugador específico"""
     
@@ -270,6 +271,7 @@ def show_player_list():
 
 def show_content():
     """Función principal para mostrar el contenido de la sección Ballers."""
+
     st.markdown('<h3 class="section-title">Profiles</h3>', unsafe_allow_html=True)
     
     # Si es un jugador, mostrar su propio perfil
@@ -293,6 +295,7 @@ def show_content():
 
 def _handle_player_export(player, user):
     """Maneja la exportación del perfil de jugador a PDF."""
+    
     try:
         # Obtener filtros actuales de la sesión
         start_date = st.session_state.get("player_start_date", dt.date.today() - dt.timedelta(days=7))
@@ -303,7 +306,7 @@ def _handle_player_export(player, user):
         # Si no hay selección activa, usar las primeras 3 métricas por defecto
         selected_metrics = getattr(st.session_state, 'selected_metrics', None)
         if not selected_metrics:
-            from controllers.player_controller import PlayerController
+
             with PlayerController() as controller:
                 available_metrics = controller.get_test_metrics_list()
                 selected_metrics = available_metrics[:3] if available_metrics else []

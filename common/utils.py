@@ -3,8 +3,11 @@ Utilidades compartidas para toda la aplicación Ballers.
 Funciones reutilizables que no dependen de UI específica.
 """
 import hashlib
+import os
 import datetime as dt
 from typing import Optional
+from zoneinfo import ZoneInfo
+from controllers.db import get_db_session
 
 def hash_password(password: str) -> str:
     """
@@ -37,7 +40,6 @@ def format_time_local(dt_obj: Optional[dt.datetime]) -> str:
         dt_obj = dt_obj.replace(tzinfo=dt.timezone.utc)
     
     # Convertir a hora de Madrid
-    from zoneinfo import ZoneInfo
     try:
         local_tz = ZoneInfo("Europe/Madrid")
         local_time = dt_obj.astimezone(local_tz)
@@ -70,7 +72,6 @@ def normalize_datetime_for_hash(dt_obj) -> str:
     # Manejar datetime naive (asumir timezone local Madrid)
     if dt_obj.tzinfo is None:
         try:
-            from zoneinfo import ZoneInfo
             local_tz = ZoneInfo("Europe/Madrid")
             dt_obj = dt_obj.replace(tzinfo=local_tz)
         except:
@@ -88,7 +89,6 @@ def app_health_check() -> dict:
     Verifica el estado de salud de la aplicación.
     Útil para deployment y debugging.
     """
-    import os
     
     health = {
         "status": "healthy",
@@ -124,7 +124,6 @@ def app_health_check() -> dict:
     
     # Verificar conexión a base de datos
     try:
-        from controllers.db import get_db_session
         db = get_db_session()
         db.close()
         health["checks"]["database_connection"] = "✅"

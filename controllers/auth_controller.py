@@ -4,7 +4,6 @@ Controlador para manejo de autenticación y sesiones.
 Usa ValidationController para validación de login fields
 """
 import streamlit as st
-import datetime as dt
 from typing import Optional, Tuple, Dict, Any
 
 from models import User
@@ -200,7 +199,7 @@ class AuthController:
             st.success("Has cerrado sesión correctamente")
 
     # Validaciones y permisos
- 
+
     def is_logged_in(self) -> bool:
         """Verifica si hay una sesión activa."""
         return "user_id" in st.session_state and st.session_state["user_id"]

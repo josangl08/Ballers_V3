@@ -5,6 +5,7 @@ Usa ValidationController para validaciones de existencia
 """
 import datetime as dt
 import logging
+import os
 from typing import List, Optional, Dict
 from sqlalchemy.orm import Session as SQLSession
 from zoneinfo import ZoneInfo
@@ -18,9 +19,9 @@ from .calendar_utils import (
     session_needs_update
 )
 from googleapiclient.errors import HttpError
-import os
 from controllers.validation_controller import ValidationController
 
+from config import CALENDAR_COLORS
 logger = logging.getLogger(__name__)
 CAL_ID = os.getenv("CALENDAR_ID")
 
@@ -45,7 +46,7 @@ class SessionController:
             self.db.close()
 
     # Consultas y filtros
-   
+
     def get_sessions(
         self,
         start: dt.datetime,
@@ -304,7 +305,6 @@ class SessionController:
 
     # Metodos privados para Google Calendar
 
-    
     def _push_session_to_calendar(self, session: Session) -> bool:
         """
         Crea evento en Google Calendar.
@@ -345,7 +345,6 @@ class SessionController:
             return self._push_session_to_calendar(session)
         
         try:
-            from .calendar_utils import build_calendar_event_body, update_session_tracking
             
             body = build_calendar_event_body(session)
             calendar().events().patch(
@@ -354,10 +353,10 @@ class SessionController:
                 body=body
             ).execute()
             
-            # 🔧 CRÍTICO: Actualizar campos de tracking después de actualización exitosa
+            # Actualizar campos de tracking después de actualización exitosa
             update_session_tracking(session)
             
-            # 🔧 CRÍTICO: Commitear los cambios en BD
+            # Commitear los cambios en BD
             self.db.add(session)
             self.db.commit()
             
@@ -407,7 +406,6 @@ class SessionController:
             return
         
         try:
-            from config import CALENDAR_COLORS
             COLOR = {k: v["google"] for k, v in CALENDAR_COLORS.items()}
             
             calendar().events().patch(
@@ -529,7 +527,7 @@ class SessionController:
         
         sessions = query.all()
         
-        # 🔧 CREAR diccionario con descripciones (como estaba en el código original)
+        # Crear diccionario con descripciones
         today = dt.date.today()
         tomorrow = today + dt.timedelta(days=1)
         

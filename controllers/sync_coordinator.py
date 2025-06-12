@@ -12,6 +12,8 @@ from dataclasses import dataclass, asdict, field
 from typing import Optional, Dict, Any, List
 import logging
 
+from models import Coach, User
+from controllers.db import get_db_session
 from controllers.notification_controller import save_sync_problems
 from .calendar_sync_core import sync_calendar_to_db_with_feedback, sync_db_to_calendar
 from .session_controller import update_past_sessions
@@ -47,8 +49,6 @@ def get_coach_id_if_needed() -> Optional[int]:
         return None
         
     try:
-        from controllers.db import get_db_session
-        from models import Coach, User
         
         user_id = st.session_state.get("user_id")
         db = get_db_session()
@@ -349,11 +349,11 @@ class SimpleAutoSync:
             _auto_sync.stats.last_sync_duration = duration
             _auto_sync.stats.last_error = None
 
-            # CRÍTICO: SIEMPRE guardar problemas del sync actual (incluso si está vacío)
+            # Siempre guardar problemas del sync actual (incluso si está vacío)
             
             save_sync_problems(rejected_events, warning_events)
             
-            # LOGGING PRECISO para manual sync
+            # Logging para manual sync
             total_problems = len(rejected_events) + len(warning_events)
             if total_problems > 0:
                 logger.warning(f"🔧 Manual sync completado con problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
@@ -379,7 +379,7 @@ class SimpleAutoSync:
             _auto_sync.stats.failed_syncs += 1
             _auto_sync.stats.last_error = str(e)
 
-            # LIMPIAR problemas en caso de error
+            # Limpiar problemas en caso de error
             save_sync_problems([], [])
             logger.error(f"❌ Error manual sync: {e}")
             

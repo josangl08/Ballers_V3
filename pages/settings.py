@@ -5,12 +5,12 @@ import datetime as dt
 import os
 import shutil
 
+from models import UserType
 from controllers.user_controller import UserController, get_users_for_management, create_user_simple, update_user_simple, delete_user_simple, get_user_with_profile
 from controllers.calendar_sync_core import sync_db_to_calendar
 from controllers.sync_coordinator import start_auto_sync, stop_auto_sync, get_auto_sync_status, force_manual_sync, is_auto_sync_running, has_pending_notifications
 from controllers.sheets_controller import get_accounting_df
 from controllers.notification_controller import auto_cleanup_old_problems, get_sync_problems, clear_sync_problems
-from models import UserType
 from controllers.validation_controller import ValidationController
 
 
@@ -130,7 +130,8 @@ def create_user_form():
 
 
 def edit_any_user():
-    """Función para que los administradores editen cualquier usuario - MEJORADO."""
+    """Función para que los administradores editen cualquier usuario"""
+
     st.subheader("Edit Users")
     
     # Key dinámica para limpiar formulario solo en éxito
@@ -174,7 +175,7 @@ def edit_any_user():
         col1, col2 = st.columns(2)
         with col1:
             name = st.text_input("Full Name", value=user_data["name"])
-            username = st.text_input("Username", value=user_data["username"])  # 🆕 NUEVO
+            username = st.text_input("Username", value=user_data["username"])
             email = st.text_input("E-mail", value=user_data["email"])
         with col2:
             phone = st.text_input("Phone", value=user_data["phone"] or "")
@@ -247,7 +248,6 @@ def edit_any_user():
         st.subheader("Change Profile Picture")
         new_profile_photo = st.file_uploader("New Profile Picture", type=["jpg", "jpeg", "png"])
         
-    
         submit = st.form_submit_button("Save Changes", type="primary")
         
         if submit:
@@ -344,6 +344,7 @@ def delete_user():
 
 def manage_user_status():
     """Gestiona activación/desactivación de usuarios"""
+
     st.subheader("User Status Management")
     
     # Obtener usuarios
@@ -519,11 +520,11 @@ def system_settings():
                             'deleted': problems['stats']['deleted'],
                             'rejected_events': problems['rejected'],
                             'warning_events': problems['warnings'],
-                            'duration': problems['stats']['duration']  # ← DURACIÓN INCLUIDA
+                            'duration': problems['stats']['duration'] 
                         }
                         st.info("📊 Data from: Auto-sync (AutoSyncStats)")
                     else:
-                        # Fallback tradicional sin stats
+                        
                         result_data = {
                             'imported': 0, 'updated': 0, 'deleted': 0,
                             'rejected_events': problems['rejected'],
@@ -627,7 +628,6 @@ def system_settings():
             
         st.divider()
 
-    # Resto de system settings
     st.subheader("Database/Googlesheets Management")
 
     col1, col2 = st.columns(2)

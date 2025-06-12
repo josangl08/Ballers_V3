@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 
 from .base import Base
 
-
 class Coach(Base):
     __tablename__ = "coaches"
 

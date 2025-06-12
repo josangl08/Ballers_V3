@@ -5,7 +5,7 @@ Separa la lógica del menú de la presentación UI.
 """
 import streamlit as st
 from typing import Dict, List, Optional
-from .sync_coordinator import get_sync_stats_unified, is_auto_sync_running
+from .sync_coordinator import get_sync_stats_unified, is_auto_sync_running, _auto_sync
 
 class MenuController:
     """
@@ -142,7 +142,6 @@ class MenuController:
         """
         try:
             # Limpiar estadísticas del auto-sync
-            from .sync_coordinator import _auto_sync
             
             _auto_sync.stats.last_sync_time = None
             _auto_sync.stats.last_sync_duration = 0

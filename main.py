@@ -75,7 +75,31 @@ h2, h3 {
         .stButton>button {border-radius: 5px; background-color: #1E88E5; color: white;}
         </style>
         """, unsafe_allow_html=True)
-
+def debug_remember_me():
+    """Debug para Remember Me en Streamlit Cloud"""
+    import streamlit as st
+    import os
+    
+    # Solo mostrar debug en Cloud (no en local)
+    if "streamlit.io" in str(st.context.headers.get("host", "")) or os.getenv("STREAMLIT_CLOUD"):
+        st.sidebar.write("🔍 **DEBUG Remember Me**")
+        
+        # Verificar query params
+        if st.query_params:
+            st.sidebar.write(f"Query params: {dict(st.query_params)}")
+        else:
+            st.sidebar.write("❌ No query params found")
+        
+        # Verificar session state relevante
+        relevant_keys = ["user_id", "username", "just_logged_out"]
+        session_data = {k: st.session_state.get(k) for k in relevant_keys if k in st.session_state}
+        if session_data:
+            st.sidebar.write(f"Session state: {session_data}")
+        else:
+            st.sidebar.write("❌ No session data found")
+        
+        # URL actual
+        st.sidebar.write(f"Current URL: {st.context.headers.get('host', 'Unknown')}")
 # Función principal
 def main():
 
@@ -166,7 +190,7 @@ def main():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             st.image("assets/ballers/logo_white.png", width=400)
-       
+
         # Si hay sesión, mostrar menú y contenido según selección
         selected_section = create_sidebar_menu()
         

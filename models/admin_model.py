@@ -7,7 +7,6 @@ if TYPE_CHECKING:
 
 from .base import Base
 
-
 class Admin(Base):
     __tablename__ = "admins"
 

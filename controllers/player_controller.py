@@ -122,7 +122,6 @@ class PlayerController:
 
     # Estadisticas y datos calculados
 
-    
     def get_player_stats(self, player: Player) -> Dict[str, Any]:
         """
         Calcula estadísticas completas de un jugador.
@@ -199,7 +198,6 @@ class PlayerController:
 
     # Resultados de tests
 
-    
     def get_player_test_results(self, player: Player) -> List[TestResult]:
         """
         Obtiene resultados de tests de un jugador ordenados por fecha.
@@ -268,7 +266,6 @@ class PlayerController:
 
     # Operaciones CRUD
 
-    
     def update_player_notes(self, player: Player, notes: str) -> Tuple[bool, str]:
         """
         Actualiza las notas de un jugador.
@@ -295,7 +292,6 @@ class PlayerController:
 def get_player_profile_data(player_id: Optional[int] = None, user_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
     """
     Función de conveniencia para obtener datos completos de perfil.
-    Mantiene compatibilidad con código existente.
     
     Args:
         player_id: ID específico del jugador
@@ -324,7 +320,6 @@ def get_player_profile_data(player_id: Optional[int] = None, user_id: Optional[i
 def get_players_for_list(search_term: str = "") -> List[Dict[str, Any]]:
     """
     Función de conveniencia para obtener jugadores para listas.
-    Mantiene compatibilidad con código existente.
     
     Args:
         search_term: Término de búsqueda opcional
@@ -340,7 +335,6 @@ def get_players_for_list(search_term: str = "") -> List[Dict[str, Any]]:
 def update_player_notes_simple(player_id: int, notes: str) -> Tuple[bool, str]:
     """
     Función de conveniencia para actualizar notas.
-    Mantiene compatibilidad con código existente.
     
     Args:
         player_id: ID del jugador

@@ -7,32 +7,32 @@ import datetime as dt
 import re
 from typing import Tuple, Optional, List, Union, Any
 
-# CONFIGURACIÓN DE HORARIOS CENTRALIZADOS (movido desde administration.py)
+# Configuracion de horarios centralizados
 
 class ScheduleConfig:
     """Configuración centralizada de horarios para formularios."""
     
-    # Horarios ESTRICTOS para CREAR sesiones
+    # Horarios estrictos para crear sesiones
     CREATE_START_HOUR_MIN = 8   # 8:00
     CREATE_START_HOUR_MAX = 18  # último inicio: 18:00
     CREATE_END_HOUR_MIN = 9     # 9:00  
     CREATE_END_HOUR_MAX = 19    # último fin: 19:00
     
-    # Horarios BASE para EDITAR (recomendados)
+    # Horarios base para editar (recomendados)
     EDIT_BASE_START_MIN = 8     # 8:00
     EDIT_BASE_START_MAX = 18    # 18:00
     EDIT_BASE_END_MIN = 9       # 9:00
     EDIT_BASE_END_MAX = 19      # 19:00
     
-    # Horarios EXTENDIDOS para EDITAR (permitidos con advertencia)
+    # Horarios extendidos para editar (permitidos con advertencia)
     EDIT_EXTENDED_START_MIN = 6   # 6:00
     EDIT_EXTENDED_START_MAX = 22  # 22:00  
     EDIT_EXTENDED_END_MIN = 7     # 7:00
     EDIT_EXTENDED_END_MAX = 23    # 23:00
     
-    # Horarios RECOMENDADOS (para advertencias)
+    # Horarios recomendados (para advertencias)
     RECOMMENDED_START = dt.time(8, 0)
-    RECOMMENDED_END = dt.time(19, 0)  # 🔧 FIX: 19:00 es válido
+    RECOMMENDED_END = dt.time(19, 0)  
     
 class ValidationController:
     """
@@ -168,7 +168,7 @@ class ValidationController:
         if end_time <= start_time:
             return False, "The end time must be later than the start time."
         
-        # 2. Verificar horario de trabajo ESTRICTO (8:00 - 18:00)
+        # 2. Verificar horario de trabajo estricto (8:00 - 18:00)
         WORK_START = dt.time(8, 0)
         WORK_END = dt.time(18, 0)
         
@@ -200,7 +200,7 @@ class ValidationController:
         """
         warnings = []
         
-        # ❌ CRÍTICOS (rechazan)
+        # CRÍTICOS (rechazan)
         if end_dt <= start_dt:
             return False, "End time must be later than start time", warnings
         
@@ -215,7 +215,7 @@ class ValidationController:
         if duration_minutes < 45:
             return False, f"Duration too short: {int(duration_minutes)} min (minimum: 45 min)", warnings
         
-        # ⚠️ WARNINGS (permiten pero alertan)
+        # WARNINGS (permiten pero alertan)
         warnings.extend(ValidationController._check_time_warnings(start_dt, end_dt))
         warnings.extend(ValidationController._check_duration_warnings(duration_minutes))
         warnings.extend(ValidationController._check_weekend_warnings(start_dt))
@@ -251,9 +251,7 @@ class ValidationController:
         
         return True, ""
     
-
     # Validaciones de fechas
-
     
     @staticmethod
     def validate_date_range(start_date: dt.date, end_date: dt.date) -> Tuple[bool, str]:
@@ -306,7 +304,7 @@ class ValidationController:
         Centraliza validaciones de archivos.
         """
         if not uploaded_file:
-            return True, ""  # Opcional
+            return True, ""  
         
         # Validar extensión
         allowed_extensions = ['jpg', 'jpeg', 'png', 'gif']
@@ -367,7 +365,6 @@ class ValidationController:
             return False, f"Please type '{expected}' to confirm."
         return True, ""
     
-
     # Métodos privados de apoyo
     
     @staticmethod

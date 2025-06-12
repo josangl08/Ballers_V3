@@ -4,6 +4,7 @@ Controlador para manejo de notificaciones de problemas de sincronización.
 Separa la lógica de datos de la presentación UI.
 """
 import streamlit as st
+import os
 import datetime as dt
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
@@ -79,7 +80,6 @@ class NotificationController:
                 print(f"💾 Sync problems saved: {len(rejected_events)} rejected, {len(warning_events)} warnings ({current_timestamp})")
             else:
                 # Log de limpieza solo en debug
-                import os
                 if os.getenv("DEBUG", "False") == "True":
                     print(f"💾 Sync problems cleared ({current_timestamp})")
                     
@@ -137,7 +137,7 @@ class NotificationController:
             if (rejected_events or warning_events) and problems_timestamp:
                 print(f"🔍 Fallback AutoSyncStats: {len(rejected_events)} rejected, {len(warning_events)} warnings")
                 
-                # 🆕 CREAR SyncProblemsData EXTENDIDA con stats adicionales
+                # Crear SyncProblemsData extendida con stats adicionales
                 problems_data = SyncProblemsData(
                     rejected=rejected_events,
                     warnings=warning_events,
@@ -145,7 +145,7 @@ class NotificationController:
                     seen=False
                 )
                 
-                # 🆕 AÑADIR stats adicionales como atributo dinámico
+                # Añadir stats adicionales como atributo dinámico
                 problems_data.duration = auto_status.get('last_sync_duration', 0)
                 problems_data.imported = auto_status.get('last_changes', {}).get('imported', 0)
                 problems_data.updated = auto_status.get('last_changes', {}).get('updated', 0)
@@ -172,7 +172,7 @@ class NotificationController:
         """Limpia todos los problemas guardados."""
         keys_to_remove = [
             self.STORAGE_KEY,
-            'last_rejected_events',  # Compatibilidad con versiones anteriores
+            'last_rejected_events',
             'last_warning_events', 
             'last_sync_time'
         ]
@@ -327,7 +327,7 @@ def get_sync_problems() -> Optional[Dict[str, Any]]:
         'seen': problems.seen
     }
     
-    # 🆕 INCLUIR stats adicionales si vienen del fallback
+    # Incluir stats adicionales si vienen del fallback
     if hasattr(problems, 'duration'):
         result['stats'] = {
             'duration': getattr(problems, 'duration', 0),
@@ -362,8 +362,7 @@ def get_problems_summary() -> str:
     controller = NotificationController()
     return controller.get_summary_text()
 
-# Funciones avanzadas para UI
-
+# Funciones para UI
 
 def get_notification_controller() -> NotificationController:
     """

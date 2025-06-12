@@ -4,6 +4,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from pathlib import Path
 import datetime as dt
+import json
 
 # Cargar variables de entorno si existe el archivo .env
 load_dotenv()
@@ -88,7 +89,6 @@ def get_google_service_account_info():
     # Para desarrollo local - usar archivo JSON
     google_sa_path = get_config_value("GOOGLE_SA_PATH")
     if google_sa_path and os.path.exists(google_sa_path):
-        import json
         with open(google_sa_path, 'r') as f:
             if os.getenv("DEBUG") == "True":
                 print(f"✅ Credenciales Google cargadas desde archivo: {google_sa_path}")

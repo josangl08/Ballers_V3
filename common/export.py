@@ -6,8 +6,6 @@ Contiene funciones helper y CSS para optimizar impresión.
 import streamlit as st
 import streamlit.components.v1 as components
 from typing import List, Dict, Any
-import json, textwrap
-
 
 def create_export_buttons(
     on_export_pdf=None, 
@@ -449,7 +447,6 @@ def trigger_browser_print():
     """
     
     # Inyectar CSS y JavaScript
-    import streamlit.components.v1 as components
     components.html(css_and_js, height=0)
 
 
