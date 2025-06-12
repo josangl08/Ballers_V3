@@ -74,7 +74,7 @@ Ballers App es una plataforma web moderna que integra gestión de sesiones de en
 ![Report-sessions](assets/screenshots/report-sessions.png)
 
 ### Reporte Financials PDF
-![Report-financials](assets/screenshots/eport-financials.png)
+![Report-financials](assets/screenshots/report-financials.png)
 
 ### Settings
 ![Settings](assets/screenshots/settings.png)
