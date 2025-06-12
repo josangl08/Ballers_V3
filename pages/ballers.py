@@ -13,6 +13,7 @@ from controllers.validation_controller import ValidationController
 from controllers.export_controller import generate_player_pdf
 from common.export import create_download_link, show_export_success_message, show_export_error_message
 from common.export import trigger_browser_print
+from common.cloud_utils import show_cloud_mode_info, is_streamlit_cloud, show_cloud_feature_limitation
 
 
 
@@ -219,6 +220,10 @@ def show_player_profile(player_id=None):
             
         # Si el usuario es coach o admin, permitir añadir notas
         if st.session_state.get("user_type") in ["coach", "admin"]:
+            # 🌐 MOSTRAR LIMITACIÓN EN CLOUD
+            if is_streamlit_cloud():
+                show_cloud_feature_limitation("Note editing")
+
             new_note = st.text_area("Add/Edit notes:", value=player.notes or "")
             if st.button("Save notes"):
                 # Usar función simplificada del controller
@@ -274,6 +279,11 @@ def show_content():
 
     st.markdown('<h3 class="section-title">Profiles</h3>', unsafe_allow_html=True)
     
+     # 🌐 MOSTRAR AVISO DE MODO DEMO SOLO A COACHES Y ADMINS
+    user_type = st.session_state.get("user_type")
+    if user_type in ["coach", "admin"]:
+        show_cloud_mode_info()
+
     # Si es un jugador, mostrar su propio perfil
     if st.session_state.get("user_type") == "player":
         show_player_profile()

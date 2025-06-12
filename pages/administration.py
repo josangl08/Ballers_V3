@@ -23,6 +23,7 @@ from controllers.validation_controller import (
 )
 from controllers.export_controller import generate_sessions_pdf, generate_financials_pdf
 from common.export import create_download_link, show_export_success_message, show_export_error_message, trigger_browser_print
+from common.cloud_utils import show_cloud_mode_info, show_cloud_feature_limitation, is_streamlit_cloud
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -249,6 +250,10 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
         is_admin: Si True, permite seleccionar cualquier coach
     """
     st.subheader("My Sessions" if not is_admin else "Sessions Management")
+
+    # 🌐 MOSTRAR LIMITACIÓN SI ES CLOUD
+    if is_streamlit_cloud():
+        show_cloud_feature_limitation("Session editing")
 
     with SessionController() as controller:
         # Obtener opciones para selectores
@@ -729,6 +734,9 @@ def show_content():
     """Función principal para mostrar el contenido de la sección Administration."""
     st.markdown('<h3 class="section-title">Administration</h3>', unsafe_allow_html=True)
     
+    # 🌐 MOSTRAR AVISO DE MODO DEMO
+    show_cloud_mode_info()
+
     user_type = st.session_state.get("user_type")
     
     if user_type == "admin":

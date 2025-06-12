@@ -17,6 +17,7 @@ from controllers.db import get_db_session
 from controllers.notification_controller import save_sync_problems
 from .calendar_sync_core import sync_calendar_to_db_with_feedback, sync_db_to_calendar
 from .session_controller import update_past_sessions
+from common.cloud_utils import is_streamlit_cloud, safe_database_operation
 
 logger = logging.getLogger(__name__)
 
@@ -299,10 +300,18 @@ class SimpleAutoSync:
         self.thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._sync_in_progress = False
-        self._stats_lock = threading.Lock()  # ← AÑADIR
+        self._stats_lock = threading.Lock()
         
     def start(self, interval_minutes: int = 5) -> bool:
-        """Inicia auto-sync"""
+        """Inicia auto-sync - CON PROTECCIÓN CLOUD"""
+        
+        if is_streamlit_cloud():
+            # En Cloud: no iniciar thread real
+            print("🌐 Cloud: Auto-sync no iniciado (modo demo)")
+            self.stats.running = False  # Simular que no está corriendo
+            return True
+        
+        # En local: código original
         if self.stats.running:
             return False
             
@@ -317,6 +326,13 @@ class SimpleAutoSync:
     
     def stop(self) -> bool:
         """Detiene auto-sync"""
+        
+        if is_streamlit_cloud():
+            # En Cloud: simular parada
+            self.stats.running = False
+            return True
+        
+        # En local: código original
         if not self.stats.running:
             return False
             
@@ -329,7 +345,25 @@ class SimpleAutoSync:
         return True
     
     def force_sync(self) -> Dict[str, Any]:
-        """Sync manual usando versión UI normal"""
+        """Sync manual usando versión UI normal - CON PROTECCIÓN CLOUD"""
+        
+        if is_streamlit_cloud():
+            # En Cloud: simular sync sin escribir a BD
+            print("🌐 Cloud: Simulando force_sync...")
+            
+            return {
+                "success": True,
+                "duration": 2.0,
+                "imported": 0,
+                "updated": 0, 
+                "deleted": 0,
+                "past_updated": 0,
+                "rejected_events": [],
+                "warning_events": [],
+                "error": None
+            }
+        
+        # En local: código original completo
         start_time = time.time()
         
         try:
@@ -349,11 +383,10 @@ class SimpleAutoSync:
             _auto_sync.stats.last_sync_duration = duration
             _auto_sync.stats.last_error = None
 
-            # Siempre guardar problemas del sync actual (incluso si está vacío)
-            
+            # CRÍTICO: SIEMPRE guardar problemas del sync actual (incluso si está vacío)
             save_sync_problems(rejected_events, warning_events)
             
-            # Logging para manual sync
+            # LOGGING PRECISO para manual sync
             total_problems = len(rejected_events) + len(warning_events)
             if total_problems > 0:
                 logger.warning(f"🔧 Manual sync completado con problemas: {len(rejected_events)} rechazados, {len(warning_events)} warnings")
@@ -379,7 +412,7 @@ class SimpleAutoSync:
             _auto_sync.stats.failed_syncs += 1
             _auto_sync.stats.last_error = str(e)
 
-            # Limpiar problemas en caso de error
+            # LIMPIAR problemas en caso de error
             save_sync_problems([], [])
             logger.error(f"❌ Error manual sync: {e}")
             
@@ -477,23 +510,83 @@ _auto_sync = SimpleAutoSync()
 
 # Funciones públicas (mantener nombres originales)
 def start_auto_sync(interval_minutes: int = 5) -> bool:
-    """Inicia auto-sync"""
+    """Inicia auto-sync - CON PROTECCIÓN CLOUD"""
+    
+    if is_streamlit_cloud():
+        # En Cloud: simular que se inició pero no hacer nada
+        print("🌐 Cloud: Auto-sync simulado (modo demo)")
+        return True
+    
+    # En local: auto-sync real
     return _auto_sync.start(interval_minutes)
 
 def stop_auto_sync() -> bool:
-    """Detiene auto-sync"""
+    """Detiene auto-sync - CON PROTECCIÓN CLOUD"""
+    
+    if is_streamlit_cloud():
+        # En Cloud: simular parada
+        print("🌐 Cloud: Auto-sync detenido (modo demo)")
+        return True
+    
+    # En local: parar auto-sync real
     return _auto_sync.stop()
 
 def get_auto_sync_status() -> Dict[str, Any]:
-    """Estado del auto-sync"""
+    """Estado del auto-sync - CON DATOS SIMULADOS PARA CLOUD"""
+    
+    if is_streamlit_cloud():
+        # En Cloud: devolver estado simulado
+        return {
+            "running": False,
+            "last_sync_time": None,
+            "last_sync_duration": 0,
+            "total_syncs": 0,
+            "successful_syncs": 0,
+            "failed_syncs": 0,
+            "last_error": None,
+            "interval_minutes": 5,
+            "last_changes": None,
+            "last_changes_time": None,
+            "changes_notified": True,
+            "last_rejected_events": [],
+            "last_warning_events": [],
+            "problems_timestamp": None
+        }
+    
+    # En local: estado real
     return _auto_sync.get_status()
 
+@safe_database_operation("Manual sync")
 def force_manual_sync() -> Dict[str, Any]:
-    """Sync manual inmediato"""
+    """Sync manual inmediato - CON PROTECCIÓN CLOUD"""
+    
+    if is_streamlit_cloud():
+        # En Cloud: simular sync exitoso
+        print("🌐 Cloud: Simulando sync manual...")
+        
+        return {
+            "success": True,
+            "duration": 1.5,  # Simular duración
+            "imported": 0,
+            "updated": 0, 
+            "deleted": 0,
+            "past_updated": 0,
+            "rejected_events": [],
+            "warning_events": [],
+            "error": None
+        }
+    
+    # En local: ejecutar sync real
     return _auto_sync.force_sync()
 
 def is_auto_sync_running() -> bool:
     """Verifica si auto-sync está ejecutándose"""
+    
+    if is_streamlit_cloud():
+        # En Cloud: simular que no está corriendo
+        return False
+    
+    # En local: estado real
     return _auto_sync.stats.running
 
 def has_pending_notifications() -> bool:

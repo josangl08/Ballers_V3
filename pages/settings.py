@@ -12,6 +12,7 @@ from controllers.sync_coordinator import start_auto_sync, stop_auto_sync, get_au
 from controllers.sheets_controller import get_accounting_df
 from controllers.notification_controller import auto_cleanup_old_problems, get_sync_problems, clear_sync_problems
 from controllers.validation_controller import ValidationController
+from common.cloud_utils import show_cloud_mode_info, show_cloud_feature_limitation, is_streamlit_cloud
 
 
 def create_user_form():
@@ -797,6 +798,9 @@ def show_content():
     """Función principal para mostrar el contenido de la sección Settings."""
     st.markdown('<h3 class="section-title">Settings</h3>', unsafe_allow_html=True)
     
+    # 🌐 MOSTRAR AVISO DE MODO DEMO
+    show_cloud_mode_info()
+
     # System primero, Users segundo
     tab1, tab2 = st.tabs(["System", "Users"])
     
@@ -804,6 +808,10 @@ def show_content():
         system_settings()
     
     with tab2:  # Users - Pestaña secundaria
+         # 🌐 MOSTRAR LIMITACIÓN PARA GESTIÓN DE USUARIOS
+        if is_streamlit_cloud():
+            show_cloud_feature_limitation("User management")
+            
         user_tab1, user_tab2, user_tab3, user_tab4 = st.tabs(["Create User", "Edit User", "Delete User", "User Status"])
         
         with user_tab1:

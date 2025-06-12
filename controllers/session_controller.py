@@ -20,6 +20,7 @@ from .calendar_utils import (
 )
 from googleapiclient.errors import HttpError
 from controllers.validation_controller import ValidationController
+from common.cloud_utils import safe_database_operation, is_streamlit_cloud
 
 from config import CALENDAR_COLORS
 logger = logging.getLogger(__name__)
@@ -104,6 +105,10 @@ class SessionController:
         status: SessionStatus = SessionStatus.SCHEDULED,
         sync_to_calendar: bool = True
     ) -> tuple[bool, str, Optional[Session]]:
+        """Crear sesión - verificar si es Cloud"""
+        if is_streamlit_cloud():
+            # En Cloud: simular éxito sin escribir
+            return True, "Session created successfully (demo mode)", None
         """
         Crea una nueva sesión.
         Usa ValidationController para validar coach/player existence
@@ -175,6 +180,10 @@ class SessionController:
         session_id: int,
         **kwargs
     ) -> tuple[bool, str]:
+        """Actualizar sesión - verificar si es Cloud"""
+        if is_streamlit_cloud():
+            # En Cloud: simular éxito
+            return True, "Session updated successfully (demo mode)"
         """
         Actualiza una sesión existente.
         Usa ValidationController para validar session existence
@@ -226,6 +235,10 @@ class SessionController:
             return False, f"Error updating session: {str(e)}"
     
     def delete_session(self, session_id: int) -> tuple[bool, str]:
+        """Eliminar sesión - verificar si es Cloud"""
+        if is_streamlit_cloud():
+            # En Cloud: simular éxito
+            return True, "Session deleted successfully (demo mode)"
         """
         Elimina una sesión.
         Usa ValidationController para validar session existence
@@ -604,7 +617,8 @@ def update_past_sessions() -> int:
     """Función de conveniencia para mantener compatibilidad."""
     with SessionController() as controller:
         return controller.update_past_sessions()
-    
+
+@safe_database_operation("Session creation")    
 def create_session_with_calendar(
     coach_id: int,
     player_id: int,
@@ -631,6 +645,7 @@ def create_session_with_calendar(
             sync_to_calendar=True
         )
 
+@safe_database_operation("Session update")
 def update_session_with_calendar(session_id: int, **kwargs) -> tuple[bool, str]:
     """Función de conveniencia para actualizar sesión con sincronización - CORREGIDA."""
     
@@ -653,6 +668,7 @@ def update_session_with_calendar(session_id: int, **kwargs) -> tuple[bool, str]:
     with SessionController() as controller:
         return controller.update_session(session_id, **kwargs)
 
+@safe_database_operation("Session deletion")
 def delete_session_with_calendar(session_id: int) -> tuple[bool, str]:
     """Función de conveniencia para eliminar sesión con sincronización."""
     with SessionController() as controller:
