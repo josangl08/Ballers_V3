@@ -185,3 +185,6 @@ assets/ballers
 assets/profile_photos
 logs/
 backups/
+
+# Claude Code documentation (private)
+CLAUDE.md
