@@ -1,127 +1,153 @@
 # pages/administration.py
-import streamlit as st
-import pandas as pd
 import datetime as dt
 import os
 import sys
 from typing import Optional
 
-from models import User, Coach, Session, SessionStatus
-from controllers.session_controller import SessionController, create_session_with_calendar, update_session_with_calendar, delete_session_with_calendar        
+import pandas as pd
+import streamlit as st
+
+from common.cloud_utils import (
+    is_streamlit_cloud,
+    show_cloud_feature_limitation,
+    show_cloud_mode_info,
+)
+from common.export import (
+    create_download_link,
+    show_export_error_message,
+    show_export_success_message,
+    trigger_browser_print,
+)
+from controllers.export_controller import generate_financials_pdf, generate_sessions_pdf
 from controllers.internal_calendar import show_calendar
-from controllers.sheets_controller import get_accounting_df
 from controllers.notification_controller import get_sync_problems
-from controllers.sync_coordinator import filter_sync_results_by_coach, get_coach_id_if_needed
+from controllers.session_controller import (
+    SessionController,
+    create_session_with_calendar,
+    delete_session_with_calendar,
+    update_session_with_calendar,
+)
+from controllers.sheets_controller import get_accounting_df
+from controllers.sync_coordinator import (
+    filter_sync_results_by_coach,
+    get_coach_id_if_needed,
+)
 from controllers.validation_controller import (
     ValidationController,
-    validate_session_form_data,
-    validate_coach_selection_safe,
-    validate_player_selection_safe,
+    check_session_time_recommendation,
     get_create_session_hours,
     get_edit_session_hours,
-    check_session_time_recommendation
+    validate_coach_selection_safe,
+    validate_player_selection_safe,
+    validate_session_form_data,
 )
-from controllers.export_controller import generate_sessions_pdf, generate_financials_pdf
-from common.export import create_download_link, show_export_success_message, show_export_error_message, trigger_browser_print
-from common.cloud_utils import show_cloud_mode_info, show_cloud_feature_limitation, is_streamlit_cloud
+from models import Coach, Session, SessionStatus, User
 
 # Agregar la ruta raíz al path de Python para importar config
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 
 def show_coach_sync_alerts():
     """
     Muestra alertas de sync específicas para coaches de forma no invasiva.
     NO interfiere con layout de pestañas.
     """
-    
+
     problems = get_sync_problems()
     if not problems:
         return
-    
-    rejected = problems.get('rejected', [])
-    warnings = problems.get('warnings', [])
-    
+
+    rejected = problems.get("rejected", [])
+    warnings = problems.get("warnings", [])
+
     if not rejected and not warnings:
         return
-    
+
     if rejected:
         with st.expander("🚫 Synchronisation Problems Detected", expanded=False):
             st.error(f"❌ {len(rejected)} rejected events in the last synchronisation")
-            
+
             if rejected:
                 first = rejected[0]
                 st.write(f"**Example**: {first['title']} - {first.get('date', 'N/A')}")
                 st.write(f"**Problem**: {first['reason']}")
-            
+
             if len(rejected) > 1:
                 st.info(f"+ {len(rejected) - 1} events more")
-            
+
             st.info("💡 **Solution**: Update Session in Google Calendar")
-    
+
     elif warnings:
         with st.expander("⚠️ Synchronisation Warnings", expanded=False):
             st.warning(f"⚠️ {len(warnings)} imported events at less than ideal times")
-            
+
             if warnings:
                 first = warnings[0]
                 st.write(f"**Example**: {first['title']} - {first.get('date', 'N/A')}")
-                if first.get('warnings'):
+                if first.get("warnings"):
                     st.write(f"**Warning**: {first['warnings'][0]}")
-            
+
             if len(warnings) > 1:
                 st.info(f"+ {len(warnings) - 1} eventos más")
-            
-            st.info("💡 **Note**: The sessions were imported correctly but have times outside the recommended range (8:00-18:00).")
+
+            st.info(
+                "💡 **Note**: The sessions were imported correctly but have times outside the recommended range (8:00-18:00)."
+            )
     st.divider()
+
 
 def show_coach_calendar():
     """Muestra el calendario de sesiones para un coach - SIMPLIFICADO."""
     # Obtener coach usando el controller
     user_id = st.session_state.get("user_id")
-    
+
     with SessionController() as controller:
         # Buscar coach actual
-        coach = controller.db.query(Coach).join(User).filter(User.user_id == user_id).first()
-        
+        coach = (
+            controller.db.query(Coach)
+            .join(User)
+            .filter(User.user_id == user_id)
+            .first()
+        )
+
         if not coach:
             st.error("No coach information found.")
             return
-        
+
         # Usar controller para estadísticas
         stats = controller.get_coach_stats(coach.coach_id)
-        
+
         # Mostrar métricas
         c1, c2, c3 = st.columns(3)
         c1.metric("Scheduled", stats["scheduled"])
         c2.metric("Completed", stats["completed"])
         c3.metric("Canceled", stats["canceled"])
-        
-        
+
         st.subheader(f"Calendar of {coach.user.name}")
-        
+
         # Filtros de fecha - UI solo
         col1, col2 = st.columns(2)
         with col1:
             start_date = st.date_input(
-                "From", 
+                "From",
                 value=dt.datetime.now().date() - dt.timedelta(days=7),
-                key="coach_start_date"
+                key="coach_start_date",
             )
         with col2:
             end_date = st.date_input(
-                "To", 
+                "To",
                 value=dt.datetime.now().date() + dt.timedelta(days=7),
-                key="coach_end_date"
+                key="coach_end_date",
             )
 
         status_values = [s.value for s in SessionStatus]
         status_filter = st.multiselect(
-            "Status", 
+            "Status",
             options=status_values,
             default=status_values,
-            key="coach_status_filter"
+            key="coach_status_filter",
         )
-        
+
         # Usar ValidationController para date range validation
         is_valid, error = ValidationController.validate_date_range(start_date, end_date)
         if not is_valid:
@@ -134,13 +160,24 @@ def show_coach_calendar():
         with col_export:
             col_exp, col_print = st.columns(2)
             with col_exp:
-                export_clicked = st.button("📄 PDF", key="coach_export", help="Export sessions to PDF")
+                export_clicked = st.button(
+                    "📄 PDF", key="coach_export", help="Export sessions to PDF"
+                )
             with col_print:
-                print_clicked = st.button("🖨️ Print", key="coach_print", help="Print sessions")
+                print_clicked = st.button(
+                    "🖨️ Print", key="coach_print", help="Print sessions"
+                )
         # Manejar exportación e impresión
         if export_clicked:
-            _handle_sessions_export(start_date, end_date, coach.coach_id, status_filter, "coach", coach.user.name)
-        
+            _handle_sessions_export(
+                start_date,
+                end_date,
+                coach.coach_id,
+                status_filter,
+                "coach",
+                coach.user.name,
+            )
+
         if print_clicked:
             trigger_browser_print()
 
@@ -149,9 +186,9 @@ def show_coach_calendar():
             start_date=start_date,
             end_date=end_date,
             coach_id=coach.coach_id,
-            status_filter=status_filter
+            status_filter=status_filter,
         )
-        
+
         # Mostrar calendario
         show_calendar("", sessions, key="coach_cal")
 
@@ -159,10 +196,10 @@ def show_coach_calendar():
         if sessions:
             st.subheader("Sessions List")
             formatted_data = controller.format_sessions_for_table(sessions)
-            
+
             # Crear DataFrame y aplicar estilos
             df = pd.DataFrame(formatted_data)
-            
+
             def style_sessions(row):
                 if row["Status"] == "completed":
                     return ["background-color: rgba(76, 175, 80, 0.2)"] * len(row)
@@ -173,9 +210,9 @@ def show_coach_calendar():
                 return [""] * len(row)
 
             styled_df = df.style.apply(style_sessions, axis=1)
-            
+
             st.dataframe(
-                styled_df, 
+                styled_df,
                 column_config={
                     "ID": st.column_config.NumberColumn(width="small"),
                     "Coach": st.column_config.TextColumn(width="medium"),
@@ -183,51 +220,57 @@ def show_coach_calendar():
                     "Date": st.column_config.TextColumn(width="small"),
                     "Start Time": st.column_config.TextColumn(width="small"),
                     "End Time": st.column_config.TextColumn(width="small"),
-                    "Status": st.column_config.TextColumn(width="small")
+                    "Status": st.column_config.TextColumn(width="small"),
                 },
-                hide_index=True
+                hide_index=True,
             )
         else:
-            st.info(f"There are no scheduled sessions between {start_date.strftime('%d/%m/%Y')} and {end_date.strftime('%d/%m/%Y')}.")
+            st.info(
+                f"There are no scheduled sessions between {start_date.strftime('%d/%m/%Y')} and {end_date.strftime('%d/%m/%Y')}."
+            )
 
     # Sync details display
     if st.session_state.get("show_sync_details", False):
         st.session_state["show_sync_details"] = False
-        
+
         with st.container():
-            if 'last_sync_result' in st.session_state:
-                result = st.session_state['last_sync_result']
+            if "last_sync_result" in st.session_state:
+                result = st.session_state["last_sync_result"]
 
                 coach_id = get_coach_id_if_needed()
                 if coach_id:
                     result = filter_sync_results_by_coach(result, coach_id)
                     st.info(f"Showing Events for Coach ID: {coach_id}")
 
-                rejected = result.get('rejected_events', [])
-                warnings = result.get('warning_events', [])
-                
+                rejected = result.get("rejected_events", [])
+                warnings = result.get("warning_events", [])
+
                 col1, col2, col3, col4, col5, col6 = st.columns(6)
-                col1.metric("📥 Imported", result.get('imported', 0))
-                col2.metric("🔄 Updated", result.get('updated', 0))  
-                col3.metric("🗑️ Deleted", result.get('deleted', 0))
-                col4.metric("🚫 Rejected", len(result.get('rejected_events', [])))
-                col5.metric("⚠️ Warnings", len(result.get('warning_events', [])))
+                col1.metric("📥 Imported", result.get("imported", 0))
+                col2.metric("🔄 Updated", result.get("updated", 0))
+                col3.metric("🗑️ Deleted", result.get("deleted", 0))
+                col4.metric("🚫 Rejected", len(result.get("rejected_events", [])))
+                col5.metric("⚠️ Warnings", len(result.get("warning_events", [])))
                 col6.metric("⏱️ Duration", f"{result.get('duration', 0):.1f}s")
-                
+
                 if rejected or warnings:
                     if rejected:
                         st.subheader("🚫 Rejected Events")
                         for event in rejected:
-                            st.error(f"**{event['title']}** - {event['date']} {event['time']}")
+                            st.error(
+                                f"**{event['title']}** - {event['date']} {event['time']}"
+                            )
                             st.write(f"❌ **Problem**: {event['reason']}")
                             st.write(f"💡 **Solution**: {event['suggestion']}")
                             st.markdown("---")
-                            
+
                     if warnings:
                         st.subheader("⚠️ Events with Warnings")
                         for event in warnings:
-                            st.warning(f"**{event['title']}** - {event['date']} {event['time']}")
-                            for w in event.get('warnings', []):
+                            st.warning(
+                                f"**{event['title']}** - {event['date']} {event['time']}"
+                            )
+                            for w in event.get("warnings", []):
                                 st.write(f"⚠️ {w}")
                             st.write("✅ **State**: Synced successfully")
                             st.markdown("---")
@@ -244,7 +287,7 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
     """
     Formularios unificados para crear/editar sesiones.
     Usa ValidationController para TODA la lógica de horarios y validaciones.
-    
+
     Args:
         coach_id: Si se especifica, restringe a sesiones de ese coach
         is_admin: Si True, permite seleccionar cualquier coach
@@ -259,7 +302,7 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
         # Obtener opciones para selectores
         coaches = controller.get_available_coaches()
         players = controller.get_available_players()
-        
+
         tab1, tab2 = st.tabs(["Create Session", "Edit Session"])
 
         # Tab 1: CREAR SESIÓN
@@ -278,36 +321,38 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                         selected_coach_id = st.selectbox(
                             "Coach",
                             options=[c[0] for c in coaches],
-                            format_func=lambda x: next(n for i, n in coaches if i == x)
+                            format_func=lambda x: next(n for i, n in coaches if i == x),
                         )
                     else:
                         selected_coach_id = coach_id
-                        st.info(f"Coach: {next(n for i, n in coaches if i == coach_id)}")
+                        st.info(
+                            f"Coach: {next(n for i, n in coaches if i == coach_id)}"
+                        )
 
                     player_id = st.selectbox(
                         "Player",
                         options=[p[0] for p in players],
-                        format_func=lambda x: next(n for i, n in players if i == x)
+                        format_func=lambda x: next(n for i, n in players if i == x),
                     )
 
                     session_date = st.date_input(
                         "Date",
                         value=dt.date.today(),
                         min_value=dt.date.today(),
-                        max_value=dt.date.today() + dt.timedelta(days=90)
+                        max_value=dt.date.today() + dt.timedelta(days=90),
                     )
 
                 with col2:
                     start_time = st.selectbox(
                         "Start hour",
                         options=hours_start_create,
-                        format_func=lambda t: t.strftime("%H:%M")
+                        format_func=lambda t: t.strftime("%H:%M"),
                     )
 
                     end_time = st.selectbox(
                         "End hour",
                         options=hours_end_create,
-                        format_func=lambda t: t.strftime("%H:%M")
+                        format_func=lambda t: t.strftime("%H:%M"),
                     )
 
                 notes = st.text_area("Notes")
@@ -315,43 +360,49 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
 
                 if submit:
                     # Usar validaciones seguras de ValidationController
-                    coach_valid, coach_error, safe_coach_id = validate_coach_selection_safe(selected_coach_id)
+                    coach_valid, coach_error, safe_coach_id = (
+                        validate_coach_selection_safe(selected_coach_id)
+                    )
                     if not coach_valid:
                         st.error(coach_error)
                         return
-                    
-                    player_valid, player_error, safe_player_id = validate_player_selection_safe(player_id)
+
+                    player_valid, player_error, safe_player_id = (
+                        validate_player_selection_safe(player_id)
+                    )
                     if not player_valid:
                         st.error(player_error)
                         return
-                    
+
                     # 🔧 FIX: Assert para Pylance - después de validación exitosa, no pueden ser None
                     assert safe_coach_id is not None, "Coach ID validated but is None"
                     assert safe_player_id is not None, "Player ID validated but is None"
-                    
+
                     # Validar formulario completo
                     form_valid, form_error = validate_session_form_data(
                         coach_id=safe_coach_id,
                         player_id=safe_player_id,
                         session_date=session_date,
                         start_time=start_time,
-                        end_time=end_time
+                        end_time=end_time,
                     )
-                    
+
                     if not form_valid:
                         st.error(form_error)
                         return
-                    
+
                     # Crear sesión (usar valores seguros)
-                    success, message, _ = create_session_with_calendar(  # 🔧 FIX: No usar new_session
-                        coach_id=safe_coach_id,
-                        player_id=safe_player_id,
-                        session_date=session_date,
-                        start_time=start_time,
-                        end_time=end_time,
-                        notes=notes
+                    success, message, _ = (
+                        create_session_with_calendar(  # 🔧 FIX: No usar new_session
+                            coach_id=safe_coach_id,
+                            player_id=safe_player_id,
+                            session_date=session_date,
+                            start_time=start_time,
+                            end_time=end_time,
+                            notes=notes,
+                        )
                     )
-                    
+
                     if success:
                         st.success(message)
                         st.rerun()
@@ -363,17 +414,23 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
             st.subheader("Edit / Delete Session")
 
             # Usar controller para obtener sesiones editables
-            session_descriptions = controller.get_sessions_for_editing(coach_id=coach_id)
+            session_descriptions = controller.get_sessions_for_editing(
+                coach_id=coach_id
+            )
 
             if not session_descriptions:
-                st.info("No sessions available to manage." if is_admin else "You have no sessions to manage.")
+                st.info(
+                    "No sessions available to manage."
+                    if is_admin
+                    else "You have no sessions to manage."
+                )
                 return
 
             selected_id = st.selectbox(
                 "Select session",
                 options=list(session_descriptions.keys()),
                 format_func=lambda x: session_descriptions[x],
-                key="session_to_edit"
+                key="session_to_edit",
             )
 
             # Obtener sesión seleccionada
@@ -382,14 +439,14 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
             # Usar ValidationController para horarios flexibles
             hours_start_edit, hours_end_edit = get_edit_session_hours(
                 existing_start=session.start_time.time(),
-                existing_end=session.end_time.time()
+                existing_end=session.end_time.time(),
             )
 
             # Usar ValidationController para verificar horarios recomendados
             is_recommended, warning_msg = check_session_time_recommendation(
                 session.start_time.time(), session.end_time.time()
             )
-            
+
             if not is_recommended:
                 st.warning(warning_msg)
 
@@ -403,7 +460,7 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                             "Coach",
                             options=[c[0] for c in coaches],
                             index=[c[0] for c in coaches].index(session.coach_id),
-                            format_func=lambda x: next(n for i, n in coaches if i == x)
+                            format_func=lambda x: next(n for i, n in coaches if i == x),
                         )
                     else:
                         new_coach_id = session.coach_id
@@ -413,20 +470,22 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                         "Player",
                         options=[p[0] for p in players],
                         index=[p[0] for p in players].index(session.player_id),
-                        format_func=lambda x: next(n for i, n in players if i == x)
+                        format_func=lambda x: next(n for i, n in players if i == x),
                     )
 
                     new_status = st.selectbox(
                         "Status",
                         options=[s.value for s in SessionStatus],
-                        index=list(SessionStatus).index(session.status)
+                        index=list(SessionStatus).index(session.status),
                     )
 
                 with col2:
                     # Usar ValidationController para fechas
                     current_date = session.start_time.date()
-                    date_valid, date_error, display_date = ValidationController.validate_date_within_allowed_range(
-                        current_date
+                    date_valid, date_error, display_date = (
+                        ValidationController.validate_date_within_allowed_range(
+                            current_date
+                        )
                     )
 
                     if not date_valid:
@@ -436,18 +495,22 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                         "Date",
                         value=display_date,
                         min_value=dt.date.today(),
-                        max_value=dt.date.today() + dt.timedelta(days=90)
+                        max_value=dt.date.today() + dt.timedelta(days=90),
                     )
 
                     # Usar ValidationController para índices de horarios
-                    start_valid, start_error, start_index = ValidationController.validate_time_index_in_list(
-                        session.start_time.time(), hours_start_edit, "start time"
+                    start_valid, start_error, start_index = (
+                        ValidationController.validate_time_index_in_list(
+                            session.start_time.time(), hours_start_edit, "start time"
+                        )
                     )
                     if not start_valid:
                         st.warning(f"⚠️ {start_error}")
 
-                    end_valid, end_error, end_index = ValidationController.validate_time_index_in_list(
-                        session.end_time.time(), hours_end_edit, "end time"
+                    end_valid, end_error, end_index = (
+                        ValidationController.validate_time_index_in_list(
+                            session.end_time.time(), hours_end_edit, "end time"
+                        )
                     )
                     if not end_valid:
                         st.warning(f"⚠️ {end_error}")
@@ -456,14 +519,14 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                         "Start hour",
                         options=hours_start_edit,
                         index=start_index,
-                        format_func=lambda t: t.strftime("%H:%M")
+                        format_func=lambda t: t.strftime("%H:%M"),
                     )
 
                     end_time = st.selectbox(
                         "End hour",
                         options=hours_end_edit,
                         index=end_index,
-                        format_func=lambda t: t.strftime("%H:%M")
+                        format_func=lambda t: t.strftime("%H:%M"),
                     )
 
                 notes = st.text_area("Notes", value=session.notes or "")
@@ -475,29 +538,33 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
 
                 if save_clicked:
                     # Validar antes de actualizar
-                    coach_valid, coach_error, safe_coach_id = validate_coach_selection_safe(new_coach_id)
+                    coach_valid, coach_error, safe_coach_id = (
+                        validate_coach_selection_safe(new_coach_id)
+                    )
                     if not coach_valid:
                         st.error(coach_error)
                         return
-                    
-                    player_valid, player_error, safe_player_id = validate_player_selection_safe(new_player_id)
+
+                    player_valid, player_error, safe_player_id = (
+                        validate_player_selection_safe(new_player_id)
+                    )
                     if not player_valid:
                         st.error(player_error)
                         return
-                    
+
                     # Validar formulario completo
                     update_valid, update_error = validate_session_form_data(
                         coach_id=safe_coach_id,
                         player_id=safe_player_id,
                         session_date=session_date,
                         start_time=start_time,
-                        end_time=end_time
+                        end_time=end_time,
                     )
-                    
+
                     if not update_valid:
                         st.error(update_error)
                         return
-                    
+
                     # Actualizar sesión (usar valores seguros)
                     success, message = update_session_with_calendar(
                         session_id=selected_id,
@@ -507,9 +574,9 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
                         start_time=start_time,
                         end_time=end_time,
                         status=new_status,
-                        notes=notes
+                        notes=notes,
                     )
-                    
+
                     if success:
                         st.success(message)
                         st.rerun()
@@ -522,23 +589,26 @@ def show_session_management(coach_id: Optional[int] = None, is_admin: bool = Tru
 
             # Diálogo de confirmación de eliminación (sin cambios)
             if st.session_state.get("delete_candidate") == selected_id:
+
                 @st.dialog("Confirm delete")
                 def confirm_delete():
-                    st.warning(f"Do you really want to delete Session #{selected_id}? This action cannot be undone.")
+                    st.warning(
+                        f"Do you really want to delete Session #{selected_id}? This action cannot be undone."
+                    )
                     c1, c2 = st.columns(2)
-                    
+
                     if c1.button("Delete", type="primary"):
                         success, message = delete_session_with_calendar(selected_id)
-                        
+
                         if "delete_candidate" in st.session_state:
                             del st.session_state["delete_candidate"]
-                        
+
                         if success:
                             st.success(message)
                         else:
                             st.error(message)
                         st.rerun()
-                    
+
                     if c2.button("Cancel"):
                         if "delete_candidate" in st.session_state:
                             del st.session_state["delete_candidate"]
@@ -559,54 +629,58 @@ def show_all_sessions():
         col1, col2 = st.columns(2)
         with col1:
             start_date = st.date_input(
-                "From", 
+                "From",
                 value=dt.datetime.now().date() - dt.timedelta(days=7),
-                key="admin_start_date"
+                key="admin_start_date",
             )
         with col2:
             end_date = st.date_input(
-                "To", 
+                "To",
                 value=dt.datetime.now().date() + dt.timedelta(days=7),
-                key="admin_end_date"
+                key="admin_end_date",
             )
 
         status_values = [s.value for s in SessionStatus]
         status_filter = st.multiselect(
-            "Status", 
-            options=status_values,
-            default=status_values
+            "Status", options=status_values, default=status_values
         )
-        
+
         # Filtro de coach
         coaches = controller.get_available_coaches()
         coach_options = [(None, "All Coaches")] + coaches
         selected_coach = st.selectbox(
-            "Coach:", 
+            "Coach:",
             options=[c[0] for c in coach_options],
             format_func=lambda x: next((c[1] for c in coach_options if c[0] == x), ""),
-            index=0
+            index=0,
         )
-        
+
         # Usar ValidationController para date range validation
         is_valid, error = ValidationController.validate_date_range(start_date, end_date)
         if not is_valid:
             st.error(error)
             return
-        
+
         col_title, col_export = st.columns([3, 1])
         with col_title:
             st.subheader("")
         with col_export:
             col_exp, col_print = st.columns(2)
             with col_exp:
-                export_clicked = st.button("📄 PDF", key="admin_sessions_export", help="Export sessions to PDF")
+                export_clicked = st.button(
+                    "📄 PDF", key="admin_sessions_export", help="Export sessions to PDF"
+                )
             with col_print:
-                print_clicked = st.button("🖨️ Print", key="admin_sessions_print", help="Print sessions")
+                print_clicked = st.button(
+                    "🖨️ Print", key="admin_sessions_print", help="Print sessions"
+                )
 
         # Manejar exportación e impresión
         if export_clicked:
-            _handle_sessions_export(start_date, end_date, selected_coach, status_filter, "admin", "Sessions")
-        
+            _handle_sessions_export(
+                start_date, end_date, selected_coach, status_filter, "admin", "Sessions"
+            )
+
         if print_clicked:
             trigger_browser_print()
 
@@ -615,7 +689,7 @@ def show_all_sessions():
             start_date=start_date,
             end_date=end_date,
             coach_id=selected_coach,
-            status_filter=status_filter
+            status_filter=status_filter,
         )
 
         # Mostrar calendario
@@ -625,7 +699,7 @@ def show_all_sessions():
         if sessions:
             formatted_data = controller.format_sessions_for_table(sessions)
             df = pd.DataFrame(formatted_data)
-            
+
             def style_sessions(row):
                 if row["Status"] == "completed":
                     return ["background-color: rgba(76, 175, 80, 0.2)"] * len(row)
@@ -638,7 +712,7 @@ def show_all_sessions():
             styled_df = df.style.apply(style_sessions, axis=1)
 
             st.dataframe(
-                styled_df, 
+                styled_df,
                 column_config={
                     "ID": st.column_config.NumberColumn(width="small"),
                     "Coach": st.column_config.TextColumn(width="medium"),
@@ -646,13 +720,13 @@ def show_all_sessions():
                     "Date": st.column_config.TextColumn(width="small"),
                     "Start Time": st.column_config.TextColumn(width="small"),
                     "End Time": st.column_config.TextColumn(width="small"),
-                    "Status": st.column_config.TextColumn(width="small")
+                    "Status": st.column_config.TextColumn(width="small"),
                 },
-                hide_index=True
+                hide_index=True,
             )
         else:
             st.info("There are no sessions that match the filters.")
-        
+
         # Formularios unificados para admin
         show_session_management(coach_id=None, is_admin=True)
 
@@ -666,17 +740,21 @@ def show_financials():
     with col_export:
         col_exp, col_print = st.columns(2)
         with col_exp:
-            export_clicked = st.button("📄 PDF", key="financials_export", help="Export financials to PDF")
+            export_clicked = st.button(
+                "📄 PDF", key="financials_export", help="Export financials to PDF"
+            )
         with col_print:
-            print_clicked = st.button("🖨️ Print", key="financials_print", help="Print financials")
-    
+            print_clicked = st.button(
+                "🖨️ Print", key="financials_print", help="Print financials"
+            )
+
     # Manejar exportación e impresión
     if export_clicked:
         _handle_financials_export()
-    
+
     if print_clicked:
         trigger_browser_print()
-    
+
     df = get_accounting_df()
     df_no_total = df.iloc[:-1].copy()
     st.dataframe(df_no_total, hide_index=True)
@@ -694,15 +772,18 @@ def show_financials():
         st.metric("Gastos €", f"{total_gastos:,.2f}")
 
     fecha_col = df_no_total.columns[0]
-    df_no_total[fecha_col] = pd.to_datetime(df_no_total[fecha_col], errors='coerce')
+    df_no_total[fecha_col] = pd.to_datetime(df_no_total[fecha_col], errors="coerce")
     df_no_total["Mes"] = df_no_total[fecha_col].dt.to_period("M").astype(str)
 
-    monthly_summary = df_no_total.groupby("Mes").agg({
-        "Ingresos": "sum",
-        "Gastos": "sum"
-    }).reset_index()
+    monthly_summary = (
+        df_no_total.groupby("Mes")
+        .agg({"Ingresos": "sum", "Gastos": "sum"})
+        .reset_index()
+    )
 
-    monthly_summary["Balance mensual"] = monthly_summary["Ingresos"] - monthly_summary["Gastos"]
+    monthly_summary["Balance mensual"] = (
+        monthly_summary["Ingresos"] - monthly_summary["Gastos"]
+    )
     monthly_summary["Balance acumulado"] = monthly_summary["Balance mensual"].cumsum()
 
     st.markdown(
@@ -713,19 +794,19 @@ def show_financials():
         }
         </style>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-    
+
     st.line_chart(monthly_summary.set_index("Mes")["Balance acumulado"])
 
 
 def show_admin_dashboard():
     """Panel de administración para administradores."""
     tab1, tab2 = st.tabs(["Sessions", "Financials"])
-    
+
     with tab1:
         show_all_sessions()
-    
+
     with tab2:
         show_financials()
 
@@ -733,12 +814,12 @@ def show_admin_dashboard():
 def show_content():
     """Función principal para mostrar el contenido de la sección Administration."""
     st.markdown('<h3 class="section-title">Administration</h3>', unsafe_allow_html=True)
-    
+
     # 🌐 MOSTRAR AVISO DE MODO DEMO
     show_cloud_mode_info()
 
     user_type = st.session_state.get("user_type")
-    
+
     if user_type == "admin":
         show_admin_dashboard()
     elif user_type == "coach":
@@ -747,7 +828,9 @@ def show_content():
         st.error("No tienes permisos para acceder a esta sección.")
 
 
-def _handle_sessions_export(start_date, end_date, coach_id, status_filter, user_type, user_name):
+def _handle_sessions_export(
+    start_date, end_date, coach_id, status_filter, user_type, user_name
+):
     """Maneja la exportación de sesiones a PDF."""
     try:
         buffer, filename = generate_sessions_pdf(
@@ -756,12 +839,12 @@ def _handle_sessions_export(start_date, end_date, coach_id, status_filter, user_
             coach_id=coach_id,
             status_filter=status_filter,
             user_type=user_type,
-            user_name=user_name
+            user_name=user_name,
         )
-        
+
         create_download_link(buffer, filename, "📄 Download Sessions Report")
         show_export_success_message(filename)
-        
+
     except Exception as e:
         show_export_error_message(str(e))
 
@@ -772,12 +855,12 @@ def _handle_financials_export():
         # Para finanzas, usar rango amplio para incluir todos los datos
         start_date = dt.date(2020, 1, 1)  # Fecha muy antigua para incluir todo
         end_date = dt.date.today()
-        
+
         buffer, filename = generate_financials_pdf(start_date, end_date)
-        
+
         create_download_link(buffer, filename, "📄 Download Financial Report")
         show_export_success_message(filename)
-        
+
     except Exception as e:
         show_export_error_message(str(e))
 

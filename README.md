@@ -40,7 +40,7 @@ Ballers App es una plataforma web moderna que integra gestión de sesiones de en
 
 ## 🚀 **Demo en Vivo**
 
-🌐 **[Ver Demo](https://ballers-sportsdatacampus.streamlit.app)** 
+🌐 **[Ver Demo](https://ballers-sportsdatacampus.streamlit.app)**
 
 *La aplicación está desplegada en Streamlit Cloud con datos de demostración.*
 
@@ -218,7 +218,7 @@ ballers-app/
 │   ├── sync_coordinator.py  # Coordinación auto-sync
 │   ├── user_controller.py   # Gestión usuarios
 │   ├── validation_controller.py # Validaciones
-|   └── ...                  # Otros controladores  
+|   └── ...                  # Otros controladores
 ├── 📁 data/                 # Base de datos y datos
 │   ├── ballers_app.db      # Base de datos SQLite
 │   └── seed_database.py    # Script de inicialización

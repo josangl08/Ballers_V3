@@ -1,0 +1,70 @@
+# .pre-commit-config.yaml
+# Configuración de pre-commit hooks para Ballers App
+# Ejecuta verificaciones automáticas antes de cada commit
+
+repos:
+  # Hooks básicos de pre-commit
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Verificaciones básicas de archivos
+      - id: trailing-whitespace        # Elimina espacios en blanco al final
+      - id: end-of-file-fixer         # Asegura nueva línea al final del archivo
+      - id: check-yaml                # Verifica sintaxis YAML válida
+      - id: check-json                # Verifica sintaxis JSON válida
+      - id: check-added-large-files   # Previene commits de archivos muy grandes
+        args: ['--maxkb=1000']        # Max 1MB por archivo
+      - id: check-merge-conflict      # Detecta marcadores de merge conflict
+      - id: debug-statements          # Detecta declaraciones de debug olvidadas
+
+      # Seguridad
+      - id: detect-private-key        # Detecta claves SSH privadas
+
+  # Black - Formateador de código Python
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=88]      # Estándar de 88 caracteres por línea
+
+  # isort - Organiza imports
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile=black]       # Compatible con black
+
+  # flake8 - Linter para detectar errores
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        args:
+          - --max-line-length=88      # Consistente con black
+          - --extend-ignore=E203,W503 # Ignorar conflictos con black
+          - --exclude=venv,env,.env,.venv,.git,__pycache__,*.egg-info
+
+  # bandit - Scanner de seguridad
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        args: [-r, --format=custom, --skip=B101,B601] # Skip assert_used y shell=True
+        exclude: ^tests/                               # No escanear tests
+
+  # Hooks locales personalizados
+  - repo: local
+    hooks:
+      # Verificar que tests pasan antes de commit
+      - id: pytest-check
+        name: pytest-check
+        entry: python -m pytest tests/ -q
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+# Configuración global
+default_language_version:
+  python: python3

@@ -1,33 +1,45 @@
 from __future__ import annotations
-import json
+
 import datetime as dt
+import json
 from zoneinfo import ZoneInfo
+
 import streamlit as st
 import streamlit.components.v1 as components
+
+from config import CALENDAR_COLORS
 from models import Session
-from config import CALENDAR_COLORS  
 
 HEX = {k: v["hex"] for k, v in CALENDAR_COLORS.items()}
-TZ  = ZoneInfo("Europe/Madrid")
+TZ = ZoneInfo("Europe/Madrid")
+
 
 def _fmt_local(ts: dt.datetime) -> str:
     """Devuelve 'YYYY-MM-DDTHH:MM:SS' sin zona."""
     return ts.strftime("%Y-%m-%dT%H:%M:%S")
 
+
 def _to_event(s: Session) -> dict:
     return {
-        "id":    s.id,
+        "id": s.id,
         "title": f"{s.coach.user.name} × {s.player.user.name}",
-        "start": _fmt_local(s.start_time),   # 13:00 «tal cual»
-        "end":   _fmt_local(s.end_time) if s.end_time else "",
+        "start": _fmt_local(s.start_time),  # 13:00 «tal cual»
+        "end": _fmt_local(s.end_time) if s.end_time else "",
         "description": s.notes or "",
         "player": s.player.user.name,
-        "coach":  s.coach.user.name,
-        "color":  HEX[s.status.value],
+        "coach": s.coach.user.name,
+        "color": HEX[s.status.value],
     }
 
-def show_calendar(title: str, sessions, *, height: int = 650,
-                  editable: bool = False, key: str = "calendar") -> None:
+
+def show_calendar(
+    title: str,
+    sessions,
+    *,
+    height: int = 650,
+    editable: bool = False,
+    key: str = "calendar",
+) -> None:
 
     st.subheader(title)
     events = json.dumps([_to_event(s) for s in sessions], default=str)
@@ -111,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {{
 
 /* CONTORNO del grid (todas las vistas) ------------------------------------*/
 #{key} .fc-scrollgrid,
-#{key} th, 
+#{key} th,
 #{key} td        {{ border-color:#333; }}
 
 /* CABECERA días -----------------------------------------------------------*/
@@ -129,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-event-past {{ opacity:.4; }}
 
 /* MES ---------------------------------------------------------------------*/
-#{key} .fc-daygrid-event, 
+#{key} .fc-daygrid-event,
 #{key} .fc-daygrid-event-dot           {{ color:#FAFAFA;   }}
 #{key} .fc-daygrid-day-frame           {{    }}
 #{key} .fc-daygrid-event-harness       {{background: #333333; border: 1px solid rgba(250,250,250,0.5); margin: 2px; border-radius: 6px; }}
@@ -140,16 +152,16 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-timegrid-slot-label-cushion,
 #{key} .fc-timegrid-axis-frame,
 #{key} .fc-scrollgrid-sync-inner       {{ color:#FAFAFA;   }}
-#{key} .fc-daygrid-day-events          {{ margin: 1px; }} 
+#{key} .fc-daygrid-day-events          {{ margin: 1px; }}
 #{key} .fc-timegrid-event:hover {{background: rgba(36,222,132,0.9) !important; border-color: rgba(36,222,132,1) !important; }}
 #{key} .fc-timegrid-event-harness {{margin: 1.5px;  }}
 
 /* LISTA -------------------------------------------------------------------*/
-#{key} .fc-list, 
+#{key} .fc-list,
 #{key} .fc-list-day-cushion            {{ background:#333333; color:#FAFAFA; }}
 #{key} .fc-list-event                  {{background:#1D1B1A; color:#FAFAFA; border:1px solid #333;  }}
 #{key} .fc-list-event:hover td {{background: rgba(36,222,132,1) !important; color: #333 !important; }}
 #{key} .fc-list-event:hover a {{color: #333 !important; }}
 </style>
 """
-    components.html(html, height=height+70, scrolling=False)
+    components.html(html, height=height + 70, scrolling=False)
