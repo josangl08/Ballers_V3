@@ -170,18 +170,22 @@ def create_sidebar_menu_dash():
 
     # Componentes del sidebar colapsible
     sidebar_content = [
-        # Botón toggle (nuevo)
-        dbc.Button(
-            html.I(className="bi bi-list", style={"font-size": "20px"}),
-            id="sidebar-toggle",
-            color="link",
-            className="text-white p-2 mb-3",
-            style={
-                "background": "transparent",
-                "border": "none",
-                "width": "100%",
-                "text-align": "left",
-            },
+        # Botón toggle en la esquina superior derecha
+        html.Div(
+            dbc.Button(
+                html.I(className="bi bi-chevron-left", style={"font-size": "20px"}),
+                id="sidebar-toggle",
+                color="link",
+                className="text-white p-1",
+                style={
+                    "background": "transparent",
+                    "border": "none",
+                    "position": "absolute",
+                    "top": "10px",
+                    "right": "10px",
+                },
+            ),
+            style={"position": "relative", "height": "40px"}
         ),
         # Logo (con clase para ocultar/mostrar)
         html.Div(

@@ -2,7 +2,7 @@
 """
 Callbacks relacionados con el sidebar colapsible.
 """
-from dash import Input, Output, State, callback, no_update
+from dash import Input, Output, State, callback, no_update, html
 
 
 def register_sidebar_callbacks(app):
@@ -30,17 +30,18 @@ def register_sidebar_callbacks(app):
             # Sidebar colapsado
             sidebar_style = {
                 "background-color": "#1D1B1A",
-                "padding": "10px",
+                "padding": "5px",
                 "height": "100vh",
-                "overflow-y": "auto",
+                "overflow-y": "hidden",
                 "transition": "all 0.3s ease",
-                "width": "70px",
+                "width": "50px",
             }
             content_style = {
-                "padding-left": "70px",
+                "padding-left": "50px",
                 "transition": "all 0.3s ease",
                 "background-color": "rgba(0, 0, 0, 0.2)",
                 "min-height": "100vh",
+                "width": "calc(100vw - 50px)",
             }
         else:
             # Sidebar expandido
@@ -57,16 +58,17 @@ def register_sidebar_callbacks(app):
                 "transition": "all 0.3s ease",
                 "background-color": "rgba(0, 0, 0, 0.2)",
                 "min-height": "100vh",
+                "width": "calc(100vw - 300px)",
             }
 
         return sidebar_style, content_style, new_collapsed
 
     @app.callback(
         [
-            Output({"type": "menu-text", "index": "ALL"}, "style"),
             Output("sidebar-logo", "style"),
             Output("sidebar-title", "style"),
             Output("auto-sync-area", "style"),
+            Output("sidebar-toggle", "children"),
         ],
         [Input("sidebar-collapsed", "data")],
         prevent_initial_call=False,
@@ -74,20 +76,20 @@ def register_sidebar_callbacks(app):
     def update_sidebar_content_visibility(is_collapsed):
         """Actualiza la visibilidad del contenido del sidebar."""
         if is_collapsed:
-            # Ocultar textos y elementos cuando está colapsado
-            text_style = {"display": "none"}
+            # Sidebar colapsado
             logo_style = {
-                "width": "40px",
+                "width": "30px",
                 "display": "block",
-                "margin": "0 auto 10px auto",
+                "margin": "5px auto",
                 "pointer-events": "none",
                 "transition": "all 0.3s ease",
             }
             title_style = {"display": "none"}
             sync_style = {"display": "none"}
+            # Icono de flecha hacia la derecha para expandir
+            toggle_icon = html.I(className="bi bi-chevron-right", style={"font-size": "20px"})
         else:
-            # Mostrar todo cuando está expandido
-            text_style = {"display": "inline"}
+            # Sidebar expandido
             logo_style = {
                 "width": "150px",
                 "display": "block",
@@ -104,10 +106,19 @@ def register_sidebar_callbacks(app):
                 "display": "block",
             }
             sync_style = {"transition": "all 0.3s ease", "display": "block"}
+            # Icono de flecha hacia la izquierda para colapsar
+            toggle_icon = html.I(className="bi bi-chevron-left", style={"font-size": "20px"})
 
-        # Para los textos del menú necesitamos una lista con el mismo estilo para cada elemento
-        # Incluye 3 elementos del menú + 1 logout button = 4 elementos total
-        num_menu_items = 4  # Ballers, Administration, Settings, Logout
-        text_styles = [text_style] * num_menu_items
+        return logo_style, title_style, sync_style, toggle_icon
 
-        return text_styles, logo_style, title_style, sync_style
+    @app.callback(
+        Output({"type": "menu-text", "index": "ALL"}, "style"),
+        [Input("sidebar-collapsed", "data")],
+        prevent_initial_call=True,
+    )
+    def update_menu_text_visibility(is_collapsed):
+        """Actualiza la visibilidad de los textos del menú."""
+        if is_collapsed:
+            return {"display": "none"}
+        else:
+            return {"display": "inline"}

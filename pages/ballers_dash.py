@@ -434,7 +434,7 @@ def create_players_list_dash():
                                         dbc.Button(
                                             "View Profile",
                                             id={
-                                                "type": "view-profile-button",
+                                                "type": "view-profile",
                                                 "index": player_data["player_id"],
                                             },
                                             color="primary",
@@ -786,7 +786,7 @@ def register_ballers_callbacks(app):
         if user_type == "player":
             return create_player_profile_dash()
 
-        # Si es coach o admin (migrado de show_content)
+        # Si es coach o admin, mostrar cards de jugadores directamente (migrado de show_content)
         elif user_type in ["coach", "admin"]:
             if selected_player_id:
                 # Mostrar perfil del jugador seleccionado con botón de vuelta
@@ -802,7 +802,7 @@ def register_ballers_callbacks(app):
                     ]
                 )
             else:
-                # Mostrar lista de jugadores
+                # Mostrar directamente las cards de jugadores sin más info
                 return create_players_list_dash()
         else:
             return dbc.Alert(
@@ -926,7 +926,7 @@ def register_ballers_callbacks(app):
                                             dbc.Button(
                                                 "View Profile",
                                                 id={
-                                                    "type": "view-profile-button",
+                                                    "type": "view-profile",
                                                     "index": player_data["player_id"],
                                                 },
                                                 color="primary",
