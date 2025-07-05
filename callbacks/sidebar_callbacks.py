@@ -2,7 +2,7 @@
 """
 Callbacks relacionados con el sidebar colapsible.
 """
-from dash import Input, Output, State, callback, no_update, html
+from dash import Input, Output, State, callback, html, no_update
 
 
 def register_sidebar_callbacks(app):
@@ -37,7 +37,7 @@ def register_sidebar_callbacks(app):
                 "width": "50px",
             }
             content_style = {
-                "padding-left": "50px",
+                "margin-left": "50px",
                 "transition": "all 0.3s ease",
                 "background-color": "rgba(0, 0, 0, 0.2)",
                 "min-height": "100vh",
@@ -54,7 +54,7 @@ def register_sidebar_callbacks(app):
                 "width": "300px",
             }
             content_style = {
-                "padding-left": "300px",
+                "margin-left": "300px",
                 "transition": "all 0.3s ease",
                 "background-color": "rgba(0, 0, 0, 0.2)",
                 "min-height": "100vh",
@@ -87,7 +87,9 @@ def register_sidebar_callbacks(app):
             title_style = {"display": "none"}
             sync_style = {"display": "none"}
             # Icono de flecha hacia la derecha para expandir
-            toggle_icon = html.I(className="bi bi-chevron-right", style={"font-size": "20px"})
+            toggle_icon = html.I(
+                className="bi bi-chevron-right", style={"font-size": "20px"}
+            )
         else:
             # Sidebar expandido
             logo_style = {
@@ -107,18 +109,40 @@ def register_sidebar_callbacks(app):
             }
             sync_style = {"transition": "all 0.3s ease", "display": "block"}
             # Icono de flecha hacia la izquierda para colapsar
-            toggle_icon = html.I(className="bi bi-chevron-left", style={"font-size": "20px"})
+            toggle_icon = html.I(
+                className="bi bi-chevron-left", style={"font-size": "20px"}
+            )
 
         return logo_style, title_style, sync_style, toggle_icon
 
     @app.callback(
-        Output({"type": "menu-text", "index": "ALL"}, "style"),
+        [
+            Output({"type": "menu-text", "index": "ALL"}, "style"),
+            Output("logout-button", "style"),
+        ],
         [Input("sidebar-collapsed", "data")],
         prevent_initial_call=True,
     )
-    def update_menu_text_visibility(is_collapsed):
-        """Actualiza la visibilidad de los textos del menú."""
+    def update_menu_visibility(is_collapsed):
+        """Actualiza la visibilidad de todos los elementos del menú."""
         if is_collapsed:
-            return {"display": "none"}
+            # Ocultar completamente todos los elementos cuando está colapsado
+            text_style = {"display": "none", "overflow": "hidden"}
+            logout_style = {"display": "none"}
         else:
-            return {"display": "inline"}
+            # Mostrar elementos cuando está expandido
+            text_style = {"display": "inline", "overflow": "visible"}
+            logout_style = {
+                "border-radius": "20px",
+                "font-weight": "500",
+                "background-color": "#333333",
+                "color": "rgba(36, 222, 132, 1)",
+                "border": "none",
+                "padding": "0.5rem 1rem",
+                "transition": "all 0.3s ease",
+                "width": "100%",
+                "margin-top": "1rem",
+            }
+        
+        return text_style, logout_style
+    

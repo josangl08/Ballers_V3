@@ -70,20 +70,22 @@ def register_navigation_callbacks(app):
         if not has_session:
             return login_page_dash()
 
-        # Si hay sesión, mostrar layout con sidebar colapsible y contenido responsivo
+        # Si hay sesión, mostrar layout con flexbox para sidebar y contenido
         return html.Div(
             [
-                # Sidebar fijo
+                # Sidebar colapsible
                 html.Div(
                     [create_sidebar_menu_dash()],
+                    id="sidebar-container",
                     style={
                         "position": "fixed",
                         "top": "0",
                         "left": "0",
                         "z-index": "1000",
+                        "height": "100vh",
                     },
                 ),
-                # Contenido principal responsivo
+                # Contenido principal que se ajusta al sidebar
                 html.Div(
                     [
                         dbc.Container(
@@ -97,6 +99,7 @@ def register_navigation_callbacks(app):
                                                     src="/assets/ballers/logo_white.png",
                                                     style={
                                                         "width": "400px",
+                                                        "max-width": "100%",
                                                         "display": "block",
                                                         "margin": "0 auto 20px auto",
                                                         "pointer-events": "none",
@@ -127,17 +130,20 @@ def register_navigation_callbacks(app):
                                 ),
                             ],
                             fluid=True,
+                            style={"padding": "20px"},
                         )
                     ],
                     id="main-content-area",
                     style={
-                        "padding-left": "300px",
+                        "margin-left": "300px",
                         "transition": "all 0.3s ease",
                         "background-color": "rgba(0, 0, 0, 0.2)",
                         "min-height": "100vh",
+                        "width": "calc(100vw - 300px)",
                     },
                 ),
-            ]
+            ],
+            style={"overflow-x": "hidden"},
         )
 
     @app.callback(
