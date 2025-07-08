@@ -11,6 +11,7 @@ def register_sidebar_callbacks(app):
     @app.callback(
         [
             Output("sidebar-menu", "style"),
+            Output("sidebar-menu", "className"),
             Output("main-content-area", "style"),
             Output("sidebar-collapsed", "data"),
         ],
@@ -21,7 +22,7 @@ def register_sidebar_callbacks(app):
     def toggle_sidebar(n_clicks, is_collapsed):
         """Toggle del sidebar colapsible."""
         if not n_clicks:
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
 
         # Cambiar estado
         new_collapsed = not is_collapsed
@@ -29,30 +30,32 @@ def register_sidebar_callbacks(app):
         if new_collapsed:
             # Sidebar colapsado
             sidebar_style = {
-                "background-color": "#1D1B1A",
-                "padding": "5px",
+                "background-color": "#333333",
+                "padding": "10px",
                 "height": "100vh",
                 "overflow-y": "hidden",
                 "transition": "all 0.3s ease",
-                "width": "50px",
+                "width": "70px",
             }
+            sidebar_className = "sidebar-collapsed"
             content_style = {
-                "margin-left": "50px",
+                "margin-left": "70px",
                 "transition": "all 0.3s ease",
                 "background-color": "rgba(0, 0, 0, 0.2)",
                 "min-height": "100vh",
-                "width": "calc(100vw - 50px)",
+                "width": "calc(100vw - 70px)",
             }
         else:
             # Sidebar expandido
             sidebar_style = {
-                "background-color": "#1D1B1A",
+                "background-color": "#333333",
                 "padding": "20px",
                 "height": "100vh",
                 "overflow-y": "auto",
                 "transition": "all 0.3s ease",
                 "width": "300px",
             }
+            sidebar_className = ""
             content_style = {
                 "margin-left": "300px",
                 "transition": "all 0.3s ease",
@@ -61,12 +64,12 @@ def register_sidebar_callbacks(app):
                 "width": "calc(100vw - 300px)",
             }
 
-        return sidebar_style, content_style, new_collapsed
+        return sidebar_style, sidebar_className, content_style, new_collapsed
 
     @app.callback(
         [
             Output("sidebar-logo", "style"),
-            Output("sidebar-title", "style"),
+            Output("sidebar-user-container", "style"),
             Output("auto-sync-area", "style"),
             Output("sidebar-toggle", "children"),
         ],
@@ -84,7 +87,7 @@ def register_sidebar_callbacks(app):
                 "pointer-events": "none",
                 "transition": "all 0.3s ease",
             }
-            title_style = {"display": "none"}
+            user_container_style = {"display": "none"}
             sync_style = {"display": "none"}
             # Icono de flecha hacia la derecha para expandir
             toggle_icon = html.I(
@@ -93,19 +96,15 @@ def register_sidebar_callbacks(app):
         else:
             # Sidebar expandido
             logo_style = {
-                "width": "150px",
+                "width": "120px",
                 "display": "block",
                 "margin": "0 auto 20px auto",
                 "pointer-events": "none",
                 "transition": "all 0.3s ease",
             }
-            title_style = {
-                "font-size": "14px",
-                "font-weight": "bold",
-                "margin-bottom": "10px",
-                "color": "#FFFFFF",
-                "transition": "all 0.3s ease",
+            user_container_style = {
                 "display": "block",
+                "transition": "all 0.3s ease",
             }
             sync_style = {"transition": "all 0.3s ease", "display": "block"}
             # Icono de flecha hacia la izquierda para colapsar
@@ -113,35 +112,6 @@ def register_sidebar_callbacks(app):
                 className="bi bi-chevron-left", style={"font-size": "20px"}
             )
 
-        return logo_style, title_style, sync_style, toggle_icon
+        return logo_style, user_container_style, sync_style, toggle_icon
 
-    @app.callback(
-        [
-            Output({"type": "menu-text", "index": "ALL"}, "style"),
-            Output("logout-button", "style"),
-        ],
-        [Input("sidebar-collapsed", "data")],
-        prevent_initial_call=True,
-    )
-    def update_menu_visibility(is_collapsed):
-        """Actualiza la visibilidad de todos los elementos del menú."""
-        if is_collapsed:
-            # Ocultar completamente todos los elementos cuando está colapsado
-            text_style = {"display": "none", "overflow": "hidden"}
-            logout_style = {"display": "none"}
-        else:
-            # Mostrar elementos cuando está expandido
-            text_style = {"display": "inline", "overflow": "visible"}
-            logout_style = {
-                "border-radius": "20px",
-                "font-weight": "500",
-                "background-color": "#333333",
-                "color": "rgba(36, 222, 132, 1)",
-                "border": "none",
-                "padding": "0.5rem 1rem",
-                "transition": "all 0.3s ease",
-                "width": "100%",
-                "margin-top": "1rem",
-            }
-
-        return text_style, logout_style
+    # Removed problematic callback - using CSS classes instead for better performance

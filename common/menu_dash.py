@@ -2,7 +2,7 @@
 from typing import Optional
 
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, dcc, html, no_update
+from dash import Input, Output, dcc, html, no_update
 
 from controllers.menu_controller import MenuController, get_sync_status_for_ui
 from controllers.sync_coordinator import force_manual_sync
@@ -89,22 +89,56 @@ def get_auto_sync_area_dash():
 
     # Mostrar estado de auto-sync
     auto_status = sync_data["auto_sync_status"]
-    if auto_status["type"] == "success":
-        color = "success"
-    else:
-        color = "info"
+    # Determinar color basado en estado
+    # color = "success" if auto_status["type"] == "success" else "info"
 
-    components.append(dbc.Alert(auto_status["status"], color=color, className="mb-2"))
-
-    # Quick sync button
+    # Auto-Sync status con fondo negro y iconos
     components.append(
-        dbc.Button(
-            "⚡ Quick Sync",
-            id="quick-sync-button",
-            color="primary",
-            className="w-100 mb-2",
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.I(
+                            className="bi bi-arrow-clockwise",
+                            style={
+                                "color": "#1DDD6E",
+                                "font-size": "16px",
+                                "margin-right": "10px",
+                            },
+                        ),
+                        html.Span(
+                            "Auto-Sync:",
+                            style={
+                                "color": "#FFFFFF",
+                                "font-size": "14px",
+                                "margin-right": "10px",
+                            },
+                        ),
+                        html.I(
+                            className="bi bi-pause-circle",
+                            style={
+                                "color": "#007BFF",
+                                "font-size": "16px",
+                                "cursor": "pointer",
+                            },
+                        ),
+                    ],
+                    style={
+                        "display": "flex",
+                        "align-items": "center",
+                        "padding": "10px",
+                        "background-color": "#1D1B1A",
+                        "border-radius": "10px",
+                        "margin-bottom": "10px",
+                    },
+                ),
+            ],
+            id="auto-sync-status",
+            className="mb-2",
         )
     )
+
+    # Quick sync button moved to action buttons section
 
     # Alert para mostrar resultado de sync
     components.append(
@@ -129,7 +163,6 @@ def create_sidebar_menu_dash():
 
     # Obtener configuración del menú
     menu_config = controller.get_menu_config()
-    menu_title = controller.get_menu_title()
 
     # Crear opciones del menú con IDs simples
     menu_items = []
@@ -151,14 +184,7 @@ def create_sidebar_menu_dash():
                 ],
                 id=f"menu-{option.lower().replace(' ', '-')}",
                 color="link",
-                className="text-white text-start w-100 py-2 mb-1",
-                style={
-                    "font-size": "16px",
-                    "text-align": "left",
-                    "border": "none",
-                    "background": "transparent",
-                    "text-decoration": "none",
-                },
+                className="sidebar-menu-button text-white text-start w-100",
             )
         )
 
@@ -175,7 +201,7 @@ def create_sidebar_menu_dash():
                     "background": "transparent",
                     "border": "none",
                     "position": "absolute",
-                    "top": "10px",
+                    "top": "0px",
                     "right": "10px",
                 },
             ),
@@ -188,7 +214,7 @@ def create_sidebar_menu_dash():
                     src="/assets/ballers/isotipo_white.png",
                     id="sidebar-logo",
                     style={
-                        "width": "150px",
+                        "width": "120px",
                         "display": "block",
                         "margin": "0 auto 20px auto",
                         "pointer-events": "none",
@@ -198,49 +224,114 @@ def create_sidebar_menu_dash():
             ],
             className="text-center sidebar-logo",
         ),
-        # Título del menú (con clase para ocultar/mostrar)
-        html.H6(
-            menu_title,
-            id="sidebar-title",
-            className="text-center text-white mb-3 sidebar-title",
-            style={
-                "font-size": "14px",
-                "font-weight": "bold",
-                "margin-bottom": "10px",
-                "color": "#FFFFFF",
-                "transition": "all 0.3s ease",
-            },
+        # Recuadro negro con información del usuario
+        html.Div(
+            [
+                html.Div(
+                    [
+                        # Foto de perfil
+                        html.Div(
+                            html.Img(
+                                src="/assets/profile_photos/default_profile.png",
+                                style={
+                                    "width": "40px",
+                                    "height": "40px",
+                                    "border-radius": "50%",
+                                    "object-fit": "cover",
+                                    "margin-right": "10px",
+                                },
+                            ),
+                            id="sidebar-user-photo",
+                        ),
+                        # Información del usuario
+                        html.Div(
+                            [
+                                html.Div(
+                                    controller.user_name or "Administrator",
+                                    className="sidebar-user-name",
+                                    style={
+                                        "color": "#FFFFFF",
+                                        "font-size": "14px",
+                                        "font-weight": "bold",
+                                        "margin-bottom": "2px",
+                                    },
+                                ),
+                                html.Div(
+                                    [
+                                        html.I(
+                                            className="bi bi-key",
+                                            style={
+                                                "color": "#FFD700",
+                                                "font-size": "12px",
+                                                "margin-right": "5px",
+                                            },
+                                        ),
+                                        html.Span(
+                                            "Admin",
+                                            style={
+                                                "color": "#FFFFFF",
+                                                "font-size": "12px",
+                                            },
+                                        ),
+                                    ],
+                                    className="sidebar-user-type",
+                                ),
+                            ],
+                            className="sidebar-user-info",
+                            style={"display": "flex", "flex-direction": "column"},
+                        ),
+                    ],
+                    style={
+                        "display": "flex",
+                        "align-items": "center",
+                        "padding": "10px",
+                        "background-color": "#1D1B1A",
+                        "border-radius": "10px",
+                    },
+                ),
+            ],
+            id="sidebar-user-container",
+            className="sidebar-user-container",
         ),
         # Menú de navegación con botones simples
-        html.Div(menu_items, className="mb-3"),
-        # Área de auto-sync (con clase para ocultar/mostrar)
+        html.Div(menu_items),
+        # Área de auto-sync en su propio div
         html.Div(
             id="auto-sync-area",
             children=get_auto_sync_area_dash(),
             className="sidebar-sync-area",
             style={"transition": "all 0.3s ease"},
         ),
-        # Botón de logout con estilos migrados
-        dbc.Button(
+        # Botones de acción agrupados
+        html.Div(
             [
-                html.I(className="bi bi-box-arrow-right me-2"),
-                html.Span(
-                    "📤 Log Out",
-                    id={"type": "menu-text", "index": "logout"},
-                    className="menu-text",
+                dbc.Button(
+                    [
+                        html.I(
+                            className="bi bi-lightning-charge",
+                            style={"margin-right": "8px"},
+                        ),
+                        html.Span("Quick Sync"),
+                    ],
+                    id="quick-sync-button",
+                    className="sidebar-action-button w-100",
+                    style={"margin-bottom": "8px"},
+                ),
+                dbc.Button(
+                    [
+                        html.I(className="bi bi-box-arrow-right me-2"),
+                        html.Span(
+                            "Log Out",
+                            id={"type": "menu-text", "index": "logout"},
+                            className="menu-text",
+                        ),
+                    ],
+                    id="logout-button",
+                    className="sidebar-action-button w-100",
+                    style={"margin-bottom": "8px"},
                 ),
             ],
-            id="logout-button",
-            className="w-100 mt-3",
-            style={
-                "border-radius": "20px",
-                "font-weight": "500",
-                "background-color": "#333333",
-                "color": "rgba(36, 222, 132, 1)",
-                "border": "none",
-                "padding": "0.5rem 1rem",
-                "transition": "all 0.3s ease",
-            },
+            className="sidebar-action-buttons",
         ),
         # Stores
         dcc.Store(id="selected-menu-item", data="Ballers"),
@@ -251,7 +342,7 @@ def create_sidebar_menu_dash():
         sidebar_content,
         id="sidebar-menu",
         style={
-            "background-color": "#1D1B1A",
+            "background-color": "#333333",
             "padding": "20px",
             "height": "100vh",
             "overflow-y": "auto",
@@ -278,24 +369,7 @@ def get_content_path_dash(section: str) -> Optional[str]:
 def register_menu_callbacks(app):
     """Registra los callbacks del menú manteniendo separación de responsabilidades."""
 
-    @app.callback(
-        Output("selected-menu-item", "data"),
-        [Input({"type": "nav-link", "index": "ALL"}, "n_clicks")],
-        [State({"type": "nav-link", "index": "ALL"}, "children")],
-        prevent_initial_call=True,
-    )
-    def update_selected_menu_item(n_clicks_list, children_list):
-        if not any(n_clicks_list):
-            return no_update
-
-        # Encontrar cuál fue clickeado
-        for i, n_clicks in enumerate(n_clicks_list):
-            if n_clicks:
-                # Extraer el texto del elemento clickeado
-                if children_list[i] and len(children_list[i]) > 1:
-                    return children_list[i][1]  # El texto está en la segunda posición
-
-        return no_update
+    # Callback removido - ya existe en navigation_callbacks.py
 
     @app.callback(
         [
@@ -317,6 +391,20 @@ def register_menu_callbacks(app):
             return "✅ Sync completed successfully", "success", True
         else:
             return f"❌ Error: {result['error']}", "danger", True
+
+    @app.callback(
+        Output("url", "pathname", allow_duplicate=True),
+        [Input("logout-button", "n_clicks")],
+        prevent_initial_call=True,
+    )
+    def handle_logout(n_clicks):
+        """Callback para logout."""
+        if n_clicks:
+            from controllers.auth_controller import clear_user_session
+
+            clear_user_session(show_message=False)
+            return "/"
+        return no_update
 
 
 if __name__ == "__main__":

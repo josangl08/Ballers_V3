@@ -1596,3 +1596,305 @@ input[type="date"].simple-date-input:hover {
     border-color: #24DE84 !important;
     box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
 }
+
+/* ===== SIDEBAR STYLES ===== */
+
+/* Botones del menú de navegación */
+.sidebar-menu-button {
+    font-size: 16px !important;
+    text-align: left !important;
+    border: none !important;
+    background: transparent !important;
+    text-decoration: none !important;
+    color: #FFFFFF !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.sidebar-menu-button:hover {
+    background-color: rgba(36, 222, 132, 0.1) !important;
+    border: 1px solid #24DE84 !important;
+    color: #333333 !important;
+}
+
+
+/* Botones Quick Sync y Logout */
+.sidebar-action-button {
+    font-size: 16px !important;
+    text-align: left !important;
+    border: none !important;
+    background: transparent !important;
+    text-decoration: none !important;
+    color: #FFFFFF !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 0.25rem !important;
+    width: 100% !important;
+}
+
+.sidebar-action-button:hover {
+    background-color: rgba(36, 222, 132, 0.1) !important;
+    border: 1px solid #24DE84 !important;
+    color: #24DE84 !important;
+}
+
+.sidebar-action-button:hover .bi {
+    color: #24DE84 !important;
+}
+
+/* Estilos para el contenedor de usuario */
+.sidebar-user-container {
+    background-color: transparent !important;
+    border-radius: 10px !important;
+    padding: 0 !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Estilos para el área de Auto-Sync */
+.sidebar-autosync-container {
+    background-color: #1D1B1A !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Estilos para botones del menú de navegación */
+.sidebar-menu-button {
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+    background-color: #333333 !important;
+    color: #FFFFFF !important;
+    border: 1px solid transparent !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+    text-align: left !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.sidebar-menu-button:hover {
+    background-color: #1D1B1A !important;
+    border: 1px solid #24DE84 !important;
+    color: #24DE84 !important;
+}
+
+.sidebar-menu-button:hover .bi {
+    color: #24DE84 !important;
+}
+
+.sidebar-menu-button:active {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
+.sidebar-menu-button:active .bi {
+    color: #333333 !important;
+}
+
+/* Estilos para botones de acción (quicksync, logout) */
+.sidebar-action-button {
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+    background-color: #333333 !important;
+    color: #FFFFFF !important;
+    border: 1px solid transparent !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.sidebar-action-button .bi {
+    color: #24DE84 !important;
+    margin-right: 8px !important;
+}
+
+.sidebar-action-button:hover {
+    background-color: #1D1B1A !important;
+    border: 1px solid #24DE84 !important;
+    color: #24DE84 !important;
+}
+
+.sidebar-action-button:hover .bi {
+    color: #24DE84 !important;
+}
+
+.sidebar-action-button:active {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
+.sidebar-action-button:active .bi {
+    color: #333333 !important;
+}
+
+/* Espaciado para sidebar expandido */
+.sidebar-user-container {
+    margin-bottom: 1.5rem !important;
+}
+
+.sidebar-sync-area {
+    margin-bottom: 8px !important;
+}
+
+.sidebar-sync-area > div {
+    margin-bottom: 8px !important;
+}
+
+/* Quitar margin-bottom específico para auto-sync-status cuando está minimizado */
+.sidebar-collapsed .sidebar-sync-area > div {
+    margin-bottom: 0 !important;
+}
+
+.sidebar-action-buttons {
+    margin-top: 0 !important;
+}
+
+/* Estilos para sidebar colapsado */
+.sidebar-collapsed .menu-text {
+    display: none !important;
+}
+
+.sidebar-collapsed .sidebar-user-info {
+    display: none !important;
+}
+
+.sidebar-collapsed .sidebar-action-buttons {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+}
+
+/* Foto de perfil sin recuadro negro al minimizar */
+.sidebar-collapsed .sidebar-user-container {
+    background-color: transparent !important;
+    padding: 0 !important;
+    margin-top: 20px !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+}
+
+.sidebar-collapsed .sidebar-user-container > div {
+    background-color: transparent !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+.sidebar-collapsed #sidebar-user-photo {
+    margin: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+.sidebar-collapsed #sidebar-user-photo img {
+    margin: 0 !important;
+    display: block !important;
+}
+
+/* Botones de navegación centrados */
+.sidebar-collapsed .sidebar-menu-button {
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+}
+
+.sidebar-collapsed .sidebar-menu-button .bi {
+    margin-right: 0 !important;
+    font-size: 20px !important;
+}
+
+/* Auto-sync solo icono de estado */
+.sidebar-collapsed #auto-sync-area {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-bottom: 8px !important;
+}
+
+.sidebar-collapsed #auto-sync-status {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-bottom: 0 !important;
+}
+
+.sidebar-collapsed #auto-sync-status > div {
+    background-color: transparent !important;
+    padding: 0.5rem !important;
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-bottom: 0 !important;
+}
+
+/* Ocultar icono inicial de auto-sync */
+.sidebar-collapsed #auto-sync-status .bi-arrow-clockwise {
+    display: none !important;
+}
+
+/* Mostrar solo icono de pausa/play */
+.sidebar-collapsed #auto-sync-status .bi-pause-circle {
+    display: block !important;
+    margin: 0 !important;
+    font-size: 20px !important;
+    color: #007BFF !important;
+}
+
+.sidebar-collapsed #auto-sync-status span {
+    display: none !important;
+}
+
+.sidebar-collapsed #sync-result-alert {
+    display: none !important;
+}
+
+/* Quick Sync como icono */
+.sidebar-collapsed #quick-sync-button {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0.5rem !important;
+    margin-bottom: 8px !important;
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+}
+
+.sidebar-collapsed #quick-sync-button .bi {
+    margin-right: 0 !important;
+    font-size: 20px !important;
+}
+
+.sidebar-collapsed #quick-sync-button span {
+    display: none !important;
+}
+
+/* Logout como icono */
+.sidebar-collapsed #logout-button {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0.5rem !important;
+    margin-bottom: 8px !important;
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+}
+
+.sidebar-collapsed #logout-button .bi {
+    margin-right: 0 !important;
+    font-size: 20px !important;
+}
+
+.sidebar-collapsed #logout-button span {
+    display: none !important;
+}

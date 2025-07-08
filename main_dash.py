@@ -14,6 +14,7 @@ from callbacks.player_callbacks import register_player_callbacks
 from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
 from common.login_dash import register_login_callbacks
+from common.menu_dash import register_menu_callbacks
 
 # Importar configuración
 from config import APP_NAME
@@ -55,6 +56,7 @@ def register_all_callbacks():
     """Registra todos los callbacks de la aplicación."""
     # register_auth_callbacks(app)  # Deshabilitado - usando login_dash.py callbacks
     register_login_callbacks(app)  # Callbacks de login con pausa
+    register_menu_callbacks(app)  # Callbacks del menú y logout
     register_navigation_callbacks(app)
     register_player_callbacks(app)
     register_administration_callbacks(app)
