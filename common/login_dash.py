@@ -3,7 +3,7 @@ import os
 import sys
 
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, html, no_update
+from dash import Input, Output, State, dcc, html, no_update
 
 from controllers.auth_controller import (
     authenticate_user,
@@ -199,6 +199,13 @@ def login_page_dash():
                     )
                 ]
             ),
+            # Componente para manejar la pausa después del login exitoso
+            dcc.Interval(
+                id="login-redirect-interval",
+                interval=2000,  # 2 segundos
+                n_intervals=0,
+                disabled=True,  # Deshabilitado inicialmente
+            ),
         ],
         className="login-container",
     )
@@ -221,6 +228,7 @@ def register_login_callbacks(app):
             Output("username-input", "value"),
             Output("password-input", "value"),
             Output("url", "pathname"),
+            Output("login-redirect-interval", "disabled"),
         ],
         [
             Input("login-button", "n_clicks"),
@@ -239,7 +247,15 @@ def register_login_callbacks(app):
     ):
         # Comprobar si se activó por click del botón o por Enter en los inputs
         if not n_clicks and not username_submit and not password_submit:
-            return no_update, no_update, no_update, no_update, no_update, no_update
+            return (
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
 
         if not username or not password:
             return (
@@ -249,6 +265,7 @@ def register_login_callbacks(app):
                 no_update,
                 no_update,
                 no_update,
+                no_update,  # interval disabled
             )
 
         # Usar controller para autenticación (separación de lógica de negocio)
@@ -258,9 +275,19 @@ def register_login_callbacks(app):
             # Crear sesión con remember_me
             remember = "remember" in (remember_me or [])
             create_user_session(user, remember)
-            return message, "success", True, "", "", "/"  # Redirigir para recargar
+            # Mostrar mensaje de bienvenida y activar interval para redirigir después de 2 segundos
+            welcome_message = f"¡Bienvenido {user.name}! Cargando aplicación..."
+            return (
+                welcome_message,
+                "success",
+                True,
+                "",
+                "",
+                no_update,
+                False,
+            )  # Activar interval
         else:
-            return message, "danger", True, no_update, no_update, no_update
+            return message, "danger", True, no_update, no_update, no_update, no_update
 
     @app.callback(
         Output("recovery-panel", "is_open"),
@@ -301,6 +328,17 @@ def register_login_callbacks(app):
             True,
             "",
         )
+
+    @app.callback(
+        Output("url", "pathname", allow_duplicate=True),
+        [Input("login-redirect-interval", "n_intervals")],
+        prevent_initial_call=True,
+    )
+    def handle_login_redirect(n_intervals):
+        """Callback para redirigir después del login exitoso con pausa."""
+        if n_intervals > 0:
+            return "/"  # Redirigir a la página principal
+        return no_update
 
 
 if __name__ == "__main__":
