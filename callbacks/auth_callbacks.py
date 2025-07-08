@@ -17,7 +17,11 @@ def register_auth_callbacks(app):
             Output("password-input", "value"),
             Output("url", "pathname"),
         ],
-        [Input("login-button", "n_clicks")],
+        [
+            Input("login-button", "n_clicks"),
+            Input("username-input", "n_submit"),
+            Input("password-input", "n_submit"),
+        ],
         [
             State("username-input", "value"),
             State("password-input", "value"),
@@ -25,11 +29,14 @@ def register_auth_callbacks(app):
         ],
         prevent_initial_call=True,
     )
-    def handle_login_callback(n_clicks, username, password, remember_me):
+    def handle_login_callback(
+        n_clicks, username_submit, password_submit, username, password, remember_me
+    ):
         """Callback de login centralizado."""
         from controllers.auth_controller import authenticate_user, create_user_session
 
-        if not n_clicks:
+        # Comprobar si se activó por click del botón o por Enter en los inputs
+        if not n_clicks and not username_submit and not password_submit:
             return no_update, no_update, no_update, no_update, no_update, no_update
 
         if not username or not password:
