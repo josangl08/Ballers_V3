@@ -1,0 +1,1478 @@
+/* styles/styles.css - Archivo CSS completo */
+
+/* header */
+header[data-testid="stHeader"] {
+    position: absolute !important;
+    top: 0 !important;
+    z-index: 999 !important;
+    height: auto !important;
+}
+#login{
+    color: rgb(36, 222, 132) !important;
+}
+/* Hacer que el formulario de login sea semitransparente */
+[data-testid="stForm"] {
+    background-color: rgba(51,51,51,0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos para el formulario de login */
+form {
+    background-color: #333333;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 500px;
+}
+
+/* Centrar el formulario */
+div.row-widget.stForm {
+    background-color: #333333 !important;
+    max-width: 500px !important;
+    margin: 0 auto 1rem auto !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+}
+
+/* Alineación de columnas dentro del formulario */
+.stForm .row-widget.stHorizontal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* contenedor principal */
+[data-testid="stMainBlockContainer"] {
+    padding-top: 0rem !important;
+    margin-top: 0rem !important;
+    padding-bottom: 50px !important;
+    margin-bottom: 0rem !important;
+}
+
+/* Ajustar posición vertical del logo en el sidebar */
+[data-testid="stSidebarContent"] img {
+    margin-top: -40px !important;
+    margin-bottom: 40px !important;
+    padding-top: 0 !important;
+}
+/* Hacemos que el contenedor principal sea semitransparente */
+.stApp {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+/* Datos personales del perfil */
+.st-emotion-cache-my1ldo{
+    margin-left: 50px;
+}
+.st-emotion-cache-seewz2 h1{
+    text-align: center;
+}
+body {
+    color: #333333;
+    font-family: 'Roboto', sans-serif;
+}
+/* Tarjetas y contenedores */
+div.stContainer {
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-attachment: #333333;
+}
+/* Botones personalizados */
+.stButton>button {
+    border-radius: 20px;
+    font-weight: 500;
+    background-color: #333333;
+    color: rgba(36, 222, 132, 1);
+    border: none;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.stButton>button:hover {
+    background-color: rgba(36, 222, 132, 1);
+    box-shadow: 0 4px 8px rgba(251, 250, 250, 0.1);
+    color: #333333;
+}
+
+[data-testid="stSidebarContent"] .stButton button,
+button[key="logout_button"],
+.stButton button[data-testid="baseButton-secondary"]:last-child {
+    background-color: #1D1B1A !important;
+    color: rgba(36, 222, 132, 1) !important;
+}
+
+[data-testid="stSidebarContent"] .stButton button:hover,
+button[key="logout_button"],
+.stButton button[data-testid="baseButton-secondary"]:last-child {
+    background-color: rgba(36, 222, 132, 1) !important;
+    color: #333333 !important;
+}
+/* Formularios */
+.stTextInput>div>div>input,
+.stSelectbox>div>div>select,
+.stMultiselect>div>div>div>div {
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+}
+/* Métricas */
+div.stMetric {
+    background-color: #3b3b3a;
+    padding: 1rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+}
+
+div.stMetric label {
+    color: rgba(36, 222, 132, 1);
+    font-weight: 600;
+}
+
+/* Tablas */
+div.stDataFrame {
+    border: 1px solid #1DDD6E;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+}
+
+/* Pestañas */
+button.stTab {
+    background-color: rgba(36, 222, 132, 1);
+    color:#333333;
+    border-radius: 5px 5px 0 0;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+button.stTab[aria-selected="true"] {
+    background-color: rgba(36, 222, 132, 1);
+    color: #333333;
+}
+
+/* Gráficos */
+div.stPlotlyChart {
+    background-color: rgba(255, 255, 255, 0);
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Mensajes de alerta y éxito */
+div.stAlert {
+    border-radius: 5px;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Estilos para los calendarios */
+div.calendar-container {
+    background-color: rgb(13, 11, 11);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.session-scheduled {
+    background-color: #E3F2FD;
+    border-left: 4px solid #1E88E5;
+}
+
+.session-completed {
+    background-color: #E8F5E9;
+    border-left: 4px solid #4CAF50;
+}
+
+.session-canceled {
+    background-color: #FFEBEE;
+    border-left: 4px solid #F44336;
+}
+
+/* Estilos para los estados de sesión */
+.status-scheduled {
+    background-color: #1E88E5;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+
+.status-completed {
+    background-color: #4CAF50;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+
+.status-canceled {
+    background-color: #F44336;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+
+/* Personalización de tooltips */
+div.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+div.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+div.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Desactivar zoom en imágenes */
+img {
+    pointer-events: none !important;
+}
+
+button[kind="icon"][aria-label="Fullscreen"] {
+    display: none !important;
+}
+
+div[data-testid="stImage"] {
+    pointer-events: none !important;
+}
+
+
+/* Estilos para Markdown y texto en general */
+.stMarkdown {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+/* Estilos para los enlaces */
+a {
+    color: #1E88E5;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+a:hover {
+    color: #0D47A1;
+    text-decoration: underline;
+}
+/* Hide scrollbars in DataFrames */
+[data-testid="stDataFrame"] div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+    overflow: visible !important;
+}
+
+[data-testid="stDataFrame"] div[style*="overflow: auto"] {
+    overflow: visible !important;
+}
+
+div.stDataFrame > div {
+    overflow: visible !important;
+}
+/* For Streamlit versions that use different CSS structure */
+.stDataFrame div[style*="overflow:"] {
+    overflow: visible !important;
+}
+/* Estilos para el panel de recuperación de contraseña */
+#forgotPasswordInfo {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: -10px;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#forgotPasswordInfo h4 {
+    color: #1E88E5;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+#forgotPasswordInfo p {
+    margin-bottom: 10px;
+}
+
+/* Ajuste para expanders */
+.streamlit-expanderHeader {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto !important;
+    background-color: #f5f7f9 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.streamlit-expanderContent {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto !important;
+    background-color: white !important;
+    border-radius: 0 0 10px 10px !important;
+    padding: 1rem !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Estilo para los textos dentro del expander */
+.streamlit-expanderContent p {
+    color: #555;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Ajustes para la información de debug */
+div.stExpander {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Estilos para Dash - Botones personalizados */
+.custom-button {
+    border-radius: 20px;
+    font-weight: 500;
+    background-color: #333333;
+    color: #24DE84;
+    border: none;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.custom-button:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para inputs de Dash */
+.dash-input {
+    border-radius: 5px;
+    border: 1px solid #555;
+    background-color: #555;
+    color: #fafafa;
+}
+
+.dash-input:focus {
+    border-color: #24DE84;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25);
+}
+
+/* Player cards styling for Dash */
+.player-card {
+    background-color: #333333;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: none;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    transition: transform 0.2s ease;
+    height: 280px;  /* Altura fija para todas las cards */
+    display: flex;
+    flex-direction: column;
+}
+
+.player-card .card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+}
+
+.player-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Fix para evitar overflow horizontal */
+.row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.col, .col-4 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+/* Container principal sin overflow */
+#main-content-area {
+    overflow-x: hidden;
+}
+
+/* Search input styling */
+.dash-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    background-color: #333333 !important;
+    color: #fafafa !important;
+}
+
+/* Placeholder color for inputs */
+.dash-input::placeholder {
+    color: #fafafa;
+    opacity: 0.8;
+}
+
+/* Login specific input styling */
+#username-input, #password-input {
+    background-color: #555 !important;
+    border: 1px solid #555 !important;
+    color: #fafafa !important;
+}
+
+#username-input::placeholder, #password-input::placeholder {
+    color: #fafafa !important;
+    opacity: 0.8 !important;
+}
+
+#username-input:focus, #password-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+}
+
+/* View Profile button styling - consistent with other custom buttons */
+button[id^="view-profile-btn-"] {
+    background-color: #1D1B1A !important;
+    color: #24DE84 !important;
+    border: none !important;
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+    padding: 0.4rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+}
+
+button[id^="view-profile-btn-"]:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+button[id^="view-profile-btn-"]:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    background-color: #555 !important;
+    color: #fafafa !important;
+}
+
+/* Checkbox styling */
+#remember-me .form-check-input {
+    background-color: #555;
+    border-color: #24DE84;
+}
+
+#remember-me .form-check-input:checked {
+    background-color: #24DE84;
+    border-color: #24DE84;
+}
+
+#remember-me .form-check-input:focus {
+    border-color: #24DE84;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25);
+}
+
+/* Remove padding from main container */
+#dash-app-content .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Remove default Bootstrap container padding */
+.container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Menu button styling - curved like other buttons */
+.custom-menu-button {
+    background: transparent !important;
+    border: none !important;
+    color: #fafafa !important;
+    transition: all 0.3s ease !important;
+    border-radius: 20px !important;  /* Curved like other buttons */
+}
+
+.custom-menu-button:hover {
+    background-color: #24DE84 !important;  /* Same corporate green as other buttons */
+    color: #333333 !important;  /* Dark text on green background */
+    border: none !important;
+}
+
+.custom-menu-button:hover .bi {
+    color: #333333 !important;  /* Dark icon on green background */
+}
+
+.custom-menu-button:hover .menu-text {
+    color: #333333 !important;  /* Dark text on green background */
+}
+
+.custom-menu-button:focus {
+    box-shadow: none !important;
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
+/* Quick sync and logout buttons inherit menu button styling via custom-menu-button class */
+
+/* Sync alerts styling */
+.alert {
+    border-radius: 10px !important;
+    border: none !important;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.8rem;
+}
+
+/* Sidebar collapsed state - hide user info text but keep photo */
+.sidebar-collapsed .sidebar-user-info {
+    display: none !important;
+}
+
+.sidebar-collapsed .sidebar-user-name {
+    display: none !important;
+}
+
+.sidebar-collapsed .sidebar-user-type {
+    display: none !important;
+}
+
+.sidebar-collapsed #sidebar-user-photo {
+    margin-right: 0 !important;
+    margin: 0 auto !important;
+}
+
+/* Collapsed state: hide all menu text and center icons */
+.sidebar-collapsed .menu-text {
+    display: none !important;
+}
+
+.sidebar-collapsed .custom-menu-button {
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+.sidebar-collapsed .custom-menu-button .bi {
+    margin: 0 !important;
+}
+
+/* Show only status icon for autosync when collapsed */
+.sidebar-collapsed .alert {
+    display: none !important;
+}
+
+/* Create a simplified autosync status indicator when collapsed */
+.sidebar-collapsed::after {
+    content: "";
+    /* Will be handled by JavaScript callback */
+}
+
+/* Force text alignment for logout when expanded */
+#logout-button .menu-text {
+    text-align: left !important;
+    margin-left: 10px !important;
+}
+
+/* Hover effect for collapsed quick sync button */
+#quick-sync-icon-collapsed:hover {
+    background-color: #24DE84 !important;
+}
+
+#quick-sync-icon-collapsed:hover .bi {
+    color: #333333 !important;
+}
+
+.alert-success {
+    background-color: rgba(36, 222, 132, 0.2) !important;
+    color: #24DE84 !important;
+}
+
+.alert-info {
+    background-color: rgba(33, 150, 243, 0.2) !important;
+    color: #2196F3 !important;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.2) !important;
+    color: #FFC107 !important;
+}
+
+.alert-danger {
+    background-color: rgba(244, 67, 54, 0.2) !important;
+    color: #F44336 !important;
+}
+
+/* Estilos adicionales para métricas con iconos Bootstrap */
+.metric-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    height: 160px !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.metric-card .card-body {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    height: 100% !important;
+    padding: 1rem !important;
+}
+
+.metric-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 16px rgba(36, 222, 132, 0.2) !important;
+}
+
+/* Iconos en títulos - espaciado consistente */
+.bi.me-2 {
+    margin-right: 0.5rem !important;
+}
+
+/* Estilo para iconos de estado en cards de estadísticas */
+.metric-icon {
+    transition: transform 0.2s ease !important;
+}
+
+.metric-card:hover .metric-icon {
+    transform: scale(1.1) !important;
+}
+
+/* Títulos con iconos - alineación mejorada */
+h4 .bi, h5 .bi {
+    vertical-align: middle;
+}
+
+/* Cards de test history mejoradas */
+.test-history-card {
+    background-color: #2A2A2A !important;
+    border: 1px solid #555 !important;
+    border-radius: 8px !important;
+    margin-bottom: 1rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.test-history-card:hover {
+    border-color: #24DE84 !important;
+    box-shadow: 0 4px 8px rgba(36, 222, 132, 0.1) !important;
+}
+
+/* Headers de test history con iconos */
+.test-history-header {
+    background-color: #333333 !important;
+    border-bottom: 1px solid #555 !important;
+    padding: 1rem !important;
+}
+
+.test-history-header h5 {
+    margin: 0 !important;
+    color: #24DE84 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.test-history-header .bi {
+    margin-right: 0.5rem !important;
+    font-size: 1.2rem !important;
+}
+
+/* Estilos para dropdown de filtros de estado - fondo como las cards */
+.VirtualizedSelectOption {
+    background-color: #3b3b3a !important;  /* Mismo color que las cards */
+    color: #fafafa !important;
+}
+
+.VirtualizedSelectFocusedOption {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
+.Select-control {
+    background-color: #3b3b3a !important;  /* Mismo color que las cards */
+    border-color: #555 !important;
+}
+
+.Select-multi-value-wrapper {
+    background-color: #3b3b3a !important;  /* Mismo color que las cards */
+}
+
+.Select-value {
+    border-radius: 20px !important;
+    padding: 0.25rem 0.75rem !important;
+    margin: 0.125rem !important;
+    font-weight: 500 !important;
+}
+
+/* Colores específicos para cada estado */
+.Select-value.completed {
+    background-color: #4CAF50 !important;
+    color: #fafafa !important;
+}
+
+.Select-value.scheduled {
+    background-color: #9C27B0 !important;
+    color: #fafafa !important;
+}
+
+.Select-value.canceled {
+    background-color: #F44336 !important;
+    color: #fafafa !important;
+}
+
+.Select-value-label {
+    color: #fafafa !important;
+}
+
+.Select-clear {
+    color: #24DE84 !important;
+}
+
+/* Tags de filtros - solo borde verde corporativo y letras blancas */
+.dash-dropdown .Select-multi-value,
+.Select--multi .Select-value {
+    background-color: transparent !important;
+    color: #fafafa !important;  /* Letras blancas */
+    border-radius: 20px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-weight: 500 !important;
+    border: 1px solid #24DE84 !important;  /* Borde más sutil */
+    transition: all 0.3s ease !important;
+}
+
+/* Asegurar que el texto interno también sea blanco */
+.dash-dropdown .Select-multi-value .Select-value-label,
+.Select--multi .Select-value .Select-value-label {
+    color: #fafafa !important;
+    font-weight: 500 !important;
+}
+
+.dash-dropdown .Select-multi-value:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
+.dash-dropdown .Select-multi-value .Select-value-label {
+    color: inherit !important;
+    font-weight: 500 !important;
+}
+
+.dash-dropdown .Select-multi-value .Select-value-icon {
+    border-right-color: rgba(36, 222, 132, 0.3) !important;
+}
+
+.dash-dropdown .Select-multi-value .Select-value-icon:hover {
+    background-color: rgba(36, 222, 132, 0.2) !important;
+    color: #333333 !important;
+}
+
+/* Calendario - texto blanco para fechas y números */
+.fc-event-title {
+    color: #fafafa !important;
+}
+
+.fc-daygrid-event {
+    color: #fafafa !important;
+}
+
+.fc-event {
+    color: #fafafa !important;
+}
+
+.fc-daygrid-day-number {
+    color: #fafafa !important;
+}
+
+.fc-col-header-cell {
+    color: #fafafa !important;
+}
+
+.fc-day-today {
+    background-color: rgba(36, 222, 132, 0.1) !important;
+}
+
+/* Botones del calendario - color específico solicitado */
+.fc-button {
+    background-color: rgb(59, 59, 58) !important;
+    border-color: rgb(59, 59, 58) !important;
+    color: #24DE84 !important;
+    transition: all 0.3s ease !important;
+}
+
+.fc-button:hover {
+    background-color: #24DE84 !important;
+    border-color: #24DE84 !important;
+    color: #333333 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(36, 222, 132, 0.3) !important;
+}
+
+.fc-button:disabled {
+    background-color: #444 !important;
+    border-color: #444 !important;
+    color: #999 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Título del calendario - mes y año en blanco */
+.fc-toolbar-title {
+    color: #fafafa !important;
+}
+
+/* Override para asegurar texto blanco en calendario */
+#admin-calendar .fc-event-title,
+#admin-calendar .fc-daygrid-event,
+#admin-calendar .fc-event,
+#player-calendar .fc-event-title,
+#player-calendar .fc-daygrid-event,
+#player-calendar .fc-event {
+    color: #fafafa !important;
+    font-weight: 500 !important;
+}
+
+/* Estilos para inputs de fecha con fondo gris del sidebar */
+#calendar-start-date-input,
+#calendar-end-date-input {
+    background-color: #1D1B1A !important;
+    border: 1px solid #555 !important;
+    color: #fafafa !important;
+}
+
+#calendar-start-date-input:focus,
+#calendar-end-date-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    background-color: #1D1B1A !important;
+}
+
+/* Dropdown de filtros de estado */
+#calendar-status-filter-dropdown .Select-control {
+    background-color: #1D1B1A !important;
+    border-color: #555 !important;
+    color: #fafafa !important;
+}
+
+#calendar-status-filter-dropdown .Select-placeholder {
+    color: #ccc !important;
+}
+
+#calendar-status-filter-dropdown .Select-input > input {
+    color: #fafafa !important;
+}
+
+/* Estilos adicionales para tags de estado por colores */
+.status-tag-completed {
+    background-color: #4CAF50 !important;
+    color: #fafafa !important;
+}
+
+.status-tag-scheduled {
+    background-color: #9C27B0 !important;
+    color: #fafafa !important;
+}
+
+.status-tag-canceled {
+    background-color: #F44336 !important;
+    color: #fafafa !important;
+}
+
+/* Header del perfil reorganizado */
+.profile-header-row {
+    align-items: flex-start !important;
+    margin-bottom: 2rem !important;
+}
+
+.profile-header-row .col-md-3:first-child {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+}
+
+.profile-header-row .col-md-5 {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+}
+
+.profile-header-row .col-md-3:last-child {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: flex-end !important;
+    min-height: 200px !important;
+}
+
+/* Colores específicos para tags de estado en Dash dropdowns */
+/* Selección de Completed */
+div[id*="status-filter"] span[title="Completed"],
+div[id*="status-filter"] span[title="completed"] {
+    background-color: #4CAF50 !important;
+    color: #fafafa !important;
+    border-radius: 20px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+/* Selección de Scheduled */
+div[id*="status-filter"] span[title="Scheduled"],
+div[id*="status-filter"] span[title="scheduled"] {
+    background-color: #9C27B0 !important;
+    color: #fafafa !important;
+    border-radius: 20px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+/* Selección de Canceled */
+div[id*="status-filter"] span[title="Canceled"],
+div[id*="status-filter"] span[title="canceled"] {
+    background-color: #F44336 !important;
+    color: #fafafa !important;
+    border-radius: 20px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+/* Estilos para tags en el dropdown de Dash */
+.dash-dropdown .dropdown-content .VirtualizedSelectOption {
+    background-color: #3b3b3a !important;
+    color: #fafafa !important;
+    padding: 0.5rem !important;
+    border-bottom: 1px solid #555 !important;
+}
+
+.dash-dropdown .dropdown-content .VirtualizedSelectOption:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
+/* Tags seleccionados con colores de estado */
+.dash-dropdown .multi-value {
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+    margin: 0.125rem !important;
+    padding: 0.25rem 0.75rem !important;
+    color: #fafafa !important;
+}
+
+/* Intentar capturar por contenido de texto */
+.multi-value:contains("Completed"),
+.multi-value:contains("completed") {
+    background-color: #4CAF50 !important;
+}
+
+.multi-value:contains("Scheduled"),
+.multi-value:contains("scheduled") {
+    background-color: #9C27B0 !important;
+}
+
+.multi-value:contains("Canceled"),
+.multi-value:contains("canceled") {
+    background-color: #F44336 !important;
+}
+
+/* Corregir inputs de fecha y dropdown para fondo correcto */
+/* Inputs de fecha - fondo gris claro correcto */
+div[id*="calendar-start-date"] input,
+div[id*="calendar-end-date"] input,
+input[type="date"],
+#calendar-start-date-input,
+#calendar-end-date-input {
+    background-color: #3b3b3a !important;
+    border: 1px solid #555 !important;
+    color: #fafafa !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+}
+
+div[id*="calendar-start-date"] input:focus,
+div[id*="calendar-end-date"] input:focus,
+input[type="date"]:focus,
+#calendar-start-date-input:focus,
+#calendar-end-date-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    background-color: #3b3b3a !important;
+}
+
+/* Dropdown completo - fondo gris claro correcto para todo el contenedor */
+div[id*="status-filter"],
+div[id*="status-filter"] > div,
+div[id*="status-filter"] .Select,
+div[id*="status-filter"] .Select-control,
+#calendar-status-filter-dropdown,
+#calendar-status-filter-dropdown > div,
+#calendar-status-filter-dropdown .Select,
+#calendar-status-filter-dropdown .Select-control {
+    background-color: #3b3b3a !important;
+    border: 1px solid #555 !important;
+    border-radius: 8px !important;
+}
+
+/* Placeholder y texto */
+div[id*="status-filter"] .Select-placeholder,
+div[id*="status-filter"] .Select-value {
+    color: #fafafa !important;
+}
+
+/* Input interno */
+div[id*="status-filter"] .Select-input input {
+    color: #fafafa !important;
+}
+
+/* Menu desplegable */
+div[id*="status-filter"] .Select-menu-outer {
+    background-color: #3b3b3a !important;
+    border: 1px solid #555 !important;
+    border-radius: 8px !important;
+}
+
+/* Opciones del menu */
+div[id*="status-filter"] .Select-option {
+    background-color: #3b3b3a !important;
+    color: #fafafa !important;
+}
+
+div[id*="status-filter"] .Select-option:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
+/* Hover effect para filas de tabla */
+.table-row-hover:hover {
+    background-color: rgba(36, 222, 132, 0.1) !important;
+}
+
+.table-row-hover:hover td {
+    background-color: rgba(36, 222, 132, 0.1) !important;
+}
+
+/* Estilos para tabs de Test Results y Notes - como Streamlit original */
+.nav-tabs .nav-link {
+    color: #fafafa !important;  /* Letras blancas por defecto */
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    padding: 0.75rem 1.5rem !important;
+}
+
+.nav-tabs .nav-link.active {
+    color: #24DE84 !important;  /* Texto verde cuando activo */
+    border-bottom: 3px solid #24DE84 !important;  /* Línea inferior verde */
+    background-color: transparent !important;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #24DE84 !important;
+    border-bottom: 3px solid rgba(36, 222, 132, 0.5) !important;
+    background-color: transparent !important;
+}
+
+/* Eliminar borde superior de las tabs */
+.nav-tabs {
+    border-bottom: 1px solid #555 !important;
+}
+
+/* Estilos para acordeones de test history */
+.accordion-item {
+    background-color: #2A2A2A !important;
+    border: 1px solid #555 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.accordion-button {
+    background-color: #333333 !important;
+    color: #fafafa !important;  /* Texto blanco por defecto */
+    border: none !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;  /* Tamaño más apropiado */
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #24DE84 !important;  /* Fondo verde cuando abierto */
+    color: #333 !important;  /* Mismo gris que hover de botones */
+    box-shadow: none !important;
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+}
+
+.accordion-body {
+    background-color: #2A2A2A !important;
+    color: #fafafa !important;
+    padding: 1.5rem !important;
+    font-size: 0.9rem !important;  /* Tamaño de fuente consistente */
+}
+
+/* Asegurar que los iconos mantengan su color */
+.accordion-button .bi {
+    color: #24DE84 !important;
+}
+
+.accordion-button:not(.collapsed) .bi {
+    color: #666666 !important;  /* Icono gris cuando abierto */
+}
+
+/* Sistema de tipografía consistente para toda la app */
+.title-xl { font-size: 2rem !important; font-weight: 700 !important; }     /* Títulos principales */
+.title-lg { font-size: 1.5rem !important; font-weight: 600 !important; }   /* Títulos de sección */
+.title-md { font-size: 1.25rem !important; font-weight: 600 !important; }  /* Subtítulos */
+.title-sm { font-size: 1rem !important; font-weight: 600 !important; }     /* Títulos de card */
+
+.text-lg { font-size: 1.1rem !important; }      /* Texto grande */
+.text-base { font-size: 1rem !important; }      /* Texto por defecto */
+.text-sm { font-size: 0.875rem !important; }    /* Texto pequeño */
+.text-xs { font-size: 0.75rem !important; }     /* Texto extra pequeño */
+
+/* Correcciones específicas para elementos que estaban demasiado grandes */
+h1, .h1 { font-size: 2rem !important; font-weight: 700 !important; }
+h2, .h2 { font-size: 1.75rem !important; font-weight: 600 !important; }
+h3, .h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
+h4, .h4 { font-size: 1.25rem !important; font-weight: 600 !important; }
+h5, .h5 { font-size: 1rem !important; font-weight: 600 !important; }
+
+/* Iconos estandarizados */
+.icon-lg { font-size: 1.5rem !important; }      /* Iconos grandes */
+.icon-md { font-size: 1.25rem !important; }     /* Iconos medianos */
+.icon-sm { font-size: 1rem !important; }        /* Iconos pequeños */
+.icon-xs { font-size: 0.875rem !important; }    /* Iconos extra pequeños */
+
+/* Mejoras adicionales para el calendario más vistoso */
+.fc-event-title {
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    font-size: 0.875rem !important;  /* Tamaño consistente */
+}
+
+/* Animaciones suaves para elementos del calendario */
+@keyframes slideInCalendar {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Aplicar animación al cargar */
+.fc-scrollgrid {
+    animation: slideInCalendar 0.6s ease-out !important;
+}
+
+/* Efectos de brillo para los botones del calendario */
+.fc-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(36, 222, 132, 0.3), transparent);
+    transition: left 0.6s;
+}
+
+.fc-button:hover::before {
+    left: 100%;
+}
+
+/* Estilos para la vista de lista del calendario */
+.fc-list {
+    background-color: transparent !important;
+}
+
+.fc-list-event {
+    background-color: #333333 !important;
+    border-left: 4px solid #24DE84 !important;
+    margin-bottom: 0.5rem !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+}
+
+.fc-list-event:hover {
+    background-color: #3b3b3a !important;
+    transform: translateX(4px) !important;
+    box-shadow: 0 2px 8px rgba(36, 222, 132, 0.2) !important;
+}
+
+.fc-list-day-cushion {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+.fc-list-event-title {
+    color: #fafafa !important;
+    font-weight: 500 !important;
+}
+
+.fc-list-event-time {
+    color: #24DE84 !important;
+    font-weight: 600 !important;
+}
+
+.fc-list-table {
+    border: none !important;
+}
+
+.fc-list-day {
+    background-color: transparent !important;
+}
+
+/* Estilos para inputs de fecha HTML nativos - Simple y elegante como Streamlit */
+/* IMPORTANTE: Estos estilos deben tener prioridad sobre otros estilos */
+.simple-date-input,
+input[type="date"].simple-date-input,
+input[type="date"],
+.form-control[type="date"] {
+    background-color: transparent !important;
+    border: 1px solid #24DE84 !important;
+    color: #fafafa !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1rem !important;
+    font-family: 'Roboto', sans-serif !important;
+    font-size: 1rem !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    width: 100% !important;
+}
+
+.simple-date-input:focus,
+input[type="date"].simple-date-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.3) !important;
+    background-color: transparent !important;
+    outline: none !important;
+}
+
+.simple-date-input:hover,
+input[type="date"].simple-date-input:hover {
+    background-color: rgba(36, 222, 132, 0.05) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Calendario nativo del navegador - Tema oscuro */
+.simple-date-input::-webkit-calendar-picker-indicator {
+    background-color: #24DE84 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    filter: invert(1) !important;
+}
+
+.simple-date-input::-webkit-datetime-edit {
+    color: #fafafa !important;
+}
+
+.simple-date-input::-webkit-datetime-edit-text {
+    color: #fafafa !important;
+}
+
+.simple-date-input::-webkit-datetime-edit-month-field {
+    color: #fafafa !important;
+}
+
+.simple-date-input::-webkit-datetime-edit-day-field {
+    color: #fafafa !important;
+}
+
+.simple-date-input::-webkit-datetime-edit-year-field {
+    color: #fafafa !important;
+}
+
+/* Firefox */
+.simple-date-input::-moz-calendar-picker-indicator {
+    background-color: #24DE84 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+}
+
+/* Calendario desplegable - Réplica exacta del Streamlit de la imagen */
+.DayPicker,
+.DayPickerNavigation,
+.DayPickerKeyboardShortcuts_panel,
+.DateRangePickerInput__dropdown {
+    background-color: #2b2b2b !important;  /* Fondo exacto de la imagen */
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+    font-family: 'Roboto', sans-serif !important;
+    padding: 1rem !important;
+}
+
+/* Header de días de la semana - Exacto como en la imagen */
+.DayPicker_weekHeader,
+.DayPicker_weekHeader_ul {
+    background-color: #2b2b2b !important;
+    color: #8a8a8a !important;  /* Gris tenue como en la imagen */
+    font-weight: 400 !important;
+    border-bottom: none !important;
+    text-transform: uppercase !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.5px !important;
+}
+
+.DayPicker_weekHeader_li,
+.DayPicker_weekHeader_ul li {
+    color: #8a8a8a !important;  /* Gris tenue Mo Tu We Th Fr Sa Su */
+    font-weight: 400 !important;
+    text-transform: uppercase !important;
+    font-size: 0.75rem !important;
+}
+
+/* Contenedor del mes */
+.CalendarMonth,
+.CalendarMonth_table {
+    background-color: #2b2b2b !important;
+}
+
+/* Días del calendario - Exacto como en la imagen */
+.CalendarDay,
+.CalendarDay__default {
+    background-color: transparent !important;
+    color: #ffffff !important;  /* Números blancos como en la imagen */
+    border: none !important;
+    font-size: 1rem !important;
+    font-weight: 400 !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;  /* Círculos como en la imagen */
+    transition: all 0.2s ease !important;
+}
+
+.CalendarDay:hover,
+.CalendarDay__hovered_span {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* Día seleccionado - Verde circular como en la imagen */
+.CalendarDay__selected,
+.CalendarDay__selected_span,
+.CalendarDay__selected:hover {
+    background-color: #24DE84 !important;  /* Verde corporativo circular */
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 600 !important;
+    border-radius: 50% !important;
+}
+
+/* Día actual - Sin resaltado especial a menos que esté seleccionado */
+.CalendarDay__today {
+    color: #ffffff !important;
+    font-weight: 400 !important;
+    background-color: transparent !important;
+}
+
+/* Días fuera de rango - Grises tenues */
+.CalendarDay__blocked_out_of_range,
+.CalendarDay__outside {
+    background-color: transparent !important;
+    color: #555 !important;
+}
+
+/* Header del calendario con mes/año - Como en la imagen */
+.DayPicker_caption,
+.DayPicker_caption__caption {
+    color: #ffffff !important;
+    background-color: #2b2b2b !important;
+    font-weight: 400 !important;
+    font-size: 1.1rem !important;
+    text-align: center !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Botones de navegación - Flechas simples como en la imagen */
+.DayPickerNavigation_button,
+.DayPickerNavigation_button__default {
+    background-color: transparent !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-size: 1.2rem !important;
+    padding: 0.5rem !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.DayPickerNavigation_button:hover,
+.DayPickerNavigation_button__default:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* Selectores de mes y año - Dropdown estilo oscuro */
+.DayPicker_monthPicker,
+.DayPicker_yearPicker {
+    background-color: #2b2b2b !important;
+    color: #ffffff !important;
+    border: 1px solid #555 !important;
+    border-radius: 6px !important;
+}
+
+.DayPicker_monthPicker select,
+.DayPicker_yearPicker select {
+    background-color: #2b2b2b !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+/* Input inferior del calendario - Como en la imagen */
+.SingleDatePickerInput__display-text {
+    background-color: #2b2b2b !important;
+    border: 1px solid #24DE84 !important;
+    border-radius: 8px !important;
+    color: #ffffff !important;
+    padding: 0.75rem 1rem !important;
+    text-align: center !important;
+}
+
+/* Overlay del calendario */
+.DateRangePickerInput__dropdown,
+.SingleDatePickerInput__dropdown {
+    z-index: 10000 !important;
+}
+
+/* Flecha del calendario desplegable */
+.DateRangePickerInput_arrow,
+.SingleDatePickerInput_arrow {
+    border-bottom-color: #2b2b2b !important;
+    border-top-color: #2b2b2b !important;
+}
+
+/* Mejorar la vista de agenda lateral (si se implementa) */
+.calendar-agenda {
+    background: linear-gradient(135deg, rgba(51, 51, 51, 0.9), rgba(42, 42, 42, 0.9));
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}

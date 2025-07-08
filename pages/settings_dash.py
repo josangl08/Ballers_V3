@@ -1,18 +1,21 @@
 # pages/settings_dash.py - Migración visual de settings.py a Dash
-import datetime as dt
-import os
-import shutil
-from typing import Optional
-
 import dash_bootstrap_components as dbc
-import pandas as pd
-from dash import Input, Output, State, callback, dcc, html, no_update
+from dash import dcc, html
 
-from common.cloud_utils import (
-    is_streamlit_cloud,
-    show_cloud_feature_limitation,
-    show_cloud_mode_info,
-)
+
+# Funciones simples para reemplazar cloud_utils removido
+def is_streamlit_cloud():
+    return False
+
+
+def show_cloud_feature_limitation(feature_name):
+    return f"Feature {feature_name} not available in local mode"
+
+
+def show_cloud_mode_info():
+    return "Running in local mode"
+
+
 from controllers.calendar_sync_core import sync_db_to_calendar
 from controllers.notification_controller import (
     auto_cleanup_old_problems,

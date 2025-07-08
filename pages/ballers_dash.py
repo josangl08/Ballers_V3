@@ -1,36 +1,23 @@
 # pages/ballers_dash.py - Migración visual de ballers.py a Dash
 from __future__ import annotations
 
-import datetime as dt
-from typing import Optional
-
 import dash_bootstrap_components as dbc
-import pandas as pd
-import plotly.express as px
-from dash import Input, Output, State, callback, dcc, html, no_update
+from dash import Input, Output, State, dcc, html
 
-from common.cloud_utils import (
-    is_streamlit_cloud,
-    show_cloud_feature_limitation,
-    show_cloud_mode_info,
-)
-from common.export import (
-    create_download_link,
-    show_export_error_message,
-    show_export_success_message,
-    trigger_browser_print,
-)
-from controllers.export_controller import generate_player_pdf
-from controllers.internal_calendar import show_calendar
-from controllers.player_controller import (
-    PlayerController,
-    get_player_profile_data,
-    get_players_for_list,
-    update_player_notes_simple,
-)
-from controllers.session_controller import SessionController
-from controllers.validation_controller import ValidationController
-from models import SessionStatus
+from controllers.player_controller import get_player_profile_data, get_players_for_list
+
+
+# Funciones simples para reemplazar cloud_utils removido
+def is_streamlit_cloud():
+    return False
+
+
+def show_cloud_feature_limitation(feature_name):
+    return f"Feature {feature_name} not available in local mode"
+
+
+def show_cloud_mode_info():
+    return "Running in local mode"
 
 
 def create_player_profile_dash(player_id=None):

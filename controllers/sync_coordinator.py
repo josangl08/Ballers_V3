@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Optional
 
 import streamlit as st
 
-from common.cloud_utils import is_streamlit_cloud, safe_database_operation
 from controllers.db import get_db_session
 from controllers.notification_controller import save_sync_problems
 from models import Coach, User
@@ -22,6 +21,22 @@ from .calendar_sync_core import sync_calendar_to_db_with_feedback, sync_db_to_ca
 from .session_controller import update_past_sessions
 
 logger = logging.getLogger(__name__)
+
+
+# Funciones simples para reemplazar cloud_utils (eliminado)
+def is_streamlit_cloud():
+    """Siempre False ya que no usamos Streamlit Cloud"""
+    return False
+
+
+def safe_database_operation(operation, *args, **kwargs):
+    """Ejecuta operación de BD de forma simple"""
+    try:
+        return operation(*args, **kwargs)
+    except Exception as e:
+        logger.error(f"Database operation failed: {e}")
+        return None
+
 
 # Internal helpers
 
@@ -614,7 +629,7 @@ def get_auto_sync_status() -> Dict[str, Any]:
     return _auto_sync.get_status()
 
 
-@safe_database_operation("Manual sync")
+# Decorador removido para simplificación
 def force_manual_sync() -> Dict[str, Any]:
     """Sync manual inmediato - CON PROTECCIÓN CLOUD"""
 

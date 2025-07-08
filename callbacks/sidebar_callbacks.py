@@ -143,6 +143,5 @@ def register_sidebar_callbacks(app):
                 "width": "100%",
                 "margin-top": "1rem",
             }
-        
+
         return text_style, logout_style
-    

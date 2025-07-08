@@ -12,7 +12,6 @@ from zoneinfo import ZoneInfo
 from googleapiclient.errors import HttpError
 from sqlalchemy.orm import Session as SQLSession
 
-from common.cloud_utils import is_streamlit_cloud, safe_database_operation
 from config import CALENDAR_COLORS
 from controllers.db import get_db_session
 from controllers.google_client import calendar
@@ -28,6 +27,19 @@ from .calendar_utils import (
 
 logger = logging.getLogger(__name__)
 CAL_ID = os.getenv("CALENDAR_ID")
+
+
+# Funciones simples para reemplazar cloud_utils removido
+def is_streamlit_cloud():
+    return False
+
+
+def safe_database_operation(operation, *args, **kwargs):
+    try:
+        return operation(*args, **kwargs)
+    except Exception as e:
+        logging.error(f"Database operation failed: {e}")
+        return None
 
 
 class SessionController:
@@ -649,7 +661,7 @@ def update_past_sessions() -> int:
         return controller.update_past_sessions()
 
 
-@safe_database_operation("Session creation")
+# Decorador removido para simplificación
 def create_session_with_calendar(
     coach_id: int,
     player_id: int,
@@ -677,7 +689,7 @@ def create_session_with_calendar(
         )
 
 
-@safe_database_operation("Session update")
+# Decorador removido para simplificación
 def update_session_with_calendar(session_id: int, **kwargs) -> tuple[bool, str]:
     """Función de conveniencia para actualizar sesión con sincronización - CORREGIDA."""
 
@@ -701,7 +713,7 @@ def update_session_with_calendar(session_id: int, **kwargs) -> tuple[bool, str]:
         return controller.update_session(session_id, **kwargs)
 
 
-@safe_database_operation("Session deletion")
+# Decorador removido para simplificación
 def delete_session_with_calendar(session_id: int) -> tuple[bool, str]:
     """Función de conveniencia para eliminar sesión con sincronización."""
     with SessionController() as controller:

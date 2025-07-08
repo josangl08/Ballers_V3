@@ -12,7 +12,7 @@ Contraseña: admin
 Nombre: Miguel Ramirez
 ```
 
-### 🏃‍♂️ Entrenadores  
+### 🏃‍♂️ Entrenadores
 ```
 Usuario: coach1
 Contraseña: coach123
@@ -36,7 +36,7 @@ Nombre: Joseph Boyd
 
 ### 2. **Test de Dashboard por Rol**
 - [ ] **Admin**: Verificar panel de administración con botones de gestión
-- [ ] **Coach**: Verificar panel de entrenador con sesiones y calendario  
+- [ ] **Coach**: Verificar panel de entrenador con sesiones y calendario
 - [ ] **Player**: Verificar panel de jugador con calendario y perfil
 
 ### 3. **Test de Navegación**

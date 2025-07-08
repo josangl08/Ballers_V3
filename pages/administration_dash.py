@@ -1,48 +1,19 @@
 # pages/administration_dash.py - Migración visual de administration.py a Dash
-import datetime as dt
-import os
-import sys
-from typing import Optional
-
 import dash_bootstrap_components as dbc
-import pandas as pd
-from dash import Input, Output, State, callback, dcc, html, no_update
+from dash import dcc, html
 
-from common.cloud_utils import (
-    is_streamlit_cloud,
-    show_cloud_feature_limitation,
-    show_cloud_mode_info,
-)
-from common.export import (
-    create_download_link,
-    show_export_error_message,
-    show_export_success_message,
-    trigger_browser_print,
-)
-from controllers.export_controller import generate_financials_pdf, generate_sessions_pdf
-from controllers.internal_calendar import show_calendar
-from controllers.notification_controller import get_sync_problems
-from controllers.session_controller import (
-    SessionController,
-    create_session_with_calendar,
-    delete_session_with_calendar,
-    update_session_with_calendar,
-)
-from controllers.sheets_controller import get_accounting_df
-from controllers.sync_coordinator import (
-    filter_sync_results_by_coach,
-    get_coach_id_if_needed,
-)
-from controllers.validation_controller import (
-    ValidationController,
-    check_session_time_recommendation,
-    get_create_session_hours,
-    get_edit_session_hours,
-    validate_coach_selection_safe,
-    validate_player_selection_safe,
-    validate_session_form_data,
-)
-from models import Coach, Session, SessionStatus, User
+
+# Funciones simples para reemplazar cloud_utils removido
+def is_streamlit_cloud():
+    return False
+
+
+def show_cloud_feature_limitation(feature_name):
+    return f"Feature {feature_name} not available in local mode"
+
+
+def show_cloud_mode_info():
+    return "Running in local mode"
 
 
 def create_session_form_dash():

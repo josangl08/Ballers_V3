@@ -185,7 +185,7 @@ def create_sidebar_menu_dash():
                     "right": "10px",
                 },
             ),
-            style={"position": "relative", "height": "40px"}
+            style={"position": "relative", "height": "40px"},
         ),
         # Logo (con clase para ocultar/mostrar)
         html.Div(
