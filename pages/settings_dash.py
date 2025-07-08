@@ -16,33 +16,6 @@ def show_cloud_mode_info():
     return "Running in local mode"
 
 
-from controllers.calendar_sync_core import sync_db_to_calendar
-from controllers.notification_controller import (
-    auto_cleanup_old_problems,
-    clear_sync_problems,
-    get_sync_problems,
-)
-from controllers.sheets_controller import get_accounting_df
-from controllers.sync_coordinator import (
-    force_manual_sync,
-    get_auto_sync_status,
-    has_pending_notifications,
-    is_auto_sync_running,
-    start_auto_sync,
-    stop_auto_sync,
-)
-from controllers.user_controller import (
-    UserController,
-    create_user_simple,
-    delete_user_simple,
-    get_user_with_profile,
-    get_users_for_management,
-    update_user_simple,
-)
-from controllers.validation_controller import ValidationController
-from models import UserType
-
-
 def create_user_form_dash():
     """Crea el formulario de usuario para Dash - migrado exactamente de Streamlit (lines 949-1120)"""
 

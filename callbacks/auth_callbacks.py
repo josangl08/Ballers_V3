@@ -2,7 +2,7 @@
 """
 Callbacks relacionados con autenticación y sesiones.
 """
-from dash import Input, Output, State, callback, no_update
+from dash import Input, Output, State, no_update
 
 
 def register_auth_callbacks(app):

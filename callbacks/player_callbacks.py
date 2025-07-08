@@ -3,7 +3,7 @@
 Callbacks relacionados con jugadores y perfiles.
 """
 import dash_bootstrap_components as dbc
-from dash import ALL, Input, Output, State, callback, html, no_update
+from dash import ALL, Input, Output, State, html, no_update
 
 
 def register_player_callbacks(app):

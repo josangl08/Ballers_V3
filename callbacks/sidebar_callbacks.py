@@ -2,7 +2,7 @@
 """
 Callbacks relacionados con el sidebar colapsible.
 """
-from dash import Input, Output, State, callback, html, no_update
+from dash import Input, Output, State, html, no_update
 
 
 def register_sidebar_callbacks(app):

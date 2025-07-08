@@ -14,7 +14,6 @@ from controllers.auth_controller import (
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from config import DEBUG
 
 
 def login_page():

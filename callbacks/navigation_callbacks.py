@@ -3,7 +3,7 @@
 Callbacks relacionados con navegación entre páginas.
 """
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, callback, html, no_update
+from dash import Input, Output, State, html, no_update
 
 
 def register_navigation_callbacks(app):

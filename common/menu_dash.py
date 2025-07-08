@@ -1,16 +1,10 @@
 # common/menu_dash.py
-import datetime as dt
 from typing import Optional
 
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, callback, dcc, html, no_update
+from dash import Input, Output, State, dcc, html, no_update
 
-from controllers.auth_controller import clear_user_session
-from controllers.menu_controller import (
-    MenuController,
-    get_sync_status_for_ui,
-    handle_sync_details_redirect,
-)
+from controllers.menu_controller import MenuController, get_sync_status_for_ui
 from controllers.sync_coordinator import force_manual_sync
 
 
