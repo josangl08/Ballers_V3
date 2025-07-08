@@ -20,8 +20,6 @@ def login_page_dash():
 
     return html.Div(
         [
-            # Espaciado superior
-            html.Div(style={"height": "15vh"}),
             # Logo "BLLRS." centrado como en la imagen original
             html.H1(
                 "BLLRS.",
@@ -277,6 +275,7 @@ def register_login_callbacks(app):
             create_user_session(user, remember)
             # Mostrar mensaje de bienvenida y activar interval para redirigir después de 2 segundos
             welcome_message = f"¡Bienvenido {user.name}! Cargando aplicación..."
+            print(f"DEBUG: Login successful for {user.name}, activating interval")
             return (
                 welcome_message,
                 "success",
@@ -284,8 +283,8 @@ def register_login_callbacks(app):
                 "",
                 "",
                 no_update,
-                False,
-            )  # Activar interval
+                False,  # Activar interval (disabled=False)
+            )
         else:
             return message, "danger", True, no_update, no_update, no_update, no_update
 
@@ -336,7 +335,9 @@ def register_login_callbacks(app):
     )
     def handle_login_redirect(n_intervals):
         """Callback para redirigir después del login exitoso con pausa."""
+        print(f"DEBUG: handle_login_redirect called with n_intervals={n_intervals}")
         if n_intervals > 0:
+            print("DEBUG: Redirecting to /")
             return "/"  # Redirigir a la página principal
         return no_update
 

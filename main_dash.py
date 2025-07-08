@@ -9,14 +9,14 @@ from dash import dcc, html
 from callbacks.administration_callbacks import register_administration_callbacks
 
 # Importar callbacks organizados
-from callbacks.auth_callbacks import register_auth_callbacks
 from callbacks.navigation_callbacks import register_navigation_callbacks
 from callbacks.player_callbacks import register_player_callbacks
 from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
+from common.login_dash import register_login_callbacks
 
 # Importar configuración
-from config import APP_ICON, APP_NAME
+from config import APP_NAME
 from controllers.db import initialize_database
 
 # Configuración de la aplicación Dash
@@ -53,7 +53,8 @@ app.layout = get_app_layout()
 # Registrar todos los callbacks organizados
 def register_all_callbacks():
     """Registra todos los callbacks de la aplicación."""
-    register_auth_callbacks(app)
+    # register_auth_callbacks(app)  # Deshabilitado - usando login_dash.py callbacks
+    register_login_callbacks(app)  # Callbacks de login con pausa
     register_navigation_callbacks(app)
     register_player_callbacks(app)
     register_administration_callbacks(app)
