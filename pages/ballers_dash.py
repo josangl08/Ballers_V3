@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, dcc, html
+from dash import Input, Output, dcc, html
 
 from controllers.player_controller import get_player_profile_data, get_players_for_list
 
@@ -393,7 +393,7 @@ def create_player_card(player_data):
                     ),
                     # Nombre del jugador
                     html.H5(
-                        player_data['name'],
+                        player_data["name"],
                         className="text-center",
                         style={"color": "#FFFFFF", "margin-bottom": "10px"},
                     ),
@@ -439,11 +439,11 @@ def create_player_card(player_data):
                         className="mt-auto",
                     ),
                 ],
-                style={"display": "flex", "flex-direction": "column", "height": "100%"}
+                style={"display": "flex", "flex-direction": "column", "height": "100%"},
             )
         ],
         className="player-card",  # Usar la clase CSS existente
-        style={"height": "100%"}  # Asegurar altura completa
+        style={"height": "100%"},  # Asegurar altura completa
     )
 
 
@@ -481,15 +481,15 @@ def create_players_list_dash():
 
     return dbc.Container(
         [
-            search_section, 
+            search_section,
             dbc.Row(
-                player_cards, 
+                player_cards,
                 id="players-cards-container",
-                className="g-3"  # Espaciado consistente entre cards
-            )
+                className="g-3",  # Espaciado consistente entre cards
+            ),
         ],
         fluid=True,  # Para ocupar todo el espacio disponible
-        className="h-100"  # Altura completa
+        className="h-100",  # Altura completa
     )
 
 
