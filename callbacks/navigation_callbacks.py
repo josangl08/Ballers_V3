@@ -114,19 +114,7 @@ def register_navigation_callbacks(app):
                                 # Contenido dinámico
                                 html.Div(
                                     id="dynamic-content",
-                                    children=[
-                                        html.H3(
-                                            "🏀 Welcome to Ballers",
-                                            style={
-                                                "color": "rgba(36, 222, 132, 1)",
-                                                "text-align": "center",
-                                            },
-                                        ),
-                                        html.P(
-                                            "Select a section from the menu to get started.",
-                                            className="text-center text-muted",
-                                        ),
-                                    ],
+                                    children=[],
                                 ),
                             ],
                             fluid=True,

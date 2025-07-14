@@ -493,66 +493,6 @@ def create_players_list_dash():
     )
 
 
-def create_ballers_dashboard_dash():
-    """Crea el dashboard principal de Ballers para Dash - migrado de Streamlit"""
-
-    return dbc.Container(
-        [
-            # Cabecera principal
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            html.H1(
-                                "🏀 Ballers Dashboard",
-                                style={
-                                    "color": "rgba(36, 222, 132, 1)",
-                                    "text-align": "center",
-                                },
-                            ),
-                            html.P(
-                                "Welcome to the Ballers management system",
-                                className="text-center text-muted",
-                            ),
-                        ],
-                        width=12,
-                    )
-                ],
-                className="mb-4",
-            ),
-            # Navegación por pestañas (migrado de Streamlit)
-            dbc.Tabs(
-                [
-                    dbc.Tab(
-                        label="📊 Overview",
-                        tab_id="overview",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
-                    ),
-                    dbc.Tab(
-                        label="👥 Players",
-                        tab_id="players",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
-                    ),
-                    dbc.Tab(
-                        label="📅 Calendar",
-                        tab_id="calendar",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
-                    ),
-                    dbc.Tab(
-                        label="📈 Statistics",
-                        tab_id="statistics",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
-                    ),
-                ],
-                id="ballers-tabs",
-                active_tab="overview",
-            ),
-            # Contenido de las pestañas
-            html.Div(id="ballers-tab-content", className="mt-4"),
-        ]
-    )
-
-
 def create_overview_content_dash():
     """Crea el contenido de overview para Dash - migrado de Streamlit"""
 
@@ -745,12 +685,6 @@ def show_ballers_content_dash():
 
     return html.Div(
         [
-            # Título de la sección (migrado de Streamlit)
-            html.H3(
-                "Profiles",
-                style={"color": "rgba(36, 222, 132, 1)", "text-align": "center"},
-                className="section-title mb-4",
-            ),
             # Contenido según el tipo de usuario (migrada la lógica de Streamlit)
             html.Div(id="ballers-user-content"),
             # Store para manejar estados
