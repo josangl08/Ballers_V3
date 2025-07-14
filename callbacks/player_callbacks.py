@@ -74,7 +74,7 @@ def register_player_callbacks(app):
                     return (
                         user_data.get("user_type", "player") if user_data else "player"
                     )
-        except:
+        except Exception:
             pass
         return "player"
 
@@ -95,11 +95,62 @@ def register_player_callbacks(app):
             if selected_player_id:
                 return html.Div(
                     [
-                        dbc.Button(
-                            "← Back to list",
-                            id="back-to-list-btn",
-                            color="secondary",
-                            className="mb-3",
+                        # Fila con botones de navegación y acción
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        dbc.Button(
+                                            [
+                                                html.I(
+                                                    className="bi bi-arrow-left me-2"
+                                                ),
+                                                "Back to list",
+                                            ],
+                                            id="back-to-list-btn",
+                                            className="custom-button",
+                                            style={
+                                                "border-radius": "20px",
+                                                "background-color": "#333333",
+                                                "color": "#24DE84",
+                                                "border": "none",
+                                                "padding": "0.5rem 1rem",
+                                                "font-weight": "500",
+                                                "transition": "all 0.3s ease",
+                                            },
+                                        )
+                                    ],
+                                    width="auto",
+                                ),
+                                dbc.Col(
+                                    [
+                                        dbc.Button(
+                                            [
+                                                html.I(
+                                                    className=(
+                                                        "bi bi-file-earmark-pdf me-2"
+                                                    )
+                                                ),
+                                                "Export Profile PDF",
+                                            ],
+                                            id="export-profile-btn",
+                                            className="custom-button",
+                                            style={
+                                                "border-radius": "20px",
+                                                "background-color": "#333333",
+                                                "color": "#24DE84",
+                                                "border": "none",
+                                                "padding": "0.5rem 1rem",
+                                                "font-weight": "500",
+                                                "transition": "all 0.3s ease",
+                                            },
+                                        )
+                                    ],
+                                    width="auto",
+                                    className="ms-auto",  # Empujar hacia la derecha
+                                ),
+                            ],
+                            className="mb-3 align-items-center",
                         ),
                         create_player_profile_dash(selected_player_id),
                     ]
@@ -145,3 +196,234 @@ def register_player_callbacks(app):
         from pages.ballers_dash import create_sessions_calendar_dash
 
         return create_sessions_calendar_dash(from_date, to_date, status)
+
+    @app.callback(
+        Output("performance-evolution-chart", "figure"),
+        [Input("metrics-selector", "value")],
+        [State("selected-player-id", "data")],
+        prevent_initial_call=False,
+    )
+    def update_performance_chart(selected_metrics, player_id):
+        """Actualiza el gráfico de evolución de rendimiento - migrado de Streamlit"""
+        import pandas as pd
+        import plotly.express as px
+
+        from controllers.player_controller import (
+            PlayerController,
+            get_player_profile_data,
+        )
+
+        # Si no hay player_id o métricas, mostrar gráfico vacío
+        if not player_id or not selected_metrics:
+            return px.line(title="Select metrics to display performance evolution")
+
+        try:
+            # Obtener datos del perfil usando la misma lógica que en Streamlit
+            profile_data = get_player_profile_data(player_id=player_id, user_id=None)
+
+            if not profile_data:
+                return px.line(title="No data available")
+
+            test_results = profile_data.get("test_results", [])
+
+            if not test_results:
+                return px.line(title="No test results available")
+
+            # Usar PlayerController para formatear datos como en Streamlit
+            with PlayerController() as controller:
+                test_data = controller.format_test_data_for_chart(test_results)
+
+            df = pd.DataFrame(test_data)
+
+            if df.empty:
+                return px.line(title="No data to display")
+
+            # Crear gráfico con colores diferentes por métrica
+            fig = px.line(
+                df,
+                x="Date",
+                y=selected_metrics,
+                title="Evolution of performance metrics",
+                markers=True,
+                color_discrete_sequence=[
+                    "#24DE84",  # Verde corporativo
+                    "#FF4757",  # Rojo brillante
+                    "#3742FA",  # Azul eléctrico
+                    "#FF6348",  # Naranja
+                    "#A4B0BE",  # Gris azulado
+                    "#FFA502",  # Amarillo dorado
+                    "#FF3838",  # Rojo intenso
+                    "#1E90FF",  # Azul dodger
+                    "#FF1493",  # Rosa intenso
+                ],
+            )
+
+            # Aplicar estilo coherente con la aplicación desde el inicio
+            fig.update_layout(
+                plot_bgcolor="#333333",  # Fondo gris consistente
+                paper_bgcolor="#333333",  # Fondo del papel gris
+                font_color="#FFFFFF",
+                title_font_color="#24DE84",
+                xaxis=dict(gridcolor="#555", color="#FFFFFF"),
+                yaxis=dict(gridcolor="#555", color="#FFFFFF"),
+                legend=dict(
+                    bgcolor="rgba(51,51,51,0.9)",
+                    bordercolor="#666",
+                    borderwidth=1,
+                    font_color="#FFFFFF",
+                ),
+            )
+
+            return fig
+
+        except Exception as e:
+            return px.line(title=f"Error loading chart: {str(e)}")
+
+    @app.callback(
+        Output("test-history-content", "children"),
+        [Input("profile-tabs", "active_tab")],
+        [State("selected-player-id", "data")],
+        prevent_initial_call=False,
+    )
+    def update_test_history(active_tab, player_id):
+        """Actualiza el contenido del historial de tests usando accordions.
+
+        Migrado de Streamlit.
+        """
+        if active_tab != "test-results" or not player_id:
+            return html.Div()
+
+        try:
+            from controllers.player_controller import get_player_profile_data
+
+            # Obtener datos usando la misma lógica que en Streamlit
+            profile_data = get_player_profile_data(player_id=player_id, user_id=None)
+
+            if not profile_data:
+                return dbc.Alert("No player data available.", color="info")
+
+            test_results = profile_data.get("test_results", [])
+
+            if not test_results:
+                return dbc.Alert(
+                    "No test results available.",
+                    color="info",
+                    style={
+                        "background-color": "#2A2A2A",
+                        "border": "none",
+                        "color": "#CCCCCC",
+                    },
+                )
+
+            # Crear accordions como los expanders de Streamlit
+            accordion_items = []
+
+            for i, test in enumerate(test_results):
+                # Crear contenido del accordion usando la misma estructura
+                # que en Streamlit
+                accordion_content = dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                html.P(
+                                    [html.Strong("Test Name: "), test.test_name],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [html.Strong("Weight: "), f"{test.weight} kg"],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [html.Strong("Height: "), f"{test.height} cm"],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                            ],
+                            width=6,
+                        ),
+                        dbc.Col(
+                            [
+                                html.P(
+                                    [
+                                        html.Strong("Ball Control: "),
+                                        str(test.ball_control),
+                                    ],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [
+                                        html.Strong("Control & Passing: "),
+                                        str(test.control_pass),
+                                    ],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [
+                                        html.Strong("Receiving & Passing/Scanning: "),
+                                        str(test.receive_scan),
+                                    ],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [
+                                        html.Strong("Dribling & Ball Carriying: "),
+                                        str(test.dribling_carriying),
+                                    ],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [
+                                        html.Strong("Shoot & Finishing: "),
+                                        str(test.shooting),
+                                    ],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [html.Strong("Crossbar: "), str(test.crossbar)],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [html.Strong("Sprint: "), str(test.sprint)],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [html.Strong("T-test: "), str(test.t_test)],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                                html.P(
+                                    [html.Strong("Jumping: "), str(test.jumping)],
+                                    style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                                ),
+                            ],
+                            width=6,
+                        ),
+                    ]
+                )
+
+                # Crear item del accordion
+                accordion_item = dbc.AccordionItem(
+                    accordion_content,
+                    title=f"Test of {test.date.strftime('%d/%m/%Y')}",
+                    item_id=f"test-{i}",
+                )
+
+                accordion_items.append(accordion_item)
+
+            # Crear accordion completo
+            accordion = dbc.Accordion(
+                accordion_items,
+                start_collapsed=True,  # Todos cerrados inicialmente como los expanders
+                style={"background-color": "#333333"},
+            )
+
+            return accordion
+
+        except Exception as e:
+            return dbc.Alert(
+                f"Error loading test history: {str(e)}",
+                color="danger",
+                style={
+                    "background-color": "#2A2A2A",
+                    "border": "none",
+                    "color": "#F44336",
+                },
+            )

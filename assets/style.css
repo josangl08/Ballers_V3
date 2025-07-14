@@ -64,6 +64,35 @@ div.row-widget.stForm {
 .st-emotion-cache-my1ldo{
     margin-left: 50px;
 }
+
+/* Estilos para textarea de notas */
+#notes-editor::placeholder {
+    color: #CCCCCC !important;
+    opacity: 1 !important;
+}
+
+/* Estilo para botón de Save Notes */
+#save-notes-profile-btn {
+    border-radius: 20px !important;
+    background-color: #333333 !important;
+    color: #24DE84 !important;
+    border: none !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+#save-notes-profile-btn:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+    box-shadow: 0 4px 8px rgba(251, 250, 250, 0.1) !important;
+}
+
+#save-notes-profile-btn:active {
+    background-color: #1DB15C !important;
+    color: #333333 !important;
+    transform: translateY(1px) !important;
+}
 .st-emotion-cache-seewz2 h1{
     text-align: center;
 }
@@ -149,17 +178,22 @@ button.stTab[aria-selected="true"] {
     color: #333333;
 }
 
-/* Gráficos */
-div.stPlotlyChart {
-    background-color: rgba(255, 255, 255, 0);
+/* Gráficos - Adaptado para Dash */
+#performance-evolution-chart {
+    background-color: #333333 !important;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     padding: 1rem;
     margin-bottom: 1rem;
 }
 
-/* Mensajes de alerta y éxito */
-div.stAlert {
+/* Forzar fondo gris en contenedores de plotly */
+.plotly-graph-div {
+    background-color: #333333 !important;
+}
+
+/* Mensajes de alerta - Adaptado para Dash */
+.alert {
     border-radius: 5px;
     padding: 0.5rem 1rem;
     margin-bottom: 1rem;

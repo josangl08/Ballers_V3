@@ -98,7 +98,7 @@ class PlayerController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
 
-        return self.db.query(Player).join(User).filter(User.is_active == True).all()
+        return self.db.query(Player).join(User).filter(User.is_active.is_(True)).all()
 
     def search_players(self, search_term: str) -> List[Player]:
         """
@@ -119,7 +119,7 @@ class PlayerController:
         return (
             self.db.query(Player)
             .join(User)
-            .filter(User.is_active == True, User.name.ilike(f"%{search_term}%"))
+            .filter(User.is_active.is_(True), User.name.ilike(f"%{search_term}%"))
             .all()
         )
 
@@ -154,13 +154,16 @@ class PlayerController:
                 - ((today.month, today.day) < (birth_date.month, birth_date.day))
             )
 
-        # Obtener próxima sesión programada
+        # Obtener próxima sesión programada (usar UTC para comparación)
+        from datetime import timezone
+
+        now_utc = dt.datetime.now(timezone.utc)
         next_session = (
             self.db.query(Session)
             .filter(
                 Session.player_id == player.player_id,
                 Session.status == SessionStatus.SCHEDULED,
-                Session.start_time > dt.datetime.now(),
+                Session.start_time > now_utc,
             )
             .order_by(Session.start_time)
             .first()
