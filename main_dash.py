@@ -17,7 +17,7 @@ from common.login_dash import register_login_callbacks
 from common.menu_dash import register_menu_callbacks
 
 # Importar configuración
-from config import APP_NAME
+from config import APP_NAME, APP_ICON
 from controllers.db import initialize_database
 
 # Configuración de la aplicación Dash
@@ -62,6 +62,10 @@ def register_all_callbacks():
     register_administration_callbacks(app)
     register_settings_callbacks(app)
     register_sidebar_callbacks(app)
+    
+    # Registrar callbacks específicos de páginas
+    from pages.ballers_dash import register_ballers_callbacks
+    register_ballers_callbacks(app)
 
 
 def initialize_dash_app():

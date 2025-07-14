@@ -59,10 +59,7 @@ div.row-widget.stForm {
     margin-bottom: 40px !important;
     padding-top: 0 !important;
 }
-/* Hacemos que el contenedor principal sea semitransparente */
-.stApp {
-    background-color: rgba(0, 0, 0, 0.2);
-}
+/* Clase de Streamlit eliminada - ya no necesaria en Dash */
 /* Datos personales del perfil */
 .st-emotion-cache-my1ldo{
     margin-left: 50px;
@@ -385,7 +382,7 @@ div.stExpander {
     overflow: hidden;
     margin-bottom: 1rem;
     transition: transform 0.2s ease;
-    height: 280px;  /* Altura fija para todas las cards */
+    height: 320px;  /* Altura aumentada para acomodar mejor el contenido */
     display: flex;
     flex-direction: column;
 }
@@ -395,11 +392,13 @@ div.stExpander {
     flex-direction: column;
     height: 100%;
     padding: 1rem;
+    justify-content: space-between;  /* Distribuir espacio entre elementos */
 }
 
 .player-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 12px rgba(36, 222, 132, 0.3);  /* Sombra verde */
+    border: 1px solid #24DE84;  /* Borde verde al hacer hover */
 }
 
 /* Fix para evitar overflow horizontal */
@@ -416,6 +415,20 @@ div.stExpander {
 /* Container principal sin overflow */
 #main-content-area {
     overflow-x: hidden;
+    background-color: #1D1B1A !important;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Responsive grid para cards de jugadores */
+@media (max-width: 576px) {
+    .player-card {
+        margin-bottom: 1rem;
+    }
+    
+    #main-content-area {
+        padding: 15px;
+    }
 }
 
 /* Search input styling */
@@ -450,11 +463,11 @@ div.stExpander {
     box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
 }
 
-/* View Profile button styling - consistent with other custom buttons */
-button[id^="view-profile-btn-"] {
-    background-color: #1D1B1A !important;
-    color: #24DE84 !important;
-    border: none !important;
+/* View Profile button styling - para cards de jugadores */
+.player-card .btn {
+    background-color: #000000 !important;  /* Fondo negro */
+    color: #FFFFFF !important;  /* Letras blancas */
+    border: 1px solid transparent !important;  /* Borde blanco */
     border-radius: 20px !important;
     font-weight: 500 !important;
     padding: 0.4rem 1.2rem !important;
@@ -462,19 +475,24 @@ button[id^="view-profile-btn-"] {
     cursor: pointer !important;
 }
 
-button[id^="view-profile-btn-"]:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+.player-card .btn:hover {
+    background-color: #000000 !important;  /* Mantener fondo negro */
+    color: #24DE84 !important;  /* Letras verdes al hover */
+    border-color: #24DE84 !important;  /* Borde verde al hover */
     transform: translateY(-1px) !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 2px 4px rgba(36, 222, 132, 0.2) !important;
 }
 
-button[id^="view-profile-btn-"]:active {
-    transform: translateY(0) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-    background-color: #555 !important;
-    color: #fafafa !important;
+/* Asegurar que el texto dentro de las cards sea blanco */
+.player-card h5 {
+    color: #FFFFFF !important;  /* Nombres en blanco */
 }
+
+.player-card .text-muted {
+    color: #CCCCCC !important;  /* Texto secundario en gris claro */
+}
+
+/* Estilo antiguo eliminado - ya no se usa */
 
 /* Checkbox styling */
 #remember-me .form-check-input {

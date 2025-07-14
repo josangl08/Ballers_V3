@@ -41,7 +41,6 @@ def register_sidebar_callbacks(app):
             content_style = {
                 "margin-left": "70px",
                 "transition": "all 0.3s ease",
-                "background-color": "rgba(0, 0, 0, 0.2)",
                 "min-height": "100vh",
                 "width": "calc(100vw - 70px)",
             }
@@ -59,7 +58,6 @@ def register_sidebar_callbacks(app):
             content_style = {
                 "margin-left": "300px",
                 "transition": "all 0.3s ease",
-                "background-color": "rgba(0, 0, 0, 0.2)",
                 "min-height": "100vh",
                 "width": "calc(100vw - 300px)",
             }

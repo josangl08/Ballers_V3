@@ -364,6 +364,89 @@ def create_player_profile_dash(player_id=None):
     )
 
 
+def create_player_card(player_data):
+    """Crea una tarjeta individual de jugador reutilizable"""
+    return dbc.Card(
+        [
+            dbc.CardBody(
+                [
+                    # Foto de perfil centrada con estilo circular
+                    html.Div(
+                        [
+                            html.Img(
+                                src=(
+                                    player_data["profile_photo"]
+                                    if player_data["profile_photo"]
+                                    else "/assets/profile_photos/default_profile.png"
+                                ),
+                                style={
+                                    "width": "80px",
+                                    "height": "80px",
+                                    "object-fit": "cover",
+                                    "border-radius": "50%",
+                                    "margin": "0 auto 15px auto",
+                                    "display": "block",
+                                },
+                            )
+                        ],
+                        className="text-center",
+                    ),
+                    # Nombre del jugador
+                    html.H5(
+                        player_data['name'],
+                        className="text-center",
+                        style={"color": "#FFFFFF", "margin-bottom": "10px"},
+                    ),
+                    # Información del jugador en formato vertical centrado
+                    html.Div(
+                        [
+                            html.P(
+                                f"Age: {player_data['age'] if player_data['age'] else 'N/A'} years",
+                                className="text-center text-muted mb-1",
+                            ),
+                            html.P(
+                                f"Service: {player_data['service'] or 'Basic'}",
+                                className="text-center text-muted mb-1",
+                            ),
+                            html.P(
+                                f"Sessions: {player_data.get('sessions_count', 0)}",
+                                className="text-center text-muted mb-1",
+                            ),
+                            html.P(
+                                f"Remaining: {player_data.get('remaining_sessions', 0)}",
+                                className="text-center text-muted mb-3",
+                            ),
+                        ]
+                    ),
+                    # Información de próxima sesión pegada al borde inferior
+                    html.Div(
+                        [
+                            html.P(
+                                f"Next Session: {player_data.get('next_session', 'To be confirmed')}",
+                                className="text-center text-muted mb-3",
+                                style={"font-size": "0.85rem", "font-style": "italic"},
+                            ),
+                            # Botón Ver Perfil usando las clases CSS
+                            dbc.Button(
+                                "View Profile",
+                                id={
+                                    "type": "view-profile-button",
+                                    "index": player_data["player_id"],
+                                },
+                                className="w-100",  # Los estilos están en CSS
+                            ),
+                        ],
+                        className="mt-auto",
+                    ),
+                ],
+                style={"display": "flex", "flex-direction": "column", "height": "100%"}
+            )
+        ],
+        className="player-card",  # Usar la clase CSS existente
+        style={"height": "100%"}  # Asegurar altura completa
+    )
+
+
 def create_players_list_dash():
     """Crea la lista de jugadores para Dash - migrado exactamente de Streamlit"""
 
@@ -373,81 +456,13 @@ def create_players_list_dash():
     if not players_data:
         return dbc.Alert("No registered players.", color="info")
 
-    # Crear tarjetas de jugadores (migrado de la estructura original de Streamlit)
+    # Crear tarjetas de jugadores usando la función reutilizable
     player_cards = []
     for i, player_data in enumerate(players_data):
-
-        # Usar la estructura exacta de player_data como en el original
-        card = dbc.Card(
-            [
-                dbc.CardBody(
-                    [
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        html.Img(
-                                            src=(
-                                                player_data["profile_photo"]
-                                                if player_data["profile_photo"]
-                                                else "/assets/profile_photos/default_profile.png"
-                                            ),
-                                            style={
-                                                "width": "100px",
-                                                "height": "100px",
-                                                "object-fit": "cover",
-                                            },
-                                            className="rounded",
-                                        )
-                                    ],
-                                    width=4,
-                                ),
-                                dbc.Col(
-                                    [
-                                        html.H5(
-                                            f"**{player_data['name']}**",
-                                            style={"color": "rgba(36, 222, 132, 1)"},
-                                        ),
-                                        html.P(
-                                            f"Age: {player_data['age'] if player_data['age'] else 'N/A'}"
-                                        ),
-                                        html.P(
-                                            f"Email: {player_data['email']}",
-                                            className="text-muted",
-                                        ),
-                                        html.P(
-                                            f"Service: {player_data['service'] or 'N/A'}"
-                                        ),
-                                        dbc.Button(
-                                            "View Profile",
-                                            id={
-                                                "type": "view-profile",
-                                                "index": player_data["player_id"],
-                                            },
-                                            color="primary",
-                                            size="sm",
-                                            className="mt-2",
-                                        ),
-                                    ],
-                                    width=8,
-                                ),
-                            ]
-                        )
-                    ]
-                )
-            ],
-            style={
-                "background-color": "#333333",
-                "border-radius": "10px",
-                "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
-                "margin-bottom": "1rem",
-                "border": "1px solid #444",
-            },
-        )
-
+        card = create_player_card(player_data)
         player_cards.append(dbc.Col([card], width=12, md=6, lg=4))
 
-    # Filtro de búsqueda (migrado de la función original)
+    # Filtro de búsqueda usando estilos existentes
     search_section = dbc.Row(
         [
             dbc.Col(
@@ -456,7 +471,7 @@ def create_players_list_dash():
                         id="search-player-input",
                         placeholder="Search Player by name:",
                         type="text",
-                        className="mb-3",
+                        className="dash-input mb-3",  # Usar la clase existente
                     )
                 ],
                 width=12,
@@ -465,7 +480,16 @@ def create_players_list_dash():
     )
 
     return dbc.Container(
-        [search_section, dbc.Row(player_cards, id="players-cards-container")]
+        [
+            search_section, 
+            dbc.Row(
+                player_cards, 
+                id="players-cards-container",
+                className="g-3"  # Espaciado consistente entre cards
+            )
+        ],
+        fluid=True,  # Para ocupar todo el espacio disponible
+        className="h-100"  # Altura completa
     )
 
 
@@ -742,97 +766,9 @@ def show_ballers_content_dash():
 def register_ballers_callbacks(app):
     """Registra los callbacks específicos de la página Ballers."""
 
-    @app.callback(
-        Output("user-type-store", "data"),
-        [Input("url", "pathname")],
-        prevent_initial_call=False,
-    )
-    def get_user_type(pathname):
-        """Obtiene el tipo de usuario de la sesión - MIGRADO DE STREAMLIT."""
-        from controllers.auth_controller import AuthController
+    # Callbacks removidos - ya existen en player_callbacks.py
 
-        try:
-            with AuthController() as auth:
-                if auth.is_logged_in():
-                    user_data = auth.get_current_user_data()
-                    return (
-                        user_data.get("user_type", "player") if user_data else "player"
-                    )
-        except:
-            pass
-        return "player"
-
-    @app.callback(
-        Output("ballers-user-content", "children"),
-        [Input("user-type-store", "data"), Input("selected-player-id", "data")],
-    )
-    def update_ballers_content(user_type, selected_player_id):
-        """Actualiza contenido según tipo de usuario y selección - MIGRADO DE STREAMLIT."""
-
-        # Si es un jugador, mostrar su propio perfil (migrado de show_content)
-        if user_type == "player":
-            return create_player_profile_dash()
-
-        # Si es coach o admin, mostrar cards de jugadores directamente (migrado de show_content)
-        elif user_type in ["coach", "admin"]:
-            if selected_player_id:
-                # Mostrar perfil del jugador seleccionado con botón de vuelta
-                return html.Div(
-                    [
-                        dbc.Button(
-                            "← Back to list",
-                            id="back-to-list-btn",
-                            color="secondary",
-                            className="mb-3",
-                        ),
-                        create_player_profile_dash(selected_player_id),
-                    ]
-                )
-            else:
-                # Mostrar directamente las cards de jugadores sin más info
-                return create_players_list_dash()
-        else:
-            return dbc.Alert(
-                "No tienes permisos para acceder a esta sección.", color="danger"
-            )
-
-    @app.callback(
-        Output("selected-player-id", "data"),
-        [
-            Input("back-to-list-btn", "n_clicks"),
-            Input({"type": "view-profile", "index": "ALL"}, "n_clicks"),
-        ],
-        [State("selected-player-id", "data")],
-        prevent_initial_call=True,
-    )
-    def handle_player_navigation(back_clicks, view_clicks, current_selection):
-        """Maneja la navegación entre lista y perfil de jugadores."""
-        import json
-
-        from dash import callback_context
-
-        if not callback_context.triggered:
-            return current_selection
-
-        trigger_id = callback_context.triggered[0]["prop_id"]
-
-        # Si se clickeó "Back to list"
-        if "back-to-list-btn" in trigger_id:
-            return None
-
-        # Si se clickeó "View Profile" en algún jugador
-        if "view-profile" in trigger_id and view_clicks:
-            try:
-                # Extraer el player_id del trigger
-                trigger_info = json.loads(trigger_id.split(".")[0])
-                player_id = trigger_info["index"]
-                print(f"DEBUG: Navigating to player {player_id}")  # Debug
-                return player_id
-            except Exception as e:
-                print(f"DEBUG: Error parsing trigger: {e}")  # Debug
-                return current_selection
-
-        return current_selection
+    # Callback removido - ya existe en player_callbacks.py
 
     @app.callback(
         Output("players-cards-container", "children"),
@@ -865,78 +801,10 @@ def register_ballers_callbacks(app):
                     )
                 ]
 
-        # Recrear tarjetas con datos filtrados
+        # Recrear tarjetas con datos filtrados usando la función reutilizable
         player_cards = []
         for i, player_data in enumerate(players_data):
-            card = dbc.Card(
-                [
-                    dbc.CardBody(
-                        [
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            html.Img(
-                                                src=(
-                                                    player_data["profile_photo"]
-                                                    if player_data["profile_photo"]
-                                                    else "/assets/profile_photos/default_profile.png"
-                                                ),
-                                                style={
-                                                    "width": "100px",
-                                                    "height": "100px",
-                                                    "object-fit": "cover",
-                                                },
-                                                className="rounded",
-                                            )
-                                        ],
-                                        width=4,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            html.H5(
-                                                f"**{player_data['name']}**",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
-                                            ),
-                                            html.P(
-                                                f"Age: {player_data['age'] if player_data['age'] else 'N/A'}"
-                                            ),
-                                            html.P(
-                                                f"Email: {player_data['email']}",
-                                                className="text-muted",
-                                            ),
-                                            html.P(
-                                                f"Service: {player_data['service'] or 'N/A'}"
-                                            ),
-                                            dbc.Button(
-                                                "View Profile",
-                                                id={
-                                                    "type": "view-profile",
-                                                    "index": player_data["player_id"],
-                                                },
-                                                color="primary",
-                                                size="sm",
-                                                className="mt-2",
-                                            ),
-                                        ],
-                                        width=8,
-                                    ),
-                                ]
-                            )
-                        ]
-                    )
-                ],
-                style={
-                    "background-color": "#333333",
-                    "border-radius": "10px",
-                    "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
-                    "margin-bottom": "1rem",
-                    "border": "1px solid #444",
-                },
-            )
-
+            card = create_player_card(player_data)
             player_cards.append(dbc.Col([card], width=12, md=6, lg=4))
 
         return player_cards
