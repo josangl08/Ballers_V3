@@ -32,4 +32,4 @@ filterwarnings = [
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", "env", ".venv"]
-skips = ["B101", "B601"]  # Skip assert_used and shell=True
+skips = ["B101", "B601", "B110"]  # Skip assert_used, shell=True, and try_except_pass

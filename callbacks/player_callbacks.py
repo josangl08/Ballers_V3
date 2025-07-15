@@ -75,7 +75,8 @@ def register_player_callbacks(app):
                         user_data.get("user_type", "player") if user_data else "player"
                     )
         except Exception:
-            pass
+            # Fallback to default user type if authentication fails
+            return "player"
         return "player"
 
     @app.callback(
@@ -182,20 +183,34 @@ def register_player_callbacks(app):
             return html.Div("Select a tab to view content")
 
     @app.callback(
-        Output("sessions-calendar-content", "children"),
-        [Input("apply-filter-btn", "n_clicks")],
+        Output("calendar-display", "children"),
         [
-            State("filter-from-date", "value"),
-            State("filter-to-date", "value"),
-            State("filter-status", "value"),
+            Input("filter-from-date", "value"),
+            Input("filter-to-date", "value"),
+            Input("status-filters", "data"),
+            Input(
+                "selected-player-id", "data"
+            ),  # Mover de State a Input para manejar cambios
         ],
-        prevent_initial_call=False,
+        prevent_initial_call=False,  # Permitir inicialización
     )
-    def update_sessions_calendar_content(n_clicks, from_date, to_date, status):
-        """Actualiza el contenido del calendario de sesiones - migrado de Streamlit"""
+    def update_sessions_calendar_content(from_date, to_date, status_filter, player_id):
+        """
+        Actualiza el contenido del calendario de sesiones de forma reactiva.
+        Se actualiza automáticamente cuando cambian los filtros.
+        """
         from pages.ballers_dash import create_sessions_calendar_dash
 
-        return create_sessions_calendar_dash(from_date, to_date, status)
+        # Usar filtros del store, por defecto todos están activos
+        if not status_filter:
+            status_filter = ["scheduled", "completed", "canceled"]
+
+        return create_sessions_calendar_dash(
+            from_date=from_date,
+            to_date=to_date,
+            status_filter=status_filter,
+            player_id=player_id,
+        )
 
     @app.callback(
         Output("performance-evolution-chart", "figure"),
@@ -215,19 +230,74 @@ def register_player_callbacks(app):
 
         # Si no hay player_id o métricas, mostrar gráfico vacío
         if not player_id or not selected_metrics:
-            return px.line(title="Select metrics to display performance evolution")
+            empty_fig = px.line()
+            empty_fig.update_layout(
+                plot_bgcolor="#333333",
+                paper_bgcolor="#333333",
+                font_color="#FFFFFF",
+                annotations=[
+                    dict(
+                        text="Select metrics to display performance evolution",
+                        xref="paper",
+                        yref="paper",
+                        x=0.5,
+                        y=0.5,
+                        xanchor="center",
+                        yanchor="middle",
+                        showarrow=False,
+                        font=dict(size=16, color="#FFFFFF"),
+                    )
+                ],
+            )
+            return empty_fig
 
         try:
             # Obtener datos del perfil usando la misma lógica que en Streamlit
             profile_data = get_player_profile_data(player_id=player_id, user_id=None)
 
             if not profile_data:
-                return px.line(title="No data available")
+                no_data_fig = px.line()
+                no_data_fig.update_layout(
+                    plot_bgcolor="#333333",
+                    paper_bgcolor="#333333",
+                    annotations=[
+                        dict(
+                            text="No data available",
+                            xref="paper",
+                            yref="paper",
+                            x=0.5,
+                            y=0.5,
+                            xanchor="center",
+                            yanchor="middle",
+                            showarrow=False,
+                            font=dict(size=16, color="#FFFFFF"),
+                        )
+                    ],
+                )
+                return no_data_fig
 
             test_results = profile_data.get("test_results", [])
 
             if not test_results:
-                return px.line(title="No test results available")
+                no_tests_fig = px.line()
+                no_tests_fig.update_layout(
+                    plot_bgcolor="#333333",
+                    paper_bgcolor="#333333",
+                    annotations=[
+                        dict(
+                            text="No test results available",
+                            xref="paper",
+                            yref="paper",
+                            x=0.5,
+                            y=0.5,
+                            xanchor="center",
+                            yanchor="middle",
+                            showarrow=False,
+                            font=dict(size=16, color="#FFFFFF"),
+                        )
+                    ],
+                )
+                return no_tests_fig
 
             # Usar PlayerController para formatear datos como en Streamlit
             with PlayerController() as controller:
@@ -236,14 +306,31 @@ def register_player_callbacks(app):
             df = pd.DataFrame(test_data)
 
             if df.empty:
-                return px.line(title="No data to display")
+                empty_df_fig = px.line()
+                empty_df_fig.update_layout(
+                    plot_bgcolor="#333333",
+                    paper_bgcolor="#333333",
+                    annotations=[
+                        dict(
+                            text="No data to display",
+                            xref="paper",
+                            yref="paper",
+                            x=0.5,
+                            y=0.5,
+                            xanchor="center",
+                            yanchor="middle",
+                            showarrow=False,
+                            font=dict(size=16, color="#FFFFFF"),
+                        )
+                    ],
+                )
+                return empty_df_fig
 
             # Crear gráfico con colores diferentes por métrica
             fig = px.line(
                 df,
                 x="Date",
                 y=selected_metrics,
-                title="Evolution of performance metrics",
                 markers=True,
                 color_discrete_sequence=[
                     "#24DE84",  # Verde corporativo
@@ -263,21 +350,44 @@ def register_player_callbacks(app):
                 plot_bgcolor="#333333",  # Fondo gris consistente
                 paper_bgcolor="#333333",  # Fondo del papel gris
                 font_color="#FFFFFF",
-                title_font_color="#24DE84",
                 xaxis=dict(gridcolor="#555", color="#FFFFFF"),
                 yaxis=dict(gridcolor="#555", color="#FFFFFF"),
                 legend=dict(
+                    orientation="h",  # Leyenda horizontal
+                    yanchor="top",
+                    y=-0.2,  # Posicionar más abajo para evitar superposición
+                    xanchor="center",
+                    x=0.5,  # Centrar horizontalmente
                     bgcolor="rgba(51,51,51,0.9)",
                     bordercolor="#666",
                     borderwidth=1,
                     font_color="#FFFFFF",
                 ),
+                margin=dict(l=40, r=40, t=20, b=100),  # Aumentar margen inferior
             )
 
             return fig
 
         except Exception as e:
-            return px.line(title=f"Error loading chart: {str(e)}")
+            error_fig = px.line()
+            error_fig.update_layout(
+                plot_bgcolor="#333333",
+                paper_bgcolor="#333333",
+                annotations=[
+                    dict(
+                        text=f"Error loading chart: {str(e)}",
+                        xref="paper",
+                        yref="paper",
+                        x=0.5,
+                        y=0.5,
+                        xanchor="center",
+                        yanchor="middle",
+                        showarrow=False,
+                        font=dict(size=16, color="#FF4757"),
+                    )
+                ],
+            )
+            return error_fig
 
     @app.callback(
         Output("test-history-content", "children"),
@@ -399,10 +509,18 @@ def register_player_callbacks(app):
                     ]
                 )
 
-                # Crear item del accordion
+                # Crear item del accordion con icono verde
                 accordion_item = dbc.AccordionItem(
                     accordion_content,
-                    title=f"Test of {test.date.strftime('%d/%m/%Y')}",
+                    title=html.Span(
+                        [
+                            html.I(
+                                className="bi bi-clipboard-data me-2",
+                                style={"color": "#24DE84"},
+                            ),
+                            f"Test of {test.date.strftime('%d/%m/%Y')}",
+                        ]
+                    ),
                     item_id=f"test-{i}",
                 )
 

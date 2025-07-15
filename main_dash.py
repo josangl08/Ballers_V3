@@ -7,6 +7,7 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 
 from callbacks.administration_callbacks import register_administration_callbacks
+from callbacks.ballers_callbacks import register_ballers_callbacks
 
 # Importar callbacks organizados
 from callbacks.navigation_callbacks import register_navigation_callbacks
@@ -17,8 +18,8 @@ from common.login_dash import register_login_callbacks
 from common.menu_dash import register_menu_callbacks
 
 # Importar configuración
-from config import APP_ICON, APP_NAME
-from controllers.db import initialize_database
+from config import APP_ICON, APP_NAME  # noqa: F401
+from controllers.db import initialize_database  # noqa: F401
 
 # Configuración de la aplicación Dash
 app = dash.Dash(
@@ -64,7 +65,6 @@ def register_all_callbacks():
     register_sidebar_callbacks(app)
 
     # Registrar callbacks específicos de páginas
-    from pages.ballers_dash import register_ballers_callbacks
 
     register_ballers_callbacks(app)
 

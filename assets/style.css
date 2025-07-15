@@ -71,25 +71,25 @@ div.row-widget.stForm {
     opacity: 1 !important;
 }
 
-/* Estilo para botón de Save Notes */
+/* Estilo para botón de Save Notes - igual que View Profile */
 #save-notes-profile-btn {
+    background-color: #1D1B1A !important;
+    border: 2px solid #1D1B1A !important;
     border-radius: 20px !important;
-    background-color: #333333 !important;
-    color: #24DE84 !important;
-    border: none !important;
-    padding: 0.5rem 1rem !important;
+    color: white !important;
+    padding: 0.4rem 1.2rem !important;
+    font-size: 1rem !important;
     font-weight: 500 !important;
     transition: all 0.3s ease !important;
 }
 
 #save-notes-profile-btn:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
-    box-shadow: 0 4px 8px rgba(251, 250, 250, 0.1) !important;
+    border-color: rgba(36, 222, 132, 1) !important;
+    color: rgba(36, 222, 132, 1) !important;
 }
 
 #save-notes-profile-btn:active {
-    background-color: #1DB15C !important;
+    background-color: rgba(36, 222, 132, 1) !important;
     color: #333333 !important;
     transform: translateY(1px) !important;
 }
@@ -99,6 +99,7 @@ div.row-widget.stForm {
 body {
     color: #333333;
     font-family: 'Roboto', sans-serif;
+    font-size: 0.9rem;
 }
 /* Tarjetas y contenedores */
 div.stContainer {
@@ -183,8 +184,10 @@ button.stTab[aria-selected="true"] {
     background-color: #333333 !important;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    padding: 1rem;
-    margin-bottom: 1rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    height: 450px;
 }
 
 /* Forzar fondo gris en contenedores de plotly */
@@ -201,7 +204,7 @@ button.stTab[aria-selected="true"] {
 
 /* Estilos para los calendarios */
 div.calendar-container {
-    background-color: rgb(13, 11, 11);
+    background-color: transparent;
     border-radius: 10px;
     padding: 1rem;
     margin-bottom: 1rem;
@@ -223,29 +226,38 @@ div.calendar-container {
     border-left: 4px solid #F44336;
 }
 
-/* Estilos para los estados de sesión */
-.status-scheduled {
-    background-color: #1E88E5;
+/* Estilos para los estados de sesión - mismo tamaño que filtros */
+/* Badge system unificado */
+.status-scheduled,
+.status-completed,
+.status-canceled,
+.status-inactive {
     color: white;
-    padding: 0.25rem 0.5rem;
+    padding: 6px 12px;
     border-radius: 3px;
     font-size: 0.8rem;
+    min-width: 85px;
+    text-align: center;
+    display: inline-block;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.status-scheduled {
+    background-color: rgba(30, 136, 229, 0.4);
 }
 
 .status-completed {
-    background-color: #4CAF50;
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 3px;
-    font-size: 0.8rem;
+    background-color: rgba(76, 175, 80, 0.4);
 }
 
 .status-canceled {
-    background-color: #F44336;
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 3px;
-    font-size: 0.8rem;
+    background-color: rgba(244, 67, 54, 0.4);
+}
+
+.status-inactive {
+    background-color: #6c757d;
+    opacity: 0.6;
 }
 
 /* Personalización de tooltips */
@@ -397,8 +409,8 @@ div.stExpander {
 /* Estilos para inputs de Dash */
 .dash-input {
     border-radius: 5px;
-    border: 1px solid #555;
-    background-color: #555;
+    border: 1px solid #666;
+    background-color: #333333;
     color: #fafafa;
 }
 
@@ -479,6 +491,45 @@ div.stExpander {
     opacity: 0.8;
 }
 
+/* Estilo minimalista para tabla de sesiones */
+.table-dark {
+    background-color: transparent !important;
+    border: 1px solid #24DE84 !important;
+    border-radius: 8px !important;
+    font-size: 0.85rem !important;
+    border-bottom: 1.5px solid #24DE84 !important;
+}
+
+.table-dark th {
+    background-color: #333 !important;
+    border: none !important;
+    color: #24DE84 !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    padding: 8px 12px !important;
+}
+
+/* Estilo base para celdas sin background específico */
+.table-dark td {
+    border: none !important;
+    color: #FFFFFF !important;
+    font-size: 0.8rem !important;
+    padding: 8px 12px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Filas alternadas entre transparente y sidebar */
+.table-dark tbody tr:nth-child(odd) td {
+    background-color: transparent !important;
+}
+.table-dark tbody tr:nth-child(even) td {
+    background-color: #333333 !important;
+}
+
+.table-dark tr:hover td {
+    background-color: rgba(36, 222, 132, 0.1) !important;
+}
+
 /* Login specific input styling */
 #username-input, #password-input {
     background-color: #333333 !important;
@@ -499,9 +550,9 @@ div.stExpander {
 
 /* View Profile button styling - para cards de jugadores */
 .player-card .btn {
-    background-color: #000000 !important;  /* Fondo negro */
+    background-color: #1D1B1A !important;  /* Mismo fondo que Save Notes */
     color: #FFFFFF !important;  /* Letras blancas */
-    border: 1px solid transparent !important;  /* Borde blanco */
+    border: 2px solid #1D1B1A !important;  /* Borde igual que Save Notes */
     border-radius: 20px !important;
     font-weight: 500 !important;
     padding: 0.4rem 1.2rem !important;
@@ -510,7 +561,7 @@ div.stExpander {
 }
 
 .player-card .btn:hover {
-    background-color: #000000 !important;  /* Mantener fondo negro */
+    background-color: #1D1B1A !important;  /* Mantener mismo fondo */
     color: #24DE84 !important;  /* Letras verdes al hover */
     border-color: #24DE84 !important;  /* Borde verde al hover */
     transform: translateY(-1px) !important;
@@ -775,20 +826,20 @@ h4 .bi, h5 .bi {
     font-weight: 500 !important;
 }
 
-/* Colores específicos para cada estado */
+/* Colores específicos para cada estado - iguales que session list */
 .Select-value.completed {
-    background-color: #4CAF50 !important;
-    color: #fafafa !important;
+    background-color: rgba(76, 175, 80, 0.4) !important;
+    color: white !important;
 }
 
 .Select-value.scheduled {
-    background-color: #9C27B0 !important;
-    color: #fafafa !important;
+    background-color: rgba(30, 136, 229, 0.4) !important;
+    color: white !important;
 }
 
 .Select-value.canceled {
-    background-color: #F44336 !important;
-    color: #fafafa !important;
+    background-color: rgba(244, 67, 54, 0.4) !important;
+    color: white !important;
 }
 
 .Select-value-label {
@@ -908,6 +959,9 @@ h4 .bi, h5 .bi {
     background-color: #1D1B1A !important;
     border: 1px solid #555 !important;
     color: #fafafa !important;
+    height: 32px !important;
+    padding: 4px 8px !important;
+    font-size: 0.85rem !important;
 }
 
 #calendar-start-date-input:focus,
@@ -932,20 +986,20 @@ h4 .bi, h5 .bi {
     color: #fafafa !important;
 }
 
-/* Estilos adicionales para tags de estado por colores */
+/* Estilos adicionales para tags de estado por colores - iguales que session list */
 .status-tag-completed {
-    background-color: #4CAF50 !important;
-    color: #fafafa !important;
+    background-color: rgba(76, 175, 80, 0.4) !important;
+    color: white !important;
 }
 
 .status-tag-scheduled {
-    background-color: #9C27B0 !important;
-    color: #fafafa !important;
+    background-color: rgba(30, 136, 229, 0.4) !important;
+    color: white !important;
 }
 
 .status-tag-canceled {
-    background-color: #F44336 !important;
-    color: #fafafa !important;
+    background-color: rgba(244, 67, 54, 0.4) !important;
+    color: white !important;
 }
 
 /* Header del perfil reorganizado */
@@ -1048,12 +1102,16 @@ div[id*="calendar-start-date"] input,
 div[id*="calendar-end-date"] input,
 input[type="date"],
 #calendar-start-date-input,
-#calendar-end-date-input {
+#calendar-end-date-input,
+#filter-from-date,
+#filter-to-date {
     background-color: #3b3b3a !important;
     border: 1px solid #555 !important;
     color: #fafafa !important;
     border-radius: 8px !important;
-    padding: 0.5rem !important;
+    padding: 0.4rem 0.6rem !important;
+    height: 32px !important;
+    font-size: 0.85rem !important;
 }
 
 div[id*="calendar-start-date"] input:focus,
@@ -1152,6 +1210,17 @@ div[id*="status-filter"] .Select-option:hover {
     margin-bottom: 0.5rem !important;
 }
 
+/* Contenedor de acordeones con fondo transparente */
+.accordion {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Espaciado transparente entre acordeones */
+.accordion-item + .accordion-item {
+    margin-top: 0.5rem !important;
+}
+
 .accordion-button {
     background-color: #333333 !important;
     color: #fafafa !important;  /* Texto blanco por defecto */
@@ -1187,22 +1256,22 @@ div[id*="status-filter"] .Select-option:hover {
 }
 
 /* Sistema de tipografía consistente para toda la app */
-.title-xl { font-size: 2rem !important; font-weight: 700 !important; }     /* Títulos principales */
-.title-lg { font-size: 1.5rem !important; font-weight: 600 !important; }   /* Títulos de sección */
-.title-md { font-size: 1.25rem !important; font-weight: 600 !important; }  /* Subtítulos */
-.title-sm { font-size: 1rem !important; font-weight: 600 !important; }     /* Títulos de card */
+.title-xl { font-size: 1.75rem !important; font-weight: 700 !important; }     /* Títulos principales */
+.title-lg { font-size: 1.3rem !important; font-weight: 600 !important; }   /* Títulos de sección */
+.title-md { font-size: 1.1rem !important; font-weight: 600 !important; }  /* Subtítulos */
+.title-sm { font-size: 0.9rem !important; font-weight: 600 !important; }     /* Títulos de card */
 
-.text-lg { font-size: 1.1rem !important; }      /* Texto grande */
-.text-base { font-size: 1rem !important; }      /* Texto por defecto */
-.text-sm { font-size: 0.875rem !important; }    /* Texto pequeño */
-.text-xs { font-size: 0.75rem !important; }     /* Texto extra pequeño */
+.text-lg { font-size: 1rem !important; }      /* Texto grande */
+.text-base { font-size: 0.9rem !important; }      /* Texto por defecto */
+.text-sm { font-size: 0.8rem !important; }    /* Texto pequeño */
+.text-xs { font-size: 0.7rem !important; }     /* Texto extra pequeño */
 
 /* Correcciones específicas para elementos que estaban demasiado grandes */
-h1, .h1 { font-size: 2rem !important; font-weight: 700 !important; }
-h2, .h2 { font-size: 1.75rem !important; font-weight: 600 !important; }
-h3, .h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
-h4, .h4 { font-size: 1.25rem !important; font-weight: 600 !important; }
-h5, .h5 { font-size: 1rem !important; font-weight: 600 !important; }
+h1, .h1 { font-size: 1.8rem !important; font-weight: 700 !important; }
+h2, .h2 { font-size: 1.6rem !important; font-weight: 600 !important; }
+h3, .h3 { font-size: 1.4rem !important; font-weight: 600 !important; }
+h4, .h4 { font-size: 1.2rem !important; font-weight: 600 !important; }
+h5, .h5 { font-size: 0.95rem !important; font-weight: 600 !important; }
 
 /* Iconos estandarizados */
 .icon-lg { font-size: 1.5rem !important; }      /* Iconos grandes */
@@ -1800,6 +1869,86 @@ input[type="date"].simple-date-input:hover {
 
 .sidebar-action-buttons {
     margin-top: 0 !important;
+}
+
+/* Badges del filtro de status - colores específicos y sin negrita */
+#status-scheduled {
+    font-weight: normal !important;
+}
+
+#status-completed {
+    font-weight: normal !important;
+}
+
+#status-canceled {
+    font-weight: normal !important;
+}
+
+/* Forzar colores específicos del proyecto para badges activos con más transparencia */
+#status-scheduled.btn-primary {
+    background-color: rgba(30, 136, 229, 0.4) !important;
+    border-color: #1E88E5 !important;
+    color: white !important;
+}
+
+#status-completed.btn-success {
+    background-color: rgba(76, 175, 80, 0.4) !important;
+    border-color: #4CAF50 !important;
+    color: white !important;
+}
+
+#status-canceled.btn-danger {
+    background-color: rgba(244, 67, 54, 0.4) !important;
+    border-color: #F44336 !important;
+    color: white !important;
+}
+
+/* Badges inactivos */
+#status-scheduled.btn-secondary,
+#status-completed.btn-secondary,
+#status-canceled.btn-secondary {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+}
+
+/* Estilos específicos para las etiquetas del dropdown de métricas */
+#metrics-selector .Select-multi-value {
+    background-color: transparent !important;
+    border: 1px solid #24DE84 !important;
+    border-radius: 20px !important;
+    color: #fafafa !important;
+}
+
+#metrics-selector .Select-multi-value-wrapper {
+    background-color: transparent !important;
+}
+
+#metrics-selector .Select-multi-value .Select-value-label {
+    color: #fafafa !important;
+    font-weight: normal !important;
+}
+
+#metrics-selector .Select-multi-value .Select-value-icon {
+    border-left: 1px solid #24DE84 !important;
+    background-color: transparent !important;
+    color: #fafafa !important;
+    border-radius: 0 20px 20px 0 !important;
+}
+
+#metrics-selector .Select-multi-value .Select-value-icon:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
+/* Targeting React-Select specific classes for metrics selector */
+#metrics-selector .css-12jo7m5 {
+    border-left: 1px solid #24DE84 !important;
+}
+
+#metrics-selector .css-12jo7m5:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
 }
 
 /* Estilos para sidebar colapsado */

@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 
 from googleapiclient.errors import HttpError
 from sqlalchemy.orm import Session as SQLSession
+from sqlalchemy.orm import joinedload
 
 from config import CALENDAR_COLORS
 from controllers.db import get_db_session
@@ -87,8 +88,13 @@ class SessionController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
 
-        query = self.db.query(Session).filter(
-            Session.start_time >= start, Session.start_time <= end
+        query = (
+            self.db.query(Session)
+            .options(
+                joinedload(Session.coach).joinedload(Coach.user),
+                joinedload(Session.player).joinedload(Player.user),
+            )
+            .filter(Session.start_time >= start, Session.start_time <= end)
         )
 
         if coach_id:
@@ -105,7 +111,15 @@ class SessionController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
 
-        return self.db.query(Session).filter_by(id=session_id).first()
+        return (
+            self.db.query(Session)
+            .options(
+                joinedload(Session.coach).joinedload(Coach.user),
+                joinedload(Session.player).joinedload(Player.user),
+            )
+            .filter_by(id=session_id)
+            .first()
+        )
 
     # Operaciones CRUD
 
@@ -556,7 +570,7 @@ class SessionController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
 
-        coaches = self.db.query(Coach).join(User).filter(User.is_active == True).all()
+        coaches = self.db.query(Coach).join(User).filter(User.is_active.is_(True)).all()
         return [(c.coach_id, c.user.name) for c in coaches]
 
     def get_available_players(self) -> List[tuple]:
@@ -564,7 +578,9 @@ class SessionController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
 
-        players = self.db.query(Player).join(User).filter(User.is_active == True).all()
+        players = (
+            self.db.query(Player).join(User).filter(User.is_active.is_(True)).all()
+        )
         return [(p.player_id, p.user.name) for p in players]
 
     def get_sessions_for_editing(

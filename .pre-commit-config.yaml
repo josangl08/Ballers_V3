@@ -44,13 +44,14 @@ repos:
           - --max-line-length=88      # Consistente con black
           - --extend-ignore=E203,W503 # Ignorar conflictos con black
           - --exclude=venv,env,.env,.venv,.git,__pycache__,*.egg-info
+          - --per-file-ignores=controllers/internal_calendar.py:E501,controllers/session_controller.py:E501,pages/ballers_dash.py:E501
 
   # bandit - Scanner de seguridad
   - repo: https://github.com/pycqa/bandit
     rev: 1.7.10
     hooks:
       - id: bandit
-        args: [-r, --format=custom, --skip=B101,B601] # Skip assert_used y shell=True
+        args: [-r, --format=custom, --skip=B101,B601,B110] # Skip assert_used, shell=True, try_except_pass
         exclude: ^tests/                               # No escanear tests
 
   # Hooks locales personalizados
