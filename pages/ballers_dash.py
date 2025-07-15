@@ -1,6 +1,8 @@
 # pages/ballers_dash.py - Migración visual de ballers.py a Dash
 from __future__ import annotations
 
+import datetime
+
 import dash_bootstrap_components as dbc
 from dash import Input, Output, State, dcc, html  # noqa: F401
 
@@ -341,14 +343,11 @@ def create_player_profile_dash(player_id=None):
                                     dbc.Input(
                                         id="filter-from-date",
                                         type="date",
-                                        className="dash-input",
-                                        style={
-                                            "border-radius": "5px",
-                                            "background-color": "#333333",
-                                            "border": "1px solid #666",
-                                            "color": "#FAFAFA",
-                                            "max-width": "180px",
-                                        },
+                                        className="custom-date-input",
+                                        value=(
+                                            datetime.date.today()
+                                            - datetime.timedelta(days=7)
+                                        ).isoformat(),
                                     ),
                                 ],
                                 width=3,  # Reducir de 4 a 3
@@ -366,14 +365,11 @@ def create_player_profile_dash(player_id=None):
                                     dbc.Input(
                                         id="filter-to-date",
                                         type="date",
-                                        className="dash-input",
-                                        style={
-                                            "border-radius": "5px",
-                                            "background-color": "#333333",
-                                            "border": "1px solid #666",
-                                            "color": "#FAFAFA",
-                                            "max-width": "180px",
-                                        },
+                                        className="custom-date-input",
+                                        value=(
+                                            datetime.date.today()
+                                            + datetime.timedelta(days=21)
+                                        ).isoformat(),
                                     ),
                                 ],
                                 width=3,  # Reducir de 4 a 3

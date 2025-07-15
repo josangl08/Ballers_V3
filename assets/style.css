@@ -1097,14 +1097,11 @@ div[id*="status-filter"] span[title="canceled"] {
 }
 
 /* Corregir inputs de fecha y dropdown para fondo correcto */
-/* Inputs de fecha - fondo gris claro correcto */
+/* Inputs de fecha - fondo gris claro correcto (excluding filter dates) */
 div[id*="calendar-start-date"] input,
 div[id*="calendar-end-date"] input,
-input[type="date"],
 #calendar-start-date-input,
-#calendar-end-date-input,
-#filter-from-date,
-#filter-to-date {
+#calendar-end-date-input {
     background-color: #3b3b3a !important;
     border: 1px solid #555 !important;
     color: #fafafa !important;
@@ -1116,7 +1113,6 @@ input[type="date"],
 
 div[id*="calendar-start-date"] input:focus,
 div[id*="calendar-end-date"] input:focus,
-input[type="date"]:focus,
 #calendar-start-date-input:focus,
 #calendar-end-date-input:focus {
     border-color: #24DE84 !important;
@@ -1368,7 +1364,6 @@ h5, .h5 { font-size: 0.95rem !important; font-weight: 600 !important; }
 /* IMPORTANTE: Estos estilos deben tener prioridad sobre otros estilos */
 .simple-date-input,
 input[type="date"].simple-date-input,
-input[type="date"],
 .form-control[type="date"] {
     background-color: transparent !important;
     border: 1px solid #24DE84 !important;
@@ -1956,6 +1951,193 @@ input[type="date"].simple-date-input:hover {
     display: none !important;
 }
 
+/* ============================================================================
+   CUSTOM DATE PICKER STYLES - Replicando el minicalendario de Streamlit
+   ============================================================================ */
+
+/* Contenedor principal del DatePicker */
+.custom-datepicker .DateInput {
+    background-color: #333333 !important;
+    border: 1px solid #24DE84 !important;
+    border-radius: 5px !important;
+    width: 100% !important;
+}
+
+/* Input del DatePicker */
+.custom-datepicker .DateInput_input {
+    background-color: #333333 !important;
+    border: none !important;
+    color: #FAFAFA !important;
+    font-size: 0.9rem !important;
+    padding: 8px 12px !important;
+    border-radius: 5px !important;
+}
+
+.custom-datepicker .DateInput_input::placeholder {
+    color: #CCCCCC !important;
+}
+
+.custom-datepicker .DateInput_input:focus {
+    border: none !important;
+    outline: none !important;
+}
+
+/* Dropdown del calendario */
+.custom-datepicker .DateRangePickerInput,
+.custom-datepicker .SingleDatePickerInput {
+    background-color: #333333 !important;
+    border: 1px solid #24DE84 !important;
+    border-radius: 5px !important;
+}
+
+/* ====== MINICALENDARIO DROPDOWN ====== */
+
+/* Contenedor principal del calendario desplegable */
+.DateRangePicker_picker,
+.SingleDatePicker_picker {
+    background-color: #1a1a1a !important;
+    border: 1px solid #24DE84 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+    z-index: 1000 !important;
+}
+
+/* Cabecera del calendario (navegación de mes/año) */
+.DayPicker__header {
+    background-color: #555555 !important;
+    border-bottom: 1px solid #333 !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+/* Botones de navegación (prev/next) */
+.DayPicker_nav {
+    background-color: transparent !important;
+    border: none !important;
+    color: #FAFAFA !important;
+    font-size: 1.2rem !important;
+}
+
+.DayPicker_nav:hover {
+    background-color: #24DE84 !important;
+    color: #1a1a1a !important;
+}
+
+/* Título del mes/año */
+.DayPicker_monthLabel,
+.DayPicker_caption {
+    color: #FAFAFA !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+}
+
+/* Nombres de días de la semana */
+.DayPicker_weekHeader {
+    background-color: #555555 !important;
+    color: #CCCCCC !important;
+    font-size: 0.8rem !important;
+    font-weight: normal !important;
+    text-transform: uppercase !important;
+}
+
+.DayPicker_weekHeader_ul {
+    background-color: #555555 !important;
+}
+
+.DayPicker_weekHeader_li {
+    color: #CCCCCC !important;
+}
+
+/* ====== CUERPO DEL CALENDARIO ====== */
+
+/* Fondo del cuerpo del calendario */
+.DayPicker_month {
+    background-color: #1a1a1a !important;
+    border-radius: 0 0 8px 8px !important;
+}
+
+/* Tabla del calendario */
+.DayPicker_monthTable {
+    background-color: #1a1a1a !important;
+}
+
+/* Días individuales */
+.CalendarDay {
+    background-color: #1a1a1a !important;
+    border: 1px solid transparent !important;
+    color: #FAFAFA !important;
+    font-size: 0.9rem !important;
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    text-align: center !important;
+}
+
+/* Hover sobre días */
+.CalendarDay:hover {
+    background-color: #1a1a1a !important;
+    border: 2px solid #24DE84 !important;
+    border-radius: 50% !important;
+    color: #FAFAFA !important;
+}
+
+/* Día seleccionado */
+.CalendarDay__selected,
+.CalendarDay__selected:active,
+.CalendarDay__selected:hover {
+    background-color: #24DE84 !important;
+    border: 2px solid #24DE84 !important;
+    border-radius: 50% !important;
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+}
+
+/* Días fuera del mes actual */
+.CalendarDay__outside {
+    color: #666666 !important;
+    background-color: #1a1a1a !important;
+}
+
+.CalendarDay__outside:hover {
+    background-color: #1a1a1a !important;
+    border: 1px solid #444444 !important;
+    color: #888888 !important;
+}
+
+/* Día de hoy (sin seleccionar) */
+.CalendarDay__default:hover {
+    background-color: #1a1a1a !important;
+    border: 2px solid #24DE84 !important;
+    border-radius: 50% !important;
+}
+
+/* Días bloqueados/deshabilitados */
+.CalendarDay__blocked_minimum_nights,
+.CalendarDay__blocked_calendar,
+.CalendarDay__blocked_out_of_range {
+    background-color: #1a1a1a !important;
+    color: #444444 !important;
+    text-decoration: line-through !important;
+}
+
+/* Navegación de meses */
+.DayPickerNavigation {
+    background-color: #555555 !important;
+}
+
+.DayPickerNavigation_button {
+    background-color: transparent !important;
+    border: none !important;
+    color: #FAFAFA !important;
+    font-size: 1.1rem !important;
+    padding: 8px 12px !important;
+}
+
+.DayPickerNavigation_button:hover {
+    background-color: #24DE84 !important;
+    color: #1a1a1a !important;
+    border-radius: 4px !important;
+}
+
 .sidebar-collapsed .sidebar-user-info {
     display: none !important;
 }
@@ -2099,3 +2281,146 @@ input[type="date"].simple-date-input:hover {
 .sidebar-collapsed #logout-button span {
     display: none !important;
 }
+
+/* Estilos para date inputs personalizados - matching Streamlit design */
+/* Higher specificity to override other date input styles */
+input[type="date"].custom-date-input,
+.custom-date-input {
+    background-color: #333333 !important;
+    border: 2px solid #24DE84 !important;
+    border-radius: 5px !important;
+    color: #FAFAFA !important;
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+    transition: all 0.3s ease !important;
+    max-width: 180px !important;
+}
+
+input[type="date"].custom-date-input:focus,
+.custom-date-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    outline: none !important;
+    background-color: #333333 !important;
+}
+
+input[type="date"].custom-date-input:hover,
+.custom-date-input:hover {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
+    background-color: #333333 !important;
+}
+
+/* Estilos para el calendario nativo del navegador */
+input[type="date"].custom-date-input::-webkit-calendar-picker-indicator,
+.custom-date-input::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(0) saturate(100%) invert(78%) sepia(55%) saturate(1650%) hue-rotate(100deg) brightness(99%) contrast(87%);
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+input[type="date"].custom-date-input::-webkit-calendar-picker-indicator:hover,
+.custom-date-input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Estilos para el texto del placeholder/valor */
+input[type="date"].custom-date-input::-webkit-input-placeholder,
+.custom-date-input::-webkit-input-placeholder {
+    color: #CCCCCC !important;
+    opacity: 1;
+}
+
+input[type="date"].custom-date-input::-moz-placeholder,
+.custom-date-input::-moz-placeholder {
+    color: #CCCCCC !important;
+    opacity: 1;
+}
+
+input[type="date"].custom-date-input:-ms-input-placeholder,
+.custom-date-input:-ms-input-placeholder {
+    color: #CCCCCC !important;
+    opacity: 1;
+}
+
+input[type="date"].custom-date-input::-ms-input-placeholder,
+.custom-date-input::-ms-input-placeholder {
+    color: #CCCCCC !important;
+    opacity: 1;
+}
+
+/* Specific styles for filter date inputs - highest priority */
+#filter-from-date.custom-date-input,
+#filter-to-date.custom-date-input,
+input[type="date"]#filter-from-date.custom-date-input,
+input[type="date"]#filter-to-date.custom-date-input {
+    background-color: #333333 !important;
+    border: 1px solid #666 !important;
+    border-radius: 5px !important;
+    color: #FAFAFA !important;
+    padding: 6px 10px !important;
+    font-size: 0.85rem !important;
+    transition: all 0.3s ease !important;
+    max-width: 150px !important;
+    /* Force dark theme for native calendar */
+    color-scheme: dark;
+    outline: none !important;
+}
+
+#filter-from-date.custom-date-input:focus,
+#filter-to-date.custom-date-input:focus,
+input[type="date"]#filter-from-date.custom-date-input:focus,
+input[type="date"]#filter-to-date.custom-date-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    outline: none !important;
+    background-color: #333333 !important;
+}
+
+#filter-from-date.custom-date-input:hover,
+#filter-to-date.custom-date-input:hover,
+input[type="date"]#filter-from-date.custom-date-input:hover,
+input[type="date"]#filter-to-date.custom-date-input:hover {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
+    background-color: #333333 !important;
+}
+
+/* Additional native calendar styling */
+#filter-from-date.custom-date-input::-webkit-calendar-picker-indicator,
+#filter-to-date.custom-date-input::-webkit-calendar-picker-indicator {
+    background-color: #24DE84 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    filter: invert(1) !important;
+    padding: 4px !important;
+}
+
+/* Try to style the native calendar popup */
+#filter-from-date.custom-date-input::-webkit-datetime-edit,
+#filter-to-date.custom-date-input::-webkit-datetime-edit {
+    color: #FAFAFA !important;
+    padding: 4px !important;
+}
+
+#filter-from-date.custom-date-input::-webkit-datetime-edit-text,
+#filter-to-date.custom-date-input::-webkit-datetime-edit-text,
+#filter-from-date.custom-date-input::-webkit-datetime-edit-month-field,
+#filter-to-date.custom-date-input::-webkit-datetime-edit-month-field,
+#filter-from-date.custom-date-input::-webkit-datetime-edit-day-field,
+#filter-to-date.custom-date-input::-webkit-datetime-edit-day-field,
+#filter-from-date.custom-date-input::-webkit-datetime-edit-year-field,
+#filter-to-date.custom-date-input::-webkit-datetime-edit-year-field {
+    color: #FAFAFA !important;
+    background-color: transparent !important;
+}
+
+/* Make native calendar popup larger */
+#filter-from-date.custom-date-input::-webkit-calendar-picker-indicator,
+#filter-to-date.custom-date-input::-webkit-calendar-picker-indicator {
+    width: 20px !important;
+    height: 20px !important;
+    background-size: 16px !important;
+}
+
+/* Native calendar has no size control - this is a browser/OS limitation */
