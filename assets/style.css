@@ -238,9 +238,12 @@ div.calendar-container {
     font-size: 0.8rem;
     min-width: 85px;
     text-align: center;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-weight: normal;
     cursor: pointer;
+    min-height: 26px;
 }
 
 .status-scheduled {
@@ -489,6 +492,80 @@ div.stExpander {
 .dash-input::placeholder {
     color: #fafafa;
     opacity: 0.8;
+}
+
+/* Status chips styling for administration page */
+.status-chip {
+    transition: all 0.3s ease;
+    border: none;
+    font-weight: 500;
+}
+
+.status-chip-active {
+    background-color: rgba(36, 222, 132, 1) !important;
+    color: #FFFFFF !important;
+    opacity: 1;
+}
+
+.status-chip-inactive {
+    background-color: rgba(100, 100, 100, 0.5) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    opacity: 0.7;
+}
+
+.status-chip:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+/* Custom dropdown styling for administration */
+.custom-dropdown .Select-control {
+    background-color: #333333 !important;
+    border: 1px solid #555555 !important;
+    border-radius: 10px !important;
+    color: #FFFFFF !important;
+    min-height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.custom-dropdown .Select-value-label {
+    color: #FFFFFF !important;
+    line-height: 26px !important;
+}
+
+.custom-dropdown .Select-placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+    line-height: 26px !important;
+}
+
+.custom-dropdown .Select-menu-outer {
+    background-color: #333333 !important;
+    border: 1px solid #555555 !important;
+    border-radius: 10px !important;
+}
+
+.custom-dropdown .Select-option {
+    background-color: #333333 !important;
+    color: #FFFFFF !important;
+}
+
+.custom-dropdown .Select-option:hover {
+    background-color: rgba(36, 222, 132, 0.2) !important;
+}
+
+/* Custom date input styling */
+.custom-date-input {
+    background-color: #333333 !important;
+    border: 1px solid #555555 !important;
+    border-radius: 10px !important;
+    color: #FFFFFF !important;
+    padding: 10px !important;
+}
+
+.custom-date-input:focus {
+    border-color: rgba(36, 222, 132, 1) !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
 }
 
 /* Estilo minimalista para tabla de sesiones */
@@ -2362,6 +2439,8 @@ input[type="date"]#filter-to-date.custom-date-input {
     font-size: 0.85rem !important;
     transition: all 0.3s ease !important;
     max-width: 150px !important;
+    min-height: 38px !important;
+    box-sizing: border-box !important;
     /* Force dark theme for native calendar */
     color-scheme: dark;
     outline: none !important;

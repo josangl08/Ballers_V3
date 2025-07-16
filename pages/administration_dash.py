@@ -1,654 +1,563 @@
-# pages/administration_dash.py - Migración visual de administration.py a Dash
+# pages/administration_dash.py - Migración exacta copiando estructura de ballers_dash.py
+import datetime
+
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
 
-# Funciones simples para reemplazar cloud_utils removido
-def is_streamlit_cloud():
-    return False
-
-
-def show_cloud_feature_limitation(feature_name):
-    return f"Feature {feature_name} not available in local mode"
-
-
-def show_cloud_mode_info():
-    return "Running in local mode"
-
-
-def create_session_form_dash():
-    """Crea el formulario de sesión para Dash - migrado exactamente de Streamlit"""
+def show_administration_content_dash():
+    """Función principal para mostrar el contenido de Administration"""
 
     return dbc.Container(
         [
-            dbc.Card(
-                [
-                    dbc.CardBody(
-                        [
-                            html.H5(
-                                "📅 Create New Session",
-                                className="card-title",
-                                style={"color": "rgba(36, 222, 132, 1)"},
-                            ),
-                            # Información básica de la sesión
-                            html.H6(
-                                "📋 Basic Information",
-                                style={"color": "rgba(36, 222, 132, 1)"},
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Session Date *"),
-                                            dbc.Input(
-                                                id="new-session-date",
-                                                type="date",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
-                                            ),
-                                        ],
-                                        width=4,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Start Time *"),
-                                            dbc.Input(
-                                                id="new-session-time",
-                                                type="time",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
-                                            ),
-                                        ],
-                                        width=4,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Duration (minutes) *"),
-                                            dbc.Input(
-                                                id="new-session-duration",
-                                                type="number",
-                                                min=15,
-                                                max=240,
-                                                value=60,
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
-                                            ),
-                                        ],
-                                        width=4,
-                                    ),
-                                ],
-                                className="mb-3",
-                            ),
-                            # Asignación de personal y jugadores
-                            html.H6(
-                                "👥 Assignment",
-                                style={"color": "rgba(36, 222, 132, 1)"},
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Coach *"),
-                                            dcc.Dropdown(
-                                                id="new-session-coach",
-                                                placeholder="Select a coach...",
-                                                style={"border-radius": "5px"},
-                                            ),
-                                        ],
-                                        width=6,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Session Type *"),
-                                            dcc.Dropdown(
-                                                id="new-session-type",
-                                                options=[
-                                                    {
-                                                        "label": "🏃‍♀️ Training",
-                                                        "value": "training",
-                                                    },
-                                                    {
-                                                        "label": "⚽ Match",
-                                                        "value": "match",
-                                                    },
-                                                    {
-                                                        "label": "📊 Evaluation",
-                                                        "value": "evaluation",
-                                                    },
-                                                    {
-                                                        "label": "🎯 Personal Training",
-                                                        "value": "personal",
-                                                    },
-                                                ],
-                                                value="training",
-                                                style={"border-radius": "5px"},
-                                            ),
-                                        ],
-                                        width=6,
-                                    ),
-                                ],
-                                className="mb-3",
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Players"),
-                                            dcc.Dropdown(
-                                                id="new-session-players",
-                                                placeholder="Select players (optional for open sessions)...",
-                                                multi=True,
-                                                style={"border-radius": "5px"},
-                                            ),
-                                        ],
-                                        width=12,
-                                    )
-                                ],
-                                className="mb-3",
-                            ),
-                            # Información financiera y adicional
-                            html.H6(
-                                "💰 Financial & Additional",
-                                style={"color": "rgba(36, 222, 132, 1)"},
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Price per Player (€)"),
-                                            dbc.Input(
-                                                id="new-session-price",
-                                                type="number",
-                                                min=0,
-                                                step=0.01,
-                                                value=20.00,
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
-                                            ),
-                                        ],
-                                        width=6,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Maximum Participants"),
-                                            dbc.Input(
-                                                id="new-session-max-participants",
-                                                type="number",
-                                                min=1,
-                                                max=20,
-                                                value=10,
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
-                                            ),
-                                        ],
-                                        width=6,
-                                    ),
-                                ],
-                                className="mb-3",
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Session Notes"),
-                                            dbc.Textarea(
-                                                id="new-session-notes",
-                                                placeholder="Add any additional notes or instructions for this session...",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
-                                                rows=3,
-                                            ),
-                                        ],
-                                        width=12,
-                                    )
-                                ],
-                                className="mb-3",
-                            ),
-                            # Configuración de sincronización
-                            html.H6(
-                                "🔄 Sync Settings",
-                                style={"color": "rgba(36, 222, 132, 1)"},
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Checklist(
-                                                id="session-sync-options",
-                                                options=[
-                                                    {
-                                                        "label": "🗓️ Sync to Google Calendar",
-                                                        "value": "calendar",
-                                                    },
-                                                    {
-                                                        "label": "📧 Send email notifications",
-                                                        "value": "email",
-                                                    },
-                                                    {
-                                                        "label": "📱 Send SMS reminders",
-                                                        "value": "sms",
-                                                    },
-                                                ],
-                                                value=["calendar"],
-                                                className="mb-3",
-                                            )
-                                        ],
-                                        width=12,
-                                    )
-                                ],
-                                className="mb-3",
-                            ),
-                            # Botones de acción
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Button(
-                                                "📅 Create Session",
-                                                id="create-session-submit-btn",
-                                                color="success",
-                                                size="lg",
-                                                className="w-100",
-                                                style={"border-radius": "20px"},
-                                            )
-                                        ],
-                                        width=8,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Button(
-                                                "🔍 Check Time Conflicts",
-                                                id="check-conflicts-btn",
-                                                color="warning",
-                                                size="lg",
-                                                className="w-100",
-                                                style={"border-radius": "20px"},
-                                            )
-                                        ],
-                                        width=4,
-                                    ),
-                                ]
-                            ),
-                        ]
-                    )
-                ],
-                style={
-                    "background-color": "#333333",
-                    "border-radius": "10px",
-                    "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
-                },
-            ),
-            # Alert para mensajes
-            dbc.Alert(
-                id="session-form-alert",
-                is_open=False,
-                dismissable=True,
-                className="mt-3",
-            ),
-        ]
-    )
-
-
-def create_sessions_list_dash():
-    """Crea la lista de sesiones para Dash - migrado exactamente de Streamlit"""
-
-    return dbc.Container(
-        [
-            # Filtros mejorados (migrado del original)
-            dbc.Card(
-                [
-                    dbc.CardBody(
-                        [
-                            html.H5(
-                                "🔍 Session Filters",
-                                style={"color": "rgba(36, 222, 132, 1)"},
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("From Date"),
-                                            dbc.Input(
-                                                id="admin-filter-date-start",
-                                                type="date",
-                                                style={"border-radius": "5px"},
-                                            ),
-                                        ],
-                                        width=3,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("To Date"),
-                                            dbc.Input(
-                                                id="admin-filter-date-end",
-                                                type="date",
-                                                style={"border-radius": "5px"},
-                                            ),
-                                        ],
-                                        width=3,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Status"),
-                                            dcc.Dropdown(
-                                                id="admin-filter-status",
-                                                options=[
-                                                    {"label": "All", "value": "all"},
-                                                    {
-                                                        "label": "✅ Completed",
-                                                        "value": "completed",
-                                                    },
-                                                    {
-                                                        "label": "📅 Scheduled",
-                                                        "value": "scheduled",
-                                                    },
-                                                    {
-                                                        "label": "❌ Canceled",
-                                                        "value": "canceled",
-                                                    },
-                                                ],
-                                                value="all",
-                                                style={"border-radius": "5px"},
-                                            ),
-                                        ],
-                                        width=3,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Label("Coach"),
-                                            dcc.Dropdown(
-                                                id="admin-filter-coach",
-                                                options=[],  # Se llenará dinámicamente
-                                                placeholder="All coaches",
-                                                style={"border-radius": "5px"},
-                                            ),
-                                        ],
-                                        width=3,
-                                    ),
-                                ],
-                                className="mb-3",
-                            ),
-                            dbc.Button(
-                                "🔍 Apply Filters",
-                                id="admin-apply-filters-btn",
-                                color="primary",
-                                style={"border-radius": "20px"},
-                            ),
-                        ]
-                    )
-                ],
-                className="mb-4",
-                style={
-                    "background-color": "#333333",
-                    "border-radius": "10px",
-                    "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
-                },
-            ),
-            # Sessions Management (migrado del original)
-            dbc.Card(
-                [
-                    dbc.CardBody(
-                        [
-                            html.H5(
-                                "📋 Sessions Management",
-                                style={"color": "rgba(36, 222, 132, 1)"},
-                            ),
-                            # Calendario integrado
-                            html.Div(id="admin-calendar-view", className="mb-4"),
-                            # Lista de sesiones
-                            html.Div(id="admin-sessions-table"),
-                            # Botones de export y acciones
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Button(
-                                                "📊 Export Sessions PDF",
-                                                id="export-sessions-pdf-btn",
-                                                color="primary",
-                                                className="me-2",
-                                                style={
-                                                    "border-radius": "20px",
-                                                    "background-color": "#333333",
-                                                    "color": "rgba(36, 222, 132, 1)",
-                                                    "border": "none",
-                                                },
-                                            ),
-                                            dbc.Button(
-                                                "🖨️ Print Sessions",
-                                                id="print-sessions-btn",
-                                                color="secondary",
-                                                className="me-2",
-                                                style={
-                                                    "border-radius": "20px",
-                                                    "background-color": "#666666",
-                                                    "color": "white",
-                                                    "border": "none",
-                                                },
-                                            ),
-                                            dbc.Button(
-                                                "🔄 Sync with Calendar",
-                                                id="sync-calendar-btn",
-                                                color="info",
-                                                style={"border-radius": "20px"},
-                                            ),
-                                        ],
-                                        width=12,
-                                        className="text-center",
-                                    )
-                                ],
-                                className="mt-3",
-                            ),
-                        ]
-                    )
-                ],
-                style={
-                    "background-color": "#333333",
-                    "border-radius": "10px",
-                    "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
-                },
-            ),
-        ]
-    )
-
-
-def create_sync_alerts_dash():
-    """Crea las alertas de sync para Dash - migrado de Streamlit"""
-
-    return dbc.Card(
-        [
-            dbc.CardBody(
-                [
-                    html.H5(
-                        "🔄 Sync Status",
-                        className="card-title",
-                        style={"color": "rgba(36, 222, 132, 1)"},
-                    ),
-                    html.Div(id="sync-alerts-content"),
-                    dbc.Button(
-                        "🔄 Manual Sync",
-                        id="manual-sync-btn",
-                        color="info",
-                        className="w-100 mt-3",
-                        style={"border-radius": "20px"},
-                    ),
-                ]
-            )
-        ],
-        style={
-            "background-color": "#333333",
-            "border-radius": "10px",
-            "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
-        },
-    )
-
-
-def create_administration_dashboard_dash():
-    """Crea el dashboard de administración para Dash - migrado de Streamlit"""
-
-    return dbc.Container(
-        [
-            # Cabecera principal
+            # Título principal
             dbc.Row(
                 [
                     dbc.Col(
                         [
                             html.H1(
-                                "⚙️ Administration",
+                                [
+                                    html.I(className="bi bi-shield-lock me-3"),
+                                    "Administration",
+                                ],
                                 style={
                                     "color": "rgba(36, 222, 132, 1)",
-                                    "text-align": "center",
+                                    "margin-bottom": "30px",
+                                    "font-size": "2.5rem",
                                 },
-                            ),
-                            html.P(
-                                "Manage sessions, users, and system settings",
-                                className="text-center text-muted",
                             ),
                         ],
                         width=12,
-                    )
-                ],
-                className="mb-4",
+                    ),
+                ]
             ),
-            # Navegación por pestañas (migrado exactamente de Streamlit)
+            # Main tabs (Sessions/Financials)
             dbc.Tabs(
                 [
                     dbc.Tab(
-                        label="📅 Sessions",
-                        tab_id="sessions",
+                        label="Sessions",
+                        tab_id="sessions-tab",
                         active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        label_style={"color": "#FFFFFF"},
                     ),
                     dbc.Tab(
-                        label="💰 Financials",
-                        tab_id="financials",
+                        label="Financials",
+                        tab_id="financials-tab",
                         active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        label_style={"color": "#FFFFFF"},
                     ),
                 ],
-                id="admin-tabs",
-                active_tab="sessions",
+                id="admin-main-tabs",
+                active_tab="sessions-tab",
+                style={"margin-bottom": "40px"},
             ),
-            # Contenido de las pestañas
-            html.Div(id="admin-tab-content", className="mt-4"),
-            # Alerta para mensajes
-            dbc.Alert(
-                id="admin-alert", is_open=False, dismissable=True, className="mt-3"
+            # Tab content
+            html.Div(id="admin-main-content"),
+            # Store for user type
+            dcc.Store(id="admin-user-type-store", data="admin"),
+            # Store for status filters
+            dcc.Store(
+                id="admin-status-filters", data=["scheduled", "completed", "canceled"]
             ),
         ]
     )
 
 
-def create_users_management_dash():
-    """Crea la gestión de usuarios para Dash - migrado de Streamlit"""
+def create_sessions_content():
+    """Crea el contenido de sessions copiando exactamente la estructura de ballers"""
+
+    return html.Div(
+        [
+            # COPIANDO EXACTAMENTE LA ESTRUCTURA DE BALLERS_DASH PROFILES
+            html.Div(
+                [
+                    html.H5(
+                        [
+                            html.I(className="bi bi-calendar-week me-2"),
+                            "Sessions Calendar",
+                        ],
+                        style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "margin-bottom": "20px",
+                            "font-size": "1.1rem",
+                        },
+                    ),
+                    dbc.Row(
+                        [
+                            # Filtros de fecha combinados en una sola columna
+                            dbc.Col(
+                                [
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        "From",
+                                                        style={
+                                                            "color": "#FFFFFF",
+                                                            "font-weight": "500",
+                                                            "font-size": "0.9rem",
+                                                        },
+                                                    ),
+                                                    dbc.Input(
+                                                        id="filter-from-date",
+                                                        type="date",
+                                                        className="custom-date-input",
+                                                        value=(
+                                                            datetime.date.today()
+                                                            - datetime.timedelta(days=7)
+                                                        ).isoformat(),
+                                                    ),
+                                                ],
+                                                width=6,
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        "To",
+                                                        style={
+                                                            "color": "#FFFFFF",
+                                                            "font-weight": "500",
+                                                            "font-size": "0.9rem",
+                                                        },
+                                                    ),
+                                                    dbc.Input(
+                                                        id="filter-to-date",
+                                                        type="date",
+                                                        className="custom-date-input",
+                                                        value=(
+                                                            datetime.date.today()
+                                                            + datetime.timedelta(
+                                                                days=21
+                                                            )
+                                                        ).isoformat(),
+                                                    ),
+                                                ],
+                                                width=6,
+                                            ),
+                                        ]
+                                    )
+                                ],
+                                width=4,
+                                lg=4,
+                                md=6,
+                                sm=12,
+                            ),
+                            # Status badges centrados
+                            dbc.Col(
+                                [
+                                    html.Div(
+                                        [
+                                            dbc.Label(
+                                                "Status",
+                                                style={
+                                                    "color": "#FFFFFF",
+                                                    "font-weight": "500",
+                                                    "margin-bottom": "8px",
+                                                    "font-size": "0.9rem",
+                                                },
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Span(
+                                                        "Scheduled",
+                                                        id="admin-status-scheduled",
+                                                        className="status-scheduled",
+                                                        style={
+                                                            "cursor": "pointer",
+                                                            "margin-right": "10px",
+                                                        },
+                                                    ),
+                                                    html.Span(
+                                                        "Completed",
+                                                        id="admin-status-completed",
+                                                        className="status-completed",
+                                                        style={
+                                                            "cursor": "pointer",
+                                                            "margin-right": "10px",
+                                                        },
+                                                    ),
+                                                    html.Span(
+                                                        "Canceled",
+                                                        id="admin-status-canceled",
+                                                        className="status-canceled",
+                                                        style={
+                                                            "cursor": "pointer",
+                                                        },
+                                                    ),
+                                                ],
+                                                style={"text-align": "center"},
+                                            ),
+                                        ],
+                                        style={"text-align": "center"},
+                                    )
+                                ],
+                                width=4,
+                                lg=4,
+                                md=6,
+                                sm=12,
+                            ),
+                            # Coach filter
+                            dbc.Col(
+                                [
+                                    dbc.Label(
+                                        "Coach",
+                                        style={
+                                            "color": "#FFFFFF",
+                                            "font-weight": "500",
+                                            "font-size": "0.9rem",
+                                        },
+                                    ),
+                                    dcc.Dropdown(
+                                        id="admin-filter-coach",
+                                        placeholder="All Coaches",
+                                        className="custom-dropdown",
+                                        style={"color": "#000"},
+                                    ),
+                                ],
+                                width=4,
+                                lg=4,
+                                md=12,
+                                sm=12,
+                            ),
+                        ],
+                        className="mb-4",
+                    ),
+                    # Calendario - directo sobre fondo
+                    html.Div(
+                        [html.Div(id="admin-calendar")],
+                        style={"margin-bottom": "30px", "margin-top": "20px"},
+                    ),
+                    # Lista de sesiones - directo sobre fondo
+                    html.Div(
+                        [
+                            html.H6(
+                                [
+                                    html.I(className="bi bi-list-ul me-2"),
+                                    "Sessions List",
+                                ],
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "margin-bottom": "15px",
+                                    "font-size": "1rem",
+                                },
+                            ),
+                            html.Div(id="admin-sessions-table"),
+                        ],
+                        style={"margin-bottom": "30px"},
+                    ),
+                ],
+                style={"margin-bottom": "30px"},
+            ),
+            # Sessions Management section
+            html.Hr(style={"border-color": "#555555", "margin": "40px 0"}),
+            html.H5(
+                [
+                    html.I(className="bi bi-gear me-2"),
+                    "Sessions Management",
+                ],
+                style={
+                    "color": "rgba(36, 222, 132, 1)",
+                    "margin-bottom": "20px",
+                    "font-size": "1.1rem",
+                },
+            ),
+            # Tabs para Create/Edit copiando estilo de ballers
+            dbc.Tabs(
+                [
+                    dbc.Tab(
+                        label="Create Session",
+                        tab_id="create-session",
+                        active_label_style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "font-size": "0.9rem",
+                        },
+                        label_style={"font-size": "0.9rem"},
+                    ),
+                    dbc.Tab(
+                        label="Edit Session",
+                        tab_id="edit-session",
+                        active_label_style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "font-size": "0.9rem",
+                        },
+                        label_style={"font-size": "0.9rem"},
+                    ),
+                ],
+                id="admin-session-tabs",
+                active_tab="create-session",
+                style={"margin-bottom": "20px"},
+            ),
+            # Contenido de las tabs
+            html.Div(id="admin-session-tab-content", style={"margin-top": "20px"}),
+            # Alert para mensajes
+            dbc.Alert(
+                id="admin-alert", is_open=False, dismissable=True, className="mb-3"
+            ),
+        ]
+    )
+
+
+def create_session_form():
+    """Crea el formulario para crear sesiones copiando estructura de ballers"""
 
     return dbc.Container(
         [
+            html.H5(
+                [
+                    html.I(className="bi bi-plus-circle me-2"),
+                    "New Session",
+                ],
+                style={
+                    "color": "rgba(36, 222, 132, 1)",
+                    "margin-bottom": "20px",
+                    "font-size": "1.1rem",
+                },
+            ),
+            # Form usando el mismo estilo que ballers
             dbc.Row(
                 [
                     dbc.Col(
                         [
-                            html.H4(
-                                "👥 Users Management",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                            dbc.Label(
+                                "Coach",
+                                style={"color": "#FFFFFF", "margin-bottom": "8px"},
                             ),
-                            html.P(
-                                "Manage players, coaches, and administrators",
-                                className="text-muted",
+                            dcc.Dropdown(
+                                id="admin-new-session-coach",
+                                placeholder="Select coach...",
+                                className="custom-dropdown",
+                                style={"color": "#000"},
                             ),
                         ],
-                        width=8,
+                        width=6,
                     ),
                     dbc.Col(
                         [
-                            dbc.Button(
-                                "➕ Add User",
-                                id="add-user-btn",
-                                color="success",
-                                className="float-end",
-                                style={"border-radius": "20px"},
-                            )
+                            dbc.Label(
+                                "Player",
+                                style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                            ),
+                            dcc.Dropdown(
+                                id="admin-new-session-player",
+                                placeholder="Select player...",
+                                className="custom-dropdown",
+                                style={"color": "#000"},
+                            ),
+                        ],
+                        width=6,
+                    ),
+                ],
+                className="mb-3",
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Label(
+                                "Date",
+                                style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                            ),
+                            dbc.Input(
+                                id="admin-new-session-date",
+                                type="date",
+                                className="custom-date-input",
+                                value=datetime.date.today().isoformat(),
+                            ),
+                        ],
+                        width=4,
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Label(
+                                "Start hour",
+                                style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                            ),
+                            dcc.Dropdown(
+                                id="admin-new-session-start-time",
+                                placeholder="Select start time...",
+                                className="custom-dropdown",
+                                style={"color": "#000"},
+                            ),
+                        ],
+                        width=4,
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Label(
+                                "End hour",
+                                style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                            ),
+                            dcc.Dropdown(
+                                id="admin-new-session-end-time",
+                                placeholder="Select end time...",
+                                className="custom-dropdown",
+                                style={"color": "#000"},
+                            ),
                         ],
                         width=4,
                     ),
                 ],
-                className="mb-4",
+                className="mb-3",
             ),
-            # Filtros de usuarios
             dbc.Row(
                 [
                     dbc.Col(
                         [
-                            dcc.Dropdown(
-                                id="user-type-filter",
-                                options=[
-                                    {"label": "All Users", "value": "all"},
-                                    {"label": "Players", "value": "player"},
-                                    {"label": "Coaches", "value": "coach"},
-                                    {"label": "Administrators", "value": "admin"},
-                                ],
-                                value="all",
-                                style={"border-radius": "5px"},
-                            )
-                        ],
-                        width=6,
-                    ),
-                    dbc.Col(
-                        [
-                            dbc.Input(
-                                id="user-search",
-                                placeholder="Search users...",
-                                type="text",
+                            dbc.Label(
+                                "Notes",
+                                style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                            ),
+                            dbc.Textarea(
+                                id="admin-new-session-notes",
+                                placeholder="Add notes...",
+                                rows=4,
                                 style={
-                                    "border-radius": "5px",
-                                    "border": "1px solid #e0e0e0",
+                                    "background-color": "#333333",
+                                    "border": "1px solid #555555",
+                                    "border-radius": "10px",
+                                    "color": "#FFFFFF",
+                                    "resize": "vertical",
                                 },
-                            )
+                            ),
                         ],
-                        width=6,
+                        width=12,
                     ),
                 ],
-                className="mb-4",
+                className="mb-3",
             ),
-            # Tabla de usuarios
-            html.Div(id="users-table-container"),
+            # Save button usando estilo verde
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Button(
+                                "Save Session",
+                                id="admin-save-session-btn",
+                                style={
+                                    "background-color": "rgba(36, 222, 132, 1)",
+                                    "border": "none",
+                                    "border-radius": "10px",
+                                    "color": "#FFFFFF",
+                                    "padding": "10px 30px",
+                                    "font-weight": "500",
+                                },
+                            ),
+                        ],
+                        width=12,
+                    ),
+                ]
+            ),
         ]
     )
 
 
-# Función principal para mostrar contenido (migrada exactamente de administration.py)
-def show_administration_content_dash():
-    """Función principal para mostrar el contenido de la sección Administration - MIGRADA DE STREAMLIT."""
+def create_edit_session_form():
+    """Crea el formulario para editar sesiones"""
+
+    return dbc.Container(
+        [
+            html.H5(
+                [
+                    html.I(className="bi bi-pencil-square me-2"),
+                    "Edit / Delete Session",
+                ],
+                style={
+                    "color": "rgba(36, 222, 132, 1)",
+                    "margin-bottom": "20px",
+                    "font-size": "1.1rem",
+                },
+            ),
+            # Session selector
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Label(
+                                "Select session",
+                                style={"color": "#FFFFFF", "margin-bottom": "8px"},
+                            ),
+                            dcc.Dropdown(
+                                id="admin-edit-session-selector",
+                                placeholder="Select session to edit...",
+                                className="custom-dropdown",
+                                style={"color": "#000"},
+                            ),
+                        ],
+                        width=12,
+                    ),
+                ],
+                className="mb-3",
+            ),
+            # Container for edit form (will be populated dynamically)
+            html.Div(id="admin-edit-session-form-container"),
+        ]
+    )
+
+
+def create_financials_content():
+    """Crea el contenido de financials"""
 
     return html.Div(
         [
-            # Título de la sección (migrado de Streamlit)
-            html.H3(
-                "Administration",
-                style={"color": "rgba(36, 222, 132, 1)", "text-align": "center"},
-                className="section-title mb-4",
+            html.H5(
+                [
+                    html.I(className="bi bi-calculator me-2"),
+                    "Financial Management",
+                ],
+                style={
+                    "color": "rgba(36, 222, 132, 1)",
+                    "margin-bottom": "20px",
+                    "font-size": "1.1rem",
+                },
             ),
-            # Contenido según el tipo de usuario (migrada la lógica de Streamlit)
-            html.Div(id="admin-user-content"),
-            # Store para manejar estados
-            dcc.Store(
-                id="admin-user-type-store", data="player"
-            ),  # Se actualizará dinámicamente
+            # Export buttons
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.ButtonGroup(
+                                [
+                                    dbc.Button(
+                                        [
+                                            html.I(
+                                                className="bi bi-file-earmark-pdf me-2"
+                                            ),
+                                            "Export PDF",
+                                        ],
+                                        id="admin-financials-export-btn",
+                                        style={
+                                            "background-color": "rgba(36, 222, 132, 1)",
+                                            "border": "none",
+                                            "border-radius": "10px",
+                                        },
+                                    ),
+                                    dbc.Button(
+                                        [
+                                            html.I(className="bi bi-printer me-2"),
+                                            "Print",
+                                        ],
+                                        id="admin-financials-print-btn",
+                                        style={
+                                            "background-color": "#666666",
+                                            "border": "none",
+                                            "border-radius": "10px",
+                                        },
+                                    ),
+                                ]
+                            ),
+                        ],
+                        width=12,
+                        className="text-end mb-4",
+                    ),
+                ]
+            ),
+            # Financial content
+            html.Div(id="admin-financials-content"),
+            html.Div(id="admin-financials-metrics", className="mb-4"),
+            html.Div(id="admin-financials-chart"),
         ]
     )
-
-
-# Callback movido a callbacks/administration_callbacks.py
 
 
 if __name__ == "__main__":
