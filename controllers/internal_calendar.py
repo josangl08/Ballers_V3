@@ -21,7 +21,8 @@ def _fmt_local(ts: dt.datetime) -> str:
 
 def _to_event(s: Session) -> dict:
     # Determinar si el evento es pasado para aplicar clase CSS
-    now = dt.datetime.now(TZ)
+    # Corregir problema de timezone: usar datetime naive para comparar
+    now = dt.datetime.now()  # Sin timezone para comparar con sesiones naive
     is_past = s.end_time and s.end_time < now
     
     event = {
