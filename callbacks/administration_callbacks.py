@@ -144,6 +144,7 @@ def register_administration_callbacks(app):
         except Exception:
             return []
 
+    # RESTAURADO: Callback simple y funcional que actualiza calendario y tabla juntos
     @app.callback(
         [
             Output("admin-calendar", "children"),
@@ -155,10 +156,16 @@ def register_administration_callbacks(app):
             Input("admin-filter-coach", "value"),
             Input("admin-status-filters", "data"),
         ],
+        [State("admin-main-tabs", "active_tab")],
         prevent_initial_call=False,
     )
-    def update_calendar_and_table(from_date, to_date, coach_filter, status_filter):
-        """Actualiza calendario y tabla según filtros - COPIANDO LÓGICA DE BALLERS."""
+    def update_calendar_and_table(
+        from_date, to_date, coach_filter, status_filter, active_tab
+    ):
+        """Actualiza calendario y tabla según filtros - RESTAURADO FUNCIONAL."""
+        if active_tab != "sessions-tab":
+            return html.Div(), html.Div()
+
         try:
             # Usar filtros directamente del store
             if not status_filter:
@@ -187,14 +194,14 @@ def register_administration_callbacks(app):
                     status_filter=status_filter,
                 )
 
-                # Crear calendario usando el mismo controller que ballers
+                # Crear calendario usando el controller funcional
                 from controllers.internal_calendar import show_calendar_dash
 
                 calendar_content = show_calendar_dash(
                     sessions, editable=False, key="admin-cal"
                 )
 
-                # Crear tabla usando el mismo formato que ballers
+                # Crear tabla usando el mismo formato
                 if sessions:
                     formatted_data = controller.format_sessions_for_table(sessions)
                     table_content = create_sessions_table_content(formatted_data)
@@ -512,6 +519,9 @@ def register_administration_callbacks(app):
                 f"Error loading financial data: {str(e)}", color="danger"
             )
             return error_alert, error_alert, error_alert
+
+    # TEMPORALMENTE ELIMINADO: ClientSide callback causaba crashes de Dash
+    # TODO: Implementar estrategia alternativa para actualizar eventos
 
 
 def create_sessions_table_content(formatted_data):

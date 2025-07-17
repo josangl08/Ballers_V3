@@ -5,6 +5,19 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 
 
+def create_fixed_calendar_component():
+    """Crea el componente del calendario fijo usando el controller."""
+    try:
+        from controllers.internal_calendar import create_fixed_calendar_dash
+
+        return create_fixed_calendar_dash(key="admin-cal")
+    except Exception as e:
+        return html.Div(
+            f"Error loading calendar: {str(e)}",
+            style={"color": "red", "text-align": "center", "padding": "20px"},
+        )
+
+
 def show_administration_content_dash():
     """Función principal para mostrar el contenido de Administration"""
 
@@ -59,6 +72,7 @@ def show_administration_content_dash():
             dcc.Store(
                 id="admin-status-filters", data=["scheduled", "completed", "canceled"]
             ),
+            # Stores básicos para funcionalidad
         ]
     )
 
@@ -91,47 +105,51 @@ def create_sessions_content():
                                         [
                                             dbc.Col(
                                                 [
-                                                    dbc.Label(
-                                                        "From",
-                                                        style={
-                                                            "color": "#FFFFFF",
-                                                            "font-weight": "500",
-                                                            "font-size": "0.9rem",
-                                                        },
-                                                    ),
-                                                    dbc.Input(
-                                                        id="filter-from-date",
-                                                        type="date",
-                                                        className="custom-date-input",
-                                                        value=(
-                                                            datetime.date.today()
-                                                            - datetime.timedelta(days=7)
-                                                        ).isoformat(),
-                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            dbc.Label(
+                                                                "From",
+                                                                className="filter-label",
+                                                            ),
+                                                            dbc.Input(
+                                                                id="filter-from-date",
+                                                                type="date",
+                                                                className="date-filter-input",
+                                                                value=(
+                                                                    datetime.date.today()
+                                                                    - datetime.timedelta(
+                                                                        days=7
+                                                                    )
+                                                                ).isoformat(),
+                                                            ),
+                                                        ],
+                                                        className="date-filter-container",
+                                                    )
                                                 ],
                                                 width=6,
                                             ),
                                             dbc.Col(
                                                 [
-                                                    dbc.Label(
-                                                        "To",
-                                                        style={
-                                                            "color": "#FFFFFF",
-                                                            "font-weight": "500",
-                                                            "font-size": "0.9rem",
-                                                        },
-                                                    ),
-                                                    dbc.Input(
-                                                        id="filter-to-date",
-                                                        type="date",
-                                                        className="custom-date-input",
-                                                        value=(
-                                                            datetime.date.today()
-                                                            + datetime.timedelta(
-                                                                days=21
-                                                            )
-                                                        ).isoformat(),
-                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            dbc.Label(
+                                                                "To",
+                                                                className="filter-label",
+                                                            ),
+                                                            dbc.Input(
+                                                                id="filter-to-date",
+                                                                type="date",
+                                                                className="date-filter-input",
+                                                                value=(
+                                                                    datetime.date.today()
+                                                                    + datetime.timedelta(
+                                                                        days=21
+                                                                    )
+                                                                ).isoformat(),
+                                                            ),
+                                                        ],
+                                                        className="date-filter-container",
+                                                    )
                                                 ],
                                                 width=6,
                                             ),
@@ -150,46 +168,30 @@ def create_sessions_content():
                                         [
                                             dbc.Label(
                                                 "Status",
-                                                style={
-                                                    "color": "#FFFFFF",
-                                                    "font-weight": "500",
-                                                    "margin-bottom": "8px",
-                                                    "font-size": "0.9rem",
-                                                },
+                                                className="filter-label",
                                             ),
                                             html.Div(
                                                 [
                                                     html.Span(
                                                         "Scheduled",
                                                         id="admin-status-scheduled",
-                                                        className="status-scheduled",
-                                                        style={
-                                                            "cursor": "pointer",
-                                                            "margin-right": "10px",
-                                                        },
+                                                        className="status-scheduled status-badge",
                                                     ),
                                                     html.Span(
                                                         "Completed",
                                                         id="admin-status-completed",
-                                                        className="status-completed",
-                                                        style={
-                                                            "cursor": "pointer",
-                                                            "margin-right": "10px",
-                                                        },
+                                                        className="status-completed status-badge",
                                                     ),
                                                     html.Span(
                                                         "Canceled",
                                                         id="admin-status-canceled",
-                                                        className="status-canceled",
-                                                        style={
-                                                            "cursor": "pointer",
-                                                        },
+                                                        className="status-canceled status-badge",
                                                     ),
                                                 ],
-                                                style={"text-align": "center"},
+                                                className="status-badges-container",
                                             ),
                                         ],
-                                        style={"text-align": "center"},
+                                        className="status-filter-container",
                                     )
                                 ],
                                 width=4,
@@ -200,20 +202,20 @@ def create_sessions_content():
                             # Coach filter
                             dbc.Col(
                                 [
-                                    dbc.Label(
-                                        "Coach",
-                                        style={
-                                            "color": "#FFFFFF",
-                                            "font-weight": "500",
-                                            "font-size": "0.9rem",
-                                        },
-                                    ),
-                                    dcc.Dropdown(
-                                        id="admin-filter-coach",
-                                        placeholder="All Coaches",
-                                        className="custom-dropdown",
-                                        style={"color": "#000"},
-                                    ),
+                                    html.Div(
+                                        [
+                                            dbc.Label(
+                                                "Coach",
+                                                className="filter-label",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="admin-filter-coach",
+                                                placeholder="All Coaches",
+                                                className="coach-filter-dropdown",
+                                            ),
+                                        ],
+                                        className="coach-filter-container",
+                                    )
                                 ],
                                 width=4,
                                 lg=4,
@@ -223,7 +225,7 @@ def create_sessions_content():
                         ],
                         className="mb-4",
                     ),
-                    # Calendario - directo sobre fondo
+                    # Calendario - RESTAURADO: Enfoque simple y funcional
                     html.Div(
                         [html.Div(id="admin-calendar")],
                         style={"margin-bottom": "30px", "margin-top": "20px"},

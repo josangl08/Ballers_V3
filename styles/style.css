@@ -226,46 +226,41 @@ div.calendar-container {
     border-left: 4px solid #F44336;
 }
 
-/* Estilos para los estados de sesión - sistema unificado */
-/* Badge system unificado para todos los componentes */
+/* Estilos para los estados de sesión - mismo tamaño que filtros */
+/* Badge system unificado */
 .status-scheduled,
 .status-completed,
 .status-canceled,
 .status-inactive {
-    color: white !important;
-    padding: 8px 12px !important;
-    border-radius: 3px !important;
-    font-size: 0.8rem !important;
-    min-width: 85px !important;
-    text-align: center !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-weight: normal !important;
-    cursor: pointer !important;
-    height: 38px !important; /* Altura unificada para filtros */
-    min-height: 38px !important;
-    max-height: 38px !important;
-    transition: all 0.3s ease !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    min-width: 85px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: normal;
+    cursor: pointer;
+    min-height: 26px;
 }
 
 .status-scheduled {
-    background-color: rgba(30, 136, 229, 0.4) !important;
+    background-color: rgba(30, 136, 229, 0.4);
 }
 
 .status-completed {
-    background-color: rgba(76, 175, 80, 0.4) !important;
+    background-color: rgba(76, 175, 80, 0.4);
 }
 
 .status-canceled {
-    background-color: rgba(244, 67, 54, 0.4) !important;
+    background-color: rgba(244, 67, 54, 0.4);
 }
 
 .status-inactive {
-    background-color: #6c757d !important;
-    opacity: 0.6 !important;
+    background-color: #6c757d;
+    opacity: 0.6;
 }
 
 /* Personalización de tooltips */
@@ -523,189 +518,54 @@ div.stExpander {
     opacity: 0.9;
 }
 
-/* ===== SISTEMA LIMPIO PARA COACH FILTER DROPDOWN ===== */
-/* Prioridad máxima: selectores específicos para evitar conflictos */
-
-/* Control principal del dropdown coach */
-#admin-filter-coach .Select-control {
-    background-color: rgb(51, 51, 51) !important;
-    border: 1px solid transparent !important;
-    border-radius: 10px !important;
-    color: #FFFFFF !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    max-height: 38px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 0 8px !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-}
-
-/* Contenedor de valores múltiples (si aplica) */
-#admin-filter-coach .Select-multi-value-wrapper {
-    background-color: rgb(51, 51, 51) !important;
-    display: flex !important;
-    align-items: center !important;
-    flex: 1 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-/* Valor seleccionado (texto principal) */
-#admin-filter-coach .Select-value,
-#admin-filter-coach .Select-value-label {
-    color: #FFFFFF !important;
-    font-size: 0.85rem !important;
-    text-align: left !important;
-    flex: 1 !important;
-    padding: 0 4px !important;
-    display: flex !important;
-    align-items: center !important;
-    margin: 0 !important;
-    background-color: transparent !important;
-    border: none !important;
-    line-height: 38px !important;
-}
-
-/* Placeholder */
-#admin-filter-coach .Select-placeholder {
-    color: rgba(255, 255, 255, 0.7) !important;
-    font-size: 0.85rem !important;
-    text-align: left !important;
-    flex: 1 !important;
-    padding: 0 4px !important;
-    display: flex !important;
-    align-items: center !important;
-    margin: 0 !important;
-    line-height: 38px !important;
-}
-
-/* Zona del icono clear (X) */
-#admin-filter-coach .Select-clear-zone {
-    width: 20px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 38px !important;
-    margin: 0 !important;
-}
-
-/* Zona del icono dropdown (flecha) */
-#admin-filter-coach .Select-arrow-zone {
-    width: 30px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 38px !important;
-    margin: 0 !important;
-}
-
-/* Menu desplegable */
-#admin-filter-coach .Select-menu-outer {
-    background-color: rgb(51, 51, 51) !important;
-    border: 1px solid rgba(36, 222, 132, 0.3) !important;
-    border-radius: 10px !important;
-    margin-top: 2px !important;
-    z-index: 1000 !important;
-}
-
-/* Opciones del menu */
-#admin-filter-coach .Select-option {
-    background-color: rgb(51, 51, 51) !important;
-    color: #FFFFFF !important;
-    font-size: 0.85rem !important;
-    padding: 8px 12px !important;
-    border: none !important;
-    margin: 0 !important;
-}
-
-#admin-filter-coach .Select-option:hover {
-    background-color: rgba(36, 222, 132, 0.2) !important;
-}
-
-/* ===== SISTEMA GENÉRICO PARA OTROS DROPDOWNS ===== */
+/* Custom dropdown styling for administration */
 .custom-dropdown .Select-control {
-    background-color: rgb(51, 51, 51) !important;
-    border: 1px solid transparent !important;
+    background-color: #333333 !important;
+    border: 1px solid #555555 !important;
     border-radius: 10px !important;
     color: #FFFFFF !important;
-    height: 38px !important;
+    min-height: 38px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 0 8px !important;
-    box-sizing: border-box !important;
 }
 
-.custom-dropdown .Select-value-label,
-.custom-dropdown .Select-placeholder {
+.custom-dropdown .Select-value-label {
     color: #FFFFFF !important;
-    font-size: 0.85rem !important;
-    flex: 1 !important;
-    padding: 0 4px !important;
+    line-height: 26px !important;
+}
+
+.custom-dropdown .Select-placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+    line-height: 26px !important;
 }
 
 .custom-dropdown .Select-menu-outer {
-    background-color: rgb(51, 51, 51) !important;
-    border: 1px solid rgba(36, 222, 132, 0.3) !important;
+    background-color: #333333 !important;
+    border: 1px solid #555555 !important;
     border-radius: 10px !important;
 }
 
 .custom-dropdown .Select-option {
-    background-color: rgb(51, 51, 51) !important;
+    background-color: #333333 !important;
     color: #FFFFFF !important;
-    padding: 8px 12px !important;
 }
 
 .custom-dropdown .Select-option:hover {
     background-color: rgba(36, 222, 132, 0.2) !important;
 }
 
-/* Sistema unificado de date inputs para toda la aplicación */
-input[type="date"].custom-date-input,
-input[type="date"].date-filter-input,
-input[type="date"]#filter-from-date,
-input[type="date"]#filter-to-date,
-.custom-date-input,
-.date-filter-input {
-    background-color: rgb(51, 51, 51) !important; /* Color solicitado */
-    border: 1px solid transparent !important; /* Sin borde por defecto */
+/* Custom date input styling */
+.custom-date-input {
+    background-color: #333333 !important;
+    border: 1px solid #555555 !important;
     border-radius: 10px !important;
     color: #FFFFFF !important;
-    padding: 8px 12px !important;
-    height: 38px !important;
-    font-size: 0.75rem !important; /* Texto aún más pequeño */
-    transition: all 0.3s ease !important;
-    color-scheme: dark !important;
-    text-align: center !important; /* Centrado horizontal */
-    display: flex !important;
-    align-items: center !important; /* Centrado vertical */
-    justify-content: center !important;
-    box-sizing: border-box !important;
+    padding: 10px !important;
 }
 
-input[type="date"].custom-date-input:hover,
-input[type="date"].date-filter-input:hover,
-input[type="date"]#filter-from-date:hover,
-input[type="date"]#filter-to-date:hover,
-.custom-date-input:hover,
-.date-filter-input:hover {
-    border-color: rgba(36, 222, 132, 1) !important;
-    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
-}
-
-input[type="date"].custom-date-input:focus,
-input[type="date"].date-filter-input:focus,
-input[type="date"]#filter-from-date:focus,
-input[type="date"]#filter-to-date:focus,
-.custom-date-input:focus,
-.date-filter-input:focus {
+.custom-date-input:focus {
     border-color: rgba(36, 222, 132, 1) !important;
     box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
-    outline: none !important;
 }
 
 /* Estilo minimalista para tabla de sesiones */
@@ -783,60 +643,6 @@ input[type="date"]#filter-to-date:focus,
     border-color: #24DE84 !important;  /* Borde verde al hover */
     transform: translateY(-1px) !important;
     box-shadow: 0 2px 4px rgba(36, 222, 132, 0.2) !important;
-}
-
-/* ===== FILTROS DE ADMINISTRACIÓN - SISTEMA UNIFICADO ===== */
-
-/* Clases base para filtros - altura unificada */
-.filter-label {
-    color: #FFFFFF !important;
-    font-weight: 500 !important;
-    font-size: 0.9rem !important;
-    margin-bottom: 8px !important;
-    display: block !important;
-    height: 20px !important; /* Altura fija para label */
-    line-height: 20px !important;
-}
-
-.filter-container,
-.date-filter-container,
-.status-filter-container,
-.coach-filter-container {
-    display: flex !important;
-    flex-direction: column !important;
-    height: 66px !important; /* Altura fija: 20px label + 8px margin + 38px input */
-    min-height: 66px !important;
-    max-height: 66px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Contenedor específico para status badges */
-.status-filter-container {
-    text-align: center !important;
-}
-
-.status-badges-container {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    gap: 10px !important;
-    flex-wrap: wrap !important;
-    height: 38px !important; /* Altura exacta igual que inputs */
-    min-height: 38px !important;
-    max-height: 38px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-.status-badge {
-    /* Hereda estilos del sistema unificado de status badges */
-    height: 38px !important; /* Altura exacta igual que inputs */
-    min-height: 38px !important;
-    max-height: 38px !important;
-    margin: 0 !important;
-    padding: 8px 12px !important;
-    box-sizing: border-box !important;
 }
 
 /* Asegurar que el texto dentro de las cards sea blanco */
@@ -1081,18 +887,16 @@ h4 .bi, h5 .bi {
     color: #333333 !important;
 }
 
-/* ===== SELECTORES GENÉRICOS - SOLO PARA CASOS NO ESPECÍFICOS ===== */
-/* Estos solo se aplicarán si no hay un selector más específico */
-.Select-control:not([class*="admin-filter"]):not([class*="custom-dropdown"]) {
-    background-color: #3b3b3a !important;
+.Select-control {
+    background-color: #3b3b3a !important;  /* Mismo color que las cards */
     border-color: #555 !important;
 }
 
-.Select-multi-value-wrapper:not([class*="admin-filter"]):not([class*="custom-dropdown"]) {
-    background-color: #3b3b3a !important;
+.Select-multi-value-wrapper {
+    background-color: #3b3b3a !important;  /* Mismo color que las cards */
 }
 
-.Select-value:not([class*="admin-filter"]):not([class*="custom-dropdown"]) {
+.Select-value {
     border-radius: 20px !important;
     padding: 0.25rem 0.75rem !important;
     margin: 0.125rem !important;
@@ -2139,22 +1943,39 @@ input[type="date"].simple-date-input:hover {
     margin-top: 0 !important;
 }
 
-/* Badges específicos por ID - compatibilidad con sistema existente */
-#status-scheduled,
-#status-completed,
+/* Badges del filtro de status - colores específicos y sin negrita */
+#status-scheduled {
+    font-weight: normal !important;
+}
+
+#status-completed {
+    font-weight: normal !important;
+}
+
 #status-canceled {
     font-weight: normal !important;
 }
 
-/* Compatibility con bootstrap buttons - usar clases unificadas */
-#status-scheduled.btn-primary,
-#status-completed.btn-success,
-#status-canceled.btn-danger {
-    background-color: inherit !important;
-    border-color: inherit !important;
-    color: inherit !important;
+/* Forzar colores específicos del proyecto para badges activos con más transparencia */
+#status-scheduled.btn-primary {
+    background-color: rgba(30, 136, 229, 0.4) !important;
+    border-color: #1E88E5 !important;
+    color: white !important;
 }
 
+#status-completed.btn-success {
+    background-color: rgba(76, 175, 80, 0.4) !important;
+    border-color: #4CAF50 !important;
+    color: white !important;
+}
+
+#status-canceled.btn-danger {
+    background-color: rgba(244, 67, 54, 0.4) !important;
+    border-color: #F44336 !important;
+    color: white !important;
+}
+
+/* Badges inactivos */
 #status-scheduled.btn-secondary,
 #status-completed.btn-secondary,
 #status-canceled.btn-secondary {
@@ -2538,71 +2359,147 @@ input[type="date"].simple-date-input:hover {
     display: none !important;
 }
 
-/* Estilos específicos para inputs de fecha - optimizados */
+/* Estilos para date inputs personalizados - matching Streamlit design */
+/* Higher specificity to override other date input styles */
 input[type="date"].custom-date-input,
-input[type="date"].date-filter-input,
-input[type="date"]#filter-from-date,
-input[type="date"]#filter-to-date,
-.custom-date-input,
-.date-filter-input {
-    /* Calendario nativo del navegador */
-    color-scheme: dark !important;
+.custom-date-input {
+    background-color: #333333 !important;
+    border: 2px solid #24DE84 !important;
+    border-radius: 5px !important;
+    color: #FAFAFA !important;
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+    transition: all 0.3s ease !important;
     max-width: 180px !important;
-    box-sizing: border-box !important;
 }
 
-/* Estilos específicos para filtros de fecha */
-#filter-from-date.date-filter-input,
-#filter-to-date.date-filter-input {
-    max-width: 150px !important;
+input[type="date"].custom-date-input:focus,
+.custom-date-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    outline: none !important;
+    background-color: #333333 !important;
+}
+
+input[type="date"].custom-date-input:hover,
+.custom-date-input:hover {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
+    background-color: #333333 !important;
 }
 
 /* Estilos para el calendario nativo del navegador */
 input[type="date"].custom-date-input::-webkit-calendar-picker-indicator,
-input[type="date"].date-filter-input::-webkit-calendar-picker-indicator,
-input[type="date"]#filter-from-date::-webkit-calendar-picker-indicator,
-input[type="date"]#filter-to-date::-webkit-calendar-picker-indicator,
-.custom-date-input::-webkit-calendar-picker-indicator,
-.date-filter-input::-webkit-calendar-picker-indicator {
+.custom-date-input::-webkit-calendar-picker-indicator {
     filter: invert(1) brightness(0) saturate(100%) invert(78%) sepia(55%) saturate(1650%) hue-rotate(100deg) brightness(99%) contrast(87%);
-    cursor: pointer !important;
+    cursor: pointer;
     opacity: 0.8;
-    width: 16px !important;
-    height: 16px !important;
-    background-size: 14px !important;
 }
 
-/* Estilos para el texto del calendario */
-input[type="date"].custom-date-input::-webkit-datetime-edit,
-input[type="date"].date-filter-input::-webkit-datetime-edit,
-input[type="date"]#filter-from-date::-webkit-datetime-edit,
-input[type="date"]#filter-to-date::-webkit-datetime-edit,
-.custom-date-input::-webkit-datetime-edit,
-.date-filter-input::-webkit-datetime-edit {
+input[type="date"].custom-date-input::-webkit-calendar-picker-indicator:hover,
+.custom-date-input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Estilos para el texto del placeholder/valor */
+input[type="date"].custom-date-input::-webkit-input-placeholder,
+.custom-date-input::-webkit-input-placeholder {
+    color: #CCCCCC !important;
+    opacity: 1;
+}
+
+input[type="date"].custom-date-input::-moz-placeholder,
+.custom-date-input::-moz-placeholder {
+    color: #CCCCCC !important;
+    opacity: 1;
+}
+
+input[type="date"].custom-date-input:-ms-input-placeholder,
+.custom-date-input:-ms-input-placeholder {
+    color: #CCCCCC !important;
+    opacity: 1;
+}
+
+input[type="date"].custom-date-input::-ms-input-placeholder,
+.custom-date-input::-ms-input-placeholder {
+    color: #CCCCCC !important;
+    opacity: 1;
+}
+
+/* Specific styles for filter date inputs - highest priority */
+#filter-from-date.custom-date-input,
+#filter-to-date.custom-date-input,
+input[type="date"]#filter-from-date.custom-date-input,
+input[type="date"]#filter-to-date.custom-date-input {
+    background-color: #333333 !important;
+    border: 1px solid #666 !important;
+    border-radius: 5px !important;
     color: #FAFAFA !important;
-    padding: 2px !important;
-    font-size: 0.75rem !important;
+    padding: 6px 10px !important;
+    font-size: 0.85rem !important;
+    transition: all 0.3s ease !important;
+    max-width: 150px !important;
+    min-height: 38px !important;
+    box-sizing: border-box !important;
+    /* Force dark theme for native calendar */
+    color-scheme: dark;
+    outline: none !important;
 }
 
-input[type="date"].custom-date-input::-webkit-datetime-edit-text,
-input[type="date"].custom-date-input::-webkit-datetime-edit-month-field,
-input[type="date"].custom-date-input::-webkit-datetime-edit-day-field,
-input[type="date"].custom-date-input::-webkit-datetime-edit-year-field,
-input[type="date"].date-filter-input::-webkit-datetime-edit-text,
-input[type="date"].date-filter-input::-webkit-datetime-edit-month-field,
-input[type="date"].date-filter-input::-webkit-datetime-edit-day-field,
-input[type="date"].date-filter-input::-webkit-datetime-edit-year-field,
-input[type="date"]#filter-from-date::-webkit-datetime-edit-text,
-input[type="date"]#filter-from-date::-webkit-datetime-edit-month-field,
-input[type="date"]#filter-from-date::-webkit-datetime-edit-day-field,
-input[type="date"]#filter-from-date::-webkit-datetime-edit-year-field,
-input[type="date"]#filter-to-date::-webkit-datetime-edit-text,
-input[type="date"]#filter-to-date::-webkit-datetime-edit-month-field,
-input[type="date"]#filter-to-date::-webkit-datetime-edit-day-field,
-input[type="date"]#filter-to-date::-webkit-datetime-edit-year-field {
+#filter-from-date.custom-date-input:focus,
+#filter-to-date.custom-date-input:focus,
+input[type="date"]#filter-from-date.custom-date-input:focus,
+input[type="date"]#filter-to-date.custom-date-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    outline: none !important;
+    background-color: #333333 !important;
+}
+
+#filter-from-date.custom-date-input:hover,
+#filter-to-date.custom-date-input:hover,
+input[type="date"]#filter-from-date.custom-date-input:hover,
+input[type="date"]#filter-to-date.custom-date-input:hover {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
+    background-color: #333333 !important;
+}
+
+/* Additional native calendar styling */
+#filter-from-date.custom-date-input::-webkit-calendar-picker-indicator,
+#filter-to-date.custom-date-input::-webkit-calendar-picker-indicator {
+    background-color: #24DE84 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    filter: invert(1) !important;
+    padding: 4px !important;
+}
+
+/* Try to style the native calendar popup */
+#filter-from-date.custom-date-input::-webkit-datetime-edit,
+#filter-to-date.custom-date-input::-webkit-datetime-edit {
+    color: #FAFAFA !important;
+    padding: 4px !important;
+}
+
+#filter-from-date.custom-date-input::-webkit-datetime-edit-text,
+#filter-to-date.custom-date-input::-webkit-datetime-edit-text,
+#filter-from-date.custom-date-input::-webkit-datetime-edit-month-field,
+#filter-to-date.custom-date-input::-webkit-datetime-edit-month-field,
+#filter-from-date.custom-date-input::-webkit-datetime-edit-day-field,
+#filter-to-date.custom-date-input::-webkit-datetime-edit-day-field,
+#filter-from-date.custom-date-input::-webkit-datetime-edit-year-field,
+#filter-to-date.custom-date-input::-webkit-datetime-edit-year-field {
     color: #FAFAFA !important;
     background-color: transparent !important;
-    font-size: 0.75rem !important;
+}
+
+/* Make native calendar popup larger */
+#filter-from-date.custom-date-input::-webkit-calendar-picker-indicator,
+#filter-to-date.custom-date-input::-webkit-calendar-picker-indicator {
+    width: 20px !important;
+    height: 20px !important;
+    background-size: 16px !important;
 }
 
 /* Native calendar has no size control - this is a browser/OS limitation */
