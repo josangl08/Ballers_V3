@@ -8,6 +8,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import Input, Output, State, html
 
+from controllers.internal_calendar import show_calendar_dash, update_and_get_sessions
 from controllers.session_controller import SessionController
 from controllers.validation_controller import ValidationController  # noqa: F401
 from models import SessionStatus
@@ -186,8 +187,9 @@ def register_administration_callbacks(app):
             coach_id = coach_filter if coach_filter and coach_filter != "all" else None
 
             with SessionController() as controller:
-                # Obtener sesiones
-                sessions = controller.get_sessions_for_display(
+                # Obtener sesiones con auto-actualización de sesiones pasadas
+                sessions = update_and_get_sessions(
+                    controller,
                     start_date=start_date_obj,
                     end_date=end_date_obj,
                     coach_id=coach_id,
@@ -195,7 +197,6 @@ def register_administration_callbacks(app):
                 )
 
                 # Crear calendario usando el controller funcional
-                from controllers.internal_calendar import show_calendar_dash
 
                 calendar_content = show_calendar_dash(
                     sessions, editable=False, key="admin-cal"

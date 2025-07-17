@@ -20,7 +20,11 @@ def _fmt_local(ts: dt.datetime) -> str:
 
 
 def _to_event(s: Session) -> dict:
-    return {
+    # Determinar si el evento es pasado para aplicar clase CSS
+    now = dt.datetime.now(TZ)
+    is_past = s.end_time and s.end_time < now
+    
+    event = {
         "id": s.id,
         "title": f"{s.coach.user.name} × {s.player.user.name}",
         "start": _fmt_local(s.start_time),  # 13:00 «tal cual»
@@ -30,6 +34,12 @@ def _to_event(s: Session) -> dict:
         "coach": s.coach.user.name,
         "color": HEX[s.status.value],
     }
+    
+    # Añadir clase CSS para eventos pasados
+    if is_past:
+        event["className"] = "fc-event-past"
+    
+    return event
 
 
 def show_calendar(
@@ -377,6 +387,31 @@ document.addEventListener("DOMContentLoaded", () => {{
 def sessions_to_events(sessions):
     """Convierte sessions a formato eventos para FullCalendar."""
     return [_to_event(s) for s in sessions]
+
+
+def update_and_get_sessions(controller, **kwargs):
+    """
+    Actualiza sesiones pasadas y devuelve las sesiones filtradas.
+    Función helper para mantener separación de responsabilidades.
+    """
+    # Actualizar sesiones pasadas automáticamente
+    try:
+        updated_count = controller.update_past_sessions()
+        if updated_count > 0:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"📅 Auto-updated {updated_count} past sessions to completed")
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in auto-update past sessions: {e}")
+    
+    # Obtener sesiones con filtros usando el método correcto
+    if hasattr(controller, 'get_sessions_for_display'):
+        return controller.get_sessions_for_display(**kwargs)
+    else:
+        # Fallback al método básico
+        return controller.get_sessions(**kwargs)
 
 
 def create_fixed_calendar_dash(
