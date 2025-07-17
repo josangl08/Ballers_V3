@@ -12,33 +12,38 @@ vaciar todo el calendario.
 Requisitos:
     pip install google-api-python-client    (ya lo tienes en el proyecto)
 """
-import os
 import datetime as dt
-import sys
+import os
 import pathlib
+import sys
+
 from googleapiclient.errors import HttpError
+
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-from controllers.google_client import calendar   # tu helper existente
 from dotenv import load_dotenv
-load_dotenv()   
+
+from controllers.google_client import calendar  # tu helper existente
+
+load_dotenv()
 
 # ------------------------------------------------------------------------
-CAL_ID         = os.getenv("CALENDAR_ID")         # mismo env var que la app
-ONLY_SESSIONS  = False     # ← Cambia a False para borrar TODO el calendario
-DRY_RUN        = False     # True = solo imprime, False = borra de verdad
-UTC       = dt.timezone.utc
-NOW_UTC   = dt.datetime.now(UTC).replace(microsecond=0)
-TIME_MIN  = (NOW_UTC - dt.timedelta(days=365)).isoformat()
-TIME_MAX  = (NOW_UTC + dt.timedelta(days=365)).isoformat()
+CAL_ID = os.getenv("CALENDAR_ID")  # mismo env var que la app
+ONLY_SESSIONS = False  # ← Cambia a False para borrar TODO el calendario
+DRY_RUN = False  # True = solo imprime, False = borra de verdad
+UTC = dt.timezone.utc
+NOW_UTC = dt.datetime.now(UTC).replace(microsecond=0)
+TIME_MIN = (NOW_UTC - dt.timedelta(days=365)).isoformat()
+TIME_MAX = (NOW_UTC + dt.timedelta(days=365)).isoformat()
 # ------------------------------------------------------------------------
+
 
 def wipe_calendar():
     svc = calendar()
     page_token = None
     deleted = 0
-    
+
     while True:
         resp = (
             svc.events()
@@ -56,7 +61,7 @@ def wipe_calendar():
             if ONLY_SESSIONS:
                 props = ev.get("extendedProperties", {}).get("private", {})
                 if not props.get("session_id"):
-                    continue        # salta eventos ajenos a la app
+                    continue  # salta eventos ajenos a la app
             summary = ev.get("summary", "(sin título)")
             if DRY_RUN:
                 print(f"[dry‑run] {summary}  —  {ev['id']}")
@@ -74,8 +79,9 @@ def wipe_calendar():
 
     print(
         "\nFin del script.",
-        f"{'Se habrían borrado' if DRY_RUN else 'Borrados'} {deleted} eventos."
+        f"{'Se habrían borrado' if DRY_RUN else 'Borrados'} {deleted} eventos.",
     )
+
 
 # ------------------------------------------------------------------------
 if __name__ == "__main__":

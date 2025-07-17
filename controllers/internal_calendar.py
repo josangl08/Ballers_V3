@@ -149,9 +149,9 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-daygrid-event-dot           {{ color:#FAFAFA;   }}
 #{key} .fc-daygrid-day-frame           {{ background:rgba(255,255,255,0.05); border-color:rgba(128,128,128,0.15); }}
 #{key} .fc-daygrid-day-number          {{ background:transparent; color:#FAFAFA; }}
-#{key} .fc-daygrid-event-harness       {{ background: rgba(51,51,51,0.8); border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
-#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; background:transparent; }}
-#{key} .fc-daygrid-event:hover         {{ background: rgba(36,222,132,0.8) !important; border-color: rgba(36,222,132,1) !important; }}
+#{key} .fc-daygrid-event-harness       {{ border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
+#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-daygrid-event:hover         {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 
 /* SEMANA / DÍA ------------------------------------------------------------*/
 #{key} .fc-timegrid-slot-label-cushion,
@@ -203,6 +203,13 @@ document.addEventListener("DOMContentLoaded", () => {{
   let currentView = localStorage.getItem('calendar-view') || "dayGridMonth";
   let savedDate = localStorage.getItem('calendar-date');
   let currentDate = savedDate || new Date().toISOString().split('T')[0];
+
+  // Detectar si es primera visita para asegurar vista mensual
+  let isFirstVisit = !localStorage.getItem('calendar-view');
+  if (isFirstVisit) {{
+    currentView = "dayGridMonth";
+    currentDate = new Date().toISOString().split('T')[0];
+  }}
 
 
   // Limpiar cualquier calendario previo
@@ -331,9 +338,9 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-daygrid-event-dot           {{ color:#FAFAFA;   }}
 #{key} .fc-daygrid-day-frame           {{ background:rgba(255,255,255,0.05); border-color:rgba(128,128,128,0.15); }}
 #{key} .fc-daygrid-day-number          {{ background:transparent; color:#FAFAFA; }}
-#{key} .fc-daygrid-event-harness       {{ background: rgba(51,51,51,0.8); border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
-#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; background:transparent; }}
-#{key} .fc-daygrid-event:hover         {{ background: rgba(36,222,132,0.8) !important; border-color: rgba(36,222,132,1) !important; }}
+#{key} .fc-daygrid-event-harness       {{ border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
+#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-daygrid-event:hover         {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 
 /* SEMANA - TRANSPARENTE CON LÍNEAS SUAVES --------------------------------*/
 #{key} .fc-timegrid-divider,
@@ -341,8 +348,8 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-timegrid-slot-label-cushion,
 #{key} .fc-timegrid-axis-frame,
 #{key} .fc-scrollgrid-sync-inner       {{ color:#FAFAFA; background:transparent; }}
-#{key} .fc-timegrid-event              {{ background: rgba(51,51,51,0.8) !important; border: 1px solid rgba(128,128,128,0.4) !important; border-radius: 6px; }}
-#{key} .fc-timegrid-event:hover        {{ background: rgba(36,222,132,0.8) !important; border-color: rgba(36,222,132,1) !important; }}
+#{key} .fc-timegrid-event              {{ border: 1px solid rgba(128,128,128,0.4) !important; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-timegrid-event:hover        {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 #{key} .fc-timegrid-event-harness      {{ margin: 1.5px; }}
 
 /* LISTA - TRANSPARENTE CON LÍNEAS SUAVES ---------------------------------*/
@@ -398,8 +405,15 @@ document.addEventListener("DOMContentLoaded", () => {{
   // CALENDARIO FIJO: Solo se inicializa UNA VEZ
   let currentView = localStorage.getItem('calendar-view') || "dayGridMonth";
 
+  // Detectar si es primera visita para asegurar vista mensual
+  let isFirstVisit = !localStorage.getItem('calendar-view');
+  if (isFirstVisit) {{
+    currentView = "dayGridMonth";
+  }}
+
   console.log("🔧 CALENDARIO FIJO - Inicialización única:");
   console.log("  - View:", currentView);
+  console.log("  - Is first visit:", isFirstVisit);
   console.log("  - NO fecha guardada - siempre actual");
 
   // Limpiar cualquier calendario previo solo una vez
@@ -526,17 +540,17 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-daygrid-event-dot           {{ color:#FAFAFA;   }}
 #{key} .fc-daygrid-day-frame           {{ background:rgba(255,255,255,0.05); border-color:rgba(128,128,128,0.15); }}
 #{key} .fc-daygrid-day-number          {{ background:transparent; color:#FAFAFA; }}
-#{key} .fc-daygrid-event-harness       {{ background: rgba(51,51,51,0.8); border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
-#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; background:transparent; }}
-#{key} .fc-daygrid-event:hover         {{ background: rgba(36,222,132,0.8) !important; border-color: rgba(36,222,132,1) !important; }}
+#{key} .fc-daygrid-event-harness       {{ border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
+#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-daygrid-event:hover         {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 
 #{key} .fc-timegrid-divider,
 #{key} .fc-timegrid-slot-lane          {{ border-color:rgba(128,128,128,0.15); background:transparent; color:#FAFAFA; }}
 #{key} .fc-timegrid-slot-label-cushion,
 #{key} .fc-timegrid-axis-frame,
 #{key} .fc-scrollgrid-sync-inner       {{ color:#FAFAFA; background:transparent; }}
-#{key} .fc-timegrid-event              {{ background: rgba(51,51,51,0.8) !important; border: 1px solid rgba(128,128,128,0.4) !important; border-radius: 6px; }}
-#{key} .fc-timegrid-event:hover        {{ background: rgba(36,222,132,0.8) !important; border-color: rgba(36,222,132,1) !important; }}
+#{key} .fc-timegrid-event              {{ border: 1px solid rgba(128,128,128,0.4) !important; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-timegrid-event:hover        {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 #{key} .fc-timegrid-event-harness      {{ margin: 1.5px; }}
 
 #{key} .fc-list,

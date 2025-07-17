@@ -1,30 +1,35 @@
 # data/seed_calendar.py
 
 import random
-import time
-from datetime import datetime, timedelta, time as dt_time
 import sys
+import time
+from datetime import datetime
+from datetime import time as dt_time
+from datetime import timedelta
 from pathlib import Path
 
 # Agregar el directorio raíz al path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from models.player_model import Player
-from models.coach_model import Coach
-from models.session_model import Session, SessionStatus
 from controllers.db import get_db_session
+from models.coach_model import Coach
+from models.player_model import Player
+from models.session_model import Session, SessionStatus
+
 
 # --------------------------- #
 # Función interna específica para SEED
 def create_event_return_id(session):
     """Crea evento en Google Calendar y devuelve solo el event_id (sin hacer commit en base de datos)."""
-    from controllers.google_client import calendar
-    from controllers.calendar_utils import build_calendar_event_body
     from controllers.calendar_sync_core import CAL_ID
-    
+    from controllers.calendar_utils import build_calendar_event_body
+    from controllers.google_client import calendar
+
     body = build_calendar_event_body(session)
     ev = calendar().events().insert(calendarId=CAL_ID, body=body).execute()
     return ev["id"]
+
+
 # --------------------------- #
 
 # Configuración de rangos
@@ -49,10 +54,11 @@ NOTES_OPTIONS = [
     "Sesión psicológica",
     "Trabajo de fuerza específica",
     "Estrategias a balón parado",
-    "Test de agilidad"
+    "Test de agilidad",
 ]
 
 TAGS = ["Técnico", "Físico", "Táctico", "Psicológico"]
+
 
 def random_datetime_within(start_date, end_date):
     while True:
@@ -64,11 +70,14 @@ def random_datetime_within(start_date, end_date):
             end = start + timedelta(hours=1)
             return start, end
 
+
 def random_note():
     return random.choice(NOTES_OPTIONS)
 
+
 def random_tag():
     return f"[{random.choice(TAGS)}] "
+
 
 def create_sessions(player, coaches, coach_index):
     sessions = []
@@ -83,9 +92,9 @@ def create_sessions(player, coaches, coach_index):
 
     total_sessions = n_completed + n_scheduled + n_canceled
     session_types = (
-        [SessionStatus.COMPLETED] * n_completed +
-        [SessionStatus.SCHEDULED] * n_scheduled +
-        [SessionStatus.CANCELED] * n_canceled
+        [SessionStatus.COMPLETED] * n_completed
+        + [SessionStatus.SCHEDULED] * n_scheduled
+        + [SessionStatus.CANCELED] * n_canceled
     )
     random.shuffle(session_types)
 
@@ -109,7 +118,7 @@ def create_sessions(player, coaches, coach_index):
                     start_time=start,
                     end_time=end,
                     status=status,
-                    notes=random_tag() + random_note()
+                    notes=random_tag() + random_note(),
                 )
                 sessions.append(session)
                 player_sessions_by_day.add(day)
@@ -117,9 +126,12 @@ def create_sessions(player, coaches, coach_index):
                 coach_index += 1
                 break
         else:
-            print(f"⚠️ No se pudo asignar sesión {status} para el jugador {player.player_id} tras 100 intentos.")
+            print(
+                f"⚠️ No se pudo asignar sesión {status} para el jugador {player.player_id} tras 100 intentos."
+            )
 
     return sessions, coach_index
+
 
 def seed_all_sessions():
     db = get_db_session()
@@ -136,7 +148,9 @@ def seed_all_sessions():
         player_sessions, coach_index = create_sessions(player, coaches, coach_index)
         all_sessions.extend(player_sessions)
 
-    print(f"✅ {len(all_sessions)} sesiones generadas localmente. Guardando en la base de datos...")
+    print(
+        f"✅ {len(all_sessions)} sesiones generadas localmente. Guardando en la base de datos..."
+    )
 
     # Guardar las sesiones en la base de datos
     db.bulk_save_objects(all_sessions)
@@ -149,8 +163,12 @@ def seed_all_sessions():
     synced_count = 0
     for idx, session in enumerate(sessions_in_db, 1):
         try:
-            print(f"➡️ [{idx}/{len(sessions_in_db)}] Creando evento para sesión ID {session.id}...")
-            event_id = create_event_return_id(session)  # 🚀 Usamos nuestra función interna
+            print(
+                f"➡️ [{idx}/{len(sessions_in_db)}] Creando evento para sesión ID {session.id}..."
+            )
+            event_id = create_event_return_id(
+                session
+            )  # 🚀 Usamos nuestra función interna
             session.calendar_event_id = event_id
             db.add(session)  # Marcar la sesión modificada
             synced_count += 1
@@ -161,10 +179,13 @@ def seed_all_sessions():
     db.commit()
     db.close()
 
-    print(f"""\n✅ Base de datos rellenada y sincronizada.
+    print(
+        f"""\n✅ Base de datos rellenada y sincronizada.
     Sesiones creadas: {len(all_sessions)}
     Sesiones sincronizadas con Google Calendar: {synced_count}
-    """)
+    """
+    )
+
 
 if __name__ == "__main__":
     seed_all_sessions()

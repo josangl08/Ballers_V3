@@ -113,7 +113,7 @@ def create_sessions_content():
                                                             ),
                                                             dbc.Input(
                                                                 id="filter-from-date",
-                                                                type="date", # type: ignore
+                                                                type="date",  # type: ignore
                                                                 className="date-filter-input",
                                                                 value=(
                                                                     datetime.date.today()
@@ -138,7 +138,7 @@ def create_sessions_content():
                                                             ),
                                                             dbc.Input(
                                                                 id="filter-to-date",
-                                                                type="date", # type: ignore
+                                                                type="date",  # type: ignore
                                                                 className="date-filter-input",
                                                                 value=(
                                                                     datetime.date.today()
@@ -362,7 +362,7 @@ def create_session_form():
                             ),
                             dbc.Input(
                                 id="admin-new-session-date",
-                                type="date", # type: ignore
+                                type="date",  # type: ignore
                                 className="custom-date-input",
                                 value=datetime.date.today().isoformat(),
                             ),
