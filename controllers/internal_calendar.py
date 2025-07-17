@@ -153,7 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {{
 
 /* HOY y eventos pasados ---------------------------------------------------*/
 #{key} .fc-day-today {{ background:rgba(29,221,110,.1); }}
-#{key} .fc-event-past {{ opacity:.4; }}
+#{key} .fc-event-past {{ opacity:.4 !important; }}
+#{key} .fc-daygrid-event.fc-event-past {{ opacity:.4 !important; }}
+#{key} .fc-timegrid-event.fc-event-past {{ opacity:.4 !important; }}
 
 /* MES - TRANSPARENTE CON LÍNEAS SUAVES ------------------------------------*/
 #{key} .fc-daygrid-event,
@@ -162,6 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-daygrid-day-number          {{ background:transparent; color:#FAFAFA; }}
 #{key} .fc-daygrid-event-harness       {{ border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
 #{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-daygrid-event.fc-event-past {{ opacity: 0.4 !important; }}
 #{key} .fc-daygrid-event:hover         {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 
 /* SEMANA / DÍA ------------------------------------------------------------*/
@@ -342,7 +345,9 @@ document.addEventListener("DOMContentLoaded", () => {{
 
 /* HOY y eventos pasados ---------------------------------------------------*/
 #{key} .fc-day-today {{ background:rgba(29,221,110,.1); }}
-#{key} .fc-event-past {{ opacity:.4; }}
+#{key} .fc-event-past {{ opacity:.4 !important; }}
+#{key} .fc-daygrid-event.fc-event-past {{ opacity:.4 !important; }}
+#{key} .fc-timegrid-event.fc-event-past {{ opacity:.4 !important; }}
 
 /* MES - TRANSPARENTE CON LÍNEAS SUAVES ------------------------------------*/
 #{key} .fc-daygrid-event,
@@ -351,6 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-daygrid-day-number          {{ background:transparent; color:#FAFAFA; }}
 #{key} .fc-daygrid-event-harness       {{ border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
 #{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-daygrid-event.fc-event-past {{ opacity: 0.4 !important; }}
 #{key} .fc-daygrid-event:hover         {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 
 /* SEMANA - TRANSPARENTE CON LÍNEAS SUAVES --------------------------------*/
@@ -360,6 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-timegrid-axis-frame,
 #{key} .fc-scrollgrid-sync-inner       {{ color:#FAFAFA; background:transparent; }}
 #{key} .fc-timegrid-event              {{ border: 1px solid rgba(128,128,128,0.4) !important; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-timegrid-event.fc-event-past {{ opacity: 0.4 !important; }}
 #{key} .fc-timegrid-event:hover        {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 #{key} .fc-timegrid-event-harness      {{ margin: 1.5px; }}
 
@@ -578,6 +585,7 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-daygrid-day-number          {{ background:transparent; color:#FAFAFA; }}
 #{key} .fc-daygrid-event-harness       {{ border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
 #{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-daygrid-event.fc-event-past {{ opacity: 0.4 !important; }}
 #{key} .fc-daygrid-event:hover         {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 
 #{key} .fc-timegrid-divider,
@@ -586,6 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-timegrid-axis-frame,
 #{key} .fc-scrollgrid-sync-inner       {{ color:#FAFAFA; background:transparent; }}
 #{key} .fc-timegrid-event              {{ border: 1px solid rgba(128,128,128,0.4) !important; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-timegrid-event.fc-event-past {{ opacity: 0.4 !important; }}
 #{key} .fc-timegrid-event:hover        {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 #{key} .fc-timegrid-event-harness      {{ margin: 1.5px; }}
 
