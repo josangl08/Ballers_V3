@@ -202,10 +202,15 @@ def register_administration_callbacks(app):
                     sessions, editable=False, key="admin-cal"
                 )
 
-                # Crear tabla usando el mismo formato
+                # Crear tabla usando el mismo estilo de ballers_dash
                 if sessions:
-                    formatted_data = controller.format_sessions_for_table(sessions)
-                    table_content = create_sessions_table_content(formatted_data)
+                    from pages.ballers_dash import create_sessions_table_dash
+                    # Usar la función existente de ballers_dash que tiene el estilo correcto
+                    table_content = create_sessions_table_dash(
+                        from_date=start_date_obj,
+                        to_date=end_date_obj,
+                        status_filter=status_filter
+                    )
                 else:
                     table_content = html.Div(
                         "No sessions found for the selected filters",
@@ -525,58 +530,4 @@ def register_administration_callbacks(app):
     # TODO: Implementar estrategia alternativa para actualizar eventos
 
 
-def create_sessions_table_content(formatted_data):
-    """Crea el contenido de la tabla de sesiones con estilos - COPIADO DE BALLERS"""
-    if not formatted_data:
-        return html.Div(
-            "No sessions to display",
-            style={"text-align": "center", "padding": "20px", "color": "#FFFFFF"},
-        )
-
-    df = pd.DataFrame(formatted_data)
-
-    # Crear tabla con estilos por status como en ballers
-    table_data = []
-    for _, row in df.iterrows():
-        row_data = []
-        for col in df.columns:
-            cell_style = {"padding": "12px", "color": "#FFFFFF"}
-            if col == "Status":
-                if row[col] == "completed":
-                    cell_style["background-color"] = "rgba(76, 175, 80, 0.3)"
-                elif row[col] == "scheduled":
-                    cell_style["background-color"] = "rgba(33, 150, 243, 0.3)"
-                elif row[col] == "canceled":
-                    cell_style["background-color"] = "rgba(244, 67, 54, 0.3)"
-
-            row_data.append(html.Td(str(row[col]), style=cell_style))
-        table_data.append(html.Tr(row_data))
-
-    # Headers
-    headers = html.Tr(
-        [
-            html.Th(
-                col,
-                style={
-                    "padding": "12px",
-                    "color": "#FFFFFF",
-                    "background-color": "#444444",
-                    "border-bottom": "2px solid rgba(36, 222, 132, 1)",
-                },
-            )
-            for col in df.columns
-        ]
-    )
-
-    table = html.Table(
-        [html.Thead(headers), html.Tbody(table_data)],
-        style={
-            "width": "100%",
-            "border-collapse": "collapse",
-            "border": "2px solid rgba(36, 222, 132, 1)",
-            "border-radius": "10px",
-            "overflow": "hidden",
-        },
-    )
-
-    return table
+# Función create_sessions_table_content eliminada - ahora se usa create_sessions_table_dash de ballers_dash
