@@ -199,17 +199,11 @@ def show_calendar_dash(
 document.addEventListener("DOMContentLoaded", () => {{
   const root = document.getElementById("{key}");
 
-  // SOLUCIÓN MEJORADA: Preservar vista Y fecha del usuario
+  // Preservar vista y fecha del usuario
   let currentView = localStorage.getItem('calendar-view') || "dayGridMonth";
   let savedDate = localStorage.getItem('calendar-date');
   let currentDate = savedDate || new Date().toISOString().split('T')[0];
 
-  console.log("🔧 SOLUCIÓN MEJORADA - Vista y fecha preservadas:");
-  console.log("  - View:", currentView);
-  console.log("  - Date:", currentDate);
-  console.log("  - Saved date:", savedDate);
-
-  // Limpio y simple
 
   // Limpiar cualquier calendario previo
   if (root.firstChild) {{
@@ -246,26 +240,18 @@ document.addEventListener("DOMContentLoaded", () => {{
         }},
 
         datesSet: function(dateInfo) {{
-            // SOLUCIÓN MEJORADA: Guardar vista y fecha cuando usuario navega
-            console.log("📅 DATES_SET - SOLUCIÓN MEJORADA:");
-            console.log("  - View type:", dateInfo.view.type);
-            console.log("  - Start date:", dateInfo.start);
-            console.log("  - Is initializing:", isInitializing);
+            // Guardar vista y fecha cuando usuario navega
 
             if (isInitializing) {{
-                console.log("  ⚠️ Skipping during initialization");
                 return;
             }}
 
             // Guardar vista siempre
             localStorage.setItem('calendar-view', dateInfo.view.type);
 
-            // Guardar fecha cuando usuario navega (no durante filtros)
+            // Guardar fecha cuando usuario navega
             const centerDate = new Date(dateInfo.start.getTime() + (dateInfo.end.getTime() - dateInfo.start.getTime()) / 2);
             localStorage.setItem('calendar-date', centerDate.toISOString().split('T')[0]);
-
-            console.log("  ✅ Saved view:", dateInfo.view.type);
-            console.log("  ✅ Saved date:", centerDate.toISOString().split('T')[0]);
         }},
 
         /* Formato 24 h para todas las vistas */
@@ -308,8 +294,6 @@ document.addEventListener("DOMContentLoaded", () => {{
     }});
     cal.render();
 
-    // SOLUCIÓN 3: Sin postMessage, calendario se actualiza completamente
-    console.log("✅ Calendar rendered with filtered sessions");
 
   }} catch (e) {{
     console.error("FullCalendar Dash error:", e);
