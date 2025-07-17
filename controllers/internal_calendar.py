@@ -24,7 +24,7 @@ def _to_event(s: Session) -> dict:
     # Corregir problema de timezone: usar datetime naive para comparar
     now = dt.datetime.now()  # Sin timezone para comparar con sesiones naive
     is_past = s.end_time and s.end_time < now
-    
+
     event = {
         "id": s.id,
         "title": f"{s.coach.user.name} × {s.player.user.name}",
@@ -35,11 +35,11 @@ def _to_event(s: Session) -> dict:
         "coach": s.coach.user.name,
         "color": HEX[s.status.value],
     }
-    
+
     # Añadir clase CSS para eventos pasados
     if is_past:
         event["className"] = "fc-event-past"
-    
+
     return event
 
 
@@ -213,16 +213,23 @@ def show_calendar_dash(
 document.addEventListener("DOMContentLoaded", () => {{
   const root = document.getElementById("{key}");
 
-  // Preservar vista y fecha del usuario
+  // SEPARAR COMPORTAMIENTO: inicial vs cambio de filtros
   let currentView = localStorage.getItem('calendar-view') || "dayGridMonth";
-  let savedDate = localStorage.getItem('calendar-date');
-  let currentDate = savedDate || new Date().toISOString().split('T')[0];
+  let currentDate;
 
-  // Detectar si es primera visita para asegurar vista mensual
-  let isFirstVisit = !localStorage.getItem('calendar-view');
-  if (isFirstVisit) {{
-    currentView = "dayGridMonth";
+  // Distinguir entre creación inicial y cambio de filtros
+  let isFilterChange = localStorage.getItem('calendar-filter-change') === 'true';
+
+  if (isFilterChange) {{
+    // Cambio de filtros: preservar vista y fecha del usuario
+    let savedDate = localStorage.getItem('calendar-date');
+    currentDate = savedDate || new Date().toISOString().split('T')[0];
+    localStorage.removeItem('calendar-filter-change'); // Limpiar flag
+  }} else {{
+    // Creación inicial: siempre mostrar mes actual
     currentDate = new Date().toISOString().split('T')[0];
+    // Limpiar fecha guardada para forzar mes actual en próxima creación
+    localStorage.removeItem('calendar-date');
   }}
 
 
@@ -261,16 +268,15 @@ document.addEventListener("DOMContentLoaded", () => {{
         }},
 
         datesSet: function(dateInfo) {{
-            // Guardar vista y fecha cuando usuario navega
-
+            // Solo guardar cuando usuario navega manualmente (no durante inicialización)
             if (isInitializing) {{
                 return;
             }}
 
-            // Guardar vista siempre
+            // Guardar vista siempre para preservar preferencia
             localStorage.setItem('calendar-view', dateInfo.view.type);
 
-            // Guardar fecha cuando usuario navega
+            // Guardar fecha cuando usuario navega manualmente
             const centerDate = new Date(dateInfo.start.getTime() + (dateInfo.end.getTime() - dateInfo.start.getTime()) / 2);
             localStorage.setItem('calendar-date', centerDate.toISOString().split('T')[0]);
         }},
@@ -407,15 +413,17 @@ def update_and_get_sessions(controller, **kwargs):
         updated_count = controller.update_past_sessions()
         if updated_count > 0:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.info(f"📅 Auto-updated {updated_count} past sessions to completed")
     except Exception as e:
         import logging
+
         logger = logging.getLogger(__name__)
         logger.error(f"Error in auto-update past sessions: {e}")
-    
+
     # Obtener sesiones con filtros usando el método correcto
-    if hasattr(controller, 'get_sessions_for_display'):
+    if hasattr(controller, "get_sessions_for_display"):
         return controller.get_sessions_for_display(**kwargs)
     else:
         # Fallback al método básico
@@ -448,15 +456,15 @@ document.addEventListener("DOMContentLoaded", () => {{
   // CALENDARIO FIJO: Solo se inicializa UNA VEZ
   let currentView = localStorage.getItem('calendar-view') || "dayGridMonth";
 
-  // Detectar si es primera visita para asegurar vista mensual
-  let isFirstVisit = !localStorage.getItem('calendar-view');
-  if (isFirstVisit) {{
+  // Validar vista guardada para asegurar vista mensual por defecto
+  let savedView = localStorage.getItem('calendar-view');
+  if (!savedView || savedView === 'null' || savedView === 'undefined') {{
     currentView = "dayGridMonth";
   }}
 
   console.log("🔧 CALENDARIO FIJO - Inicialización única:");
   console.log("  - View:", currentView);
-  console.log("  - Is first visit:", isFirstVisit);
+  console.log("  - Saved view:", savedView);
   console.log("  - NO fecha guardada - siempre actual");
 
   // Limpiar cualquier calendario previo solo una vez

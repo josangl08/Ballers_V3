@@ -2606,3 +2606,6 @@ input[type="date"]#filter-to-date::-webkit-datetime-edit-year-field {
 }
 
 /* Native calendar has no size control - this is a browser/OS limitation */
+
+/* JavaScript para forzar cierre del minicalendario */
+/* Se ejecuta cuando se selecciona una fecha en los inputs date */

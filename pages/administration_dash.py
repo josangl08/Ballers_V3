@@ -109,21 +109,25 @@ def create_sessions_content():
                                                         [
                                                             dbc.Label(
                                                                 "From",
-                                                                className="filter-label",
+                                                                className=(
+                                                                    "filter-label"
+                                                                ),
                                                             ),
                                                             dbc.Input(
                                                                 id="filter-from-date",
-                                                                type="date",  # type: ignore
-                                                                className="date-filter-input",
+                                                                type="date",  # noqa: E501
+                                                                className="date-filter-input",  # noqa: E501
                                                                 value=(
-                                                                    datetime.date.today()
-                                                                    - datetime.timedelta(
+                                                                    datetime.date.today()  # noqa: E501
+                                                                    - datetime.timedelta(  # noqa: E501
                                                                         days=7
                                                                     )
-                                                                ).isoformat(),
+                                                                ).isoformat(),  # noqa: E501
                                                             ),
                                                         ],
-                                                        className="date-filter-container",
+                                                        className=(
+                                                            "date-filter-container"
+                                                        ),
                                                     )
                                                 ],
                                                 width=6,
@@ -134,21 +138,25 @@ def create_sessions_content():
                                                         [
                                                             dbc.Label(
                                                                 "To",
-                                                                className="filter-label",
+                                                                className=(
+                                                                    "filter-label"
+                                                                ),
                                                             ),
                                                             dbc.Input(
                                                                 id="filter-to-date",
-                                                                type="date",  # type: ignore
-                                                                className="date-filter-input",
+                                                                type="date",  # noqa: E501
+                                                                className="date-filter-input",  # noqa: E501
                                                                 value=(
-                                                                    datetime.date.today()
-                                                                    + datetime.timedelta(
+                                                                    datetime.date.today()  # noqa: E501
+                                                                    + datetime.timedelta(  # noqa: E501
                                                                         days=21
                                                                     )
-                                                                ).isoformat(),
+                                                                ).isoformat(),  # noqa: E501
                                                             ),
                                                         ],
-                                                        className="date-filter-container",
+                                                        className=(
+                                                            "date-filter-container"
+                                                        ),
                                                     )
                                                 ],
                                                 width=6,
@@ -174,18 +182,27 @@ def create_sessions_content():
                                                 [
                                                     html.Span(
                                                         "Scheduled",
-                                                        id="admin-status-scheduled",
-                                                        className="status-scheduled status-badge",
+                                                        id=("admin-status-scheduled"),
+                                                        className=(
+                                                            "status-scheduled "
+                                                            "status-badge"
+                                                        ),
                                                     ),
                                                     html.Span(
                                                         "Completed",
-                                                        id="admin-status-completed",
-                                                        className="status-completed status-badge",
+                                                        id=("admin-status-completed"),
+                                                        className=(
+                                                            "status-completed "
+                                                            "status-badge"
+                                                        ),
                                                     ),
                                                     html.Span(
                                                         "Canceled",
-                                                        id="admin-status-canceled",
-                                                        className="status-canceled status-badge",
+                                                        id=("admin-status-canceled"),
+                                                        className=(
+                                                            "status-canceled "
+                                                            "status-badge"
+                                                        ),
                                                     ),
                                                 ],
                                                 className="status-badges-container",
@@ -295,6 +312,20 @@ def create_sessions_content():
             # Alert para mensajes
             dbc.Alert(
                 id="admin-alert", is_open=False, dismissable=True, className="mb-3"
+            ),
+            # Script para forzar cierre del minicalendario
+            html.Script(
+                """
+            document.addEventListener('DOMContentLoaded', function() {
+                // Agregar evento a los inputs de fecha para forzar cierre
+                const dateInputs = document.querySelectorAll('input[type="date"]');
+                dateInputs.forEach(input => {
+                    input.addEventListener('change', function() {
+                        this.blur(); // Quitar foco del input para cerrar el calendario
+                    });
+                });
+            });
+            """
             ),
         ]
     )
