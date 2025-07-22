@@ -71,6 +71,23 @@ div.row-widget.stForm {
     opacity: 1 !important;
 }
 
+/* Estilos para textarea del formulario de administración */
+.form-textarea::placeholder {
+    color: #CCCCCC !important;
+    opacity: 1 !important;
+}
+
+.form-textarea:hover {
+    border-color: rgba(36, 222, 132, 1) !important;
+    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
+}
+
+.form-textarea:focus {
+    border-color: rgba(36, 222, 132, 1) !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    outline: none !important;
+}
+
 /* Estilo para botón de Save Notes - igual que View Profile */
 #save-notes-profile-btn {
     background-color: #1D1B1A !important;
@@ -91,6 +108,20 @@ div.row-widget.stForm {
 #save-notes-profile-btn:active {
     background-color: rgba(36, 222, 132, 1) !important;
     color: #333333 !important;
+    transform: translateY(1px) !important;
+}
+
+/* Estilos para botón Save Session - igual que View Profile de player cards */
+#admin-save-session-btn:hover {
+    background-color: #1D1B1A !important;  /* Mantener mismo fondo */
+    color: #24DE84 !important;  /* Letras verdes al hover */
+    border-color: #24DE84 !important;  /* Borde verde al hover */
+    transform: translateY(-1px) !important;
+}
+
+#admin-save-session-btn:active {
+    background-color: #24DE84 !important;  /* Fondo verde al clickear */
+    color: #1D1B1A !important;  /* Letras oscuras al clickear */
     transform: translateY(1px) !important;
 }
 .st-emotion-cache-seewz2 h1{
@@ -527,35 +558,44 @@ div.stExpander {
 /* Prioridad máxima: selectores específicos para evitar conflictos */
 
 /* Control principal del dropdown coach */
-#admin-filter-coach .Select-control {
-    background-color: rgb(51, 51, 51) !important;
-    border: 1px solid transparent !important;
+/* Estilos específicos para admin-filter-coach eliminados - ahora usa .standard-dropdown */
+
+/* ===== CLASE ESTÁNDAR PARA TODOS LOS DROPDOWNS ===== */
+.standard-dropdown .Select-control {
+    background-color: #3b3b3a !important;
+    border-color: #555 !important;
     border-radius: 10px !important;
     color: #FFFFFF !important;
     height: 38px !important;
-    min-height: 38px !important;
-    max-height: 38px !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    padding: 0 8px !important;
-    box-sizing: border-box !important;
     margin: 0 !important;
+    line-height: 38px !important;
+    transition: all 0.3s ease !important;
 }
 
-/* Contenedor de valores múltiples (si aplica) */
-#admin-filter-coach .Select-multi-value-wrapper {
+.standard-dropdown .Select-control:hover,
+.standard-dropdown .Select-control:hover:not([class*="admin-filter"]) {
+    border-color: rgba(36, 222, 132, 1) !important;
+}
+
+.standard-dropdown .Select-control.is-focused,
+.standard-dropdown .Select-control.is-focused:not([class*="admin-filter"]) {
+    border-color: rgba(36, 222, 132, 1) !important;
+}
+
+.standard-dropdown .Select-multi-value-wrapper {
     background-color: rgb(51, 51, 51) !important;
     display: flex !important;
     align-items: center !important;
     flex: 1 !important;
     padding: 0 !important;
     margin: 0 !important;
+    line-height: 38px !important;
 }
 
-/* Valor seleccionado (texto principal) */
-#admin-filter-coach .Select-value,
-#admin-filter-coach .Select-value-label {
+.standard-dropdown .Select-value,
+.standard-dropdown .Select-value-label {
     color: #FFFFFF !important;
     font-size: 0.85rem !important;
     text-align: left !important;
@@ -564,13 +604,10 @@ div.stExpander {
     display: flex !important;
     align-items: center !important;
     margin: 0 !important;
-    background-color: transparent !important;
-    border: none !important;
     line-height: 38px !important;
 }
 
-/* Placeholder */
-#admin-filter-coach .Select-placeholder {
+.standard-dropdown .Select-placeholder {
     color: rgba(255, 255, 255, 0.7) !important;
     font-size: 0.85rem !important;
     text-align: left !important;
@@ -582,8 +619,7 @@ div.stExpander {
     line-height: 38px !important;
 }
 
-/* Zona del icono clear (X) */
-#admin-filter-coach .Select-clear-zone {
+.standard-dropdown .Select-clear-zone {
     width: 20px !important;
     padding: 0 !important;
     display: flex !important;
@@ -593,8 +629,7 @@ div.stExpander {
     margin: 0 !important;
 }
 
-/* Zona del icono dropdown (flecha) */
-#admin-filter-coach .Select-arrow-zone {
+.standard-dropdown .Select-arrow-zone {
     width: 30px !important;
     padding: 0 !important;
     display: flex !important;
@@ -604,8 +639,7 @@ div.stExpander {
     margin: 0 !important;
 }
 
-/* Menu desplegable */
-#admin-filter-coach .Select-menu-outer {
+.standard-dropdown .Select-menu-outer {
     background-color: rgb(51, 51, 51) !important;
     border: 1px solid rgba(36, 222, 132, 0.3) !important;
     border-radius: 10px !important;
@@ -613,8 +647,7 @@ div.stExpander {
     z-index: 1000 !important;
 }
 
-/* Opciones del menu */
-#admin-filter-coach .Select-option {
+.standard-dropdown .Select-option {
     background-color: rgb(51, 51, 51) !important;
     color: #FFFFFF !important;
     font-size: 0.85rem !important;
@@ -623,44 +656,7 @@ div.stExpander {
     margin: 0 !important;
 }
 
-#admin-filter-coach .Select-option:hover {
-    background-color: rgba(36, 222, 132, 0.2) !important;
-}
-
-/* ===== SISTEMA GENÉRICO PARA OTROS DROPDOWNS ===== */
-.custom-dropdown .Select-control {
-    background-color: rgb(51, 51, 51) !important;
-    border: 1px solid transparent !important;
-    border-radius: 10px !important;
-    color: #FFFFFF !important;
-    height: 38px !important;
-    display: flex !important;
-    align-items: center !important;
-    padding: 0 8px !important;
-    box-sizing: border-box !important;
-}
-
-.custom-dropdown .Select-value-label,
-.custom-dropdown .Select-placeholder {
-    color: #FFFFFF !important;
-    font-size: 0.85rem !important;
-    flex: 1 !important;
-    padding: 0 4px !important;
-}
-
-.custom-dropdown .Select-menu-outer {
-    background-color: rgb(51, 51, 51) !important;
-    border: 1px solid rgba(36, 222, 132, 0.3) !important;
-    border-radius: 10px !important;
-}
-
-.custom-dropdown .Select-option {
-    background-color: rgb(51, 51, 51) !important;
-    color: #FFFFFF !important;
-    padding: 8px 12px !important;
-}
-
-.custom-dropdown .Select-option:hover {
+.standard-dropdown .Select-option:hover {
     background-color: rgba(36, 222, 132, 0.2) !important;
 }
 
@@ -671,8 +667,8 @@ input[type="date"]#filter-from-date,
 input[type="date"]#filter-to-date,
 .custom-date-input,
 .date-filter-input {
-    background-color: rgb(51, 51, 51) !important; /* Color solicitado */
-    border: 1px solid transparent !important; /* Sin borde por defecto */
+    background-color: #3b3b3a !important;
+    border: 1px solid #555 !important;
     border-radius: 10px !important;
     color: #FFFFFF !important;
     padding: 8px 12px !important;
@@ -2606,6 +2602,36 @@ input[type="date"]#filter-to-date::-webkit-datetime-edit-year-field {
 }
 
 /* Native calendar has no size control - this is a browser/OS limitation */
+
+/* ===== OCULTAR SCROLLBARS DEL CALENDARIO - SOLUCION AGRESIVA ===== */
+div[id*="admin-cal"] *::-webkit-scrollbar,
+div[id*="dash-calendar"] *::-webkit-scrollbar,
+iframe[id*="admin-cal"] *::-webkit-scrollbar,
+iframe[id*="dash-calendar"] *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+div[id*="admin-cal"] *,
+div[id*="dash-calendar"] *,
+iframe[id*="admin-cal"] *,
+iframe[id*="dash-calendar"] * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* Forzar overflow hidden en elementos específicos de FullCalendar */
+[class*="fc-scroller"],
+[class*="fc-scrollgrid"] {
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+}
+
+[class*="fc-scroller"]::-webkit-scrollbar,
+[class*="fc-scrollgrid"]::-webkit-scrollbar {
+    display: none !important;
+}
 
 /* JavaScript para forzar cierre del minicalendario */
 /* Se ejecuta cuando se selecciona una fecha en los inputs date */

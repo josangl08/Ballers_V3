@@ -254,7 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {{
         eventOverlap:     false,   // idem para overlaps parciales
         locale:  "en",
         timeZone:"local",
-        height:  {height},
+        height: {height},
         slotMinTime: "08:00:00",
         slotMaxTime: "19:00:00",
         firstDay: 1,
@@ -320,7 +320,6 @@ document.addEventListener("DOMContentLoaded", () => {{
       }}
     }});
     cal.render();
-
 
   }} catch (e) {{
     console.error("FullCalendar Dash error:", e);
@@ -432,7 +431,7 @@ def update_and_get_sessions(controller, **kwargs):
 
 def create_fixed_calendar_dash(
     *,
-    height: int = 650,
+    height: int | None = 650,
     editable: bool = False,
     key: str = "dash-calendar",
 ) -> str:
@@ -488,7 +487,7 @@ document.addEventListener("DOMContentLoaded", () => {{
         eventOverlap:     false,
         locale:  "en",
         timeZone:"local",
-        height:  {height},
+        height: {height},
         slotMinTime: "08:00:00",
         slotMaxTime: "19:00:00",
         firstDay: 1,

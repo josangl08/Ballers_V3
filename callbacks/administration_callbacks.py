@@ -5,7 +5,6 @@ Callbacks relacionados con la página de Administration - COPIANDO ESTRUCTURA DE
 import datetime as dt
 
 import dash_bootstrap_components as dbc
-import pandas as pd
 from dash import Input, Output, State, html
 
 from controllers.internal_calendar import show_calendar_dash, update_and_get_sessions
@@ -199,17 +198,19 @@ def register_administration_callbacks(app):
                 # Crear calendario usando el controller funcional
 
                 calendar_content = show_calendar_dash(
-                    sessions, editable=False, key="admin-cal"
+                    sessions, editable=False, key="admin-cal", height=800
                 )
 
                 # Crear tabla usando el mismo estilo de ballers_dash
                 if sessions:
                     from pages.ballers_dash import create_sessions_table_dash
-                    # Usar la función existente de ballers_dash que tiene el estilo correcto
+
+                    # Usar la función existente de ballers_dash que tiene
+                    # el estilo correcto
                     table_content = create_sessions_table_dash(
                         from_date=start_date_obj,
                         to_date=end_date_obj,
-                        status_filter=status_filter
+                        status_filter=status_filter,
                     )
                 else:
                     table_content = html.Div(
@@ -526,8 +527,142 @@ def register_administration_callbacks(app):
             )
             return error_alert, error_alert, error_alert
 
+    @app.callback(
+        [
+            Output("admin-edit-session-coach", "options"),
+            Output("admin-edit-session-coach", "value"),
+            Output("admin-edit-session-player", "options"),
+            Output("admin-edit-session-player", "value"),
+            Output("admin-edit-session-status", "value"),
+            Output("admin-edit-session-date", "value"),
+            Output("admin-edit-session-start-time", "options"),
+            Output("admin-edit-session-start-time", "value"),
+            Output("admin-edit-session-end-time", "options"),
+            Output("admin-edit-session-end-time", "value"),
+            Output("admin-edit-session-notes", "value"),
+            Output("admin-edit-session-warning", "children"),
+        ],
+        [Input("admin-edit-session-selector", "value")],
+        prevent_initial_call=True,
+    )
+    def auto_load_session_data(selected_session_id):
+        """Auto-carga información de la sesión seleccionada."""
+
+        # Si no hay sesión seleccionada, devolver valores vacíos
+        if not selected_session_id:
+            return [], None, [], None, None, "", [], None, [], None, "", html.Div()
+
+        try:
+            from controllers.validation_controller import (
+                check_session_time_recommendation,
+                get_edit_session_hours,
+            )
+
+            with SessionController() as controller:
+                # Obtener la sesión usando el modelo correcto - SIMPLIFICADO
+                from models import Session
+
+                session = controller.db.get(Session, selected_session_id)
+
+                if not session:
+                    return (
+                        [],
+                        None,
+                        [],
+                        None,
+                        None,
+                        "",
+                        [],
+                        None,
+                        [],
+                        None,
+                        "",
+                        html.Div("Session not found", style={"color": "red"}),
+                    )
+
+                # Obtener coaches y players
+                coaches = controller.get_available_coaches()
+                coach_options = [
+                    {"label": name, "value": coach_id} for coach_id, name in coaches
+                ]
+
+                players = controller.get_available_players()
+                player_options = [
+                    {"label": name, "value": player_id} for player_id, name in players
+                ]
+
+                # Obtener horarios flexibles usando ValidationController
+                hours_start_edit, hours_end_edit = get_edit_session_hours(
+                    existing_start=session.start_time.time(),
+                    existing_end=session.end_time.time(),
+                )
+
+                # Convertir horarios a opciones para dropdown
+                start_time_options = [
+                    {"label": t.strftime("%H:%M"), "value": t.strftime("%H:%M")}
+                    for t in hours_start_edit
+                ]
+                end_time_options = [
+                    {"label": t.strftime("%H:%M"), "value": t.strftime("%H:%M")}
+                    for t in hours_end_edit
+                ]
+
+                # Verificar recomendaciones de horarios
+                is_recommended, warning_msg = check_session_time_recommendation(
+                    session.start_time.time(), session.end_time.time()
+                )
+
+                warning_div = html.Div()
+                if not is_recommended:
+                    warning_div = html.Div(
+                        [
+                            html.I(
+                                className="bi bi-exclamation-triangle me-2",
+                                style={"color": "#ffc107"},
+                            ),
+                            warning_msg,
+                        ],
+                        style={
+                            "color": "#ffc107",
+                            "background-color": "rgba(255, 193, 7, 0.1)",
+                            "padding": "10px",
+                            "border-radius": "5px",
+                            "border-left": "4px solid #ffc107",
+                        },
+                    )
+
+                # Valores a establecer
+                coach_value = session.coach_id
+                player_value = session.player_id
+                status_value = session.status.value
+                date_value = session.start_time.date().isoformat()
+                start_time_value = session.start_time.time().strftime("%H:%M")
+                end_time_value = session.end_time.time().strftime("%H:%M")
+                notes_value = session.notes or ""
+
+                return (
+                    coach_options,
+                    coach_value,
+                    player_options,
+                    player_value,
+                    status_value,
+                    date_value,
+                    start_time_options,
+                    start_time_value,
+                    end_time_options,
+                    end_time_value,
+                    notes_value,
+                    warning_div,
+                )
+
+        except Exception as e:
+            error_div = html.Div(
+                f"Error loading session: {str(e)}", style={"color": "red"}
+            )
+            return [], None, [], None, None, "", [], None, [], None, "", error_div
+
     # TEMPORALMENTE ELIMINADO: ClientSide callback causaba crashes de Dash
     # TODO: Implementar estrategia alternativa para actualizar eventos
 
 
-# Función create_sessions_table_content eliminada - ahora se usa create_sessions_table_dash de ballers_dash
+# Función create_sessions_table_content eliminada - usa create_sessions_table_dash
