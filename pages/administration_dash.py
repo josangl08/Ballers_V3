@@ -544,21 +544,231 @@ def create_edit_session_form():
             # Formulario completo de edición con selector incluido
             html.Div(
                 [
-                    # Session selector - DENTRO del contenedor
+                    # Primera fila: Filtros rápidos temporales
                     html.Div(
                         [
                             html.Label(
-                                "Select session",
+                                "Quick filters",
                                 style={"color": "#FFFFFF", "margin-bottom": "8px"},
                             ),
-                            dcc.Dropdown(
-                                id="admin-edit-session-selector",
-                                placeholder="Select session to edit...",
-                                className="standard-dropdown",
+                            html.Div(
+                                [
+                                    # Grupo de filtros principales
+                                    html.Div(
+                                        [
+                                            html.Button(
+                                                "Last Month",
+                                                id="filter-last-month",
+                                                className="btn-filter-quick",
+                                                style={
+                                                    "background-color": "#3b3b3a",
+                                                    "border": "1px solid #555",
+                                                    "color": "#FFFFFF",
+                                                    "border-radius": "15px",
+                                                    "padding": "6px 12px",
+                                                    "margin-right": "12px",
+                                                    "margin-bottom": "6px",
+                                                    "font-size": "0.8rem",
+                                                    "cursor": "pointer",
+                                                    "transition": "all 0.3s ease",
+                                                },
+                                            ),
+                                            html.Button(
+                                                "Last Week",
+                                                id="filter-last-week",
+                                                className="btn-filter-quick",
+                                                style={
+                                                    "background-color": "#3b3b3a",
+                                                    "border": "1px solid #555",
+                                                    "color": "#FFFFFF",
+                                                    "border-radius": "15px",
+                                                    "padding": "6px 12px",
+                                                    "margin-right": "12px",
+                                                    "margin-bottom": "6px",
+                                                    "font-size": "0.8rem",
+                                                    "cursor": "pointer",
+                                                    "transition": "all 0.3s ease",
+                                                },
+                                            ),
+                                            html.Button(
+                                                "Yesterday",
+                                                id="filter-yesterday",
+                                                className="btn-filter-quick",
+                                                style={
+                                                    "background-color": "#3b3b3a",
+                                                    "border": "1px solid #555",
+                                                    "color": "#FFFFFF",
+                                                    "border-radius": "15px",
+                                                    "padding": "6px 12px",
+                                                    "margin-right": "12px",
+                                                    "margin-bottom": "6px",
+                                                    "font-size": "0.8rem",
+                                                    "cursor": "pointer",
+                                                    "transition": "all 0.3s ease",
+                                                },
+                                            ),
+                                            html.Button(
+                                                "Today",
+                                                id="filter-today",
+                                                className="btn-filter-quick",
+                                                style={
+                                                    "background-color": "#3b3b3a",
+                                                    "border": "1px solid #555",
+                                                    "color": "#FFFFFF",
+                                                    "border-radius": "15px",
+                                                    "padding": "6px 12px",
+                                                    "margin-right": "12px",
+                                                    "margin-bottom": "6px",
+                                                    "font-size": "0.8rem",
+                                                    "cursor": "pointer",
+                                                    "transition": "all 0.3s ease",
+                                                },
+                                            ),
+                                            html.Button(
+                                                "Tomorrow",
+                                                id="filter-tomorrow",
+                                                className="btn-filter-quick",
+                                                style={
+                                                    "background-color": "#3b3b3a",
+                                                    "border": "1px solid #555",
+                                                    "color": "#FFFFFF",
+                                                    "border-radius": "15px",
+                                                    "padding": "6px 12px",
+                                                    "margin-right": "12px",
+                                                    "margin-bottom": "6px",
+                                                    "font-size": "0.8rem",
+                                                    "cursor": "pointer",
+                                                    "transition": "all 0.3s ease",
+                                                },
+                                            ),
+                                            html.Button(
+                                                "This Week",
+                                                id="filter-this-week",
+                                                className="btn-filter-quick",
+                                                style={
+                                                    "background-color": "#3b3b3a",
+                                                    "border": "1px solid #555",
+                                                    "color": "#FFFFFF",
+                                                    "border-radius": "15px",
+                                                    "padding": "6px 12px",
+                                                    "margin-right": "12px",
+                                                    "margin-bottom": "6px",
+                                                    "font-size": "0.8rem",
+                                                    "cursor": "pointer",
+                                                    "transition": "all 0.3s ease",
+                                                },
+                                            ),
+                                            html.Button(
+                                                "This Month",
+                                                id="filter-this-month",
+                                                className="btn-filter-quick",
+                                                style={
+                                                    "background-color": "#3b3b3a",
+                                                    "border": "1px solid #555",
+                                                    "color": "#FFFFFF",
+                                                    "border-radius": "15px",
+                                                    "padding": "6px 12px",
+                                                    "margin-right": "12px",
+                                                    "margin-bottom": "6px",
+                                                    "font-size": "0.8rem",
+                                                    "cursor": "pointer",
+                                                    "transition": "all 0.3s ease",
+                                                },
+                                            ),
+                                        ],
+                                        style={
+                                            "display": "flex",
+                                            "flex-wrap": "wrap",
+                                            "align-items": "center",
+                                        },
+                                    ),
+                                    # Botón Clear separado a la derecha
+                                    html.Button(
+                                        "Clear",
+                                        id="filter-clear",
+                                        className="btn-filter-clear",
+                                        style={
+                                            "background-color": "#dc3545",
+                                            "border": "1px solid #dc3545",
+                                            "color": "#FFFFFF",
+                                            "border-radius": "15px",
+                                            "padding": "6px 12px",
+                                            "margin-bottom": "6px",
+                                            "font-size": "0.8rem",
+                                            "cursor": "pointer",
+                                            "transition": "all 0.3s ease",
+                                        },
+                                    ),
+                                ],
+                                style={
+                                    "display": "flex",
+                                    "flex-wrap": "wrap",
+                                    "align-items": "center",
+                                    "justify-content": "space-between",
+                                },
                             ),
                         ],
-                        style={"margin-bottom": "25px"},
+                        style={"margin-bottom": "20px"},
                     ),
+                    # Segunda fila: Buscador y Selector de sesiones
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Label(
+                                        "Search sessions",
+                                        style={
+                                            "color": "#FFFFFF",
+                                            "margin-bottom": "8px",
+                                        },
+                                    ),
+                                    dbc.Input(
+                                        id="admin-session-search",
+                                        type="text",
+                                        placeholder="Search by coach, player, ID...",
+                                        className="custom-date-input",
+                                        style={
+                                            "background-color": "#3b3b3a",
+                                            "border": "1px solid #555",
+                                            "color": "#FFFFFF",
+                                            "height": "38px",
+                                        },
+                                    ),
+                                ],
+                                style={"width": "30%", "display": "inline-block"},
+                            ),
+                            html.Div(
+                                [
+                                    html.Label(
+                                        "Select session",
+                                        style={
+                                            "color": "#FFFFFF",
+                                            "margin-bottom": "8px",
+                                        },
+                                    ),
+                                    dcc.Dropdown(
+                                        id="admin-edit-session-selector",
+                                        placeholder="Select session to edit...",
+                                        className="standard-dropdown",
+                                        style={"height": "38px"},
+                                    ),
+                                ],
+                                style={
+                                    "width": "70%",
+                                    "display": "inline-block",
+                                    "margin-left": "0%",
+                                },
+                            ),
+                        ],
+                        style={
+                            "margin-bottom": "25px",
+                            "display": "flex",
+                            "align-items": "flex-end",
+                            "gap": "10px",
+                        },
+                    ),
+                    # Store para filtro activo
+                    dcc.Store(id="admin-active-filter", data=None),
                     # Advertencia si la sesión está fuera de horarios recomendados
                     html.Div(
                         id="admin-edit-session-warning", style={"margin-bottom": "15px"}
@@ -649,9 +859,8 @@ def create_edit_session_form():
                                     ),
                                     dbc.Input(
                                         id="admin-edit-session-date",
-                                        type="text",  # Cambio 'date' a 'text'
-                                        className="custom-date-input",
-                                        placeholder="YYYY-MM-DD",
+                                        type="date",
+                                        className="date-filter-input",
                                     ),
                                 ],
                                 style={
@@ -733,10 +942,7 @@ def create_edit_session_form():
                     html.Div(
                         [
                             dbc.Button(
-                                [
-                                    html.I(className="bi bi-check-circle me-2"),
-                                    "Save Changes",
-                                ],
+                                "Save Changes",
                                 id="admin-update-session-btn",
                                 style={
                                     "background-color": "#1D1B1A",
@@ -747,6 +953,8 @@ def create_edit_session_form():
                                     "padding": "0.4rem 1.2rem",
                                     "transition": "all 0.3s ease",
                                     "cursor": "pointer",
+                                    "display": "inline-block",
+                                    "width": "auto",
                                     "margin-right": "15px",
                                 },
                             ),
@@ -756,15 +964,18 @@ def create_edit_session_form():
                                     "Delete Session",
                                 ],
                                 id="admin-delete-session-btn",
+                                className="btn-delete",
                                 style={
-                                    "background-color": "#dc3545",
-                                    "color": "#FFFFFF",
-                                    "border": "2px solid #dc3545",
+                                    "background-color": "#1D1B1A",
+                                    "color": "#dc3545",
+                                    "border": "2px solid #1D1B1A",
                                     "border-radius": "20px",
                                     "font-weight": "500",
                                     "padding": "0.4rem 1.2rem",
                                     "transition": "all 0.3s ease",
                                     "cursor": "pointer",
+                                    "display": "inline-block",
+                                    "width": "auto",
                                 },
                             ),
                         ],

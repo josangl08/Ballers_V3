@@ -584,41 +584,171 @@ class SessionController:
         return [(p.player_id, p.user.name) for p in players]
 
     def get_sessions_for_editing(
-        self, coach_id: Optional[int] = None
+        self,
+        coach_id: Optional[int] = None,
+        date_filter: Optional[str] = None,
+        search_query: Optional[str] = None,
     ) -> Dict[int, str]:
         """
-        Obtiene sesiones para editar como diccionario.
+        Obtiene sesiones para editar como diccionario con filtros avanzados.
+
+        Args:
+            coach_id: ID del coach para filtrar (opcional)
+            date_filter: Filtro temporal ('today', 'tomorrow', 'this_week', etc.)
+            search_query: Texto de búsqueda (nombre coach/player, ID, fecha)
         """
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
 
-        query = self.db.query(Session).order_by(Session.start_time.asc())
+        query = (
+            self.db.query(Session)
+            .options(
+                joinedload(Session.coach).joinedload(Coach.user),
+                joinedload(Session.player).joinedload(Player.user),
+            )
+            .order_by(Session.start_time.asc())
+        )
 
+        # Filtro por coach
         if coach_id:
             query = query.filter(Session.coach_id == coach_id)
 
+        # Aplicar filtro de fecha si se proporciona
+        if date_filter:
+            start_date, end_date = self._get_date_range_for_filter(date_filter)
+            if start_date and end_date:
+                query = query.filter(
+                    Session.start_time >= dt.datetime.combine(start_date, dt.time.min),
+                    Session.start_time <= dt.datetime.combine(end_date, dt.time.max),
+                )
+
         sessions = query.all()
 
-        # Crear diccionario con descripciones
+        # Aplicar búsqueda por texto si se proporciona
+        if search_query and search_query.strip():
+            sessions = self._filter_sessions_by_search(sessions, search_query.strip())
+
+        # Crear diccionario con descripciones mejoradas
+        return self._create_session_descriptions(sessions)
+
+    def _get_date_range_for_filter(
+        self, date_filter: str
+    ) -> tuple[Optional[dt.date], Optional[dt.date]]:
+        """Convierte filtro de fecha a rango de fechas."""
+        today = dt.date.today()
+
+        if date_filter == "today":
+            return today, today
+        elif date_filter == "tomorrow":
+            tomorrow = today + dt.timedelta(days=1)
+            return tomorrow, tomorrow
+        elif date_filter == "yesterday":
+            yesterday = today - dt.timedelta(days=1)
+            return yesterday, yesterday
+        elif date_filter == "this_week":
+            start_week = today - dt.timedelta(days=today.weekday())
+            end_week = start_week + dt.timedelta(days=6)
+            return start_week, end_week
+        elif date_filter == "last_week":
+            start_last_week = today - dt.timedelta(days=today.weekday() + 7)
+            end_last_week = start_last_week + dt.timedelta(days=6)
+            return start_last_week, end_last_week
+        elif date_filter == "this_month":
+            start_month = today.replace(day=1)
+            if today.month == 12:
+                end_month = today.replace(
+                    year=today.year + 1, month=1, day=1
+                ) - dt.timedelta(days=1)
+            else:
+                end_month = today.replace(month=today.month + 1, day=1) - dt.timedelta(
+                    days=1
+                )
+            return start_month, end_month
+        elif date_filter == "last_month":
+            if today.month == 1:
+                start_last_month = today.replace(year=today.year - 1, month=12, day=1)
+                end_last_month = today.replace(day=1) - dt.timedelta(days=1)
+            else:
+                start_last_month = today.replace(month=today.month - 1, day=1)
+                end_last_month = today.replace(day=1) - dt.timedelta(days=1)
+            return start_last_month, end_last_month
+        else:
+            return None, None
+
+    def _filter_sessions_by_search(
+        self, sessions: List[Session], search_query: str
+    ) -> List[Session]:
+        """Filtra sesiones por consulta de búsqueda."""
+        search_lower = search_query.lower()
+        filtered_sessions = []
+
+        for session in sessions:
+            # Buscar en nombres de coach y player
+            coach_name = session.coach.user.name.lower()
+            player_name = session.player.user.name.lower()
+
+            # Buscar en ID de sesión
+            session_id_str = str(session.id)
+
+            # Buscar en fecha formateada
+            date_str = session.start_time.strftime("%d/%m/%Y").lower()
+            date_str_alt = session.start_time.strftime("%d/%m").lower()
+
+            # Buscar palabras clave temporales
+            session_date = session.start_time.date()
+            today = dt.date.today()
+            temporal_keywords = []
+
+            if session_date == today:
+                temporal_keywords.extend(["today", "hoy"])
+            elif session_date == today + dt.timedelta(days=1):
+                temporal_keywords.extend(["tomorrow", "mañana"])
+            elif session_date == today - dt.timedelta(days=1):
+                temporal_keywords.extend(["yesterday", "ayer"])
+
+            # Verificar si la búsqueda coincide con algún campo
+            if (
+                search_lower in coach_name
+                or search_lower in player_name
+                or search_lower in session_id_str
+                or search_lower in date_str
+                or search_lower in date_str_alt
+                or any(
+                    keyword.startswith(search_lower) for keyword in temporal_keywords
+                )
+            ):
+                filtered_sessions.append(session)
+
+        return filtered_sessions
+
+    def _create_session_descriptions(self, sessions: List[Session]) -> Dict[int, str]:
+        """Crea descripciones mejoradas para las sesiones."""
         today = dt.date.today()
         tomorrow = today + dt.timedelta(days=1)
+        yesterday = today - dt.timedelta(days=1)
 
         descriptions = {}
         for s in sessions:
             session_date = s.start_time.date()
 
-            if session_date < today:
-                prefix = "🔘 Past – "
+            # Prefijo temporal con emoji
+            if session_date == yesterday:
+                prefix = "🔘 Yesterday – "
             elif session_date == today:
                 prefix = "🟢 Today – "
             elif session_date == tomorrow:
                 prefix = "🟡 Tomorrow – "
+            elif session_date < today:
+                prefix = "🔘 Past – "
+            elif session_date <= today + dt.timedelta(days=7):
+                prefix = "📅 This week – "
             else:
-                prefix = ""
+                prefix = "📆 "
 
+            # Descripción completa
             descriptions[s.id] = (
-                f"{prefix}#{s.id} – {s.coach.user.name} with {s.player.user.name} "
-                f"({s.start_time:%d/%m %H:%M})"
+                f"{prefix}{s.coach.user.name} with {s.player.user.name} "
+                f"({s.start_time:%d/%m %H:%M}) [{s.status.value}]"
             )
 
         return descriptions
@@ -774,7 +904,11 @@ def get_available_players() -> List[tuple]:
         return controller.get_available_players()
 
 
-def get_sessions_for_editing(coach_id: Optional[int] = None) -> Dict[int, str]:
+def get_sessions_for_editing(
+    coach_id: Optional[int] = None,
+    date_filter: Optional[str] = None,
+    search_query: Optional[str] = None,
+) -> Dict[int, str]:
     """Función de conveniencia para obtener sesiones para editar."""
     with SessionController() as controller:
-        return controller.get_sessions_for_editing(coach_id)
+        return controller.get_sessions_for_editing(coach_id, date_filter, search_query)

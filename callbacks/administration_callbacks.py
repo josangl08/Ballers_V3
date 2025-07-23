@@ -121,28 +121,132 @@ def register_administration_callbacks(app):
         except Exception:
             return [], [], [], []
 
+    # Callback para manejar filtros rápidos y actualizar estilos
+    @app.callback(
+        [
+            Output("admin-active-filter", "data"),
+            Output("filter-last-month", "className"),
+            Output("filter-last-week", "className"),
+            Output("filter-yesterday", "className"),
+            Output("filter-today", "className"),
+            Output("filter-tomorrow", "className"),
+            Output("filter-this-week", "className"),
+            Output("filter-this-month", "className"),
+        ],
+        [
+            Input("filter-last-month", "n_clicks"),
+            Input("filter-last-week", "n_clicks"),
+            Input("filter-yesterday", "n_clicks"),
+            Input("filter-today", "n_clicks"),
+            Input("filter-tomorrow", "n_clicks"),
+            Input("filter-this-week", "n_clicks"),
+            Input("filter-this-month", "n_clicks"),
+            Input("filter-clear", "n_clicks"),
+        ],
+        [State("admin-active-filter", "data")],
+        prevent_initial_call=True,
+    )
+    def update_active_filter_and_styles(
+        last_month,
+        last_week,
+        yesterday,
+        today,
+        tomorrow,
+        this_week,
+        this_month,
+        clear,
+        current_filter,
+    ):
+        """Actualiza filtro activo y estilos de botones."""
+        from dash import callback_context
+
+        if not callback_context.triggered:
+            return (
+                None,
+                "btn-filter-quick",
+                "btn-filter-quick",
+                "btn-filter-quick",
+                "btn-filter-quick",
+                "btn-filter-quick",
+                "btn-filter-quick",
+                "btn-filter-quick",
+            )
+
+        clicked_id = callback_context.triggered[0]["prop_id"].split(".")[0]
+
+        filter_map = {
+            "filter-last-month": "last_month",
+            "filter-last-week": "last_week",
+            "filter-yesterday": "yesterday",
+            "filter-today": "today",
+            "filter-tomorrow": "tomorrow",
+            "filter-this-week": "this_week",
+            "filter-this-month": "this_month",
+            "filter-clear": None,
+        }
+
+        new_filter = filter_map.get(clicked_id)
+
+        # Si el filtro clickeado es el mismo que el actual, desactivarlo
+        if new_filter == current_filter:
+            new_filter = None
+
+        # Actualizar clases CSS basado en el filtro activo
+        base_class = "btn-filter-quick"
+        active_class = "btn-filter-quick filter-active"
+
+        classes = [
+            active_class if new_filter == "last_month" else base_class,
+            active_class if new_filter == "last_week" else base_class,
+            active_class if new_filter == "yesterday" else base_class,
+            active_class if new_filter == "today" else base_class,
+            active_class if new_filter == "tomorrow" else base_class,
+            active_class if new_filter == "this_week" else base_class,
+            active_class if new_filter == "this_month" else base_class,
+        ]
+
+        return new_filter, *classes
+
     @app.callback(
         Output("admin-edit-session-selector", "options"),
-        [Input("admin-session-tabs", "active_tab")],
+        [
+            Input("admin-session-tabs", "active_tab"),
+            Input("admin-active-filter", "data"),
+            Input("admin-session-search", "value"),
+        ],
         prevent_initial_call=False,
     )
-    def load_edit_session_options(active_tab):
-        """Carga opciones para selector de sesiones a editar."""
+    def load_edit_session_options(active_tab, date_filter, search_query):
+        """Carga opciones para selector de sesiones con filtros y búsqueda."""
         if active_tab != "edit-session":
             return []
 
         try:
             with SessionController() as controller:
-                # Obtener sesiones para editar
-                session_descriptions = controller.get_sessions_for_editing()
+                # Obtener sesiones con filtros aplicados
+                session_descriptions = controller.get_sessions_for_editing(
+                    coach_id=None, date_filter=date_filter, search_query=search_query
+                )
+
+                if not session_descriptions:
+                    return [
+                        {"label": "No sessions found", "value": None, "disabled": True}
+                    ]
+
                 session_options = [
-                    {"label": f"#{sid} - {desc}", "value": sid}
+                    {"label": desc, "value": sid}
                     for sid, desc in session_descriptions.items()
                 ]
 
                 return session_options
-        except Exception:
-            return []
+        except Exception as e:
+            return [
+                {
+                    "label": f"Error loading sessions: {str(e)}",
+                    "value": None,
+                    "disabled": True,
+                }
+            ]
 
     # RESTAURADO: Callback simple y funcional que actualiza calendario y tabla juntos
     @app.callback(
@@ -660,6 +764,107 @@ def register_administration_callbacks(app):
                 f"Error loading session: {str(e)}", style={"color": "red"}
             )
             return [], None, [], None, None, "", [], None, [], None, "", error_div
+
+    @app.callback(
+        [
+            Output("admin-alert", "children", allow_duplicate=True),
+            Output("admin-alert", "is_open", allow_duplicate=True),
+            Output("admin-alert", "color", allow_duplicate=True),
+        ],
+        [Input("admin-update-session-btn", "n_clicks")],
+        [
+            State("admin-edit-session-selector", "value"),
+            State("admin-edit-session-coach", "value"),
+            State("admin-edit-session-player", "value"),
+            State("admin-edit-session-status", "value"),
+            State("admin-edit-session-date", "value"),
+            State("admin-edit-session-start-time", "value"),
+            State("admin-edit-session-end-time", "value"),
+            State("admin-edit-session-notes", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    def update_existing_session(
+        n_clicks,
+        session_id,
+        coach_id,
+        player_id,
+        status,
+        session_date,
+        start_time,
+        end_time,
+        notes,
+    ):
+        """Actualiza una sesión existente."""
+        if not n_clicks:
+            return "", False, "info"
+
+        if not session_id:
+            return "Please select a session to update", True, "warning"
+
+        try:
+            from controllers.session_controller import update_session_with_calendar
+            from controllers.validation_controller import (
+                validate_coach_selection_safe,
+                validate_player_selection_safe,
+                validate_session_form_data,
+            )
+
+            # Validar campos requeridos
+            if not session_date or not start_time or not end_time or not coach_id:
+                return "Please fill in all required fields", True, "warning"
+
+            # Convertir datos
+            session_date_obj = dt.datetime.fromisoformat(session_date).date()
+            start_time_obj = dt.datetime.strptime(start_time, "%H:%M").time()
+            end_time_obj = dt.datetime.strptime(end_time, "%H:%M").time()
+
+            # Validaciones
+            coach_valid, coach_error, safe_coach_id = validate_coach_selection_safe(
+                coach_id
+            )
+            if not coach_valid:
+                return f"Coach error: {coach_error}", True, "danger"
+
+            safe_player_id = None
+            if player_id:
+                player_valid, player_error, safe_player_id = (
+                    validate_player_selection_safe(player_id)
+                )
+                if not player_valid:
+                    return f"Player error: {player_error}", True, "danger"
+
+            # Validar formulario
+            form_valid, form_error = validate_session_form_data(
+                coach_id=safe_coach_id,
+                player_id=safe_player_id,
+                session_date=session_date_obj,
+                start_time=start_time_obj,
+                end_time=end_time_obj,
+            )
+
+            if not form_valid:
+                return f"Validation error: {form_error}", True, "danger"
+
+            # Actualizar sesión
+            success, message = update_session_with_calendar(
+                session_id=session_id,
+                coach_id=safe_coach_id,
+                player_id=safe_player_id,
+                status=status,
+                session_date=session_date_obj,
+                start_time=start_time_obj,
+                end_time=end_time_obj,
+                notes=notes or "",
+            )
+
+            if success:
+                return f"Session updated successfully: {message}", True, "success"
+            else:
+                return f"Error updating session: {message}", True, "danger"
+
+        except Exception as e:
+            return f"Unexpected error: {str(e)}", True, "danger"
 
     # TEMPORALMENTE ELIMINADO: ClientSide callback causaba crashes de Dash
     # TODO: Implementar estrategia alternativa para actualizar eventos
