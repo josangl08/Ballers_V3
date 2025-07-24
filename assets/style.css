@@ -1173,14 +1173,20 @@ h4 .bi, h5 .bi {
 /* Calendario - texto blanco para fechas y números */
 .fc-event-title {
     color: #fafafa !important;
+    font-size: 0.75rem !important;
 }
 
 .fc-daygrid-event {
     color: #fafafa !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 2px 4px !important;
 }
 
 .fc-event {
     color: #fafafa !important;
+    border: none !important;
+    background: transparent !important;
 }
 
 .fc-daygrid-day-number {
@@ -1192,7 +1198,12 @@ h4 .bi, h5 .bi {
 }
 
 .fc-day-today {
-    background-color: rgba(36, 222, 132, 0.1) !important;
+    background: linear-gradient(to bottom, rgba(36, 222, 132, 0.3) 0%, rgba(36, 222, 132, 0.3) 25%, transparent 25%) !important;
+}
+
+.fc-day-today .fc-daygrid-day-top {
+    background-color: rgba(36, 222, 132, 0.2) !important;
+    border-radius: 4px 4px 0 0 !important;
 }
 
 /* Botones del calendario - color específico solicitado */

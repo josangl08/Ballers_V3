@@ -10,7 +10,7 @@ def create_fixed_calendar_component():
     try:
         from controllers.internal_calendar import create_fixed_calendar_dash
 
-        return create_fixed_calendar_dash(key="admin-cal", height=None)
+        return create_fixed_calendar_dash(key="admin-cal", height=650)
     except Exception as e:
         return html.Div(
             f"Error loading calendar: {str(e)}",
@@ -253,9 +253,13 @@ def create_sessions_content():
                         ],
                         className="mb-4",
                     ),
-                    # Calendario - RESTAURADO: Enfoque simple y funcional
+                    # Calendario - Pre-cargado para carga instantánea
                     html.Div(
-                        [html.Div(id="admin-calendar")],
+                        [
+                            html.Div(
+                                create_fixed_calendar_component(), id="admin-calendar"
+                            )
+                        ],
                         style={"margin-bottom": "30px", "margin-top": "20px"},
                     ),
                     # Lista de sesiones - directo sobre fondo

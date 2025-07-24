@@ -96,7 +96,9 @@ document.addEventListener("DOMContentLoaded", () => {{
         }}) => {{
         /* — tooltip — */
         const f = new Intl.DateTimeFormat("en-GB",{{ hour:'2-digit', minute:'2-digit', hourCycle:'h23'}});
-        let html = `<span style=\"color:rgba(36,222,132,1)\"><strong>${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
+        const eventColor = ev.backgroundColor || ev.borderColor || '#1E88E5';
+        const colorCircle = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${{eventColor}}; margin-right: 6px; vertical-align: middle;"></span>`;
+        let html = `<span>${{colorCircle}}<strong style="color: ${{eventColor}}">${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
                     <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{ev.extendedProps.player}}<br>
                     <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{ev.extendedProps.coach}}`;
         if (ev.extendedProps.description) html += `<br>${{ev.extendedProps.description}}`;
@@ -107,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {{
           style: `
             position:absolute; z-index:10001; background:#333; color:#fff;
             padding:8px; border:1px solid #555; border-radius:6px;
+            font-size:0.8rem;
           `
         }});
         tip.hidden = true;
@@ -152,18 +155,18 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-button-primary:not(:disabled).fc-button-active {{background:#1DDD6E; border:#1DDD6E; color:#333; }}
 
 /* HOY y eventos pasados ---------------------------------------------------*/
-#{key} .fc-day-today {{ background:rgba(29,221,110,.1); }}
+#{key} .fc-day-today {{ background: linear-gradient(to bottom, rgba(29,221,110,.3) 0%, rgba(29,221,110,.3) 20%, transparent 20%); }}
 #{key} .fc-event-past {{ opacity:.4 !important; }}
 #{key} .fc-daygrid-event.fc-event-past {{ opacity:.4 !important; }}
 #{key} .fc-timegrid-event.fc-event-past {{ opacity:.4 !important; }}
 
 /* MES - TRANSPARENTE CON LÍNEAS SUAVES ------------------------------------*/
 #{key} .fc-daygrid-event,
-#{key} .fc-daygrid-event-dot           {{ color:#FAFAFA;   }}
+#{key} .fc-daygrid-event-dot           {{ color:#FAFAFA; font-size: 0.75rem;   }}
 #{key} .fc-daygrid-day-frame           {{ background:rgba(255,255,255,0.05); border-color:rgba(128,128,128,0.15); }}
 #{key} .fc-daygrid-day-number          {{ background:transparent; color:#FAFAFA; }}
-#{key} .fc-daygrid-event-harness       {{ border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
-#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-daygrid-event-harness       {{ border: none; margin: 2px; border-radius: 0; }}
+#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 0; opacity: 0.9; border: none; background: transparent; }}
 #{key} .fc-daygrid-event.fc-event-past {{ opacity: 0.4 !important; }}
 #{key} .fc-daygrid-event:hover         {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 
@@ -292,9 +295,11 @@ document.addEventListener("DOMContentLoaded", () => {{
         }}) => {{
         /* — tooltip — */
         const f = new Intl.DateTimeFormat("en-GB",{{ hour:'2-digit', minute:'2-digit', hourCycle:'h23'}});
-        let html = `<span style="color:rgba(36,222,132,1)"><strong>${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
-                    <span style="color:rgba(36,222,132,1)">Player:</span> ${{ev.extendedProps.player}}<br>
-                    <span style="color:rgba(36,222,132,1)">Coach:</span> ${{ev.extendedProps.coach}}`;
+        const eventColor = ev.backgroundColor || ev.borderColor || '#1E88E5';
+        const colorCircle = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${{eventColor}}; margin-right: 6px; vertical-align: middle;"></span>`;
+        let html = `<span>${{colorCircle}}<strong style="color: ${{eventColor}}">${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
+                    <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{ev.extendedProps.player}}<br>
+                    <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{ev.extendedProps.coach}}`;
         if (ev.extendedProps.description) html += `<br>${{ev.extendedProps.description}}`;
 
         const tip = Object.assign(document.createElement("div"), {{
@@ -303,6 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {{
           style: `
             position:absolute; z-index:10001; background:#333; color:#fff;
             padding:8px; border:1px solid #555; border-radius:6px;
+            font-size:0.8rem;
           `
         }});
         tip.hidden = true;
@@ -349,18 +355,18 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-button-primary:not(:disabled).fc-button-active {{background:#1DDD6E; border:#1DDD6E; color:#333; }}
 
 /* HOY y eventos pasados ---------------------------------------------------*/
-#{key} .fc-day-today {{ background:rgba(29,221,110,.1); }}
+#{key} .fc-day-today {{ background: linear-gradient(to bottom, rgba(29,221,110,.3) 0%, rgba(29,221,110,.3) 20%, transparent 20%); }}
 #{key} .fc-event-past {{ opacity:.4 !important; }}
 #{key} .fc-daygrid-event.fc-event-past {{ opacity:.4 !important; }}
 #{key} .fc-timegrid-event.fc-event-past {{ opacity:.4 !important; }}
 
 /* MES - TRANSPARENTE CON LÍNEAS SUAVES ------------------------------------*/
 #{key} .fc-daygrid-event,
-#{key} .fc-daygrid-event-dot           {{ color:#FAFAFA;   }}
+#{key} .fc-daygrid-event-dot           {{ color:#FAFAFA; font-size: 0.75rem;   }}
 #{key} .fc-daygrid-day-frame           {{ background:rgba(255,255,255,0.05); border-color:rgba(128,128,128,0.15); }}
 #{key} .fc-daygrid-day-number          {{ background:transparent; color:#FAFAFA; }}
-#{key} .fc-daygrid-event-harness       {{ border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
-#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-daygrid-event-harness       {{ border: none; margin: 2px; border-radius: 0; }}
+#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 0; opacity: 0.9; border: none; background: transparent; }}
 #{key} .fc-daygrid-event.fc-event-past {{ opacity: 0.4 !important; }}
 #{key} .fc-daygrid-event:hover         {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 
@@ -527,9 +533,11 @@ document.addEventListener("DOMContentLoaded", () => {{
         }}) => {{
         /* — tooltip — */
         const f = new Intl.DateTimeFormat("en-GB",{{ hour:'2-digit', minute:'2-digit', hourCycle:'h23'}});
-        let html = `<span style="color:rgba(36,222,132,1)"><strong>${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
-                    <span style="color:rgba(36,222,132,1)">Player:</span> ${{ev.extendedProps.player}}<br>
-                    <span style="color:rgba(36,222,132,1)">Coach:</span> ${{ev.extendedProps.coach}}`;
+        const eventColor = ev.backgroundColor || ev.borderColor || '#1E88E5';
+        const colorCircle = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${{eventColor}}; margin-right: 6px; vertical-align: middle;"></span>`;
+        let html = `<span>${{colorCircle}}<strong style="color: ${{eventColor}}">${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
+                    <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{ev.extendedProps.player}}<br>
+                    <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{ev.extendedProps.coach}}`;
         if (ev.extendedProps.description) html += `<br>${{ev.extendedProps.description}}`;
 
         const tip = Object.assign(document.createElement("div"), {{
@@ -538,6 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {{
           style: `
             position:absolute; z-index:10001; background:#333; color:#fff;
             padding:8px; border:1px solid #555; border-radius:6px;
+            font-size:0.8rem;
           `
         }});
         tip.hidden = true;
@@ -583,15 +592,15 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-button-primary:not(:disabled):hover,
 #{key} .fc-button-primary:not(:disabled).fc-button-active {{background:#1DDD6E; border:#1DDD6E; color:#333; }}
 
-#{key} .fc-day-today {{ background:rgba(29,221,110,.1); }}
+#{key} .fc-day-today {{ background: linear-gradient(to bottom, rgba(29,221,110,.3) 0%, rgba(29,221,110,.3) 20%, transparent 20%); }}
 #{key} .fc-event-past {{ opacity:.4; }}
 
 #{key} .fc-daygrid-event,
-#{key} .fc-daygrid-event-dot           {{ color:#FAFAFA;   }}
+#{key} .fc-daygrid-event-dot           {{ color:#FAFAFA; font-size: 0.75rem;   }}
 #{key} .fc-daygrid-day-frame           {{ background:rgba(255,255,255,0.05); border-color:rgba(128,128,128,0.15); }}
 #{key} .fc-daygrid-day-number          {{ background:transparent; color:#FAFAFA; }}
-#{key} .fc-daygrid-event-harness       {{ border: 1px solid rgba(128,128,128,0.4); margin: 2px; border-radius: 6px; }}
-#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 6px; opacity: 0.9; }}
+#{key} .fc-daygrid-event-harness       {{ border: none; margin: 2px; border-radius: 0; }}
+#{key} .fc-daygrid-event               {{ margin: 0; border-radius: 0; opacity: 0.9; border: none; background: transparent; }}
 #{key} .fc-daygrid-event.fc-event-past {{ opacity: 0.4 !important; }}
 #{key} .fc-daygrid-event:hover         {{ opacity: 1 !important; transform: scale(1.02); transition: all 0.2s ease; }}
 
