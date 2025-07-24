@@ -999,10 +999,23 @@ def create_edit_session_form():
                     dbc.ModalHeader(
                         dbc.ModalTitle(
                             [
-                                html.I(className="bi bi-exclamation-triangle me-2"),
+                                html.I(
+                                    className="bi bi-exclamation-triangle me-2",
+                                    style={"color": "#24DE84", "font-size": "1.2rem"},
+                                ),
                                 "Confirm Delete",
-                            ]
-                        )
+                            ],
+                            style={
+                                "color": "#FFFFFF",
+                                "font-weight": "600",
+                                "font-size": "1.25rem",
+                            },
+                        ),
+                        style={
+                            "background-color": "#1D1B1A",
+                            "border-bottom": "2px solid #24DE84",
+                            "padding": "1rem 1.5rem",
+                        },
                     ),
                     dbc.ModalBody(
                         [
@@ -1010,29 +1023,72 @@ def create_edit_session_form():
                                 id="admin-delete-confirmation-text",
                                 children="Do you really want to delete this "
                                 "session? This action cannot be undone.",
-                                style={"color": "#333"},
+                                style={
+                                    "color": "#FFFFFF",
+                                    "font-size": "1.1rem",
+                                    "margin-bottom": "0",
+                                    "text-align": "center",
+                                    "line-height": "1.5",
+                                },
                             )
-                        ]
+                        ],
+                        style={
+                            "background-color": "#1D1B1A",
+                            "padding": "2rem 1.5rem",
+                            "border": "none",
+                        },
                     ),
                     dbc.ModalFooter(
                         [
                             dbc.Button(
                                 "Cancel",
                                 id="admin-delete-cancel-btn",
-                                className="ms-auto",
-                                style={"background-color": "#6c757d"},
+                                style={
+                                    "background-color": "#1D1B1A",
+                                    "color": "#FFFFFF",
+                                    "border": "2px solid #1D1B1A",
+                                    "border-radius": "20px",
+                                    "font-weight": "500",
+                                    "padding": "0.4rem 1.2rem",
+                                    "transition": "all 0.3s ease",
+                                    "cursor": "pointer",
+                                    "display": "inline-block",
+                                    "width": "auto",
+                                    "margin-right": "15px",
+                                },
                             ),
                             dbc.Button(
                                 [html.I(className="bi bi-trash me-2"), "Delete"],
                                 id="admin-delete-confirm-btn",
-                                className="ms-2",
-                                style={"background-color": "#dc3545"},
+                                className="btn-delete",
+                                style={
+                                    "background-color": "#1D1B1A",
+                                    "color": "#dc3545",
+                                    "border": "2px solid #1D1B1A",
+                                    "border-radius": "20px",
+                                    "font-weight": "500",
+                                    "padding": "0.4rem 1.2rem",
+                                    "transition": "all 0.3s ease",
+                                    "cursor": "pointer",
+                                    "display": "inline-block",
+                                    "width": "auto",
+                                },
                             ),
-                        ]
+                        ],
+                        style={
+                            "background-color": "#1D1B1A",
+                            "border-top": "2px solid #24DE84",
+                            "padding": "1rem 1.5rem",
+                            "text-align": "left",
+                        },
                     ),
                 ],
                 id="admin-delete-confirmation-modal",
                 is_open=False,
+                style={"z-index": "1060"},
+                backdrop="static",  # No cerrar al hacer click fuera
+                fade=True,
+                size="md",
             ),
             # Store para datos de la sesión seleccionada
             dcc.Store(id="admin-selected-session-data"),

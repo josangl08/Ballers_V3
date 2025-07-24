@@ -21,7 +21,6 @@ from models import Coach, Player, Session, SessionStatus, User
 
 from .calendar_utils import (
     build_calendar_event_body,
-    session_has_real_changes,
     session_needs_update,
     update_session_tracking,
 )
@@ -192,8 +191,7 @@ class SessionController:
                     self.db.rollback()
                     return False, "Error creating session in Google Calendar", None
 
-            # Actualizar tracking
-            update_session_tracking(new_session)
+            # Tracking ya actualizado en _push_session_to_calendar (optimización)
 
             self.db.commit()
             self.db.refresh(new_session)
@@ -244,15 +242,25 @@ class SessionController:
             # Marcar como dirty para sincronización
             session.is_dirty = True
 
-            # Verificar si hay cambios reales antes de actualizar Calendar
-            if session_has_real_changes(session):
-                success = self._update_session_in_calendar(session)
+            # Verificar cambios y actualizar tracking en una sola operación (optimización)
+            from controllers.calendar_utils import calculate_session_hash
+
+            # Calcular hash una sola vez para evitar duplicación
+            current_hash = calculate_session_hash(session)
+            has_real_changes = session.sync_hash != current_hash
+
+            if has_real_changes:
+                success = self._update_session_in_calendar(
+                    session, cached_hash=current_hash
+                )
                 if not success:
                     self.db.rollback()
                     return False, "Error updating session in Google Calendar"
+            else:
+                # Si no hay cambios, solo actualizar tracking con hash cacheado
+                from controllers.calendar_utils import update_session_tracking_with_hash
 
-            # Actualizar tracking
-            update_session_tracking(session)
+                update_session_tracking_with_hash(session, current_hash)
 
             self.db.commit()
             return True, "Session updated successfully"
@@ -379,10 +387,12 @@ class SessionController:
             logger.error(f"❌ Error creando evento en Calendar: {e}")
             return False
 
-    def _update_session_in_calendar(self, session: Session) -> bool:
+    def _update_session_in_calendar(
+        self, session: Session, cached_hash: str = None
+    ) -> bool:
         """
         Actualiza evento existente en Google Calendar.
-        🔧 CORREGIDO: Actualiza correctamente los campos de tracking después de actualización exitosa.
+        Optimizado: Acepta hash cacheado para evitar recálculos.
         """
         if not session.calendar_event_id:
             # Si no tiene event_id, crear nuevo
@@ -395,8 +405,14 @@ class SessionController:
                 calendarId=CAL_ID, eventId=session.calendar_event_id, body=body
             ).execute()
 
-            # Actualizar campos de tracking después de actualización exitosa
-            update_session_tracking(session)
+            # Actualizar tracking con hash cacheado (optimización)
+            if cached_hash:
+                from controllers.calendar_utils import update_session_tracking_with_hash
+
+                update_session_tracking_with_hash(session, cached_hash)
+            else:
+                # Fallback para compatibilidad
+                update_session_tracking(session)
 
             # Commitear los cambios en BD
             self.db.add(session)

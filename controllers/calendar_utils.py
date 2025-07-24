@@ -46,7 +46,7 @@ def normalize_datetime_for_hash(dt_obj) -> str:
     if isinstance(dt_obj, str):
         try:
             dt_obj = dt.datetime.fromisoformat(dt_obj.replace("Z", "+00:00"))
-        except:
+        except Exception:
             return dt_obj  # Si falla, devolver como está
 
     # Lógica mejorada para datetime naive
@@ -56,7 +56,7 @@ def normalize_datetime_for_hash(dt_obj) -> str:
             local_tz = ZoneInfo("Europe/Madrid")
             dt_obj = dt_obj.replace(tzinfo=local_tz)
             logger.debug(f"🌍 Datetime naive convertido a Madrid timezone: {dt_obj}")
-        except:
+        except Exception:
             # Si falla ZoneInfo, usar offset fijo +02:00
             dt_obj = dt_obj.replace(tzinfo=dt.timezone(dt.timedelta(hours=2)))
             logger.debug(f"🌍 Datetime naive convertido a +02:00: {dt_obj}")
@@ -71,7 +71,8 @@ def normalize_datetime_for_hash(dt_obj) -> str:
 
 
 def calculate_session_hash(session: Session) -> str:
-    """Calcula hash MD5 basado en datos importantes de la sesión CON FECHAS NORMALIZADAS."""
+    """Calcula hash MD5 basado en datos importantes de la sesión
+    CON FECHAS NORMALIZADAS."""
     try:
         # Normalizar fechas
         start_normalized = normalize_datetime_for_hash(session.start_time)
@@ -88,7 +89,9 @@ def calculate_session_hash(session: Session) -> str:
             ]
         )
 
-        hash_result = hashlib.md5(data.encode("utf-8")).hexdigest()
+        hash_result = hashlib.md5(
+            data.encode("utf-8"), usedforsecurity=False
+        ).hexdigest()
         logger.debug(f"🔧 Session hash data: '{data}' → {hash_result[:8]}...")
         return hash_result
 
@@ -98,7 +101,8 @@ def calculate_session_hash(session: Session) -> str:
 
 
 def calculate_event_hash(event_data: dict) -> str:
-    """Calcula hash MD5 basado en datos importantes del evento CON FECHAS NORMALIZADAS."""
+    """Calcula hash MD5 basado en datos importantes del evento
+    CON FECHAS NORMALIZADAS."""
     try:
 
         def _to_dt_local(iso: str) -> dt.datetime:
@@ -129,7 +133,9 @@ def calculate_event_hash(event_data: dict) -> str:
             ]
         )
 
-        hash_result = hashlib.md5(data.encode("utf-8")).hexdigest()
+        hash_result = hashlib.md5(
+            data.encode("utf-8"), usedforsecurity=False
+        ).hexdigest()
         logger.debug(f"🔧 Event hash data: '{data}' → {hash_result[:8]}...")
         return hash_result
 
@@ -180,6 +186,25 @@ def update_session_tracking(session: Session):
         logger.warning(f"⚠️ Error actualizando tracking sesión #{session.id}: {e}")
 
 
+def update_session_tracking_with_hash(session: Session, cached_hash: str):
+    """Actualiza tracking usando hash cacheado - OPTIMIZACIÓN."""
+    try:
+        session.sync_hash = cached_hash  # Usa hash cacheado
+        session.updated_at = dt.datetime.now(dt.timezone.utc)
+        session.last_sync_at = dt.datetime.now(dt.timezone.utc)
+        session.is_dirty = False
+        session.version = (session.version or 0) + 1
+
+        logger.debug(
+            f"📝 Tracking actualizado (optimizado): "
+            f"Sesión #{session.id} v{session.version}"
+        )
+    except Exception as e:
+        logger.warning(
+            f"⚠️ Error actualizando tracking optimizado " f"sesión #{session.id}: {e}"
+        )
+
+
 def session_has_real_changes(session: Session) -> bool:
     """Verifica si una sesión tiene cambios REALES que justifiquen update"""
     # Si está marcada como dirty → hay cambios
@@ -197,7 +222,8 @@ def session_has_real_changes(session: Session) -> bool:
 
     if session.sync_hash != current_hash:
         logger.debug(
-            f"🔄 Sesión #{session.id} hash cambió: {session.sync_hash[:8]}... → {current_hash[:8]}..."
+            f"🔄 Sesión #{session.id} hash cambió: "
+            f"{session.sync_hash[:8]}... → {current_hash[:8]}..."
         )
         return True
 

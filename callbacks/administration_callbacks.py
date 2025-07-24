@@ -1239,8 +1239,159 @@ def register_administration_callbacks(app):
         """Sincroniza el input visible con el invisible para callbacks."""
         return visible_value or ""
 
-    # TEMPORALMENTE ELIMINADO: ClientSide callback causaba crashes de Dash
-    # TODO: Implementar estrategia alternativa para actualizar eventos
+    # Delete Session Callbacks - reutilizando helpers y patrones existentes
+    @app.callback(
+        Output("admin-delete-confirmation-modal", "is_open"),
+        [Input("admin-delete-session-btn", "n_clicks")],
+        [State("admin-edit-session-selector", "value")],
+        prevent_initial_call=True,
+    )
+    def open_delete_confirmation_modal(n_clicks, selected_session_id):
+        """Abre el modal de confirmación para eliminar sesión."""
+        if not n_clicks or not selected_session_id:
+            return False
+        return True
 
+    @app.callback(
+        Output("admin-delete-confirmation-modal", "is_open", allow_duplicate=True),
+        [Input("admin-delete-cancel-btn", "n_clicks")],
+        prevent_initial_call=True,
+    )
+    def close_delete_confirmation_modal(n_clicks):
+        """Cierra el modal de confirmación al cancelar."""
+        if n_clicks:
+            return False
+        from dash import no_update
 
-# Función create_sessions_table_content eliminada - usa create_sessions_table_dash
+        return no_update
+
+    @app.callback(
+        [
+            Output("admin-delete-confirmation-modal", "is_open", allow_duplicate=True),
+            Output("admin-alert", "children", allow_duplicate=True),
+            Output("admin-alert", "is_open", allow_duplicate=True),
+            Output("admin-alert", "color", allow_duplicate=True),
+            Output("admin-alert", "style", allow_duplicate=True),
+            Output("admin-sessions-table", "children", allow_duplicate=True),
+            Output("admin-calendar", "children", allow_duplicate=True),
+            Output("admin-edit-session-selector", "options", allow_duplicate=True),
+            Output("admin-edit-session-selector", "value", allow_duplicate=True),
+        ],
+        [Input("admin-delete-confirm-btn", "n_clicks")],
+        [
+            State("admin-edit-session-selector", "value"),
+            State("admin-active-filter", "data"),
+            State("admin-session-search", "value"),
+            State("filter-from-date", "value"),
+            State("filter-to-date", "value"),
+            State("admin-filter-coach", "value"),
+            State("admin-status-filters", "data"),
+            State("admin-main-tabs", "active_tab"),
+            State("admin-session-tabs", "active_tab"),
+        ],
+        prevent_initial_call=True,
+    )
+    def delete_session_confirmed(
+        n_clicks,
+        session_id,
+        date_filter,
+        search_query,
+        from_date,
+        to_date,
+        coach_filter,
+        status_filter,
+        main_active_tab,
+        session_active_tab,
+    ):
+        """Elimina sesión tras confirmación - reutiliza helpers existentes."""
+        from dash import no_update
+
+        if not n_clicks or not session_id:
+            return (
+                False,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
+
+        try:
+            from controllers.session_controller import delete_session_with_calendar
+
+            # Eliminar sesión (reutiliza función existente)
+            success, message = delete_session_with_calendar(session_id)
+
+            if success:
+                # Actualizar UI usando helpers existentes
+                calendar_content = table_content = no_update
+                if main_active_tab == "sessions-tab":
+                    calendar_content, table_content = (
+                        _update_calendar_and_table_content(
+                            from_date, to_date, coach_filter, status_filter
+                        )
+                    )
+
+                # Actualizar selector usando patrón existente
+                session_options = []
+                if session_active_tab == "edit-session":
+                    with SessionController() as controller:
+                        session_descriptions = controller.get_sessions_for_editing(
+                            coach_id=None,
+                            date_filter=date_filter,
+                            search_query=search_query,
+                        )
+                        session_options = (
+                            [
+                                {"label": desc, "value": sid}
+                                for sid, desc in session_descriptions.items()
+                            ]
+                            if session_descriptions
+                            else [
+                                {
+                                    "label": "No sessions found",
+                                    "value": None,
+                                    "disabled": True,
+                                }
+                            ]
+                        )
+
+                return (
+                    False,  # Cerrar modal
+                    f"Session deleted successfully: {message}",
+                    True,
+                    "success",
+                    _get_toast_style(),  # Reutiliza helper toast
+                    table_content,
+                    calendar_content,
+                    session_options,
+                    None,
+                )
+            else:
+                return (
+                    False,
+                    f"Error deleting session: {message}",
+                    True,
+                    "danger",
+                    _get_toast_style(),  # Reutiliza helper toast
+                    no_update,
+                    no_update,
+                    no_update,
+                    no_update,
+                )
+
+        except Exception as e:
+            return (
+                False,
+                f"Unexpected error: {str(e)}",
+                True,
+                "danger",
+                _get_toast_style(),  # Reutiliza helper toast
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )

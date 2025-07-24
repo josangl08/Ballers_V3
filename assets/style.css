@@ -2686,12 +2686,39 @@ iframe[id*="dash-calendar"] * {
 }
 
 .btn-delete:hover {
-    background-color: #333333 !important;
-    border-color: #dc3545 !important;
+    background-color: #1D1B1A !important; /* Mantener mismo fondo */
+    border-color: #dc3545 !important; /* Solo cambiar borde a rojo */
     color: #dc3545 !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) !important;
 }
+
+/* Delete button pressed state */
+.btn-delete:active,
+.btn-delete.active,
+.btn-delete:focus {
+    background-color: #dc3545 !important; /* Fondo rojo cuando presionado */
+    color: #6c757d !important; /* Texto gris cuando presionado */
+    border-color: #dc3545 !important;
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) inset !important;
+}
+
+/* Modal cancel button - matches save changes button styling */
+#admin-delete-cancel-btn:hover {
+    background-color: #1D1B1A !important;  /* Mantener mismo fondo */
+    color: #24DE84 !important;  /* Letras verdes al hover */
+    border-color: #24DE84 !important;  /* Borde verde al hover */
+    transform: translateY(-1px) !important;
+}
+
+#admin-delete-cancel-btn:active {
+    background-color: #24DE84 !important;  /* Fondo verde al clickear */
+    color: #1D1B1A !important;  /* Letras oscuras al clickear */
+    transform: translateY(1px) !important;
+}
+
+/* Modal delete button uses .btn-delete class styling defined above */
 
 /* Toast notification animations */
 @keyframes slideInRight {
@@ -2710,6 +2737,26 @@ iframe[id*="dash-calendar"] * {
     padding-right: 50px !important;
     color: white !important;
     font-weight: 500 !important;
+    background-color: rgba(33, 37, 41, 0.95) !important; /* Más opaco */
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Toast colors específicos con más opacidad */
+#admin-alert.alert-success {
+    background-color: rgba(25, 135, 84, 0.95) !important;
+    border-color: rgba(25, 135, 84, 0.8) !important;
+}
+
+#admin-alert.alert-danger {
+    background-color: rgba(220, 53, 69, 0.95) !important;
+    border-color: rgba(220, 53, 69, 0.8) !important;
+}
+
+#admin-alert.alert-warning {
+    background-color: rgba(255, 193, 7, 0.95) !important;
+    border-color: rgba(255, 193, 7, 0.8) !important;
+    color: #212529 !important; /* Texto oscuro para warning */
 }
 
 #admin-alert .btn-close {
