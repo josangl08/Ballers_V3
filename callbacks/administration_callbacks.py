@@ -13,6 +13,89 @@ from controllers.validation_controller import ValidationController  # noqa: F401
 from models import SessionStatus
 
 
+def _get_toast_style():
+    """Helper function para obtener el estilo consistente del toast."""
+    return {
+        "position": "fixed",
+        "top": "20px",
+        "right": "20px",
+        "z-index": "1060",
+        "min-width": "350px",
+        "max-width": "500px",
+        "box-shadow": "0 8px 16px rgba(0, 0, 0, 0.15)",
+        "border-radius": "8px",
+        "animation": "slideInRight 0.3s ease-out",
+    }
+
+
+def _update_calendar_and_table_content(from_date, to_date, coach_filter, status_filter):
+    """Helper function para actualizar calendario y tabla."""
+    try:
+        from controllers.internal_calendar import (
+            show_calendar_dash,
+            update_and_get_sessions,
+        )
+        from models import SessionStatus
+
+        # Usar filtros actuales
+        if not status_filter:
+            status_filter = [s.value for s in SessionStatus]
+
+        # Fechas por defecto
+        if not from_date:
+            from_date = (dt.datetime.now().date() - dt.timedelta(days=7)).isoformat()
+        if not to_date:
+            to_date = (dt.datetime.now().date() + dt.timedelta(days=21)).isoformat()
+
+        start_date_obj = dt.datetime.fromisoformat(from_date).date()
+        end_date_obj = dt.datetime.fromisoformat(to_date).date()
+
+        # Coach filter
+        coach_id = coach_filter if coach_filter and coach_filter != "all" else None
+
+        with SessionController() as controller:
+            # Obtener sesiones con auto-actualización
+            sessions = update_and_get_sessions(
+                controller,
+                start_date=start_date_obj,
+                end_date=end_date_obj,
+                coach_id=coach_id,
+                status_filter=status_filter,
+            )
+
+            # Crear calendario
+            calendar_content = show_calendar_dash(
+                sessions, editable=False, key="admin-cal", height=800
+            )
+
+            # Crear tabla
+            if sessions:
+                from pages.ballers_dash import create_sessions_table_dash
+
+                table_content = create_sessions_table_dash(
+                    from_date=start_date_obj,
+                    to_date=end_date_obj,
+                    status_filter=status_filter,
+                )
+            else:
+                table_content = html.Div(
+                    "No sessions found for the selected filters",
+                    style={
+                        "text-align": "center",
+                        "padding": "20px",
+                        "color": "#FFFFFF",
+                    },
+                )
+
+            return calendar_content, table_content
+    except Exception as e:
+        error_div = html.Div(
+            f"Error loading data: {str(e)}",
+            style={"color": "red", "text-align": "center", "padding": "20px"},
+        )
+        return error_div, error_div
+
+
 def register_administration_callbacks(app):
     """Registra callbacks de Administration copiando estructura de ballers."""
 
@@ -213,13 +296,18 @@ def register_administration_callbacks(app):
             Input("admin-session-tabs", "active_tab"),
             Input("admin-active-filter", "data"),
             Input("admin-session-search", "value"),
+            Input(
+                "admin-alert", "is_open"
+            ),  # Se dispara cuando se muestra mensaje de éxito
         ],
-        prevent_initial_call=False,
+        prevent_initial_call=True,
     )
-    def load_edit_session_options(active_tab, date_filter, search_query):
+    def load_edit_session_options(active_tab, date_filter, search_query, alert_is_open):
         """Carga opciones para selector de sesiones con filtros y búsqueda."""
         if active_tab != "edit-session":
-            return []
+            from dash import no_update
+
+            return no_update
 
         try:
             with SessionController() as controller:
@@ -424,6 +512,9 @@ def register_administration_callbacks(app):
             Output("admin-alert", "children"),
             Output("admin-alert", "is_open"),
             Output("admin-alert", "color"),
+            Output("admin-alert", "style"),
+            Output("admin-sessions-table", "children", allow_duplicate=True),
+            Output("admin-calendar", "children", allow_duplicate=True),
         ],
         [Input("admin-save-session-btn", "n_clicks")],
         [
@@ -433,15 +524,37 @@ def register_administration_callbacks(app):
             State("admin-new-session-start-time", "value"),
             State("admin-new-session-end-time", "value"),
             State("admin-new-session-notes", "value"),
+            State("admin-active-filter", "data"),
+            State("admin-session-search", "value"),
+            State("filter-from-date", "value"),
+            State("filter-to-date", "value"),
+            State("admin-filter-coach", "value"),
+            State("admin-status-filters", "data"),
+            State("admin-main-tabs", "active_tab"),
         ],
         prevent_initial_call=True,
     )
     def create_new_session(
-        n_clicks, coach_id, player_id, session_date, start_time, end_time, notes
+        n_clicks,
+        coach_id,
+        player_id,
+        session_date,
+        start_time,
+        end_time,
+        notes,
+        date_filter,
+        search_query,
+        from_date,
+        to_date,
+        coach_filter,
+        status_filter,
+        active_tab,
     ):
         """Crea una nueva sesión."""
         if not n_clicks:
-            return "", False, "info"
+            from dash import no_update
+
+            return "", False, "info", {}, no_update, no_update
 
         try:
             from controllers.session_controller import create_session_with_calendar
@@ -453,7 +566,16 @@ def register_administration_callbacks(app):
 
             # Validar campos requeridos
             if not session_date or not start_time or not end_time or not coach_id:
-                return "Please fill in all required fields", True, "warning"
+                from dash import no_update
+
+                return (
+                    "Please fill in all required fields",
+                    True,
+                    "warning",
+                    _get_toast_style(),
+                    no_update,
+                    no_update,
+                )
 
             # Convertir datos
             session_date_obj = dt.datetime.fromisoformat(session_date).date()
@@ -465,7 +587,16 @@ def register_administration_callbacks(app):
                 coach_id
             )
             if not coach_valid:
-                return f"Coach error: {coach_error}", True, "danger"
+                from dash import no_update
+
+                return (
+                    f"Coach error: {coach_error}",
+                    True,
+                    "danger",
+                    _get_toast_style(),
+                    no_update,
+                    no_update,
+                )
 
             safe_player_id = None
             if player_id:
@@ -473,7 +604,16 @@ def register_administration_callbacks(app):
                     validate_player_selection_safe(player_id)
                 )
                 if not player_valid:
-                    return f"Player error: {player_error}", True, "danger"
+                    from dash import no_update
+
+                    return (
+                        f"Player error: {player_error}",
+                        True,
+                        "danger",
+                        _get_toast_style(),
+                        no_update,
+                        no_update,
+                    )
 
             # Validar formulario
             form_valid, form_error = validate_session_form_data(
@@ -485,7 +625,16 @@ def register_administration_callbacks(app):
             )
 
             if not form_valid:
-                return f"Validation error: {form_error}", True, "danger"
+                from dash import no_update
+
+                return (
+                    f"Validation error: {form_error}",
+                    True,
+                    "danger",
+                    _get_toast_style(),
+                    no_update,
+                    no_update,
+                )
 
             # Crear sesión
             success, message, _ = create_session_with_calendar(
@@ -498,12 +647,57 @@ def register_administration_callbacks(app):
             )
 
             if success:
-                return f"Session created successfully: {message}", True, "success"
+                # Actualizar calendario y tabla si estamos en sessions-tab
+                if active_tab == "sessions-tab":
+                    calendar_content, table_content = (
+                        _update_calendar_and_table_content(
+                            from_date, to_date, coach_filter, status_filter
+                        )
+                    )
+
+                    return (
+                        f"Session created successfully: {message}",
+                        True,
+                        "success",
+                        _get_toast_style(),
+                        table_content,
+                        calendar_content,
+                    )
+                else:
+                    # Si no estamos en sessions-tab, no actualizar calendario/tabla
+                    from dash import no_update
+
+                    return (
+                        f"Session created successfully: {message}",
+                        True,
+                        "success",
+                        _get_toast_style(),
+                        no_update,
+                        no_update,
+                    )
             else:
-                return f"Error creating session: {message}", True, "danger"
+                from dash import no_update
+
+                return (
+                    f"Error creating session: {message}",
+                    True,
+                    "danger",
+                    _get_toast_style(),
+                    no_update,
+                    no_update,
+                )
 
         except Exception as e:
-            return f"Unexpected error: {str(e)}", True, "danger"
+            from dash import no_update
+
+            return (
+                f"Unexpected error: {str(e)}",
+                True,
+                "danger",
+                _get_toast_style(),
+                no_update,
+                no_update,
+            )
 
     @app.callback(
         [
@@ -770,6 +964,10 @@ def register_administration_callbacks(app):
             Output("admin-alert", "children", allow_duplicate=True),
             Output("admin-alert", "is_open", allow_duplicate=True),
             Output("admin-alert", "color", allow_duplicate=True),
+            Output("admin-alert", "style", allow_duplicate=True),
+            Output("admin-sessions-table", "children", allow_duplicate=True),
+            Output("admin-calendar", "children", allow_duplicate=True),
+            Output("admin-edit-session-selector", "options", allow_duplicate=True),
         ],
         [Input("admin-update-session-btn", "n_clicks")],
         [
@@ -781,6 +979,14 @@ def register_administration_callbacks(app):
             State("admin-edit-session-start-time", "value"),
             State("admin-edit-session-end-time", "value"),
             State("admin-edit-session-notes", "value"),
+            State("admin-active-filter", "data"),
+            State("admin-session-search", "value"),
+            State("filter-from-date", "value"),
+            State("filter-to-date", "value"),
+            State("admin-filter-coach", "value"),
+            State("admin-status-filters", "data"),
+            State("admin-main-tabs", "active_tab"),
+            State("admin-session-tabs", "active_tab"),
         ],
         prevent_initial_call=True,
     )
@@ -794,13 +1000,33 @@ def register_administration_callbacks(app):
         start_time,
         end_time,
         notes,
+        date_filter,
+        search_query,
+        from_date,
+        to_date,
+        coach_filter,
+        status_filter,
+        main_active_tab,
+        session_active_tab,
     ):
         """Actualiza una sesión existente."""
         if not n_clicks:
-            return "", False, "info"
+            from dash import no_update
+
+            return "", False, "info", {}, no_update, no_update, no_update
 
         if not session_id:
-            return "Please select a session to update", True, "warning"
+            from dash import no_update
+
+            return (
+                "Please select a session to update",
+                True,
+                "warning",
+                _get_toast_style(),
+                no_update,
+                no_update,
+                no_update,
+            )
 
         try:
             from controllers.session_controller import update_session_with_calendar
@@ -812,7 +1038,17 @@ def register_administration_callbacks(app):
 
             # Validar campos requeridos
             if not session_date or not start_time or not end_time or not coach_id:
-                return "Please fill in all required fields", True, "warning"
+                from dash import no_update
+
+                return (
+                    "Please fill in all required fields",
+                    True,
+                    "warning",
+                    _get_toast_style(),
+                    no_update,
+                    no_update,
+                    no_update,
+                )
 
             # Convertir datos
             session_date_obj = dt.datetime.fromisoformat(session_date).date()
@@ -824,7 +1060,17 @@ def register_administration_callbacks(app):
                 coach_id
             )
             if not coach_valid:
-                return f"Coach error: {coach_error}", True, "danger"
+                from dash import no_update
+
+                return (
+                    f"Coach error: {coach_error}",
+                    True,
+                    "danger",
+                    _get_toast_style(),
+                    no_update,
+                    no_update,
+                    no_update,
+                )
 
             safe_player_id = None
             if player_id:
@@ -832,7 +1078,17 @@ def register_administration_callbacks(app):
                     validate_player_selection_safe(player_id)
                 )
                 if not player_valid:
-                    return f"Player error: {player_error}", True, "danger"
+                    from dash import no_update
+
+                    return (
+                        f"Player error: {player_error}",
+                        True,
+                        "danger",
+                        _get_toast_style(),
+                        no_update,
+                        no_update,
+                        no_update,
+                    )
 
             # Validar formulario
             form_valid, form_error = validate_session_form_data(
@@ -844,9 +1100,23 @@ def register_administration_callbacks(app):
             )
 
             if not form_valid:
-                return f"Validation error: {form_error}", True, "danger"
+                from dash import no_update
 
-            # Actualizar sesión
+                return (
+                    f"Validation error: {form_error}",
+                    True,
+                    "danger",
+                    _get_toast_style(),
+                    no_update,
+                    no_update,
+                    no_update,
+                )
+
+            # Actualizar sesión con logging de tiempo
+            import time
+
+            start_time_op = time.time()
+
             success, message = update_session_with_calendar(
                 session_id=session_id,
                 coach_id=safe_coach_id,
@@ -858,13 +1128,116 @@ def register_administration_callbacks(app):
                 notes=notes or "",
             )
 
+            update_time = time.time() - start_time_op
+            print(f"⏱️ Update session took: {update_time:.2f}s")
+
             if success:
-                return f"Session updated successfully: {message}", True, "success"
+                # Actualizar calendario, tabla y selector después de editar exitosamente
+
+                # 1. Actualizar calendario y tabla si estamos en sessions-tab
+                if main_active_tab == "sessions-tab":
+                    ui_start_time = time.time()
+                    calendar_content, table_content = (
+                        _update_calendar_and_table_content(
+                            from_date, to_date, coach_filter, status_filter
+                        )
+                    )
+                    ui_time = time.time() - ui_start_time
+                    print(f"⏱️ UI update took: {ui_time:.2f}s")
+                else:
+                    from dash import no_update
+
+                    calendar_content = no_update
+                    table_content = no_update
+
+                # 2. Actualizar selector de sesiones si estamos en edit-session
+                if session_active_tab == "edit-session":
+                    with SessionController() as controller:
+                        session_descriptions = controller.get_sessions_for_editing(
+                            coach_id=None,
+                            date_filter=date_filter,
+                            search_query=search_query,
+                        )
+                        if session_descriptions:
+                            session_options = [
+                                {"label": desc, "value": sid}
+                                for sid, desc in session_descriptions.items()
+                            ]
+                        else:
+                            session_options = [
+                                {
+                                    "label": "No sessions found",
+                                    "value": None,
+                                    "disabled": True,
+                                }
+                            ]
+                else:
+                    from dash import no_update
+
+                    session_options = no_update
+
+                return (
+                    f"Session updated successfully: {message}",
+                    True,
+                    "success",
+                    _get_toast_style(),
+                    table_content,
+                    calendar_content,
+                    session_options,
+                )
             else:
-                return f"Error updating session: {message}", True, "danger"
+                from dash import no_update
+
+                return (
+                    f"Error updating session: {message}",
+                    True,
+                    "danger",
+                    _get_toast_style(),
+                    no_update,
+                    no_update,
+                    no_update,
+                )
 
         except Exception as e:
-            return f"Unexpected error: {str(e)}", True, "danger"
+            from dash import no_update
+
+            return (
+                f"Unexpected error: {str(e)}",
+                True,
+                "danger",
+                _get_toast_style(),
+                no_update,
+                no_update,
+                no_update,
+            )
+
+    # Callback clientside para cerrar automáticamente las alertas
+    app.clientside_callback(
+        """
+        function(is_open) {
+            if (is_open) {
+                setTimeout(function() {
+                    // Activar el callback para cerrar
+                    window.dash_clientside.set_props('admin-alert', {'is_open': false});
+                }, 4000);
+            }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output("admin-alert", "data-temp", allow_duplicate=True),
+        Input("admin-alert", "is_open"),
+        prevent_initial_call=True,
+    )
+
+    # Callback para sincronizar el input de búsqueda visible con el invisible
+    @app.callback(
+        Output("admin-session-search", "value"),
+        [Input("admin-session-search-visible", "value")],
+        prevent_initial_call=True,
+    )
+    def sync_search_inputs(visible_value):
+        """Sincroniza el input visible con el invisible para callbacks."""
+        return visible_value or ""
 
     # TEMPORALMENTE ELIMINADO: ClientSide callback causaba crashes de Dash
     # TODO: Implementar estrategia alternativa para actualizar eventos

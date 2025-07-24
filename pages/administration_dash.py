@@ -72,6 +72,17 @@ def show_administration_content_dash():
             dcc.Store(
                 id="admin-status-filters", data=["scheduled", "completed", "canceled"]
             ),
+            # Store for active filter in edit session
+            dcc.Store(id="admin-active-filter", data=None),
+            # Input invisible para search (usado en callbacks)
+            dbc.Input(id="admin-session-search", style={"display": "none"}),
+            # Toast alert (invisible inicialmente, se posiciona con callback)
+            dbc.Alert(
+                id="admin-alert",
+                is_open=False,
+                dismissable=True,
+                style={"display": "none"},  # Inicialmente oculto
+            ),
             # Stores básicos para funcionalidad
         ]
     )
@@ -316,10 +327,6 @@ def create_sessions_content():
             ),
             # Contenido de las tabs
             html.Div(id="admin-session-tab-content", style={"margin-top": "20px"}),
-            # Alert para mensajes
-            dbc.Alert(
-                id="admin-alert", is_open=False, dismissable=True, className="mb-3"
-            ),
             # Script para forzar cierre del minicalendario y auto-resize del calendario
             html.Script(
                 """
@@ -414,9 +421,8 @@ def create_session_form():
                                     ),
                                     dbc.Input(
                                         id="admin-new-session-date",
-                                        type="text",  # Cambio de 'date' a 'text'
-                                        className="custom-date-input",
-                                        placeholder="YYYY-MM-DD",
+                                        type="date",
+                                        className="date-filter-input",
                                         value=datetime.date.today().isoformat(),
                                     ),
                                 ],
@@ -723,7 +729,7 @@ def create_edit_session_form():
                                         },
                                     ),
                                     dbc.Input(
-                                        id="admin-session-search",
+                                        id="admin-session-search-visible",
                                         type="text",
                                         placeholder="Search by coach, player, ID...",
                                         className="custom-date-input",
@@ -767,8 +773,6 @@ def create_edit_session_form():
                             "gap": "10px",
                         },
                     ),
-                    # Store para filtro activo
-                    dcc.Store(id="admin-active-filter", data=None),
                     # Advertencia si la sesión está fuera de horarios recomendados
                     html.Div(
                         id="admin-edit-session-warning", style={"margin-bottom": "15px"}
