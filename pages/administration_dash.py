@@ -492,6 +492,7 @@ def create_session_form():
                                     "color": "#FFFFFF",
                                     "resize": "vertical",
                                     "transition": "all 0.3s ease",
+                                    "font-size": "0.9rem",
                                 },
                             ),
                         ],
@@ -514,6 +515,7 @@ def create_session_form():
                                     "cursor": "pointer",
                                     "display": "inline-block",
                                     "width": "auto",
+                                    "font-size": "0.9rem",
                                 },
                             ),
                         ],
@@ -937,6 +939,7 @@ def create_edit_session_form():
                                     "color": "#FFFFFF",
                                     "resize": "vertical",
                                     "transition": "all 0.3s ease",
+                                    "font-size": "0.9rem",
                                 },
                             ),
                         ],
@@ -960,6 +963,7 @@ def create_edit_session_form():
                                     "display": "inline-block",
                                     "width": "auto",
                                     "margin-right": "15px",
+                                    "font-size": "0.9rem",
                                 },
                             ),
                             dbc.Button(
@@ -980,6 +984,7 @@ def create_edit_session_form():
                                     "cursor": "pointer",
                                     "display": "inline-block",
                                     "width": "auto",
+                                    "font-size": "0.9rem",
                                 },
                             ),
                         ],
@@ -1001,18 +1006,18 @@ def create_edit_session_form():
                             [
                                 html.I(
                                     className="bi bi-exclamation-triangle me-2",
-                                    style={"color": "#24DE84", "font-size": "1.2rem"},
+                                    style={"color": "#24DE84", "font-size": "1.0rem"},
                                 ),
                                 "Confirm Delete",
                             ],
                             style={
                                 "color": "#FFFFFF",
                                 "font-weight": "600",
-                                "font-size": "1.25rem",
+                                "font-size": "1.0rem",
                             },
                         ),
                         style={
-                            "background-color": "#1D1B1A",
+                            "background-color": "rgba(51,51,51,1)",
                             "border-bottom": "2px solid #24DE84",
                             "padding": "1rem 1.5rem",
                         },
@@ -1025,7 +1030,7 @@ def create_edit_session_form():
                                 "session? This action cannot be undone.",
                                 style={
                                     "color": "#FFFFFF",
-                                    "font-size": "1.1rem",
+                                    "font-size": "0.9rem",
                                     "margin-bottom": "0",
                                     "text-align": "center",
                                     "line-height": "1.5",
@@ -1033,7 +1038,7 @@ def create_edit_session_form():
                             )
                         ],
                         style={
-                            "background-color": "#1D1B1A",
+                            "background-color": "rgba(51,51,51,1)",
                             "padding": "2rem 1.5rem",
                             "border": "none",
                         },
@@ -1055,6 +1060,7 @@ def create_edit_session_form():
                                     "display": "inline-block",
                                     "width": "auto",
                                     "margin-right": "15px",
+                                    "font-size": "0.9rem",
                                 },
                             ),
                             dbc.Button(
@@ -1072,14 +1078,16 @@ def create_edit_session_form():
                                     "cursor": "pointer",
                                     "display": "inline-block",
                                     "width": "auto",
+                                    "font-size": "0.9rem",
                                 },
                             ),
                         ],
                         style={
-                            "background-color": "#1D1B1A",
+                            "background-color": "rgba(51,51,51,1)",
                             "border-top": "2px solid #24DE84",
                             "padding": "1rem 1.5rem",
-                            "text-align": "left",
+                            "justify-content": "flex-start",
+                            "display": "flex",
                         },
                     ),
                 ],
@@ -1089,6 +1097,7 @@ def create_edit_session_form():
                 backdrop="static",  # No cerrar al hacer click fuera
                 fade=True,
                 size="md",
+                centered=True,
             ),
             # Store para datos de la sesión seleccionada
             dcc.Store(id="admin-selected-session-data"),
