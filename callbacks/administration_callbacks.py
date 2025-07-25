@@ -716,26 +716,165 @@ def register_administration_callbacks(app):
             return no_update, no_update, no_update
 
         try:
-            from controllers.sheets_controller import get_accounting_df
+            import pandas as pd
 
-            df = get_accounting_df()
+            from controllers.sheets_controller_dash import get_accounting_df_dash
+
+            df, error_msg = get_accounting_df_dash()
 
             if df.empty:
-                empty_alert = dbc.Alert("No financial data available", color="info")
-                return empty_alert, empty_alert, empty_alert
+                error_alert = dbc.Alert(
+                    f"No financial data available. {error_msg or ''}",
+                    color="warning",
+                    style={"margin": "20px 0"},
+                )
+                return error_alert, error_alert, error_alert
 
-            # Tabla
-            df_no_total = df.iloc[:-1].copy()
-            financials_table = dbc.Table.from_dataframe(
-                df_no_total,
-                striped=True,
-                bordered=True,
-                hover=True,
-                responsive=True,
-                dark=True,
-            )
+            # Mostrar mensaje de error si existe pero hay datos
+            if error_msg:
+                from common.logging_config import get_logger
 
-            # Métricas
+                logger = get_logger(__name__)
+                logger.warning(f"Warning loading financial data: {error_msg}")
+
+            # Tabla con estilo consistente del proyecto y manejo mejorado de datos
+            df_no_total = df.iloc[:-1].copy() if len(df) > 1 else df.copy()
+
+            if df_no_total.empty:
+                financials_table = dbc.Alert(
+                    "No hay datos disponibles en la tabla financiera",
+                    color="info",
+                    style={"margin": "20px 0", "text-align": "center"},
+                )
+            else:
+                # Crear tabla compacta con estilo consistente del proyecto
+                table_header = html.Thead(
+                    [
+                        html.Tr(
+                            [
+                                html.Th(
+                                    col,
+                                    style={
+                                        # Fondo transparente
+                                        "background-color": "transparent",
+                                        "color": "rgba(36, 222, 132, 1)",
+                                        "border": "1px solid rgba(36, 222, 132, 0.5)",
+                                        "padding": "8px 10px",  # Más compacto
+                                        "text-align": "center",
+                                        "font-weight": "600",
+                                        # Tamaño consistente como en otras tablas
+                                        "font-size": "0.75rem",
+                                        "white-space": "nowrap",
+                                    },
+                                )
+                                for col in df_no_total.columns
+                            ]
+                        )
+                    ]
+                )
+
+                # Crear filas de datos más compactas
+                table_rows = []
+                for i in range(len(df_no_total)):
+                    cells = []
+                    for j, col in enumerate(df_no_total.columns):
+                        cell_value = df_no_total.iloc[i, j]
+
+                        # Formatear valores numéricos para columnas monetarias
+                        numeric_keywords = [
+                            "Ingresos",
+                            "Gastos",
+                            "Ingreso",
+                            "Gasto",
+                            "Total",
+                            "Cantidad",
+                            "Importe",
+                            "Precio",
+                            "Coste",
+                            "Cost",
+                        ]
+                        is_numeric_col = any(
+                            keyword.lower() in col.lower()
+                            for keyword in numeric_keywords
+                        )
+
+                        if is_numeric_col and pd.notna(cell_value):
+                            try:
+                                if float(cell_value) != 0:
+                                    cell_value = f"€{float(cell_value):,.2f}"
+                                else:
+                                    cell_value = "€0.00"
+                            except (ValueError, TypeError):
+                                cell_value = str(cell_value)
+                        else:
+                            cell_value = str(cell_value) if pd.notna(cell_value) else ""
+
+                        # Estilos de celda más compactos y consistentes
+                        cell_style = {
+                            "color": "#FFFFFF",
+                            "background-color": "#1D1B1A",  # Fondo oscuro consistente
+                            "border": "1px solid #333333",
+                            "padding": "6px 8px",  # Más compacto
+                            "text-align": "center" if is_numeric_col else "left",
+                            # Tamaño consistente como en otras tablas
+                            "font-size": "0.75rem",
+                            "vertical-align": "middle",
+                        }
+
+                        # Colores específicos para valores monetarios positivos
+                        if is_numeric_col and pd.notna(df_no_total.iloc[i, j]):
+                            try:
+                                numeric_value = float(df_no_total.iloc[i, j])
+                                if "Ingreso" in col and numeric_value > 0:
+                                    cell_style["color"] = (
+                                        "#17a2b8"  # Azul para ingresos
+                                    )
+                                elif "Gasto" in col and numeric_value > 0:
+                                    cell_style["color"] = (
+                                        "#ffc107"  # Amarillo para gastos
+                                    )
+                            except (ValueError, TypeError):
+                                pass
+
+                        cells.append(html.Td(cell_value, style=cell_style))
+
+                    table_rows.append(html.Tr(cells))
+
+                table_body = html.Tbody(
+                    table_rows,
+                    style={"background-color": "#1D1B1A"},  # Asegurar fondo oscuro
+                )
+
+                # Contenedor con scroll horizontal para tablas anchas
+                financials_table = html.Div(
+                    [
+                        dbc.Table(
+                            [table_header, table_body],
+                            striped=False,
+                            bordered=True,
+                            hover=True,
+                            responsive=False,  # Controlamos responsive manualmente
+                            size="sm",  # Tabla más compacta
+                            style={
+                                "background-color": "#1D1B1A !important",
+                                "border": "1px solid rgba(36, 222, 132, 0.4)",
+                                "border-radius": "6px",
+                                "font-size": "0.75rem",
+                                "margin": "0",
+                            },
+                        )
+                    ],
+                    style={
+                        "max-height": "400px",  # Altura máxima con scroll
+                        "overflow": "auto",
+                        "background-color": "#1D1B1A",
+                        "border-radius": "6px",
+                        "padding": "0",
+                        "margin": "15px 0",
+                    },
+                )
+
+            # Métricas con estilo consistente del proyecto
             total_gastos = df_no_total["Gastos"].sum()
             total_ingresos = df_no_total["Ingresos"].sum()
             balance = total_ingresos - total_gastos
@@ -744,78 +883,186 @@ def register_administration_callbacks(app):
                 [
                     dbc.Col(
                         [
-                            dbc.Card(
+                            html.Div(
                                 [
-                                    dbc.CardBody(
-                                        [
-                                            html.H4(
-                                                f"€{balance:,.2f}",
-                                                className="text-center",
+                                    html.H4(
+                                        f"€{balance:,.2f}",
+                                        style={
+                                            "color": (
+                                                "rgba(36, 222, 132, 1)"
+                                                if balance >= 0
+                                                else "#dc3545"
                                             ),
-                                            html.P(
-                                                "Balance",
-                                                className="text-center text-muted",
-                                            ),
-                                        ]
-                                    )
+                                            "font-weight": "bold",
+                                            "text-align": "center",
+                                            "margin-bottom": "5px",
+                                        },
+                                    ),
+                                    html.P(
+                                        "Balance",
+                                        style={
+                                            "color": "#CCCCCC",
+                                            "text-align": "center",
+                                            "margin": "0",
+                                            "font-size": "0.9rem",
+                                        },
+                                    ),
                                 ],
-                                color="success" if balance >= 0 else "danger",
-                                outline=True,
+                                style={
+                                    "background-color": (
+                                        "rgba(36, 222, 132, 0.1)"
+                                        if balance >= 0
+                                        else "rgba(220, 53, 69, 0.1)"
+                                    ),
+                                    "border": (
+                                        "1px solid rgba(36, 222, 132, 0.3)"
+                                        if balance >= 0
+                                        else "1px solid rgba(220, 53, 69, 0.3)"
+                                    ),
+                                    "border-radius": "10px",
+                                    "padding": "20px",
+                                    "text-align": "center",
+                                },
                             ),
                         ],
                         width=4,
                     ),
                     dbc.Col(
                         [
-                            dbc.Card(
+                            html.Div(
                                 [
-                                    dbc.CardBody(
-                                        [
-                                            html.H4(
-                                                f"€{total_ingresos:,.2f}",
-                                                className="text-center",
-                                            ),
-                                            html.P(
-                                                "Income",
-                                                className="text-center text-muted",
-                                            ),
-                                        ]
-                                    )
+                                    html.H4(
+                                        f"€{total_ingresos:,.2f}",
+                                        style={
+                                            "color": "#17a2b8",
+                                            "font-weight": "bold",
+                                            "text-align": "center",
+                                            "margin-bottom": "5px",
+                                        },
+                                    ),
+                                    html.P(
+                                        "Income",
+                                        style={
+                                            "color": "#CCCCCC",
+                                            "text-align": "center",
+                                            "margin": "0",
+                                            "font-size": "0.9rem",
+                                        },
+                                    ),
                                 ],
-                                color="info",
-                                outline=True,
+                                style={
+                                    "background-color": "rgba(23, 162, 184, 0.1)",
+                                    "border": "1px solid rgba(23, 162, 184, 0.3)",
+                                    "border-radius": "10px",
+                                    "padding": "20px",
+                                    "text-align": "center",
+                                },
                             ),
                         ],
                         width=4,
                     ),
                     dbc.Col(
                         [
-                            dbc.Card(
+                            html.Div(
                                 [
-                                    dbc.CardBody(
-                                        [
-                                            html.H4(
-                                                f"€{total_gastos:,.2f}",
-                                                className="text-center",
-                                            ),
-                                            html.P(
-                                                "Expenses",
-                                                className="text-center text-muted",
-                                            ),
-                                        ]
-                                    )
+                                    html.H4(
+                                        f"€{total_gastos:,.2f}",
+                                        style={
+                                            "color": "#ffc107",
+                                            "font-weight": "bold",
+                                            "text-align": "center",
+                                            "margin-bottom": "5px",
+                                        },
+                                    ),
+                                    html.P(
+                                        "Expenses",
+                                        style={
+                                            "color": "#CCCCCC",
+                                            "text-align": "center",
+                                            "margin": "0",
+                                            "font-size": "0.9rem",
+                                        },
+                                    ),
                                 ],
-                                color="warning",
-                                outline=True,
+                                style={
+                                    "background-color": "rgba(255, 193, 7, 0.1)",
+                                    "border": "1px solid rgba(255, 193, 7, 0.3)",
+                                    "border-radius": "10px",
+                                    "padding": "20px",
+                                    "text-align": "center",
+                                },
                             ),
                         ],
                         width=4,
                     ),
-                ]
+                ],
+                className="mb-4",
             )
 
-            # Gráfico simple
-            chart = dbc.Alert("Chart visualization available", color="info")
+            # Gráfico de balance acumulado (replicando Streamlit)
+            try:
+                import pandas as pd
+                import plotly.graph_objs as go
+                from dash import dcc
+
+                # Procesar datos para el gráfico como en Streamlit
+                fecha_col = df_no_total.columns[0]
+                df_chart = df_no_total.copy()
+                df_chart[fecha_col] = pd.to_datetime(
+                    df_chart[fecha_col], errors="coerce"
+                )
+                df_chart["Mes"] = df_chart[fecha_col].dt.to_period("M").astype(str)
+
+                monthly_summary = (
+                    df_chart.groupby("Mes")
+                    .agg({"Ingresos": "sum", "Gastos": "sum"})
+                    .reset_index()
+                )
+
+                monthly_summary["Balance mensual"] = (
+                    monthly_summary["Ingresos"] - monthly_summary["Gastos"]
+                )
+                monthly_summary["Balance acumulado"] = monthly_summary[
+                    "Balance mensual"
+                ].cumsum()
+
+                # Crear gráfico de línea con estilo del proyecto
+                fig = go.Figure()
+                fig.add_trace(
+                    go.Scatter(
+                        x=monthly_summary["Mes"],
+                        y=monthly_summary["Balance acumulado"],
+                        mode="lines+markers",
+                        line=dict(color="rgba(36, 222, 132, 1)", width=3),
+                        marker=dict(size=8, color="rgba(36, 222, 132, 1)"),
+                        name="Balance Acumulado",
+                    )
+                )
+
+                fig.update_layout(
+                    title={
+                        "text": "Accumulated Balance Over Time",
+                        "x": 0.5,
+                        "font": {"color": "rgba(36, 222, 132, 1)", "size": 16},
+                    },
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    font={"color": "#FFFFFF"},
+                    xaxis=dict(
+                        gridcolor="rgba(255,255,255,0.1)", tickfont={"color": "#CCCCCC"}
+                    ),
+                    yaxis=dict(
+                        gridcolor="rgba(255,255,255,0.1)", tickfont={"color": "#CCCCCC"}
+                    ),
+                    margin=dict(l=40, r=40, t=60, b=40),
+                    height=400,
+                    showlegend=False,
+                )
+
+                chart = dcc.Graph(figure=fig, style={"margin-top": "20px"})
+
+            except Exception as e:
+                chart = dbc.Alert(f"Chart error: {str(e)}", color="warning")
 
             return financials_table, metrics, chart
 
@@ -1394,4 +1641,48 @@ def register_administration_callbacks(app):
                 no_update,
                 no_update,
                 no_update,
+            )
+
+    # Callback para export PDF de financials
+    @app.callback(
+        [
+            Output("admin-alert", "children", allow_duplicate=True),
+            Output("admin-alert", "is_open", allow_duplicate=True),
+            Output("admin-alert", "color", allow_duplicate=True),
+            Output("admin-alert", "style", allow_duplicate=True),
+        ],
+        [Input("admin-financials-export-btn", "n_clicks")],
+        prevent_initial_call=True,
+    )
+    def handle_financials_export(n_clicks):
+        """Maneja la exportación de financials a PDF."""
+        if not n_clicks:
+            from dash import no_update
+
+            return no_update, no_update, no_update, no_update
+
+        try:
+            import datetime as dt
+
+            from controllers.export_controller import generate_financials_pdf
+
+            # Usar rango amplio para incluir todos los datos como en Streamlit
+            start_date = dt.date(2020, 1, 1)
+            end_date = dt.date.today()
+
+            buffer, filename = generate_financials_pdf(start_date, end_date)
+
+            return (
+                f"✅ Financial report generated successfully: {filename}",
+                True,
+                "success",
+                _get_toast_style(),
+            )
+
+        except Exception as e:
+            return (
+                f"❌ Error generating financial report: {str(e)}",
+                True,
+                "danger",
+                _get_toast_style(),
             )

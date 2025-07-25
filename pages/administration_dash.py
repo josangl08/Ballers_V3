@@ -1125,40 +1125,27 @@ def create_financials_content():
                     "font-size": "1.1rem",
                 },
             ),
-            # Export buttons
+            # Export button - mismo estilo que Export Profile PDF
             dbc.Row(
                 [
                     dbc.Col(
                         [
-                            dbc.ButtonGroup(
+                            dbc.Button(
                                 [
-                                    dbc.Button(
-                                        [
-                                            html.I(
-                                                className="bi bi-file-earmark-pdf me-2"
-                                            ),
-                                            "Export PDF",
-                                        ],
-                                        id="admin-financials-export-btn",
-                                        style={
-                                            "background-color": "rgba(36, 222, 132, 1)",
-                                            "border": "none",
-                                            "border-radius": "10px",
-                                        },
-                                    ),
-                                    dbc.Button(
-                                        [
-                                            html.I(className="bi bi-printer me-2"),
-                                            "Print",
-                                        ],
-                                        id="admin-financials-print-btn",
-                                        style={
-                                            "background-color": "#666666",
-                                            "border": "none",
-                                            "border-radius": "10px",
-                                        },
-                                    ),
-                                ]
+                                    html.I(className="bi bi-file-earmark-pdf me-2"),
+                                    "Export Financial PDF",
+                                ],
+                                id="admin-financials-export-btn",
+                                className="custom-button",
+                                style={
+                                    "border-radius": "20px",
+                                    "background-color": "#333333",
+                                    "color": "#24DE84",
+                                    "border": "none",
+                                    "padding": "0.5rem 1rem",
+                                    "font-weight": "500",
+                                    "transition": "all 0.3s ease",
+                                },
                             ),
                         ],
                         width=12,
