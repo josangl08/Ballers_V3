@@ -21,107 +21,99 @@ def create_user_form_dash():
 
     return dbc.Container(
         [
-            # User Type Selector (outside form como en original)
+            # Formulario completo con selector y campos dinámicos
             dbc.Card(
                 [
                     dbc.CardBody(
                         [
+                            # User Type Selector al principio
                             html.H5(
-                                "👤 Select User Type",
+                                "User Information",
                                 className="card-title",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "1.1rem"
+                                },
                             ),
-                            dbc.RadioItems(
-                                id="user-type-selector",
-                                options=[
-                                    {"label": "🔑 Admin", "value": "admin"},
-                                    {"label": "📢 Coach", "value": "coach"},
-                                    {"label": "⚽ Player", "value": "player"},
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            dbc.Label(
+                                                "User Type *",
+                                                className="filter-label"
+                                            ),
+                                            dcc.Dropdown(
+                                                id="user-type-selector",
+                                                options=[
+                                                    {"label": "Admin", "value": "admin"},
+                                                    {"label": "Coach", "value": "coach"},
+                                                    {"label": "Player", "value": "player"},
+                                                ],
+                                                value="player",
+                                                className="standard-dropdown",
+                                                placeholder="Select user type to see specific fields below",
+                                            ),
+                                        ],
+                                        width=12,
+                                    ),
                                 ],
-                                value="player",
-                                className="mb-3",
+                                className="mb-4",
                             ),
-                        ]
-                    )
-                ],
-                className="mb-4",
-                style={
-                    "background-color": "#333333",
-                    "border-radius": "10px",
-                    "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
-                },
-            ),
-            # User Form (migrado exactamente de Streamlit)
-            dbc.Card(
-                [
-                    dbc.CardBody(
-                        [
-                            html.H5(
-                                "👤 Basic Information",
-                                className="card-title",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                            html.H6(
+                                "Basic Information",
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "1rem"
+                                },
+                                className="mb-3",
                             ),
                             # Basic Information (left and right columns como original)
                             dbc.Row(
                                 [
                                     dbc.Col(
                                         [
-                                            dbc.Label("Full Name *"),
+                                            dbc.Label("Full Name *", className="filter-label"),
                                             dbc.Input(
                                                 id="new-fullname",
-                                                placeholder="Enter full name...",
+                                                placeholder="Enter full name",
                                                 type="text",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
+                                                className="dash-input",
                                             ),
-                                            dbc.Label("Username *", className="mt-2"),
+                                            dbc.Label("Username *", className="mt-2 filter-label"),
                                             dbc.Input(
                                                 id="new-username",
-                                                placeholder="Enter username...",
+                                                placeholder="Enter username",
                                                 type="text",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
+                                                className="dash-input",
                                             ),
-                                            dbc.Label("Email *", className="mt-2"),
+                                            dbc.Label("Email *", className="mt-2 filter-label"),
                                             dbc.Input(
                                                 id="new-email",
-                                                placeholder="Enter email...",
+                                                placeholder="Enter email address",
                                                 type="email",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
+                                                className="dash-input",
                                             ),
                                         ],
                                         width=6,
                                     ),
                                     dbc.Col(
                                         [
-                                            dbc.Label("Password *"),
+                                            dbc.Label("Password *", className="filter-label"),
                                             dbc.Input(
                                                 id="new-password",
-                                                placeholder="Enter password...",
+                                                placeholder="Enter password",
                                                 type="password",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
+                                                className="dash-input",
                                             ),
                                             dbc.Label(
-                                                "Confirm Password *", className="mt-2"
+                                                "Confirm Password *", className="mt-2 filter-label"
                                             ),
                                             dbc.Input(
                                                 id="new-confirm-password",
-                                                placeholder="Confirm password...",
+                                                placeholder="Confirm password",
                                                 type="password",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
+                                                className="dash-input",
                                             ),
                                         ],
                                         width=6,
@@ -131,49 +123,48 @@ def create_user_form_dash():
                             ),
                             # Additional Information
                             html.H6(
-                                "📱 Additional Information",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                "Additional Information",
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "1rem"
+                                },
                             ),
                             dbc.Row(
                                 [
                                     dbc.Col(
                                         [
-                                            dbc.Label("Phone"),
+                                            dbc.Label("Phone", className="filter-label"),
                                             dbc.Input(
                                                 id="new-phone",
-                                                placeholder="Enter phone...",
+                                                placeholder="Enter phone number",
                                                 type="tel",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
+                                                className="dash-input",
                                             ),
-                                            dbc.Label("LINE ID", className="mt-2"),
+                                            dbc.Label("LINE ID", className="mt-2 filter-label"),
                                             dbc.Input(
                                                 id="new-line-id",
-                                                placeholder="Enter LINE ID...",
+                                                placeholder="Enter LINE ID",
                                                 type="text",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
+                                                className="dash-input",
                                             ),
                                         ],
                                         width=6,
                                     ),
                                     dbc.Col(
                                         [
-                                            dbc.Label("Date of Birth"),
+                                            dbc.Label("Date of Birth", className="filter-label"),
                                             dbc.Input(
-                                                id="new-birth-date",
+                                                id={'type': 'auto-hide-date', 'index': 'new-birth-date'},
                                                 type="date",
-                                                style={
-                                                    "border-radius": "5px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
+                                                className="date-filter-input",
+                                            ),
+                                            # Div de output para auto-hide callback
+                                            html.Div(
+                                                id={'type': 'datepicker-output', 'index': 'new-birth-date'},
+                                                style={'display': 'none'}
                                             ),
                                             dbc.Label(
-                                                "Profile Picture", className="mt-2"
+                                                "Profile Picture", className="mt-2 filter-label"
                                             ),
                                             dcc.Upload(
                                                 id="new-profile-picture",
@@ -183,17 +174,7 @@ def create_user_form_dash():
                                                         html.A("Select Files"),
                                                     ]
                                                 ),
-                                                style={
-                                                    "width": "100%",
-                                                    "height": "40px",
-                                                    "lineHeight": "40px",
-                                                    "borderWidth": "1px",
-                                                    "borderStyle": "dashed",
-                                                    "borderRadius": "5px",
-                                                    "textAlign": "center",
-                                                    "margin": "0px",
-                                                    "border": "1px solid #e0e0e0",
-                                                },
+                                                className="upload-area",
                                             ),
                                         ],
                                         width=6,
@@ -206,18 +187,18 @@ def create_user_form_dash():
                             html.Div(
                                 [
                                     html.H6(
-                                        "📢 Coach Information",
-                                        style={"color": "rgba(36, 222, 132, 1)"},
+                                        "Coach Information",
+                                        style={
+                                            "color": "rgba(36, 222, 132, 1)",
+                                            "font-size": "1rem"
+                                        },
                                     ),
-                                    dbc.Label("License Name"),
+                                    dbc.Label("License Name", className="filter-label"),
                                     dbc.Input(
                                         id="new-license-name",
-                                        placeholder="Enter coaching license...",
+                                        placeholder="Enter coaching license",
                                         type="text",
-                                        style={
-                                            "border-radius": "5px",
-                                            "border": "1px solid #e0e0e0",
-                                        },
+                                        className="dash-input",
                                     ),
                                 ],
                                 id="coach-fields",
@@ -228,37 +209,44 @@ def create_user_form_dash():
                             html.Div(
                                 [
                                     html.H6(
-                                        "⚽ Player Information",
-                                        style={"color": "rgba(36, 222, 132, 1)"},
+                                        "Player Information",
+                                        style={
+                                            "color": "rgba(36, 222, 132, 1)",
+                                            "font-size": "1rem"
+                                        },
                                     ),
                                     dbc.Row(
                                         [
                                             dbc.Col(
                                                 [
-                                                    dbc.Label("Service Types"),
+                                                    dbc.Label("Service Types", className="filter-label"),
                                                     dcc.Dropdown(
                                                         id="new-service-types",
                                                         options=[
                                                             {
-                                                                "label": "Training",
-                                                                "value": "training",
+                                                                "label": "Basic",
+                                                                "value": "Basic",
                                                             },
                                                             {
-                                                                "label": "Personal Training",
-                                                                "value": "personal",
+                                                                "label": "Premium", 
+                                                                "value": "Premium",
                                                             },
                                                             {
-                                                                "label": "Group Training",
-                                                                "value": "group",
+                                                                "label": "Elite",
+                                                                "value": "Elite",
                                                             },
                                                             {
-                                                                "label": "Match",
-                                                                "value": "match",
+                                                                "label": "Performance",
+                                                                "value": "Performance",
+                                                            },
+                                                            {
+                                                                "label": "Recovery",
+                                                                "value": "Recovery",
                                                             },
                                                         ],
                                                         multi=True,
+                                                        value=["Basic"],  # Default value como en Streamlit
                                                         placeholder="Select service types...",
-                                                        style={"border-radius": "5px"},
                                                     ),
                                                 ],
                                                 width=6,
@@ -266,17 +254,15 @@ def create_user_form_dash():
                                             dbc.Col(
                                                 [
                                                     dbc.Label(
-                                                        "Number of Enrolled Sessions"
+                                                        "Number of Enrolled Sessions",
+                                                        className="filter-label"
                                                     ),
                                                     dbc.Input(
                                                         id="new-enrolled-sessions",
                                                         type="number",
                                                         min=0,
                                                         value=0,
-                                                        style={
-                                                            "border-radius": "5px",
-                                                            "border": "1px solid #e0e0e0",
-                                                        },
+                                                        className="dash-input",
                                                     ),
                                                 ],
                                                 width=6,
@@ -284,13 +270,20 @@ def create_user_form_dash():
                                         ],
                                         className="mb-3",
                                     ),
-                                    dbc.Label("Additional Notes"),
+                                    dbc.Label("Additional Notes", className="filter-label"),
                                     dbc.Textarea(
                                         id="new-player-notes",
-                                        placeholder="Enter additional notes...",
+                                        placeholder="Add notes about the player...",
+                                        rows=4,
+                                        className="form-textarea",
                                         style={
-                                            "border-radius": "5px",
-                                            "border": "1px solid #e0e0e0",
+                                            "background-color": "#3b3b3a",
+                                            "border": "1px solid #555",
+                                            "border-radius": "10px",
+                                            "color": "#FFFFFF",
+                                            "resize": "vertical",
+                                            "transition": "all 0.3s ease",
+                                            "font-size": "0.9rem",
                                         },
                                     ),
                                 ],
@@ -302,39 +295,36 @@ def create_user_form_dash():
                             html.Div(
                                 [
                                     html.H6(
-                                        "🔑 Admin Information",
-                                        style={"color": "rgba(36, 222, 132, 1)"},
+                                        "Admin Information",
+                                        style={
+                                            "color": "rgba(36, 222, 132, 1)",
+                                            "font-size": "1rem"
+                                        },
                                     ),
                                     dbc.Row(
                                         [
                                             dbc.Col(
                                                 [
-                                                    dbc.Label("Internal Role"),
+                                                    dbc.Label("Internal Role", className="filter-label"),
                                                     dbc.Input(
                                                         id="new-internal-role",
-                                                        placeholder="Enter internal role...",
+                                                        placeholder="Enter internal role",
                                                         type="text",
-                                                        style={
-                                                            "border-radius": "5px",
-                                                            "border": "1px solid #e0e0e0",
-                                                        },
+                                                        className="dash-input",
                                                     ),
                                                 ],
                                                 width=6,
                                             ),
                                             dbc.Col(
                                                 [
-                                                    dbc.Label("Permit Level (1-10)"),
+                                                    dbc.Label("Permit Level (1-10)", className="filter-label"),
                                                     dbc.Input(
                                                         id="new-permit-level",
                                                         type="number",
                                                         min=1,
                                                         max=10,
                                                         value=5,
-                                                        style={
-                                                            "border-radius": "5px",
-                                                            "border": "1px solid #e0e0e0",
-                                                        },
+                                                        className="dash-input",
                                                     ),
                                                 ],
                                                 width=6,
@@ -346,25 +336,28 @@ def create_user_form_dash():
                                 style={"display": "none"},
                                 className="mb-3",
                             ),
-                            # Submit Button
+                            # Submit Button con estilo consistente
                             dbc.Button(
-                                "✅ Create User",
+                                "Create User",
                                 id="create-user-btn",
-                                color="success",
-                                size="lg",
-                                className="w-100",
-                                style={"border-radius": "20px"},
+                                className="btn-admin-style",
                             ),
                         ]
                     )
                 ],
                 style={
-                    "background-color": "#333333",
+                    "background-color": "rgba(51,51,51,0.6)",
+                    "padding": "20px",
                     "border-radius": "10px",
-                    "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
+                    "margin-bottom": "20px",
                 },
             ),
-        ]
+        ],
+        fluid=True,
+        style={
+            "padding": "20px",
+            "min-height": "80vh",
+        },
     )
 
 
@@ -376,9 +369,12 @@ def create_sync_settings_dash():
             dbc.CardBody(
                 [
                     html.H5(
-                        "🔄 Sync Settings",
+                        "Sync Settings",
                         className="card-title",
-                        style={"color": "rgba(36, 222, 132, 1)"},
+                        style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "font-size": "1.1rem"
+                        },
                     ),
                     # Estado actual del sync
                     dbc.Alert(id="sync-status-alert", className="mb-3"),
@@ -387,7 +383,7 @@ def create_sync_settings_dash():
                         [
                             dbc.Col(
                                 [
-                                    dbc.Label("Auto-sync Interval (minutes)"),
+                                    dbc.Label("Auto-sync Interval (minutes)", className="filter-label"),
                                     dbc.Input(
                                         id="sync-interval",
                                         type="number",
@@ -404,7 +400,7 @@ def create_sync_settings_dash():
                             ),
                             dbc.Col(
                                 [
-                                    dbc.Label("Auto-start on Login"),
+                                    dbc.Label("Auto-start on Login", className="filter-label"),
                                     dbc.Checklist(
                                         id="auto-start-sync",
                                         options=[
@@ -428,7 +424,7 @@ def create_sync_settings_dash():
                             dbc.Col(
                                 [
                                     dbc.Button(
-                                        "▶️ Start Auto-sync",
+                                        "Start Auto-sync",
                                         id="start-sync-btn",
                                         color="success",
                                         className="w-100",
@@ -440,7 +436,7 @@ def create_sync_settings_dash():
                             dbc.Col(
                                 [
                                     dbc.Button(
-                                        "⏹️ Stop Auto-sync",
+                                        "Stop Auto-sync",
                                         id="stop-sync-btn",
                                         color="danger",
                                         className="w-100",
@@ -495,13 +491,16 @@ def create_system_settings_dash():
                     dbc.CardBody(
                         [
                             html.H5(
-                                "🔄 Sync Results & Monitoring",
+                                "Sync Results & Monitoring",
                                 className="card-title",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "1.1rem"
+                                },
                             ),
                             html.Div(id="sync-results-content"),
                             dbc.Button(
-                                "🧹 Clear Sync Results",
+                                "Clear Sync Results",
                                 id="clear-sync-results-btn",
                                 color="warning",
                                 className="w-100 mt-2",
@@ -523,16 +522,19 @@ def create_system_settings_dash():
                     dbc.CardBody(
                         [
                             html.H5(
-                                "🗃️ Database/Google Sheets Management",
+                                "Database/Google Sheets Management",
                                 className="card-title",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "1.1rem"
+                                },
                             ),
                             dbc.Row(
                                 [
                                     dbc.Col(
                                         [
                                             dbc.Button(
-                                                "💾 Create a backup copy of the database",
+                                                "Create a backup copy of the database",
                                                 id="backup-db-btn",
                                                 color="primary",
                                                 className="w-100",
@@ -549,7 +551,7 @@ def create_system_settings_dash():
                                     dbc.Col(
                                         [
                                             dbc.Button(
-                                                "🔄 Refresh Google Sheets",
+                                                "Refresh Google Sheets",
                                                 id="refresh-sheets-btn",
                                                 color="secondary",
                                                 className="w-100",
@@ -581,16 +583,19 @@ def create_system_settings_dash():
                     dbc.CardBody(
                         [
                             html.H5(
-                                "🔄 Manual Synchronization",
+                                "Manual Synchronization",
                                 className="card-title",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "1.1rem"
+                                },
                             ),
                             dbc.Row(
                                 [
                                     dbc.Col(
                                         [
                                             dbc.Button(
-                                                "📤 Push local sessions → Google Calendar",
+                                                "Push local sessions → Google Calendar",
                                                 id="sync-to-calendar-btn",
                                                 color="success",
                                                 className="w-100",
@@ -602,7 +607,7 @@ def create_system_settings_dash():
                                     dbc.Col(
                                         [
                                             dbc.Button(
-                                                "📥 Bring events ← Google Calendar",
+                                                "Bring events ← Google Calendar",
                                                 id="sync-from-calendar-btn",
                                                 color="info",
                                                 className="w-100",
@@ -629,9 +634,12 @@ def create_system_settings_dash():
                     dbc.CardBody(
                         [
                             html.H5(
-                                "⚡ Auto-Sync Management",
+                                "Auto-Sync Management",
                                 className="card-title",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "1.1rem"
+                                },
                             ),
                             # Estado del auto-sync
                             dbc.Alert(id="auto-sync-status-alert", className="mb-3"),
@@ -644,7 +652,8 @@ def create_system_settings_dash():
                                             dbc.Col(
                                                 [
                                                     dbc.Label(
-                                                        "Sync Interval (minutes)"
+                                                        "Sync Interval (minutes)",
+                                                        className="filter-label"
                                                     ),
                                                     dcc.Slider(
                                                         id="sync-interval-slider",
@@ -673,7 +682,7 @@ def create_system_settings_dash():
                                             ),
                                             dbc.Col(
                                                 [
-                                                    dbc.Label("Auto-start on Login"),
+                                                    dbc.Label("Auto-start on Login", className="filter-label"),
                                                     dbc.Checklist(
                                                         id="auto-start-checkbox",
                                                         options=[
@@ -697,7 +706,7 @@ def create_system_settings_dash():
                                             dbc.Col(
                                                 [
                                                     dbc.Button(
-                                                        "▶️ Start Auto-Sync",
+                                                        "Start Auto-Sync",
                                                         id="start-auto-sync-btn",
                                                         color="success",
                                                         className="w-100",
@@ -709,7 +718,7 @@ def create_system_settings_dash():
                                             dbc.Col(
                                                 [
                                                     dbc.Button(
-                                                        "⏹️ Stop Auto-Sync",
+                                                        "Stop Auto-Sync",
                                                         id="stop-auto-sync-btn",
                                                         color="danger",
                                                         className="w-100",
@@ -773,22 +782,22 @@ def create_settings_dashboard_dash():
             dbc.Tabs(
                 [
                     dbc.Tab(
-                        label="👥 Users",
+                        label="Users",
                         tab_id="users",
                         active_label_style={"color": "rgba(36, 222, 132, 1)"},
                     ),
                     dbc.Tab(
-                        label="🔄 Sync",
+                        label="Sync",
                         tab_id="sync",
                         active_label_style={"color": "rgba(36, 222, 132, 1)"},
                     ),
                     dbc.Tab(
-                        label="⚙️ System",
+                        label="System",
                         tab_id="system",
                         active_label_style={"color": "rgba(36, 222, 132, 1)"},
                     ),
                     dbc.Tab(
-                        label="📊 Reports",
+                        label="Reports",
                         tab_id="reports",
                         active_label_style={"color": "rgba(36, 222, 132, 1)"},
                     ),
@@ -814,9 +823,12 @@ def create_users_list_dash():
             dbc.CardBody(
                 [
                     html.H5(
-                        "👥 Users Management",
+                        "Users Management",
                         className="card-title",
-                        style={"color": "rgba(36, 222, 132, 1)"},
+                        style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "font-size": "1.1rem"
+                        },
                     ),
                     # Filtros
                     dbc.Row(
@@ -874,33 +886,76 @@ def create_users_list_dash():
 def show_settings_content_dash():
     """Función principal para mostrar el contenido de la sección Settings - MIGRADA DE STREAMLIT."""
 
-    return html.Div(
+    return dbc.Container(
         [
-            # Título de la sección (migrado de Streamlit)
-            html.H3(
-                "Settings",
-                style={"color": "rgba(36, 222, 132, 1)", "text-align": "center"},
-                className="section-title mb-4",
+            # Título principal con estilo consistente
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.H1(
+                                [
+                                    html.I(className="bi bi-gear me-3"),
+                                    "Settings",
+                                ],
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "margin-bottom": "30px",
+                                    "font-size": "2.5rem",
+                                },
+                            ),
+                        ],
+                        width=12,
+                    ),
+                ]
             ),
-            # Pestañas principales: System y Users (migrado exactamente del original)
+            # Main tabs (System/Users) con estilo consistente
             dbc.Tabs(
                 [
                     dbc.Tab(
-                        label="⚙️ System",
+                        label="System",
                         tab_id="system-tab",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        active_label_style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "font-weight": "bold",
+                        },
+                        label_style={"color": "#CCCCCC"},
                     ),
                     dbc.Tab(
-                        label="👥 Users",
+                        label="Users",
                         tab_id="users-tab",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        active_label_style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "font-weight": "bold",
+                        },
+                        label_style={"color": "#CCCCCC"},
                     ),
                 ],
                 id="settings-main-tabs",
-                active_tab="system-tab",
+                active_tab="users-tab",  # Cambiar a users como default
+                style={
+                    "margin-bottom": "30px",
+                },
             ),
             # Contenido de las pestañas
             html.Div(id="settings-main-content", className="mt-4"),
+            # Alert global para mensajes
+            dbc.Alert(
+                id="settings-alert", 
+                is_open=False, 
+                dismissable=True, 
+                className="mt-3",
+                style={
+                    "position": "fixed",
+                    "top": "20px",
+                    "right": "20px",
+                    "z-index": "1060",
+                    "min-width": "350px",
+                    "max-width": "500px",
+                    "box-shadow": "0 8px 16px rgba(0, 0, 0, 0.15)",
+                    "border-radius": "8px",
+                }
+            ),
         ]
     )
 

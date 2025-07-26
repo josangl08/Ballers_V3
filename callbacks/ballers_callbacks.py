@@ -102,8 +102,8 @@ def register_ballers_callbacks(app):
     @app.callback(
         Output("sessions-table", "children"),
         [
-            Input("filter-from-date", "value"),
-            Input("filter-to-date", "value"),
+            Input({'type': 'auto-hide-date', 'index': 'ballers-filter-from-date'}, "value"),
+            Input({'type': 'auto-hide-date', 'index': 'ballers-filter-to-date'}, "value"),
             Input("status-filters", "data"),
         ],
         [State("selected-player-id", "data")],

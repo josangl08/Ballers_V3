@@ -16,6 +16,7 @@ from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
 from common.login_dash import register_login_callbacks
 from common.menu_dash import register_menu_callbacks
+from common.datepicker_utils import register_datepicker_callbacks, create_datepicker_dummy_divs
 
 # Importar configuración
 from config import APP_ICON, APP_NAME  # noqa: F401
@@ -43,6 +44,8 @@ def get_app_layout():
             dcc.Store(id="session-store", storage_type="session"),
             # Layout principal
             html.Div(id="main-content"),
+            # Divs dummy para callbacks de datepicker
+            *create_datepicker_dummy_divs(),
         ],
         fluid=True,
     )
@@ -65,8 +68,10 @@ def register_all_callbacks():
     register_sidebar_callbacks(app)
 
     # Registrar callbacks específicos de páginas
-
     register_ballers_callbacks(app)
+    
+    # Registrar callbacks comunes para datepickers
+    register_datepicker_callbacks(app)
 
 
 def initialize_dash_app():

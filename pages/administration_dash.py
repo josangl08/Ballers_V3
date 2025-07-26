@@ -125,7 +125,7 @@ def create_sessions_content():
                                                                 ),
                                                             ),
                                                             dbc.Input(
-                                                                id="filter-from-date",
+                                                                id={'type': 'auto-hide-date', 'index': 'admin-filter-from-date'},
                                                                 type="date",  # noqa: E501
                                                                 className="date-filter-input",  # noqa: E501
                                                                 value=(
@@ -134,6 +134,11 @@ def create_sessions_content():
                                                                         days=7
                                                                     )
                                                                 ).isoformat(),  # noqa: E501
+                                                            ),
+                                                            # Div de output para auto-hide callback
+                                                            html.Div(
+                                                                id={'type': 'datepicker-output', 'index': 'admin-filter-from-date'},
+                                                                style={'display': 'none'}
                                                             ),
                                                         ],
                                                         className=(
@@ -154,7 +159,7 @@ def create_sessions_content():
                                                                 ),
                                                             ),
                                                             dbc.Input(
-                                                                id="filter-to-date",
+                                                                id={'type': 'auto-hide-date', 'index': 'admin-filter-to-date'},
                                                                 type="date",  # noqa: E501
                                                                 className="date-filter-input",  # noqa: E501
                                                                 value=(
@@ -163,6 +168,11 @@ def create_sessions_content():
                                                                         days=21
                                                                     )
                                                                 ).isoformat(),  # noqa: E501
+                                                            ),
+                                                            # Div de output para auto-hide callback
+                                                            html.Div(
+                                                                id={'type': 'datepicker-output', 'index': 'admin-filter-to-date'},
+                                                                style={'display': 'none'}
                                                             ),
                                                         ],
                                                         className=(
@@ -331,20 +341,6 @@ def create_sessions_content():
             ),
             # Contenido de las tabs
             html.Div(id="admin-session-tab-content", style={"margin-top": "20px"}),
-            # Script para forzar cierre del minicalendario y auto-resize del calendario
-            html.Script(
-                """
-            document.addEventListener('DOMContentLoaded', function() {
-                // Agregar evento a los inputs de fecha para forzar cierre
-                const dateInputs = document.querySelectorAll('input[type="date"]');
-                dateInputs.forEach(input => {
-                    input.addEventListener('change', function() {
-                        this.blur(); // Quitar foco del input para cerrar el calendario
-                    });
-                });
-            });
-            """
-            ),
         ]
     )
 
@@ -424,10 +420,15 @@ def create_session_form():
                                         },
                                     ),
                                     dbc.Input(
-                                        id="admin-new-session-date",
+                                        id={'type': 'auto-hide-date', 'index': 'admin-new-session-date'},
                                         type="date",
                                         className="date-filter-input",
                                         value=datetime.date.today().isoformat(),
+                                    ),
+                                    # Div de output para auto-hide callback
+                                    html.Div(
+                                        id={'type': 'datepicker-output', 'index': 'admin-new-session-date'},
+                                        style={'display': 'none'}
                                     ),
                                 ],
                                 style={"width": "30%", "display": "inline-block"},
@@ -868,9 +869,14 @@ def create_edit_session_form():
                                         },
                                     ),
                                     dbc.Input(
-                                        id="admin-edit-session-date",
+                                        id={'type': 'auto-hide-date', 'index': 'admin-edit-session-date'},
                                         type="date",
                                         className="date-filter-input",
+                                    ),
+                                    # Div de output para auto-hide callback
+                                    html.Div(
+                                        id={'type': 'datepicker-output', 'index': 'admin-edit-session-date'},
+                                        style={'display': 'none'}
                                     ),
                                 ],
                                 style={
