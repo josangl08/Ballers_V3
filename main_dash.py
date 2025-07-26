@@ -14,9 +14,12 @@ from callbacks.navigation_callbacks import register_navigation_callbacks
 from callbacks.player_callbacks import register_player_callbacks
 from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
+from common.datepicker_utils import (
+    create_datepicker_dummy_divs,
+    register_datepicker_callbacks,
+)
 from common.login_dash import register_login_callbacks
 from common.menu_dash import register_menu_callbacks
-from common.datepicker_utils import register_datepicker_callbacks, create_datepicker_dummy_divs
 
 # Importar configuración
 from config import APP_ICON, APP_NAME  # noqa: F401
@@ -69,7 +72,7 @@ def register_all_callbacks():
 
     # Registrar callbacks específicos de páginas
     register_ballers_callbacks(app)
-    
+
     # Registrar callbacks comunes para datepickers
     register_datepicker_callbacks(app)
 

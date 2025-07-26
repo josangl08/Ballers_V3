@@ -2,14 +2,14 @@
 """
 Callbacks relacionados con la página de Settings.
 """
-import datetime as dt
 import base64
+import datetime as dt
 import os
 from typing import Dict, List, Optional
 
+import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-import dash
 from dash import Input, Output, State, callback_context, html, no_update
 
 from controllers.user_controller import (
@@ -26,89 +26,91 @@ from controllers.validation_controller import ValidationController
 def process_dash_upload(contents: str, filename: str = None) -> object:
     """
     Procesa un archivo subido desde Dash y lo convierte al formato que espera UserController.
-    
+
     Args:
         contents: String base64 con formato "data:image/png;base64,<contenido>"
         filename: Nombre del archivo (opcional)
-    
+
     Returns:
         Objeto que simula el uploaded_file de Streamlit
     """
     if not contents:
         return None
-        
+
     # Extraer el contenido base64
-    content_type, content_string = contents.split(',')
-    
+    content_type, content_string = contents.split(",")
+
     # Decodificar base64
     decoded = base64.b64decode(content_string)
-    
+
     # Determinar extensión desde content_type o usar por defecto
-    if 'image/jpeg' in content_type:
-        ext = '.jpg'
-    elif 'image/png' in content_type:
-        ext = '.png'
-    elif 'image/gif' in content_type:
-        ext = '.gif'
+    if "image/jpeg" in content_type:
+        ext = ".jpg"
+    elif "image/png" in content_type:
+        ext = ".png"
+    elif "image/gif" in content_type:
+        ext = ".gif"
     else:
-        ext = '.jpg'  # Por defecto
-    
+        ext = ".jpg"  # Por defecto
+
     # Crear objeto que simula uploaded_file de Streamlit
     class DashUploadedFile:
         def __init__(self, content, filename):
             self._content = content
             self.name = filename or f"profile{ext}"
-            
+
         def getbuffer(self):
             return self._content
-    
+
     return DashUploadedFile(decoded, filename or f"profile{ext}")
 
 
 def save_profile_photo_dash(contents: str, username: str, filename: str = None) -> str:
     """
     Guarda una foto de perfil desde Dash upload.
-    
+
     Args:
         contents: String base64 con formato "data:image/png;base64,<contenido>"
         username: Nombre de usuario para generar nombre único
         filename: Nombre del archivo original (opcional)
-    
+
     Returns:
         Ruta del archivo guardado
     """
     if not contents:
         return "assets/profile_photos/default_profile.png"
-    
+
     # Crear directorio si no existe
     photo_dir = "assets/profile_photos"
     if not os.path.exists(photo_dir):
         os.makedirs(photo_dir)
-    
+
     # Extraer el contenido base64
-    content_type, content_string = contents.split(',')
+    content_type, content_string = contents.split(",")
     decoded = base64.b64decode(content_string)
-    
+
     # Determinar extensión
-    if 'image/jpeg' in content_type:
-        ext = '.jpg'
-    elif 'image/png' in content_type:
-        ext = '.png'
-    elif 'image/gif' in content_type:
-        ext = '.gif'
+    if "image/jpeg" in content_type:
+        ext = ".jpg"
+    elif "image/png" in content_type:
+        ext = ".png"
+    elif "image/gif" in content_type:
+        ext = ".gif"
     else:
-        ext = '.jpg'  # Por defecto
-    
+        ext = ".jpg"  # Por defecto
+
     # Generar nombre de archivo único
-    timestamp = dt.datetime.now().strftime('%Y%m%d%H%M%S')
+    timestamp = dt.datetime.now().strftime("%Y%m%d%H%M%S")
     filename = f"{username}_{timestamp}{ext}"
     file_path = os.path.join(photo_dir, filename)
-    
+
     # Guardar archivo
     with open(file_path, "wb") as f:
         f.write(decoded)
-    
+
     return file_path
+
+
 from models import UserType
 
 
@@ -273,7 +275,7 @@ def register_settings_callbacks(app):
             Output("new-confirm-password", "value"),
             Output("new-phone", "value"),
             Output("new-line-id", "value"),
-            Output({'type': 'auto-hide-date', 'index': 'new-birth-date'}, "value"),
+            Output({"type": "auto-hide-date", "index": "new-birth-date"}, "value"),
             Output("new-license-name", "value"),
             Output("new-service-types", "value"),
             Output("new-enrolled-sessions", "value"),
@@ -291,7 +293,7 @@ def register_settings_callbacks(app):
             State("new-confirm-password", "value"),
             State("new-phone", "value"),
             State("new-line-id", "value"),
-            State({'type': 'auto-hide-date', 'index': 'new-birth-date'}, "value"),
+            State({"type": "auto-hide-date", "index": "new-birth-date"}, "value"),
             State("new-profile-picture", "contents"),
             State("new-license-name", "value"),
             State("new-service-types", "value"),
@@ -480,8 +482,8 @@ def register_settings_callbacks(app):
                                 style={"padding": "8px", "text-align": "center"},
                             ),
                             html.Td(
-                                user["Name"], 
-                                style={"padding": "8px", "font-weight": "500"}
+                                user["Name"],
+                                style={"padding": "8px", "font-weight": "500"},
                             ),
                             html.Td(user["Username"], style={"padding": "8px"}),
                             html.Td(user["Email"], style={"padding": "8px"}),
@@ -496,8 +498,8 @@ def register_settings_callbacks(app):
                                             dbc.Button(
                                                 "🔄 Toggle",
                                                 id={
-                                                    "type": "toggle-user-btn", 
-                                                    "index": user["ID"]
+                                                    "type": "toggle-user-btn",
+                                                    "index": user["ID"],
                                                 },
                                                 size="sm",
                                                 color="info",
@@ -632,7 +634,9 @@ def register_settings_callbacks(app):
             Output("settings-alert", "color", allow_duplicate=True),
         ],
         [
-            Input({"type": "toggle-user-btn", "index": dash.dependencies.ALL}, "n_clicks")
+            Input(
+                {"type": "toggle-user-btn", "index": dash.dependencies.ALL}, "n_clicks"
+            )
         ],
         prevent_initial_call=True,
     )

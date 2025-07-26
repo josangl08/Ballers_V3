@@ -341,7 +341,10 @@ def create_player_profile_dash(player_id=None):
                                         },
                                     ),
                                     dbc.Input(
-                                        id={'type': 'auto-hide-date', 'index': 'ballers-filter-from-date'},
+                                        id={
+                                            "type": "auto-hide-date",
+                                            "index": "ballers-filter-from-date",
+                                        },
                                         type="date",
                                         className="date-filter-input",
                                         value=(
@@ -351,8 +354,11 @@ def create_player_profile_dash(player_id=None):
                                     ),
                                     # Div de output para auto-hide callback
                                     html.Div(
-                                        id={'type': 'datepicker-output', 'index': 'ballers-filter-from-date'},
-                                        style={'display': 'none'}
+                                        id={
+                                            "type": "datepicker-output",
+                                            "index": "ballers-filter-from-date",
+                                        },
+                                        style={"display": "none"},
                                     ),
                                 ],
                                 width=3,  # Reducir de 4 a 3
@@ -368,7 +374,10 @@ def create_player_profile_dash(player_id=None):
                                         },
                                     ),
                                     dbc.Input(
-                                        id={'type': 'auto-hide-date', 'index': 'ballers-filter-to-date'},
+                                        id={
+                                            "type": "auto-hide-date",
+                                            "index": "ballers-filter-to-date",
+                                        },
                                         type="date",
                                         className="date-filter-input",
                                         value=(
@@ -378,8 +387,11 @@ def create_player_profile_dash(player_id=None):
                                     ),
                                     # Div de output para auto-hide callback
                                     html.Div(
-                                        id={'type': 'datepicker-output', 'index': 'ballers-filter-to-date'},
-                                        style={'display': 'none'}
+                                        id={
+                                            "type": "datepicker-output",
+                                            "index": "ballers-filter-to-date",
+                                        },
+                                        style={"display": "none"},
                                     ),
                                 ],
                                 width=3,  # Reducir de 4 a 3

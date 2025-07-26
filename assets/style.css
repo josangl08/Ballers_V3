@@ -126,6 +126,64 @@ div.row-widget.stForm {
     color: #1D1B1A !important;  /* Letras oscuras al clickear */
     transform: translateY(1px) !important;
 }
+
+/* Estilos para área de upload de archivos */
+.upload-area {
+    width: 100% !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    border-width: 1px !important;
+    border-style: dashed !important;
+    border-radius: 10px !important;
+    text-align: center !important;
+    margin: 0px !important;
+    border: 1px solid #555 !important;
+    background-color: #3b3b3a !important;
+    color: #FFFFFF !important;
+    font-size: 0.9rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+}
+
+.upload-area:hover {
+    border-color: rgba(36, 222, 132, 1) !important;
+    transform: translateY(-1px) !important;
+}
+
+.upload-area:active {
+    border-color: rgba(36, 222, 132, 1) !important;
+    background-color: #24DE84 !important;
+    color: #1D1B1A !important;
+    transform: translateY(1px) !important;
+}
+
+/* Estilos para botones con clase btn-admin-style (como Create User) */
+.btn-admin-style {
+    background-color: #1D1B1A !important;
+    color: #FFFFFF !important;
+    border: 2px solid #1D1B1A !important;
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+    padding: 0.4rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    display: inline-block !important;
+    width: auto !important;
+    font-size: 0.9rem !important;
+}
+
+.btn-admin-style:hover {
+    background-color: #1D1B1A !important;  /* Mantener mismo fondo */
+    color: #24DE84 !important;  /* Letras verdes al hover */
+    border-color: #24DE84 !important;  /* Borde verde al hover */
+    transform: translateY(-1px) !important;
+}
+
+.btn-admin-style:active {
+    background-color: #24DE84 !important;  /* Fondo verde al clickear */
+    color: #1D1B1A !important;  /* Letras oscuras al clickear */
+    transform: translateY(1px) !important;
+}
 .st-emotion-cache-seewz2 h1{
     text-align: center;
 }
@@ -453,6 +511,17 @@ div.stExpander {
     border: 1px solid #666;
     background-color: #333333;
     color: #fafafa;
+    font-size: 0.75rem;
+}
+
+.dash-input::placeholder {
+    color: #FFFFFF !important;
+    opacity: 0.8 !important;
+}
+
+.dash-input:hover {
+    border-color: rgba(36, 222, 132, 1);
+    transition: all 0.3s ease;
 }
 
 .dash-input:focus {
@@ -2222,6 +2291,101 @@ input[type="date"].simple-date-input:hover {
     color: #333333 !important;
 }
 
+/* Estilos específicos para service types badges - copiando estilo de metrics-selector */
+/* Estilos base del dropdown */
+#new-service-types .Select-control {
+    background-color: #3b3b3a !important;
+    border-color: #555 !important;
+    border-radius: 10px !important;
+    color: #FFFFFF !important;
+    height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    line-height: 38px !important;
+    transition: all 0.3s ease !important;
+}
+
+#new-service-types .Select-control:hover {
+    border-color: rgba(36, 222, 132, 1) !important;
+}
+
+#new-service-types .Select-control.is-focused {
+    border-color: rgba(36, 222, 132, 1) !important;
+}
+
+#new-service-types .Select-placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 0.85rem !important;
+    text-align: left !important;
+    flex: 1 !important;
+    padding: 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    line-height: 38px !important;
+}
+
+#new-service-types .Select-menu-outer {
+    background-color: rgb(51, 51, 51) !important;
+    border: 1px solid rgba(36, 222, 132, 0.3) !important;
+    border-radius: 10px !important;
+    margin-top: 2px !important;
+    z-index: 1000 !important;
+}
+
+#new-service-types .Select-option {
+    background-color: rgb(51, 51, 51) !important;
+    color: #FFFFFF !important;
+    font-size: 0.85rem !important;
+    padding: 8px 12px !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+#new-service-types .Select-option:hover {
+    background-color: rgba(36, 222, 132, 0.2) !important;
+}
+
+/* Estilos específicos para los badges multi-value */
+#new-service-types .Select-multi-value {
+    background-color: transparent !important;
+    border: 1px solid #24DE84 !important;
+    border-radius: 20px !important;
+    color: #fafafa !important;
+}
+
+#new-service-types .Select-multi-value-wrapper {
+    background-color: transparent !important;
+}
+
+#new-service-types .Select-multi-value .Select-value-label {
+    color: #fafafa !important;
+    font-weight: normal !important;
+}
+
+#new-service-types .Select-multi-value .Select-value-icon {
+    border-left: 1px solid #24DE84 !important;
+    background-color: transparent !important;
+    color: #fafafa !important;
+    border-radius: 0 20px 20px 0 !important;
+}
+
+#new-service-types .Select-multi-value .Select-value-icon:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
+/* Targeting React-Select specific classes for service types selector */
+#new-service-types .css-12jo7m5 {
+    border-left: 1px solid #24DE84 !important;
+}
+
+#new-service-types .css-12jo7m5:hover {
+    background-color: #24DE84 !important;
+    color: #333333 !important;
+}
+
 /* Estilos para sidebar colapsado */
 .sidebar-collapsed .menu-text {
     display: none !important;
@@ -2601,7 +2765,7 @@ input[type="date"]#filter-to-date::-webkit-datetime-edit,
 .date-filter-input::-webkit-datetime-edit {
     color: #FAFAFA !important;
     padding: 2px !important;
-    font-size: 0.75rem !important;
+    font-size: 0.9rem !important;
 }
 
 input[type="date"].custom-date-input::-webkit-datetime-edit-text,
