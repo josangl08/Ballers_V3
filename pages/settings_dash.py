@@ -19,7 +19,7 @@ def show_cloud_mode_info():
 
 
 def create_user_form_dash():
-    """Crea el formulario de usuario para Dash - migrado exactamente de Streamlit (lines 949-1120)"""
+    """Crea el formulario de usuario para Dash - migrado exactamente de Streamlit"""
 
     return dbc.Container(
         [
@@ -63,7 +63,10 @@ def create_user_form_dash():
                                                 ],
                                                 value="player",
                                                 className="standard-dropdown",
-                                                placeholder="Select user type to see specific fields below",
+                                                placeholder=(
+                                                    "Select user type to see specific "
+                                                    "fields below"
+                                                ),
                                             ),
                                         ],
                                         width=12,
@@ -220,8 +223,12 @@ def create_user_form_dash():
                                             # Usar componente reutilizable
                                             create_upload_component(
                                                 upload_id="new-profile-picture",
-                                                preview_id="new-profile-picture-preview",
-                                                clear_btn_id="new-profile-picture-clear-btn",
+                                                preview_id=(
+                                                    "new-profile-picture-preview"
+                                                ),
+                                                clear_btn_id=(
+                                                    "new-profile-picture-clear-btn"
+                                                ),
                                                 title="Profile Picture",
                                             ),
                                         ],
@@ -301,8 +308,10 @@ def create_user_form_dash():
                                                         multi=True,
                                                         value=[
                                                             "Basic"
-                                                        ],  # Default value como en Streamlit
-                                                        placeholder="Select service types...",
+                                                        ],  # Default value
+                                                        placeholder=(
+                                                            "Select service types..."
+                                                        ),
                                                     ),
                                                 ],
                                                 width=6,
@@ -370,7 +379,9 @@ def create_user_form_dash():
                                                     ),
                                                     dbc.Input(
                                                         id="new-internal-role",
-                                                        placeholder="Enter internal role",
+                                                        placeholder=(
+                                                            "Enter internal role"
+                                                        ),
                                                         type="text",
                                                         className="dash-input",
                                                     ),
@@ -442,7 +453,7 @@ def create_sync_settings_dash():
                         },
                     ),
                     # Estado actual del sync
-                    dbc.Alert(id="sync-status-alert", className="mb-3"),
+                    dbc.Alert("", id="sync-status-alert", className="mb-3"),
                     # Configuración de auto-sync
                     dbc.Row(
                         [
@@ -713,7 +724,9 @@ def create_system_settings_dash():
                                 },
                             ),
                             # Estado del auto-sync
-                            dbc.Alert(id="auto-sync-status-alert", className="mb-3"),
+                            dbc.Alert(
+                                "", id="auto-sync-status-alert", className="mb-3"
+                            ),
                             # Configuración de auto-sync
                             html.Div(
                                 id="auto-sync-config",
@@ -761,7 +774,9 @@ def create_system_settings_dash():
                                                         id="auto-start-checkbox",
                                                         options=[
                                                             {
-                                                                "label": "Enable auto-start",
+                                                                "label": (
+                                                                    "Enable auto-start"
+                                                                ),
                                                                 "value": "enable",
                                                             }
                                                         ],
@@ -816,6 +831,7 @@ def create_system_settings_dash():
             ),
             # Alert para mensajes
             dbc.Alert(
+                "",
                 id="system-settings-alert",
                 is_open=False,
                 dismissable=True,
@@ -883,6 +899,7 @@ def create_settings_dashboard_dash():
             html.Div(id="settings-tab-content", className="mt-4"),
             # Alerta para mensajes
             dbc.Alert(
+                "",
                 id="settings-alert",
                 is_open=False,
                 dismissable=True,
@@ -893,7 +910,7 @@ def create_settings_dashboard_dash():
 
 
 def create_edit_user_form_dash():
-    """Crea el formulario de edición de usuario para Dash - migrado de Streamlit (lines 189-433) + Delete User"""
+    """Crea el formulario de edición de usuario para Dash."""
 
     return dbc.Container(
         [
@@ -1034,7 +1051,9 @@ def create_edit_user_form_dash():
                                                     ),
                                                     dbc.Input(
                                                         id="edit-email",
-                                                        placeholder="Enter email address",
+                                                        placeholder=(
+                                                            "Enter email address"
+                                                        ),
                                                         type="email",
                                                         className="dash-input",
                                                     ),
@@ -1049,7 +1068,9 @@ def create_edit_user_form_dash():
                                                     ),
                                                     dbc.Input(
                                                         id="edit-phone",
-                                                        placeholder="Enter phone number",
+                                                        placeholder=(
+                                                            "Enter phone number"
+                                                        ),
                                                         type="tel",
                                                         className="dash-input",
                                                     ),
@@ -1073,13 +1094,17 @@ def create_edit_user_form_dash():
                                                             "index": "edit-birth-date",
                                                         },
                                                         type="date",
-                                                        className="date-filter-input",
+                                                        className=("date-filter-input"),
                                                     ),
-                                                    # Div de output para auto-hide callback
+                                                    # Div de output para auto-hide
                                                     html.Div(
                                                         id={
-                                                            "type": "datepicker-output",
-                                                            "index": "edit-birth-date",
+                                                            "type": (
+                                                                "datepicker-output"
+                                                            ),
+                                                            "index": (
+                                                                "edit-birth-date"
+                                                            ),
                                                         },
                                                         style={"display": "none"},
                                                     ),
@@ -1114,7 +1139,7 @@ def create_edit_user_form_dash():
                                                                 "value": "player",
                                                             },
                                                         ],
-                                                        className="standard-dropdown",
+                                                        className=("standard-dropdown"),
                                                     ),
                                                 ],
                                                 width=6,
@@ -1128,31 +1153,50 @@ def create_edit_user_form_dash():
                                                     html.Div(
                                                         [
                                                             html.Span(
-                                                                id="edit-user-status-text",
+                                                                id=(
+                                                                    "edit-user-status-text"
+                                                                ),
                                                                 style={
                                                                     "color": "#FFFFFF",
                                                                     "font-weight": "500",
-                                                                    "margin-right": "10px",
-                                                                    "display": "inline-block",
+                                                                    "margin-right": (
+                                                                        "10px"
+                                                                    ),
+                                                                    "display": (
+                                                                        "inline-block"
+                                                                    ),
                                                                 },
                                                             ),
                                                             dbc.Button(
                                                                 id="edit-user-status-toggle-btn",
                                                                 size="sm",
                                                                 style={
-                                                                    "background-color": "#1D1B1A",
-                                                                    "color": "rgba(36, 222, 132, 1)",
-                                                                    "border": "1px solid rgba(36, 222, 132, 1)",
-                                                                    "border-radius": "15px",
-                                                                    "font-size": "0.8rem",
-                                                                    "padding": "0.2rem 0.8rem",
+                                                                    "background-color": (
+                                                                        "#1D1B1A"
+                                                                    ),
+                                                                    "color": (
+                                                                        "rgba(36, 222, 132, 1)"
+                                                                    ),
+                                                                    "border": (
+                                                                        "1px solid "
+                                                                        "rgba(36, 222, 132, 1)"
+                                                                    ),
+                                                                    "border-radius": (
+                                                                        "15px"
+                                                                    ),
+                                                                    "font-size": (
+                                                                        "0.8rem"
+                                                                    ),
+                                                                    "padding": (
+                                                                        "0.2rem 0.8rem"
+                                                                    ),
                                                                 },
                                                             ),
                                                         ],
                                                         className="mt-2",
                                                         style={
-                                                            "display": "flex",
-                                                            "align-items": "center",
+                                                            "display": ("flex"),
+                                                            "align-items": ("center"),
                                                         },
                                                     ),
                                                     # Hidden field to store current status
@@ -1207,34 +1251,58 @@ def create_edit_user_form_dash():
                                                         [
                                                             dbc.Label(
                                                                 "Service Types",
-                                                                className="filter-label",
+                                                                className=(
+                                                                    "filter-label"
+                                                                ),
                                                             ),
                                                             dcc.Dropdown(
                                                                 id="edit-service-types",
                                                                 options=[
                                                                     {
-                                                                        "label": "Basic",
-                                                                        "value": "Basic",
+                                                                        "label": (
+                                                                            "Basic"
+                                                                        ),
+                                                                        "value": (
+                                                                            "Basic"
+                                                                        ),
                                                                     },
                                                                     {
-                                                                        "label": "Premium",
-                                                                        "value": "Premium",
+                                                                        "label": (
+                                                                            "Premium"
+                                                                        ),
+                                                                        "value": (
+                                                                            "Premium"
+                                                                        ),
                                                                     },
                                                                     {
-                                                                        "label": "Elite",
-                                                                        "value": "Elite",
+                                                                        "label": (
+                                                                            "Elite"
+                                                                        ),
+                                                                        "value": (
+                                                                            "Elite"
+                                                                        ),
                                                                     },
                                                                     {
-                                                                        "label": "Performance",
-                                                                        "value": "Performance",
+                                                                        "label": (
+                                                                            "Performance"
+                                                                        ),
+                                                                        "value": (
+                                                                            "Performance"
+                                                                        ),
                                                                     },
                                                                     {
-                                                                        "label": "Recovery",
-                                                                        "value": "Recovery",
+                                                                        "label": (
+                                                                            "Recovery"
+                                                                        ),
+                                                                        "value": (
+                                                                            "Recovery"
+                                                                        ),
                                                                     },
                                                                 ],
                                                                 multi=True,
-                                                                placeholder="Select service types...",
+                                                                placeholder=(
+                                                                    "Select service types..."
+                                                                ),
                                                             ),
                                                         ],
                                                         width=6,
@@ -1243,7 +1311,9 @@ def create_edit_user_form_dash():
                                                         [
                                                             dbc.Label(
                                                                 "Number of Enrolled Sessions",
-                                                                className="filter-label",
+                                                                className=(
+                                                                    "filter-label"
+                                                                ),
                                                             ),
                                                             dbc.Input(
                                                                 id="edit-enrolled-sessions",
@@ -1263,7 +1333,9 @@ def create_edit_user_form_dash():
                                             ),
                                             dbc.Textarea(
                                                 id="edit-player-notes",
-                                                placeholder="Add notes about the player...",
+                                                placeholder=(
+                                                    "Add notes about the player..."
+                                                ),
                                                 rows=4,
                                                 className="form-textarea",
                                                 style={
@@ -1297,11 +1369,15 @@ def create_edit_user_form_dash():
                                                         [
                                                             dbc.Label(
                                                                 "Internal Role",
-                                                                className="filter-label",
+                                                                className=(
+                                                                    "filter-label"
+                                                                ),
                                                             ),
                                                             dbc.Input(
                                                                 id="edit-internal-role",
-                                                                placeholder="Enter internal role",
+                                                                placeholder=(
+                                                                    "Enter internal role"
+                                                                ),
                                                                 type="text",
                                                                 className="dash-input",
                                                             ),
@@ -1312,7 +1388,9 @@ def create_edit_user_form_dash():
                                                         [
                                                             dbc.Label(
                                                                 "Permit Level (1-10)",
-                                                                className="filter-label",
+                                                                className=(
+                                                                    "filter-label"
+                                                                ),
                                                             ),
                                                             dbc.Input(
                                                                 id="edit-permit-level",
@@ -1342,7 +1420,8 @@ def create_edit_user_form_dash():
                                         className="mb-3",
                                     ),
                                     dbc.Alert(
-                                        "As an administrator, you can change the password without knowing the previous password.",
+                                        "As an administrator, you can change the password "
+                                        "without knowing the previous password.",
                                         color="info",
                                         className="mb-3",
                                     ),
@@ -1356,7 +1435,9 @@ def create_edit_user_form_dash():
                                                     ),
                                                     dbc.Input(
                                                         id="edit-new-password",
-                                                        placeholder="Enter new password",
+                                                        placeholder=(
+                                                            "Enter new password"
+                                                        ),
                                                         type="password",
                                                         className="dash-input",
                                                     ),
@@ -1371,7 +1452,9 @@ def create_edit_user_form_dash():
                                                     ),
                                                     dbc.Input(
                                                         id="edit-confirm-password",
-                                                        placeholder="Confirm new password",
+                                                        placeholder=(
+                                                            "Confirm new password"
+                                                        ),
                                                         type="password",
                                                         className="dash-input",
                                                     ),
@@ -1493,7 +1576,8 @@ def create_edit_user_form_dash():
                     dbc.ModalBody(
                         [
                             html.P(
-                                "Do you really want to delete this user? This action cannot be undone.",
+                                "Do you really want to delete this user? "
+                                "This action cannot be undone.",
                                 style={
                                     "color": "#FFFFFF",
                                     "font-size": "0.9rem",
@@ -1659,7 +1743,7 @@ def create_users_list_dash():
 
 # Función principal para mostrar contenido (migrada exactamente de settings.py)
 def show_settings_content_dash():
-    """Función principal para mostrar el contenido de la sección Settings - MIGRADA DE STREAMLIT."""
+    """Función principal para mostrar el contenido de la sección Settings."""
 
     return dbc.Container(
         [
@@ -1716,6 +1800,7 @@ def show_settings_content_dash():
             html.Div(id="settings-main-content", className="mt-4"),
             # Alert global para mensajes
             dbc.Alert(
+                "",
                 id="settings-alert",
                 is_open=False,
                 dismissable=True,
@@ -1732,6 +1817,82 @@ def show_settings_content_dash():
                 },
             ),
         ]
+    )
+
+
+def create_user_status_dash():
+    """Crea el tab de User Status para Dash - reutilizando estructura existente"""
+
+    return dbc.Card(
+        [
+            dbc.CardBody(
+                [
+                    html.H5(
+                        "User Status Management",
+                        className="card-title",
+                        style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "font-size": "1.1rem",
+                        },
+                    ),
+                    # Filtros - usando clases estándar del proyecto
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Label(
+                                        "Filter by User Type:",
+                                        className="filter-label",
+                                    ),
+                                    dcc.Dropdown(
+                                        id="user-status-type-filter",
+                                        options=[
+                                            {"label": "All Users", "value": "all"},
+                                            {"label": "Players", "value": "player"},
+                                            {"label": "Coaches", "value": "coach"},
+                                            {
+                                                "label": "Administrators",
+                                                "value": "admin",
+                                            },
+                                        ],
+                                        value="all",
+                                        className="standard-dropdown",
+                                    ),
+                                ],
+                                width=6,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label(
+                                        "Filter by Status:",
+                                        className="filter-label",
+                                    ),
+                                    dcc.Dropdown(
+                                        id="user-status-status-filter",
+                                        options=[
+                                            {"label": "All Status", "value": "all"},
+                                            {"label": "Active", "value": "active"},
+                                            {"label": "Inactive", "value": "inactive"},
+                                        ],
+                                        value="all",
+                                        className="standard-dropdown",
+                                    ),
+                                ],
+                                width=6,
+                            ),
+                        ],
+                        className="mb-3",
+                    ),
+                    # Tabla de usuarios - reutilizamos el contenedor existente
+                    html.Div(id="user-status-table-container", children=[]),
+                ]
+            )
+        ],
+        style={
+            "background-color": "#333333",
+            "border-radius": "10px",
+            "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
+        },
     )
 
 

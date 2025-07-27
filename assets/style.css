@@ -1488,7 +1488,6 @@ div[id*="status-filter"] .Select-control,
 #calendar-status-filter-dropdown .Select,
 #calendar-status-filter-dropdown .Select-control {
     background-color: #3b3b3a !important;
-    border: 1px solid #555 !important;
     border-radius: 8px !important;
 }
 
@@ -2788,6 +2787,8 @@ input[type="date"]#filter-to-date::-webkit-datetime-edit-year-field {
 /* ===== OCULTAR SCROLLBARS DEL CALENDARIO - SOLUCION AGRESIVA ===== */
 div[id*="admin-cal"] *::-webkit-scrollbar,
 div[id*="dash-calendar"] *::-webkit-scrollbar,
+div[id*="admin-sessions-table"] *::-webkit-scrollbar,
+div[id*="user-status-table"] *::-webkit-scrollbar,
 iframe[id*="admin-cal"] *::-webkit-scrollbar,
 iframe[id*="dash-calendar"] *::-webkit-scrollbar {
     display: none !important;
@@ -2797,6 +2798,8 @@ iframe[id*="dash-calendar"] *::-webkit-scrollbar {
 
 div[id*="admin-cal"] *,
 div[id*="dash-calendar"] *,
+div[id*="admin-sessions-table"] *,
+div[id*="user-status-table"] *,
 iframe[id*="admin-cal"] *,
 iframe[id*="dash-calendar"] * {
     scrollbar-width: none !important;
@@ -2813,6 +2816,15 @@ iframe[id*="dash-calendar"] * {
 [class*="fc-scroller"]::-webkit-scrollbar,
 [class*="fc-scrollgrid"]::-webkit-scrollbar {
     display: none !important;
+}
+
+/* ===== CLASE SIMPLE PARA OCULTAR SCROLLBARS ===== */
+.hide-scrollbar {
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* Internet Explorer 10+ */
+}
+.hide-scrollbar::-webkit-scrollbar {
+    display: none !important; /* Safari and Chrome */
 }
 
 /* ===== ESTILOS PARA FILTROS RÁPIDOS EN EDIT SESSION ===== */

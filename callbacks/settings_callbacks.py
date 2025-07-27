@@ -127,7 +127,7 @@ def register_settings_callbacks(app):
         if active_tab == "system-tab":
             return create_sync_settings_dash()
         elif active_tab == "users-tab":
-            # Users tab con 4 subtabs exactamente como en el original
+            # Users tab con 3 subtabs (Delete User integrado en Edit User)
             return html.Div(
                 [
                     dbc.Tabs(
@@ -140,11 +140,6 @@ def register_settings_callbacks(app):
                             dbc.Tab(
                                 label="Edit User",
                                 tab_id="edit-user",
-                                active_label_style={"color": "rgba(36, 222, 132, 1)"},
-                            ),
-                            dbc.Tab(
-                                label="Delete User",
-                                tab_id="delete-user",
                                 active_label_style={"color": "rgba(36, 222, 132, 1)"},
                             ),
                             dbc.Tab(
@@ -170,7 +165,7 @@ def register_settings_callbacks(app):
     )
     def update_users_subtab_content(active_subtab):
         """Actualiza contenido de las subtabs de Users."""
-        from pages.settings_dash import create_user_form_dash, create_users_list_dash
+        from pages.settings_dash import create_user_form_dash
 
         if active_subtab == "create-user":
             return create_user_form_dash()
@@ -178,22 +173,10 @@ def register_settings_callbacks(app):
             from pages.settings_dash import create_edit_user_form_dash
 
             return create_edit_user_form_dash()
-        elif active_subtab == "delete-user":
-            return html.Div(
-                [
-                    html.H4("Delete User", style={"color": "rgba(36, 222, 132, 1)"}),
-                    dbc.Alert("Select users from the list to delete", color="warning"),
-                    create_users_list_dash(),
-                ]
-            )
         elif active_subtab == "user-status":
-            return html.Div(
-                [
-                    html.H4("User Status", style={"color": "rgba(36, 222, 132, 1)"}),
-                    dbc.Alert("User activity and status overview", color="info"),
-                    create_users_list_dash(),
-                ]
-            )
+            from pages.settings_dash import create_user_status_dash
+
+            return create_user_status_dash()
         else:
             return html.Div("Select a subtab to view content")
 
@@ -425,6 +408,9 @@ def register_settings_callbacks(app):
     )
     def update_users_table(filter_type, search_term, alert_state):
         """Actualiza la tabla de usuarios con filtros."""
+        print(
+            f"🔍 DEBUG USERS LIST: filter_type={filter_type}, search_term={search_term}"
+        )
         try:
             # Obtener usuarios usando controlador existente
             users_data = get_users_for_management()
@@ -719,6 +705,54 @@ def register_settings_callbacks(app):
 
         except Exception as e:
             return f"❌ Error: {str(e)}", True, "danger"
+
+    # Callback para toggle de User Status tab - con actualización dinámica de tabla
+    @app.callback(
+        [
+            Output("settings-alert", "children", allow_duplicate=True),
+            Output("settings-alert", "is_open", allow_duplicate=True),
+            Output("settings-alert", "color", allow_duplicate=True),
+            Output("user-status-table-container", "children", allow_duplicate=True),
+        ],
+        [
+            Input(
+                {"type": "toggle-user-status-btn", "index": dash.dependencies.ALL},
+                "n_clicks",
+            )
+        ],
+        [
+            State("user-status-type-filter", "value"),
+            State("user-status-status-filter", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    def toggle_user_status_from_status_tab(n_clicks_list, type_filter, status_filter):
+        """Activa/desactiva usuarios desde User Status tab y actualiza tabla."""
+        if not any(n_clicks_list):
+            return no_update, no_update, no_update, no_update
+
+        # Identificar qué botón fue clickeado
+        ctx = callback_context
+        if not ctx.triggered:
+            return no_update, no_update, no_update, no_update
+
+        button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+        user_id = ast.literal_eval(button_id)["index"]
+
+        try:
+            # Usar controlador existente
+            with UserController() as controller:
+                success, message = controller.toggle_user_status(user_id)
+
+            if success:
+                # Actualizar tabla dinámicamente
+                updated_table = update_user_status_table(type_filter, status_filter)
+                return f"✅ {message}", True, "success", updated_table
+            else:
+                return f"❌ {message}", True, "danger", no_update
+
+        except Exception as e:
+            return f"❌ Error: {str(e)}", True, "danger", no_update
 
     # ========================================================================
     # CALLBACKS PARA EDIT USER
@@ -1551,3 +1585,302 @@ def register_settings_callbacks(app):
                 "",  # Clear confirmation input
                 no_update,
             )
+
+    # ========================================================================
+    # CALLBACKS PARA USER STATUS TAB
+    # ========================================================================
+
+    @app.callback(
+        Output("user-status-table-container", "children"),
+        [
+            Input("user-status-type-filter", "value"),
+            Input("user-status-status-filter", "value"),
+        ],
+        prevent_initial_call=False,
+    )
+    def update_user_status_table(type_filter, status_filter):
+        """Actualiza la tabla de usuarios en User Status con filtros."""
+        try:
+            # Obtener usuarios usando controlador existente
+            users_data = get_users_for_management()
+
+            if not users_data:
+                return dbc.Alert("No users found in the database.", color="info")
+
+            # Filtrar por tipo
+            if type_filter and type_filter != "all":
+                users_data = [
+                    u for u in users_data if u["User Type"].lower() == type_filter
+                ]
+
+            # Filtrar por estado
+            if status_filter == "active":
+                users_data = [u for u in users_data if u["Active_Bool"]]
+            elif status_filter == "inactive":
+                users_data = [u for u in users_data if not u["Active_Bool"]]
+
+            if not users_data:
+                return dbc.Alert("No users match the selected filters.", color="info")
+
+            # Crear headers como en create_sessions_table_dash
+            headers = [
+                html.Th("Type"),
+                html.Th("Name"),
+                html.Th("Username"),
+                html.Th("Email"),
+                html.Th("Status"),
+                html.Th("Actions"),
+            ]
+
+            # Crear filas usando el mismo patrón que create_sessions_table_dash
+            rows = []
+            for user in users_data:
+                # Status con estilo de badge como en sessions
+                status_text = "Active" if user["Active_Bool"] else "Inactive"
+                status_class = (
+                    "status-completed" if user["Active_Bool"] else "status-canceled"
+                )
+
+                # Toggle button - texto muestra acción contraria al estado actual
+                toggle_text = "Deactivate" if user["Active_Bool"] else "Activate"
+                toggle_button = html.Button(
+                    toggle_text,
+                    id={
+                        "type": "toggle-user-status-btn",
+                        "index": user["ID"],
+                    },
+                    style={
+                        "background-color": "#17a2b8",
+                        "color": "white",
+                        "border": "none",
+                        "border-radius": "15px",
+                        "padding": "4px 8px",
+                        "font-size": "0.75rem",
+                        "cursor": "pointer",
+                    },
+                )
+
+                # Iconos Bootstrap según tipo de usuario
+                user_type_lower = user["User Type"].lower()
+                if user_type_lower == "admin":
+                    type_icon = html.I(
+                        className="bi bi-shield-lock-fill me-1",
+                        style={"color": "#dc3545"},
+                    )
+                    type_text = "Admin"
+                elif user_type_lower == "coach":
+                    type_icon = html.I(
+                        className="bi bi-megaphone-fill me-1",
+                        style={"color": "#ffc107"},
+                    )
+                    type_text = "Coach"
+                elif user_type_lower == "player":
+                    type_icon = html.I(
+                        className="bi bi-person-fill me-1",
+                        style={"color": "rgba(36, 222, 132, 1)"},
+                    )
+                    type_text = "Player"
+                else:
+                    type_icon = html.I(
+                        className="bi bi-person me-1", style={"color": "#6c757d"}
+                    )
+                    type_text = "User"
+
+                # Usar exactamente el mismo patrón que create_sessions_table_dash
+                row = html.Tr(
+                    [
+                        html.Td([type_icon, type_text]),
+                        html.Td(user["Name"]),
+                        html.Td(user["Username"]),
+                        html.Td(user["Email"]),
+                        html.Td(
+                            [
+                                html.Span(
+                                    status_text,
+                                    className=status_class,
+                                )
+                            ]
+                        ),
+                        html.Td(toggle_button),
+                    ],
+                    className="table-row-hover",  # Clase CSS existente
+                )
+                rows.append(row)
+
+            # Crear tabla usando el mismo patrón que create_sessions_table_dash
+            table = dbc.Table(
+                [html.Thead(html.Tr(headers)), html.Tbody(rows)],
+                striped=True,
+                bordered=True,
+                hover=True,
+                responsive=True,
+                className="table-dark",  # Usar clase CSS como en sessions que funciona
+            )
+
+            # Envolver con contenedor de scroll simple y limpio
+            return html.Div(
+                [table],
+                className="hide-scrollbar",
+                style={
+                    "max-height": "400px",
+                    "overflow-y": "auto",
+                    "overflow-x": "hidden",
+                },
+            )
+
+        except Exception as e:
+            return dbc.Alert(f"Error loading users: {str(e)}", color="danger")
+
+    @app.callback(
+        Output("user-status-selector", "options"),
+        [
+            Input("user-status-type-filter", "value"),
+            Input("user-status-status-filter", "value"),
+        ],
+        prevent_initial_call=False,
+    )
+    def update_user_status_selector_options(type_filter, status_filter):
+        """Actualiza las opciones del selector de usuarios para User Status."""
+        try:
+            users_data = get_users_for_management()
+
+            if not users_data:
+                return []
+
+            # Aplicar filtros
+            if type_filter and type_filter != "all":
+                users_data = [
+                    u for u in users_data if u["User Type"].lower() == type_filter
+                ]
+
+            if status_filter == "active":
+                users_data = [u for u in users_data if u["Active_Bool"]]
+            elif status_filter == "inactive":
+                users_data = [u for u in users_data if not u["Active_Bool"]]
+
+            # Crear opciones con iconos usando Bootstrap icons
+            options = []
+            for user in users_data:
+                user_type_lower = user["User Type"].lower()
+                if user_type_lower == "admin":
+                    type_text = "🔑 Admin"
+                elif user_type_lower == "coach":
+                    type_text = "📢 Coach"
+                elif user_type_lower == "player":
+                    type_text = "⚽ Player"
+                else:
+                    type_text = "👤 User"
+
+                status_icon = "✅" if user["Active_Bool"] else "❌"
+
+                label = (
+                    f"{type_text} - {user['Name']} ({user['Username']}) {status_icon}"
+                )
+                options.append({"label": label, "value": user["ID"]})
+
+            return options
+
+        except Exception as e:
+            return [{"label": f"Error loading users: {str(e)}", "value": ""}]
+
+    @app.callback(
+        [
+            Output("user-status-action-button-container", "children"),
+            Output("user-status-current-info", "children"),
+        ],
+        [Input("user-status-selector", "value")],
+        prevent_initial_call=True,
+    )
+    def update_user_status_action_section(selected_user_id):
+        """Actualiza la sección de acción y información del usuario seleccionado."""
+        if not selected_user_id:
+            return "", ""
+
+        try:
+            # Obtener información del usuario seleccionado
+            users_data = get_users_for_management()
+            selected_user = next(
+                (u for u in users_data if u["ID"] == selected_user_id), None
+            )
+
+            if not selected_user:
+                return "", dbc.Alert("User not found.", color="danger")
+
+            current_status = "Active" if selected_user["Active_Bool"] else "Inactive"
+            action = "Deactivate" if selected_user["Active_Bool"] else "Activate"
+            button_color = "danger" if selected_user["Active_Bool"] else "success"
+
+            # Botón de acción
+            action_button = dbc.Button(
+                [
+                    html.I(
+                        className=(
+                            "bi bi-toggle2-off me-2"
+                            if selected_user["Active_Bool"]
+                            else "bi bi-toggle2-on me-2"
+                        )
+                    ),
+                    f"{action} User",
+                ],
+                id={"type": "user-status-action-btn", "index": selected_user_id},
+                color=button_color,
+                size="sm",
+                className="w-100",
+                style={"margin-top": "1.9rem"},
+            )
+
+            # Información actual del usuario
+            user_info = dbc.Alert(
+                [
+                    html.Strong(f"{selected_user['Name']}"),
+                    html.Br(),
+                    f"Current status: {current_status}",
+                ],
+                color="info",
+                style={"margin-bottom": "0"},
+            )
+
+            return action_button, user_info
+
+        except Exception as e:
+            return "", dbc.Alert(f"Error: {str(e)}", color="danger")
+
+    @app.callback(
+        [
+            Output("settings-alert", "children", allow_duplicate=True),
+            Output("settings-alert", "is_open", allow_duplicate=True),
+            Output("settings-alert", "color", allow_duplicate=True),
+        ],
+        [
+            Input(
+                {"type": "user-status-action-btn", "index": dash.dependencies.ALL},
+                "n_clicks",
+            )
+        ],
+        prevent_initial_call=True,
+    )
+    def handle_user_status_action(n_clicks_list):
+        """Maneja la acción de cambio de estado de usuario desde User Status."""
+        if not any(n_clicks_list):
+            return no_update, no_update, no_update
+
+        # Identificar qué botón fue clickeado
+        ctx = callback_context
+        if not ctx.triggered:
+            return no_update, no_update, no_update
+
+        button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+        user_id = ast.literal_eval(button_id)["index"]
+
+        try:
+            # Usar controlador existente para cambiar estado
+            with UserController() as controller:
+                success, message = controller.toggle_user_status(user_id)
+
+            if success:
+                return f"✅ {message}", True, "success"
+            else:
+                return f"❌ {message}", True, "danger"
+
+        except Exception as e:
+            return f"❌ Error: {str(e)}", True, "danger"

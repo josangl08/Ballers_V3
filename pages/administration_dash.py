@@ -126,23 +126,39 @@ def create_sessions_content():
                                                             ),
                                                             dbc.Input(
                                                                 id={
-                                                                    "type": "auto-hide-date",
-                                                                    "index": "admin-filter-from-date",
+                                                                    "type": (
+                                                                        "auto-hide-date"
+                                                                    ),
+                                                                    "index": (
+                                                                        (
+                                                                            "admin-filter-from-date"
+                                                                        )
+                                                                    ),
                                                                 },
-                                                                type="date",  # noqa: E501
-                                                                className="date-filter-input",  # noqa: E501
+                                                                type="date",
+                                                                className=(
+                                                                    "date-filter-input"
+                                                                ),
                                                                 value=(
-                                                                    datetime.date.today()  # noqa: E501
-                                                                    - datetime.timedelta(  # noqa: E501
+                                                                    datetime.date.today()
+                                                                    - datetime.timedelta(
                                                                         days=7
                                                                     )
-                                                                ).isoformat(),  # noqa: E501
+                                                                ).isoformat(),
                                                             ),
                                                             # Div de output para auto-hide callback
                                                             html.Div(
                                                                 id={
-                                                                    "type": "datepicker-output",
-                                                                    "index": "admin-filter-from-date",
+                                                                    "type": (
+                                                                        (
+                                                                            "datepicker-output"
+                                                                        )
+                                                                    ),
+                                                                    "index": (
+                                                                        (
+                                                                            "admin-filter-from-date"
+                                                                        )
+                                                                    ),
                                                                 },
                                                                 style={
                                                                     "display": "none"
@@ -168,23 +184,39 @@ def create_sessions_content():
                                                             ),
                                                             dbc.Input(
                                                                 id={
-                                                                    "type": "auto-hide-date",
-                                                                    "index": "admin-filter-to-date",
+                                                                    "type": (
+                                                                        "auto-hide-date"
+                                                                    ),
+                                                                    "index": (
+                                                                        (
+                                                                            "admin-filter-to-date"
+                                                                        )
+                                                                    ),
                                                                 },
-                                                                type="date",  # noqa: E501
-                                                                className="date-filter-input",  # noqa: E501
+                                                                type="date",
+                                                                className=(
+                                                                    "date-filter-input"
+                                                                ),
                                                                 value=(
-                                                                    datetime.date.today()  # noqa: E501
-                                                                    + datetime.timedelta(  # noqa: E501
+                                                                    datetime.date.today()
+                                                                    + datetime.timedelta(
                                                                         days=21
                                                                     )
-                                                                ).isoformat(),  # noqa: E501
+                                                                ).isoformat(),
                                                             ),
                                                             # Div de output para auto-hide callback
                                                             html.Div(
                                                                 id={
-                                                                    "type": "datepicker-output",
-                                                                    "index": "admin-filter-to-date",
+                                                                    "type": (
+                                                                        (
+                                                                            "datepicker-output"
+                                                                        )
+                                                                    ),
+                                                                    "index": (
+                                                                        (
+                                                                            "admin-filter-to-date"
+                                                                        )
+                                                                    ),
                                                                 },
                                                                 style={
                                                                     "display": "none"
@@ -303,7 +335,8 @@ def create_sessions_content():
                                 },
                             ),
                             html.Div(
-                                [html.Div(id="admin-sessions-table")],
+                                id="admin-sessions-table",
+                                className="hide-scrollbar",
                                 style={
                                     "max-height": "400px",
                                     "overflow-y": "auto",
@@ -447,7 +480,7 @@ def create_session_form():
                                     # Div de output para auto-hide callback
                                     html.Div(
                                         id={
-                                            "type": "datepicker-output",
+                                            "type": ("datepicker-output"),
                                             "index": "admin-new-session-date",
                                         },
                                         style={"display": "none"},
@@ -901,7 +934,7 @@ def create_edit_session_form():
                                     # Div de output para auto-hide callback
                                     html.Div(
                                         id={
-                                            "type": "datepicker-output",
+                                            "type": ("datepicker-output"),
                                             "index": "admin-edit-session-date",
                                         },
                                         style={"display": "none"},
