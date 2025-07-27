@@ -507,11 +507,14 @@ div.stExpander {
 
 /* Estilos para inputs de Dash */
 .dash-input {
-    border-radius: 5px;
-    border: 1px solid #666;
-    background-color: #333333;
+    border-radius: 10px;
+    border: 1px solid #555;
+    background-color: #3b3b3a;
     color: #fafafa;
     font-size: 0.75rem;
+    height: 38px;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
 }
 
 .dash-input::placeholder {
@@ -525,8 +528,10 @@ div.stExpander {
 }
 
 .dash-input:focus {
-    border-color: #24DE84;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25);
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    background-color: #3b3b3a !important;
+    outline: none !important;
 }
 
 /* Player cards styling for Dash */
@@ -587,13 +592,7 @@ div.stExpander {
     }
 }
 
-/* Search input styling */
-.dash-input:focus {
-    border-color: #24DE84 !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
-    background-color: #333333 !important;
-    color: #fafafa !important;
-}
+/* Estilo duplicado removido - consolidado arriba */
 
 /* Placeholder color for inputs */
 .dash-input::placeholder {
@@ -661,10 +660,7 @@ div.stExpander {
     border-color: rgba(36, 222, 132, 1) !important;
 }
 
-.standard-dropdown .Select-control.is-focused,
-.standard-dropdown .Select-control.is-focused:not([class*="admin-filter"]) {
-    border-color: rgba(36, 222, 132, 1) !important;
-}
+/* Estilos obsoletos removidos - ahora se usan selectores CSS modernos */
 
 .standard-dropdown .Select-multi-value-wrapper {
     background-color: rgb(51, 51, 51) !important;
@@ -2310,9 +2306,7 @@ input[type="date"].simple-date-input:hover {
     border-color: rgba(36, 222, 132, 1) !important;
 }
 
-#new-service-types .Select-control.is-focused {
-    border-color: rgba(36, 222, 132, 1) !important;
-}
+/* Estilo obsoleto removido - se usa selector CSS moderno */
 
 #new-service-types .Select-placeholder {
     color: rgba(255, 255, 255, 0.7) !important;
@@ -2855,9 +2849,17 @@ iframe[id*="dash-calendar"] * {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Estilos específicos para botón Delete - texto rojo y hover rojo */
+/* Estilos específicos para botón Delete - consistente con modales */
 .btn-delete {
+    background-color: #1D1B1A !important;
     color: #dc3545 !important;
+    border: 2px solid #1D1B1A !important;
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+    padding: 0.4rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    font-size: 0.9rem !important;
 }
 
 .btn-delete:hover {
@@ -2950,3 +2952,53 @@ iframe[id*="dash-calendar"] * {
 
 /* JavaScript para forzar cierre del minicalendario */
 /* Se ejecuta cuando se selecciona una fecha en los inputs date */
+
+/* ===== CLASES COMUNES PARA BOTONES DE MODALES ===== */
+
+/* Botón Cancel común para todos los modales */
+.btn-modal-cancel {
+    background-color: #1D1B1A !important;
+    color: #FFFFFF !important;
+    border: 2px solid #1D1B1A !important;
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+    padding: 0.4rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    font-size: 0.9rem !important;
+}
+
+.btn-modal-cancel:hover {
+    background-color: #1D1B1A !important;
+    color: #24DE84 !important;
+    border-color: #24DE84 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(36, 222, 132, 0.2) !important;
+}
+
+.btn-modal-cancel:active {
+    background-color: #24DE84 !important;
+    color: #1D1B1A !important;
+    transform: translateY(1px) !important;
+}
+
+/* Los botones de confirmación de delete usan la clase .btn-delete ya definida */
+
+/* ===== SOLUCIÓN SIMPLE Y CORRECTA ===== */
+/* Override directo de la regla específica que causa el problema */
+.is-focused:not(.is-open) > .Select-control {
+    border-color: rgba(36, 222, 132, 1) !important;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 0 3px rgba(36, 222, 132, 0.1) !important;
+}
+
+/* ===== INPUT DELETE CONFIRMATION ===== */
+/* Asegurar que el texto sea blanco cuando se escribe DELETE */
+#delete-confirmation-input {
+    color: #FFFFFF !important;
+    background-color: #3b3b3a !important;
+}
+
+#delete-confirmation-input:focus {
+    color: #FFFFFF !important;
+    background-color: #3b3b3a !important;
+}

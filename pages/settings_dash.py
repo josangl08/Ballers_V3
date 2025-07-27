@@ -2,6 +2,8 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
+from common.upload_component import create_upload_component
+
 
 # Funciones simples para reemplazar cloud_utils removido
 def is_streamlit_cloud():
@@ -40,7 +42,8 @@ def create_user_form_dash():
                                     dbc.Col(
                                         [
                                             dbc.Label(
-                                                "User Type *", className="filter-label"
+                                                "User Type *",
+                                                className="filter-label",
                                             ),
                                             dcc.Dropdown(
                                                 id="user-type-selector",
@@ -82,7 +85,8 @@ def create_user_form_dash():
                                     dbc.Col(
                                         [
                                             dbc.Label(
-                                                "Full Name *", className="filter-label"
+                                                "Full Name *",
+                                                className="filter-label",
                                             ),
                                             dbc.Input(
                                                 id="new-fullname",
@@ -101,7 +105,8 @@ def create_user_form_dash():
                                                 className="dash-input",
                                             ),
                                             dbc.Label(
-                                                "Email *", className="mt-2 filter-label"
+                                                "Email *",
+                                                className="mt-2 filter-label",
                                             ),
                                             dbc.Input(
                                                 id="new-email",
@@ -115,7 +120,8 @@ def create_user_form_dash():
                                     dbc.Col(
                                         [
                                             dbc.Label(
-                                                "Password *", className="filter-label"
+                                                "Password *",
+                                                className="filter-label",
                                             ),
                                             dbc.Input(
                                                 id="new-password",
@@ -132,6 +138,26 @@ def create_user_form_dash():
                                                 placeholder="Confirm password",
                                                 type="password",
                                                 className="dash-input",
+                                            ),
+                                            dbc.Label(
+                                                "Date of Birth",
+                                                className="mt-2 filter-label",
+                                            ),
+                                            dbc.Input(
+                                                id={
+                                                    "type": "auto-hide-date",
+                                                    "index": "new-birth-date",
+                                                },
+                                                type="date",
+                                                className="date-filter-input",
+                                            ),
+                                            # Div de output para auto-hide callback
+                                            html.Div(
+                                                id={
+                                                    "type": "datepicker-output",
+                                                    "index": "new-birth-date",
+                                                },
+                                                style={"display": "none"},
                                             ),
                                         ],
                                         width=6,
@@ -152,7 +178,8 @@ def create_user_form_dash():
                                     dbc.Col(
                                         [
                                             dbc.Label(
-                                                "Phone", className="filter-label"
+                                                "Phone",
+                                                className="filter-label",
                                             ),
                                             dbc.Input(
                                                 id="new-phone",
@@ -160,8 +187,14 @@ def create_user_form_dash():
                                                 type="tel",
                                                 className="dash-input",
                                             ),
+                                        ],
+                                        width=6,
+                                    ),
+                                    dbc.Col(
+                                        [
                                             dbc.Label(
-                                                "LINE ID", className="mt-2 filter-label"
+                                                "LINE ID",
+                                                className="filter-label",
                                             ),
                                             dbc.Input(
                                                 id="new-line-id",
@@ -172,44 +205,27 @@ def create_user_form_dash():
                                         ],
                                         width=6,
                                     ),
+                                ],
+                                className="mb-3",
+                            ),
+                            # Profile Picture Row
+                            dbc.Row(
+                                [
                                     dbc.Col(
                                         [
                                             dbc.Label(
-                                                "Date of Birth",
+                                                "Profile Picture",
                                                 className="filter-label",
                                             ),
-                                            dbc.Input(
-                                                id={
-                                                    "type": "auto-hide-date",
-                                                    "index": "new-birth-date",
-                                                },
-                                                type="date",
-                                                className="date-filter-input",
-                                            ),
-                                            # Div de output para auto-hide callback
-                                            html.Div(
-                                                id={
-                                                    "type": "datepicker-output",
-                                                    "index": "new-birth-date",
-                                                },
-                                                style={"display": "none"},
-                                            ),
-                                            dbc.Label(
-                                                "Profile Picture",
-                                                className="mt-2 filter-label",
-                                            ),
-                                            dcc.Upload(
-                                                id="new-profile-picture",
-                                                children=html.Div(
-                                                    [
-                                                        "Drag and Drop or ",
-                                                        html.A("Select Files"),
-                                                    ]
-                                                ),
-                                                className="upload-area",
+                                            # Usar componente reutilizable
+                                            create_upload_component(
+                                                upload_id="new-profile-picture",
+                                                preview_id="new-profile-picture-preview",
+                                                clear_btn_id="new-profile-picture-clear-btn",
+                                                title="Profile Picture",
                                             ),
                                         ],
-                                        width=6,
+                                        width=12,
                                     ),
                                 ],
                                 className="mb-3",
@@ -225,7 +241,10 @@ def create_user_form_dash():
                                             "font-size": "1rem",
                                         },
                                     ),
-                                    dbc.Label("License Name", className="filter-label"),
+                                    dbc.Label(
+                                        "License Name",
+                                        className="filter-label",
+                                    ),
                                     dbc.Input(
                                         id="new-license-name",
                                         placeholder="Enter coaching license",
@@ -308,7 +327,8 @@ def create_user_form_dash():
                                         className="mb-3",
                                     ),
                                     dbc.Label(
-                                        "Additional Notes", className="filter-label"
+                                        "Additional Notes",
+                                        className="filter-label",
                                     ),
                                     dbc.Textarea(
                                         id="new-player-notes",
@@ -416,7 +436,10 @@ def create_sync_settings_dash():
                     html.H5(
                         "Sync Settings",
                         className="card-title",
-                        style={"color": "rgba(36, 222, 132, 1)", "font-size": "1.1rem"},
+                        style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "font-size": "1.1rem",
+                        },
                     ),
                     # Estado actual del sync
                     dbc.Alert(id="sync-status-alert", className="mb-3"),
@@ -446,7 +469,8 @@ def create_sync_settings_dash():
                             dbc.Col(
                                 [
                                     dbc.Label(
-                                        "Auto-start on Login", className="filter-label"
+                                        "Auto-start on Login",
+                                        className="filter-label",
                                     ),
                                     dbc.Checklist(
                                         id="auto-start-sync",
@@ -859,9 +883,701 @@ def create_settings_dashboard_dash():
             html.Div(id="settings-tab-content", className="mt-4"),
             # Alerta para mensajes
             dbc.Alert(
-                id="settings-alert", is_open=False, dismissable=True, className="mt-3"
+                id="settings-alert",
+                is_open=False,
+                dismissable=True,
+                className="mt-3",
             ),
         ]
+    )
+
+
+def create_edit_user_form_dash():
+    """Crea el formulario de edición de usuario para Dash - migrado de Streamlit (lines 189-433) + Delete User"""
+
+    return dbc.Container(
+        [
+            # User Selection Section
+            dbc.Card(
+                [
+                    dbc.CardBody(
+                        [
+                            html.H5(
+                                "Select User to Edit",
+                                className="card-title",
+                                style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "1.1rem",
+                                },
+                            ),
+                            dcc.Dropdown(
+                                id="edit-user-selector",
+                                placeholder="Select a user to edit...",
+                                className="standard-dropdown",
+                                style={"margin-bottom": "20px"},
+                            ),
+                        ]
+                    )
+                ],
+                style={
+                    "background-color": "rgba(51,51,51,0.6)",
+                    "padding": "20px",
+                    "border-radius": "10px",
+                    "margin-bottom": "20px",
+                },
+            ),
+            # User Info Display Section (hidden until user selected)
+            html.Div(
+                id="edit-user-info-display",
+                style={"display": "none"},
+                children=[
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H5(
+                                        "Current User Information",
+                                        style={
+                                            "color": "rgba(36, 222, 132, 1)",
+                                            "font-size": "1.1rem",
+                                            "margin-bottom": "20px",
+                                        },
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    html.Img(
+                                                        id="edit-user-profile-image",
+                                                        src="",
+                                                        style={
+                                                            "width": "150px",
+                                                            "height": "150px",
+                                                            "border-radius": "10px",
+                                                            "object-fit": "cover",
+                                                        },
+                                                    )
+                                                ],
+                                                width=4,
+                                            ),
+                                            dbc.Col(
+                                                [html.Div(id="edit-user-info-text")],
+                                                width=8,
+                                            ),
+                                        ]
+                                    ),
+                                ]
+                            )
+                        ],
+                        style={
+                            "background-color": "rgba(51,51,51,0.6)",
+                            "padding": "20px",
+                            "border-radius": "10px",
+                            "margin-bottom": "20px",
+                        },
+                    )
+                ],
+            ),
+            # Edit Form Section (hidden until user selected)
+            html.Div(
+                id="edit-user-form-container",
+                style={"display": "none"},
+                children=[
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H5(
+                                        "Edit User Information",
+                                        className="card-title",
+                                        style={
+                                            "color": "rgba(36, 222, 132, 1)",
+                                            "font-size": "1.1rem",
+                                        },
+                                    ),
+                                    # Basic Information
+                                    html.H6(
+                                        "Basic Information",
+                                        style={
+                                            "color": "rgba(36, 222, 132, 1)",
+                                            "font-size": "1rem",
+                                        },
+                                        className="mb-3",
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        "Full Name *",
+                                                        className="filter-label",
+                                                    ),
+                                                    dbc.Input(
+                                                        id="edit-fullname",
+                                                        placeholder="Enter full name",
+                                                        type="text",
+                                                        className="dash-input",
+                                                    ),
+                                                    dbc.Label(
+                                                        "Username *",
+                                                        className="mt-2 filter-label",
+                                                    ),
+                                                    dbc.Input(
+                                                        id="edit-username",
+                                                        placeholder="Enter username",
+                                                        type="text",
+                                                        className="dash-input",
+                                                    ),
+                                                    dbc.Label(
+                                                        "Email *",
+                                                        className="mt-2 filter-label",
+                                                    ),
+                                                    dbc.Input(
+                                                        id="edit-email",
+                                                        placeholder="Enter email address",
+                                                        type="email",
+                                                        className="dash-input",
+                                                    ),
+                                                ],
+                                                width=6,
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        "Phone",
+                                                        className="filter-label",
+                                                    ),
+                                                    dbc.Input(
+                                                        id="edit-phone",
+                                                        placeholder="Enter phone number",
+                                                        type="tel",
+                                                        className="dash-input",
+                                                    ),
+                                                    dbc.Label(
+                                                        "LINE ID",
+                                                        className="mt-2 filter-label",
+                                                    ),
+                                                    dbc.Input(
+                                                        id="edit-line-id",
+                                                        placeholder="Enter LINE ID",
+                                                        type="text",
+                                                        className="dash-input",
+                                                    ),
+                                                    dbc.Label(
+                                                        "Date of Birth",
+                                                        className="mt-2 filter-label",
+                                                    ),
+                                                    dbc.Input(
+                                                        id={
+                                                            "type": "auto-hide-date",
+                                                            "index": "edit-birth-date",
+                                                        },
+                                                        type="date",
+                                                        className="date-filter-input",
+                                                    ),
+                                                    # Div de output para auto-hide callback
+                                                    html.Div(
+                                                        id={
+                                                            "type": "datepicker-output",
+                                                            "index": "edit-birth-date",
+                                                        },
+                                                        style={"display": "none"},
+                                                    ),
+                                                ],
+                                                width=6,
+                                            ),
+                                        ],
+                                        className="mb-3",
+                                    ),
+                                    # User Type and Status in same row
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        "User Type *",
+                                                        className="filter-label",
+                                                    ),
+                                                    dcc.Dropdown(
+                                                        id="edit-user-type-selector",
+                                                        options=[
+                                                            {
+                                                                "label": "Admin",
+                                                                "value": "admin",
+                                                            },
+                                                            {
+                                                                "label": "Coach",
+                                                                "value": "coach",
+                                                            },
+                                                            {
+                                                                "label": "Player",
+                                                                "value": "player",
+                                                            },
+                                                        ],
+                                                        className="standard-dropdown",
+                                                    ),
+                                                ],
+                                                width=6,
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        "User Status",
+                                                        className="filter-label",
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            html.Span(
+                                                                id="edit-user-status-text",
+                                                                style={
+                                                                    "color": "#FFFFFF",
+                                                                    "font-weight": "500",
+                                                                    "margin-right": "10px",
+                                                                    "display": "inline-block",
+                                                                },
+                                                            ),
+                                                            dbc.Button(
+                                                                id="edit-user-status-toggle-btn",
+                                                                size="sm",
+                                                                style={
+                                                                    "background-color": "#1D1B1A",
+                                                                    "color": "rgba(36, 222, 132, 1)",
+                                                                    "border": "1px solid rgba(36, 222, 132, 1)",
+                                                                    "border-radius": "15px",
+                                                                    "font-size": "0.8rem",
+                                                                    "padding": "0.2rem 0.8rem",
+                                                                },
+                                                            ),
+                                                        ],
+                                                        className="mt-2",
+                                                        style={
+                                                            "display": "flex",
+                                                            "align-items": "center",
+                                                        },
+                                                    ),
+                                                    # Hidden field to store current status
+                                                    dcc.Store(
+                                                        id="edit-user-current-status"
+                                                    ),
+                                                ],
+                                                width=6,
+                                            ),
+                                        ],
+                                        className="mb-4",
+                                    ),
+                                    # Dynamic Type-Specific Fields
+                                    # Coach Fields
+                                    html.Div(
+                                        [
+                                            html.H6(
+                                                "Coach Information",
+                                                style={
+                                                    "color": "rgba(36, 222, 132, 1)",
+                                                    "font-size": "1rem",
+                                                },
+                                            ),
+                                            dbc.Label(
+                                                "License Name",
+                                                className="filter-label",
+                                            ),
+                                            dbc.Input(
+                                                id="edit-license-name",
+                                                placeholder="Enter coaching license",
+                                                type="text",
+                                                className="dash-input",
+                                            ),
+                                        ],
+                                        id="edit-coach-fields",
+                                        style={"display": "none"},
+                                        className="mb-3",
+                                    ),
+                                    # Player Fields
+                                    html.Div(
+                                        [
+                                            html.H6(
+                                                "Player Information",
+                                                style={
+                                                    "color": "rgba(36, 222, 132, 1)",
+                                                    "font-size": "1rem",
+                                                },
+                                            ),
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Label(
+                                                                "Service Types",
+                                                                className="filter-label",
+                                                            ),
+                                                            dcc.Dropdown(
+                                                                id="edit-service-types",
+                                                                options=[
+                                                                    {
+                                                                        "label": "Basic",
+                                                                        "value": "Basic",
+                                                                    },
+                                                                    {
+                                                                        "label": "Premium",
+                                                                        "value": "Premium",
+                                                                    },
+                                                                    {
+                                                                        "label": "Elite",
+                                                                        "value": "Elite",
+                                                                    },
+                                                                    {
+                                                                        "label": "Performance",
+                                                                        "value": "Performance",
+                                                                    },
+                                                                    {
+                                                                        "label": "Recovery",
+                                                                        "value": "Recovery",
+                                                                    },
+                                                                ],
+                                                                multi=True,
+                                                                placeholder="Select service types...",
+                                                            ),
+                                                        ],
+                                                        width=6,
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Label(
+                                                                "Number of Enrolled Sessions",
+                                                                className="filter-label",
+                                                            ),
+                                                            dbc.Input(
+                                                                id="edit-enrolled-sessions",
+                                                                type="number",
+                                                                min=0,
+                                                                className="dash-input",
+                                                            ),
+                                                        ],
+                                                        width=6,
+                                                    ),
+                                                ],
+                                                className="mb-3",
+                                            ),
+                                            dbc.Label(
+                                                "Additional Notes",
+                                                className="filter-label",
+                                            ),
+                                            dbc.Textarea(
+                                                id="edit-player-notes",
+                                                placeholder="Add notes about the player...",
+                                                rows=4,
+                                                className="form-textarea",
+                                                style={
+                                                    "background-color": "#3b3b3a",
+                                                    "border": "1px solid #555",
+                                                    "border-radius": "10px",
+                                                    "color": "#FFFFFF",
+                                                    "resize": "vertical",
+                                                    "transition": "all 0.3s ease",
+                                                    "font-size": "0.9rem",
+                                                },
+                                            ),
+                                        ],
+                                        id="edit-player-fields",
+                                        style={"display": "none"},
+                                        className="mb-3",
+                                    ),
+                                    # Admin Fields
+                                    html.Div(
+                                        [
+                                            html.H6(
+                                                "Admin Information",
+                                                style={
+                                                    "color": "rgba(36, 222, 132, 1)",
+                                                    "font-size": "1rem",
+                                                },
+                                            ),
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Label(
+                                                                "Internal Role",
+                                                                className="filter-label",
+                                                            ),
+                                                            dbc.Input(
+                                                                id="edit-internal-role",
+                                                                placeholder="Enter internal role",
+                                                                type="text",
+                                                                className="dash-input",
+                                                            ),
+                                                        ],
+                                                        width=6,
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Label(
+                                                                "Permit Level (1-10)",
+                                                                className="filter-label",
+                                                            ),
+                                                            dbc.Input(
+                                                                id="edit-permit-level",
+                                                                type="number",
+                                                                min=1,
+                                                                max=10,
+                                                                className="dash-input",
+                                                            ),
+                                                        ],
+                                                        width=6,
+                                                    ),
+                                                ]
+                                            ),
+                                        ],
+                                        id="edit-admin-fields",
+                                        style={"display": "none"},
+                                        className="mb-3",
+                                    ),
+                                    # Password Change Section
+                                    html.Hr(),
+                                    html.H6(
+                                        "Change Password (Optional)",
+                                        style={
+                                            "color": "rgba(36, 222, 132, 1)",
+                                            "font-size": "1rem",
+                                        },
+                                        className="mb-3",
+                                    ),
+                                    dbc.Alert(
+                                        "As an administrator, you can change the password without knowing the previous password.",
+                                        color="info",
+                                        className="mb-3",
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        "New Password",
+                                                        className="filter-label",
+                                                    ),
+                                                    dbc.Input(
+                                                        id="edit-new-password",
+                                                        placeholder="Enter new password",
+                                                        type="password",
+                                                        className="dash-input",
+                                                    ),
+                                                ],
+                                                width=6,
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        "Confirm New Password",
+                                                        className="filter-label",
+                                                    ),
+                                                    dbc.Input(
+                                                        id="edit-confirm-password",
+                                                        placeholder="Confirm new password",
+                                                        type="password",
+                                                        className="dash-input",
+                                                    ),
+                                                ],
+                                                width=6,
+                                            ),
+                                        ],
+                                        className="mb-3",
+                                    ),
+                                    # Profile Picture Change Section
+                                    html.Hr(),
+                                    html.H6(
+                                        "Change Profile Picture (Optional)",
+                                        style={
+                                            "color": "rgba(36, 222, 132, 1)",
+                                            "font-size": "1rem",
+                                        },
+                                        className="mb-3",
+                                    ),
+                                    # Usar componente reutilizable
+                                    create_upload_component(
+                                        upload_id="edit-profile-picture",
+                                        preview_id="edit-profile-picture-preview",
+                                        clear_btn_id="clear-profile-picture-btn",
+                                        title="New Profile Picture",
+                                    ),
+                                    # Action Buttons
+                                    html.Hr(),
+                                    html.Div(
+                                        [
+                                            dbc.Button(
+                                                "Save Changes",
+                                                id="save-user-changes-btn",
+                                                className="btn-admin-style",
+                                                style={
+                                                    "background-color": "#1D1B1A",
+                                                    "color": "rgba(36, 222, 132, 1)",
+                                                    "border": "2px solid #1D1B1A",
+                                                    "border-radius": "20px",
+                                                    "font-weight": "500",
+                                                    "padding": "0.4rem 1.2rem",
+                                                    "transition": "all 0.3s ease",
+                                                    "cursor": "pointer",
+                                                    "display": "inline-block",
+                                                    "width": "auto",
+                                                    "margin-right": "15px",
+                                                    "font-size": "0.9rem",
+                                                },
+                                            ),
+                                            dbc.Button(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-trash me-2"
+                                                    ),
+                                                    "Delete User",
+                                                ],
+                                                id="show-delete-confirmation-btn",
+                                                className="btn-delete",
+                                                style={
+                                                    "background-color": "#1D1B1A",
+                                                    "color": "#dc3545",
+                                                    "border": "2px solid #1D1B1A",
+                                                    "border-radius": "20px",
+                                                    "font-weight": "500",
+                                                    "padding": "0.4rem 1.2rem",
+                                                    "transition": "all 0.3s ease",
+                                                    "cursor": "pointer",
+                                                    "display": "inline-block",
+                                                    "width": "auto",
+                                                    "font-size": "0.9rem",
+                                                },
+                                            ),
+                                        ],
+                                        style={
+                                            "text-align": "left",
+                                            "margin-top": "10px",
+                                        },
+                                        className="mb-3",
+                                    ),
+                                ]
+                            )
+                        ],
+                        style={
+                            "background-color": "rgba(51,51,51,0.6)",
+                            "padding": "20px",
+                            "border-radius": "10px",
+                            "margin-bottom": "20px",
+                        },
+                    )
+                ],
+            ),
+            # Delete Confirmation Modal (styled like administration)
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(
+                        dbc.ModalTitle(
+                            [
+                                html.I(
+                                    className="bi bi-exclamation-triangle me-2",
+                                    style={
+                                        "color": "#24DE84",
+                                        "font-size": "1.0rem",
+                                    },
+                                ),
+                                "Confirm Delete",
+                            ],
+                            style={
+                                "color": "#FFFFFF",
+                                "font-weight": "600",
+                                "font-size": "1.0rem",
+                            },
+                        ),
+                        style={
+                            "background-color": "rgba(51,51,51,1)",
+                            "border-bottom": "2px solid #24DE84",
+                            "padding": "1rem 1.5rem",
+                        },
+                    ),
+                    dbc.ModalBody(
+                        [
+                            html.P(
+                                "Do you really want to delete this user? This action cannot be undone.",
+                                style={
+                                    "color": "#FFFFFF",
+                                    "font-size": "0.9rem",
+                                    "margin-bottom": "1rem",
+                                    "text-align": "center",
+                                    "line-height": "1.5",
+                                },
+                            ),
+                            html.Div(
+                                id="delete-user-info-display",
+                                style={"margin-bottom": "1rem"},
+                            ),
+                            html.Hr(
+                                style={
+                                    "border-color": "#24DE84",
+                                    "margin": "1rem 0",
+                                }
+                            ),
+                            dbc.Label(
+                                "Type 'DELETE' to confirm:",
+                                style={
+                                    "color": "#FFFFFF",
+                                    "font-weight": "500",
+                                },
+                            ),
+                            dbc.Input(
+                                id="delete-confirmation-input",
+                                placeholder="Type DELETE to confirm",
+                                type="text",
+                                className="dash-input",
+                                style={
+                                    "margin-top": "0.5rem",
+                                },
+                            ),
+                        ],
+                        style={
+                            "background-color": "rgba(51,51,51,1)",
+                            "padding": "2rem 1.5rem",
+                            "border": "none",
+                        },
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button(
+                                "Cancel",
+                                id="cancel-delete-btn",
+                                className="btn-modal-cancel",
+                                style={
+                                    "margin-right": "15px",
+                                },
+                            ),
+                            dbc.Button(
+                                [
+                                    html.I(className="bi bi-trash me-2"),
+                                    "Delete",
+                                ],
+                                id="confirm-delete-btn",
+                                className="btn-delete",
+                                disabled=True,
+                            ),
+                        ],
+                        style={
+                            "background-color": "rgba(51,51,51,1)",
+                            "border-top": "2px solid #24DE84",
+                            "padding": "1rem 1.5rem",
+                            "justify-content": "flex-start",
+                            "display": "flex",
+                        },
+                    ),
+                ],
+                id="delete-confirmation-modal",
+                is_open=False,
+                style={"z-index": "1060"},
+                backdrop="static",
+                fade=True,
+                size="md",
+                centered=True,
+            ),
+        ],
+        fluid=True,
+        style={
+            "padding": "20px",
+            "min-height": "80vh",
+        },
     )
 
 
@@ -875,7 +1591,10 @@ def create_users_list_dash():
                     html.H5(
                         "Users Management",
                         className="card-title",
-                        style={"color": "rgba(36, 222, 132, 1)", "font-size": "1.1rem"},
+                        style={
+                            "color": "rgba(36, 222, 132, 1)",
+                            "font-size": "1.1rem",
+                        },
                     ),
                     # Filtros
                     dbc.Row(
@@ -885,9 +1604,18 @@ def create_users_list_dash():
                                     dcc.Dropdown(
                                         id="users-filter-type",
                                         options=[
-                                            {"label": "All Users", "value": "all"},
-                                            {"label": "Players", "value": "player"},
-                                            {"label": "Coaches", "value": "coach"},
+                                            {
+                                                "label": "All Users",
+                                                "value": "all",
+                                            },
+                                            {
+                                                "label": "Players",
+                                                "value": "player",
+                                            },
+                                            {
+                                                "label": "Coaches",
+                                                "value": "coach",
+                                            },
                                             {
                                                 "label": "Administrators",
                                                 "value": "admin",
