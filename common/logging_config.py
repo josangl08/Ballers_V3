@@ -132,7 +132,7 @@ def get_logging_config(environment: str = "development") -> Dict[str, Any]:
                 "propagate": False,
             },
             "controllers": {
-                "level": "DEBUG",
+                "level": "INFO",  # Cambiar de DEBUG a INFO para reducir verbosidad
                 "handlers": ["console"],
                 "propagate": False,
             },

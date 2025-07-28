@@ -1885,7 +1885,6 @@ def register_settings_callbacks(app):
         except Exception as e:
             return f"❌ Error: {str(e)}", True, "danger"
 
-
     # ========================================================================
     # CALLBACKS PARA SYSTEM SETTINGS TAB
     # ========================================================================
@@ -1925,9 +1924,9 @@ def register_settings_callbacks(app):
 
         try:
             if trigger_id == "backup-db-btn" and backup_clicks:
+                import datetime as dt
                 import os
                 import shutil
-                import datetime as dt
 
                 backup_dir = "backups"
                 if not os.path.exists(backup_dir):
@@ -2040,9 +2039,17 @@ def register_settings_callbacks(app):
                                 "success",
                             )
                         else:
-                            return "✅ Manual sync completed: No changes", True, "success"
+                            return (
+                                "✅ Manual sync completed: No changes",
+                                True,
+                                "success",
+                            )
                     else:
-                        return f"❌ Manual sync failed: {result['error']}", True, "danger"
+                        return (
+                            f"❌ Manual sync failed: {result['error']}",
+                            True,
+                            "danger",
+                        )
                 except Exception as e:
                     return f"❌ Error during manual sync: {e}", True, "danger"
 
@@ -2164,4 +2171,3 @@ def register_settings_callbacks(app):
                 color="danger",
                 style={"font-size": "0.9rem"},
             )
-

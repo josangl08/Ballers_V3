@@ -349,15 +349,36 @@ def register_administration_callbacks(app):
             Input({"type": "auto-hide-date", "index": "admin-filter-to-date"}, "value"),
             Input("admin-filter-coach", "value"),
             Input("admin-status-filters", "data"),
+            Input("webhook-trigger", "data"),  # SSE trigger para auto-refresh
         ],
         [State("admin-main-tabs", "active_tab")],
         prevent_initial_call=False,
     )
     def update_calendar_and_table(
-        from_date, to_date, coach_filter, status_filter, active_tab
+        from_date, to_date, coach_filter, status_filter, webhook_trigger, active_tab
     ):
         """Actualiza calendario y tabla según filtros - RESTAURADO FUNCIONAL."""
+        # Debug: logging callback execution
+        import time
+        current_time = int(time.time())
+        print(f"🔍 DEBUG: update_calendar_and_table called at {current_time}")
+        print(f"🔍 DEBUG: webhook_trigger = {webhook_trigger} (type: {type(webhook_trigger)})")
+        print(f"🔍 DEBUG: active_tab = {active_tab}")
+        print(f"🔍 DEBUG: from_date = {from_date}")
+        print(f"🔍 DEBUG: to_date = {to_date}")
+        print(f"🔍 DEBUG: coach_filter = {coach_filter}")
+        print(f"🔍 DEBUG: status_filter = {status_filter}")
+        
+        # Verificar si este callback fue disparado por webhook
+        if webhook_trigger and webhook_trigger > 0:
+            time_diff = current_time - webhook_trigger
+            print(f"🎯 WEBHOOK TRIGGERED CALLBACK: update_calendar_and_table")
+            print(f"🎯 Time difference: {time_diff} seconds since webhook trigger")
+        else:
+            print(f"⚙️ FILTER TRIGGERED CALLBACK: update_calendar_and_table")
+        
         if active_tab != "sessions-tab":
+            print(f"🔍 DEBUG: Skipping update - not on sessions-tab")
             return html.Div(), html.Div()
 
         try:
@@ -416,9 +437,11 @@ def register_administration_callbacks(app):
                         },
                     )
 
+                print(f"🔍 DEBUG: Admin calendar and table updated successfully")
                 return calendar_content, table_content
 
         except Exception as e:
+            print(f"🔍 DEBUG: Error in update_calendar_and_table: {e}")
             error_div = html.Div(
                 f"Error loading data: {str(e)}",
                 style={"color": "red", "text-align": "center", "padding": "20px"},
@@ -1700,3 +1723,21 @@ def register_administration_callbacks(app):
                 "danger",
                 _get_toast_style(),
             )
+
+
+def create_webhook_update_callback(app):
+    """
+    Crea callback global para actualizar el Store cuando hay cambios de webhook.
+    Esta función será llamada por el webhook server cuando reciba eventos.
+    """
+    import time
+    
+    def trigger_ui_refresh():
+        """Actualiza el webhook-changes-store para disparar refresh en UI."""
+        timestamp = time.time()
+        # En una implementación real, esto se haría vía un mecanismo IPC 
+        # Por ahora, podemos usar un archivo temporal o redis
+        return {"timestamp": timestamp, "source": "webhook"}
+    
+    # Retornar la función para que el webhook server la pueda usar
+    return trigger_ui_refresh

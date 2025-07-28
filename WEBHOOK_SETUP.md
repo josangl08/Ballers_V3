@@ -157,7 +157,7 @@ python main_dash.py  # Webhook real con Google Calendar
 
 1. **✅ STAGE 1-3 COMPLETADOS**: Webhook server + Google Calendar integration
 2. **🎯 STAGE 4**: Real-time UI updates vía Server-Sent Events
-3. **🎯 STAGE 5**: Enhanced notification system 
+3. **🎯 STAGE 5**: Enhanced notification system
 4. **🎯 STAGE 6**: UI simplification con webhook status
 5. **🎯 STAGE 7**: Testing completo + deployment guide
 

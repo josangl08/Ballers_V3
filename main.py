@@ -12,6 +12,7 @@ from common.menu import create_sidebar_menu, get_content_path
 from config import APP_ICON, APP_NAME, CSS_FILE, STYLES_DIR
 from controllers.auth_controller import AuthController
 from controllers.db import initialize_database
+
 # Auto-sync imports removed - migrated to webhook-based real-time sync
 
 # Configuración de la página

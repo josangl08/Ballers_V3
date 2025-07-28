@@ -195,26 +195,48 @@ def register_player_callbacks(app):
             Input(
                 "selected-player-id", "data"
             ),  # Mover de State a Input para manejar cambios
+            Input("webhook-trigger", "data"),  # SSE trigger para auto-refresh
         ],
         prevent_initial_call=False,  # Permitir inicialización
     )
-    def update_sessions_calendar_content(from_date, to_date, status_filter, player_id):
+    def update_sessions_calendar_content(from_date, to_date, status_filter, player_id, webhook_trigger):
         """
         Actualiza el contenido del calendario de sesiones de forma reactiva.
         Se actualiza automáticamente cuando cambian los filtros.
         """
+        # Debug: logging callback execution
+        import time
+        current_time = int(time.time())
+        print(f"🔍 DEBUG: update_sessions_calendar_content called at {current_time}")
+        print(f"🔍 DEBUG: webhook_trigger = {webhook_trigger} (type: {type(webhook_trigger)})")
+        print(f"🔍 DEBUG: from_date = {from_date}")
+        print(f"🔍 DEBUG: to_date = {to_date}")
+        print(f"🔍 DEBUG: status_filter = {status_filter}")
+        print(f"🔍 DEBUG: player_id = {player_id}")
+        
+        # Verificar si este callback fue disparado por webhook
+        if webhook_trigger and webhook_trigger > 0:
+            time_diff = current_time - webhook_trigger
+            print(f"🎯 WEBHOOK TRIGGERED CALLBACK: update_sessions_calendar_content")
+            print(f"🎯 Time difference: {time_diff} seconds since webhook trigger")
+        else:
+            print(f"📅 FILTER TRIGGERED CALLBACK: update_sessions_calendar_content")
+        
         from pages.ballers_dash import create_sessions_calendar_dash
 
         # Usar filtros del store, por defecto todos están activos
         if not status_filter:
             status_filter = ["scheduled", "completed", "canceled"]
 
-        return create_sessions_calendar_dash(
+        result = create_sessions_calendar_dash(
             from_date=from_date,
             to_date=to_date,
             status_filter=status_filter,
             player_id=player_id,
         )
+        
+        print(f"🔍 DEBUG: Calendar updated successfully")
+        return result
 
     @app.callback(
         Output("performance-evolution-chart", "figure"),

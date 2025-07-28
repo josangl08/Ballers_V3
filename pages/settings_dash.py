@@ -696,7 +696,7 @@ def create_system_settings_dash():
                             dbc.Alert(
                                 "🚀 Webhook-based real-time sync (implementation in progress)",
                                 color="info",
-                                className="mb-3"
+                                className="mb-3",
                             ),
                             # Manual sync as fallback
                             dbc.Row(

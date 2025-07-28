@@ -244,10 +244,12 @@ def start_auto_sync(interval_minutes: int = 5) -> bool:
     logger.warning("start_auto_sync called but auto-sync has been deprecated")
     return False
 
+
 def stop_auto_sync() -> bool:
     """DEPRECATED: Auto-sync replaced with webhook-based real-time sync"""
     logger.warning("stop_auto_sync called but auto-sync has been deprecated")
     return False
+
 
 def get_auto_sync_status() -> Dict[str, Any]:
     """DEPRECATED: Returns empty status as auto-sync has been replaced"""
@@ -268,18 +270,21 @@ def get_auto_sync_status() -> Dict[str, Any]:
         "problems_timestamp": None,
     }
 
+
 def is_auto_sync_running() -> bool:
     """DEPRECATED: Always returns False as auto-sync has been replaced"""
     return False
+
 
 def has_pending_notifications() -> bool:
     """DEPRECATED: Always returns False as auto-sync notifications replaced with webhook notifications"""
     return False
 
+
 # New manual sync function - independent of auto-sync infrastructure
 def force_manual_sync() -> Dict[str, Any]:
     """Manual sync independent of auto-sync system"""
-    
+
     if is_streamlit_cloud():
         print("🌐 Cloud: Simulando sync manual...")
         return {
@@ -335,7 +340,7 @@ def force_manual_sync() -> Dict[str, Any]:
 
     except Exception as e:
         duration = time.time() - start_time
-        
+
         # Clear problems on error
         save_sync_problems([], [])
         logger.error(f"❌ Manual sync error: {e}")

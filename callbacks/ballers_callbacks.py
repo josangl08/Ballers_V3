@@ -109,12 +109,31 @@ def register_ballers_callbacks(app):
                 {"type": "auto-hide-date", "index": "ballers-filter-to-date"}, "value"
             ),
             Input("status-filters", "data"),
+            Input("webhook-trigger", "data"),  # SSE trigger para auto-refresh
         ],
         [State("selected-player-id", "data")],
         prevent_initial_call=True,
     )
-    def update_sessions_table(from_date, to_date, status_filters, selected_player_id):
+    def update_sessions_table(from_date, to_date, status_filters, webhook_trigger, selected_player_id):
         """Actualiza la tabla de sesiones según los filtros"""
+        # Debug: logging callback execution
+        import time
+        current_time = int(time.time())
+        print(f"🔍 DEBUG: update_sessions_table called at {current_time}")
+        print(f"🔍 DEBUG: webhook_trigger = {webhook_trigger} (type: {type(webhook_trigger)})")
+        print(f"🔍 DEBUG: from_date = {from_date}")
+        print(f"🔍 DEBUG: to_date = {to_date}")
+        print(f"🔍 DEBUG: status_filters = {status_filters}")
+        print(f"🔍 DEBUG: selected_player_id = {selected_player_id}")
+        
+        # Verificar si este callback fue disparado por webhook
+        if webhook_trigger and webhook_trigger > 0:
+            time_diff = current_time - webhook_trigger
+            print(f"🎯 WEBHOOK TRIGGERED CALLBACK: update_sessions_table")
+            print(f"🎯 Time difference: {time_diff} seconds since webhook trigger")
+        else:
+            print(f"📋 FILTER TRIGGERED CALLBACK: update_sessions_table")
+        
         try:
             # Convertir strings de fecha a objetos date si están disponibles
             from_date_obj = None
