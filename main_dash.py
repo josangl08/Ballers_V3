@@ -1,4 +1,5 @@
 # main_dash.py - Aplicación principal migrada de Streamlit a Dash
+import atexit
 import logging
 import os
 
@@ -24,6 +25,13 @@ from common.menu_dash import register_menu_callbacks
 # Importar configuración
 from config import APP_ICON, APP_NAME  # noqa: F401
 from controllers.db import initialize_database  # noqa: F401
+
+# Importar integración completa de webhooks
+from controllers.webhook_integration import (
+    initialize_webhook_integration, 
+    shutdown_webhook_integration,
+    is_webhook_integration_healthy
+)
 
 # Configuración de la aplicación Dash
 app = dash.Dash(
@@ -96,13 +104,59 @@ def initialize_dash_app():
     # Registrar callbacks
     register_all_callbacks()
 
+    # Inicializar integración completa de webhooks para sync en tiempo real
+    _initialize_webhook_integration()
+
     return app
+
+
+def _initialize_webhook_integration():
+    """Inicializa la integración completa de webhooks (servidor + Google Calendar)."""
+    # Evitar doble inicialización en modo debug (Flask reloader)
+    if os.getenv('WERKZEUG_RUN_MAIN') == 'true':
+        return  # Skip initialization in reloader process
+        
+    try:
+        print("🚀 Initializing complete webhook integration for real-time sync...")
+        success = initialize_webhook_integration()
+        
+        if success:
+            print("✅ Webhook integration initialized successfully")
+            print("📡 Real-time sync with Google Calendar fully enabled")
+            print("🔄 Auto-renewal system active for webhook channels")
+            
+            # Registrar cleanup al cerrar la aplicación
+            atexit.register(_cleanup_webhook_integration)
+        else:
+            print("⚠️ Failed to initialize webhook integration - using manual sync only")
+            print("📝 Real-time sync disabled, manual sync remains available")
+            
+    except Exception as e:
+        print(f"❌ Error initializing webhook integration: {e}")
+        print("📝 Fallback: Manual sync remains available")
+
+
+def _cleanup_webhook_integration():
+    """Limpia la integración completa de webhooks al cerrar la aplicación."""
+    try:
+        print("🧹 Cleaning up webhook integration...")
+        shutdown_webhook_integration()
+        print("✅ Webhook integration shut down successfully")
+    except Exception as e:
+        print(f"⚠️ Error shutting down webhook integration: {e}")
 
 
 if __name__ == "__main__":
     app = initialize_dash_app()
 
     print("🚀 Starting Ballers Dash Application...")
-    print("📊 Visit: http://127.0.0.1:8050")
+    print("📊 Main app: http://127.0.0.1:8050")
+    print("📡 Webhook integration: http://127.0.0.1:8001/webhook/calendar")
+    
+    # Verificar estado de integración después de inicialización
+    if is_webhook_integration_healthy():
+        print("💚 Real-time sync: ACTIVE")
+    else:
+        print("🟡 Real-time sync: INACTIVE (manual sync available)")
 
     app.run(debug=True, host="127.0.0.1", port=8050)

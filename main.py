@@ -12,7 +12,7 @@ from common.menu import create_sidebar_menu, get_content_path
 from config import APP_ICON, APP_NAME, CSS_FILE, STYLES_DIR
 from controllers.auth_controller import AuthController
 from controllers.db import initialize_database
-from controllers.sync_coordinator import is_auto_sync_running, start_auto_sync
+# Auto-sync imports removed - migrated to webhook-based real-time sync
 
 # Configuración de la página
 st.set_page_config(
@@ -191,13 +191,8 @@ def main():
         if user_type in ["admin", "coach"]:
             try:
 
-                # Verificar si debe auto-iniciarse
-                auto_start = st.session_state.get("auto_sync_auto_start", False)
-                interval = st.session_state.get("auto_sync_interval", 5)
-
-                # Auto-iniciar solo si está configurado y no está ya ejecutándose
-                if auto_start and not is_auto_sync_running():
-                    start_auto_sync(interval)
+                # Auto-sync startup logic removed - migrated to webhook-based real-time sync
+                pass
 
             except ImportError:
                 # Auto-sync no disponible, continuar normalmente

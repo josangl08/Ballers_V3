@@ -149,11 +149,10 @@ SESSION_SECRET = get_config_value("SESSION_SECRET", "your-default-secret-key")
 # Configuración de calendario
 CALENDAR_ENABLED = get_config_value("CALENDAR_ENABLED", "True") == "True"
 
-# Configuración de auto-sync
-AUTO_SYNC_DEFAULT_INTERVAL = int(
-    str(get_config_value("AUTO_SYNC_DEFAULT_INTERVAL", "10"))
-)
-AUTO_SYNC_AUTO_START = get_config_value("AUTO_SYNC_AUTO_START", "False") == "True"
+# Configuración de webhook-based sync (future implementation)
+WEBHOOK_PORT = int(str(get_config_value("WEBHOOK_PORT", "8001")))
+WEBHOOK_SECRET_TOKEN = get_config_value("WEBHOOK_SECRET_TOKEN", "default-secret-token")
+WEBHOOK_BASE_URL = get_config_value("WEBHOOK_BASE_URL", "http://localhost:8001")
 
 # Colores para las sesiones (código Google Calendar + color HEX para la UI)
 CALENDAR_COLORS = {

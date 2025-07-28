@@ -5,6 +5,7 @@ streamlit>=1.28.0  # Legacy - to be removed after migration
 dash>=2.14.0
 dash-bootstrap-components>=1.5.0
 dash-table>=5.0.0
+flask>=3.0.0  # For webhook server
 
 # Database
 sqlalchemy>=2.0.0

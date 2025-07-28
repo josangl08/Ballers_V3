@@ -508,9 +508,7 @@ def create_sync_settings_dash():
                                     dbc.Button(
                                         "Start Auto-sync",
                                         id="start-sync-btn",
-                                        color="success",
-                                        className="w-100",
-                                        style={"border-radius": "20px"},
+                                        className="btn-admin-style w-100",
                                     )
                                 ],
                                 width=6,
@@ -520,9 +518,7 @@ def create_sync_settings_dash():
                                     dbc.Button(
                                         "Stop Auto-sync",
                                         id="stop-sync-btn",
-                                        color="danger",
-                                        className="w-100",
-                                        style={"border-radius": "20px"},
+                                        className="btn-admin-style w-100",
                                     )
                                 ],
                                 width=6,
@@ -537,14 +533,7 @@ def create_sync_settings_dash():
                                     dbc.Button(
                                         "🔄 Manual Sync",
                                         id="manual-sync-settings-btn",
-                                        color="primary",
-                                        className="w-100",
-                                        style={
-                                            "border-radius": "20px",
-                                            "background-color": "#333333",
-                                            "color": "rgba(36, 222, 132, 1)",
-                                            "border": "none",
-                                        },
+                                        className="btn-admin-style w-100",
                                     )
                                 ],
                                 width=12,
@@ -584,9 +573,7 @@ def create_system_settings_dash():
                             dbc.Button(
                                 "Clear Sync Results",
                                 id="clear-sync-results-btn",
-                                color="warning",
-                                className="w-100 mt-2",
-                                style={"border-radius": "20px"},
+                                className="btn-admin-style w-100 mt-2",
                             ),
                         ]
                     )
@@ -618,14 +605,7 @@ def create_system_settings_dash():
                                             dbc.Button(
                                                 "Create a backup copy of the database",
                                                 id="backup-db-btn",
-                                                color="primary",
-                                                className="w-100",
-                                                style={
-                                                    "border-radius": "20px",
-                                                    "background-color": "#333333",
-                                                    "color": "rgba(36, 222, 132, 1)",
-                                                    "border": "none",
-                                                },
+                                                className="btn-admin-style w-100",
                                             )
                                         ],
                                         width=6,
@@ -635,14 +615,7 @@ def create_system_settings_dash():
                                             dbc.Button(
                                                 "Refresh Google Sheets",
                                                 id="refresh-sheets-btn",
-                                                color="secondary",
-                                                className="w-100",
-                                                style={
-                                                    "border-radius": "20px",
-                                                    "background-color": "#333333",
-                                                    "color": "rgba(36, 222, 132, 1)",
-                                                    "border": "none",
-                                                },
+                                                className="btn-admin-style w-100",
                                             )
                                         ],
                                         width=6,
@@ -679,9 +652,7 @@ def create_system_settings_dash():
                                             dbc.Button(
                                                 "Push local sessions → Google Calendar",
                                                 id="sync-to-calendar-btn",
-                                                color="success",
-                                                className="w-100",
-                                                style={"border-radius": "20px"},
+                                                className="btn-admin-style w-100",
                                             )
                                         ],
                                         width=6,
@@ -691,9 +662,7 @@ def create_system_settings_dash():
                                             dbc.Button(
                                                 "Bring events ← Google Calendar",
                                                 id="sync-from-calendar-btn",
-                                                color="info",
-                                                className="w-100",
-                                                style={"border-radius": "20px"},
+                                                className="btn-admin-style w-100",
                                             )
                                         ],
                                         width=6,
@@ -710,115 +679,39 @@ def create_system_settings_dash():
                     "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
                 },
             ),
-            # Auto-Sync Management (migrado de lines 1042-1080)
+            # Real-time Sync Management (Webhook-based)
             dbc.Card(
                 [
                     dbc.CardBody(
                         [
                             html.H5(
-                                "Auto-Sync Management",
+                                "Real-time Sync Management",
                                 className="card-title",
                                 style={
                                     "color": "rgba(36, 222, 132, 1)",
                                     "font-size": "1.1rem",
                                 },
                             ),
-                            # Estado del auto-sync
+                            # Webhook status display (placeholder)
                             dbc.Alert(
-                                "", id="auto-sync-status-alert", className="mb-3"
+                                "🚀 Webhook-based real-time sync (implementation in progress)",
+                                color="info",
+                                className="mb-3"
                             ),
-                            # Configuración de auto-sync
-                            html.Div(
-                                id="auto-sync-config",
-                                children=[
-                                    dbc.Row(
+                            # Manual sync as fallback
+                            dbc.Row(
+                                [
+                                    dbc.Col(
                                         [
-                                            dbc.Col(
-                                                [
-                                                    dbc.Label(
-                                                        "Sync Interval (minutes)",
-                                                        className="filter-label",
-                                                    ),
-                                                    dcc.Slider(
-                                                        id="sync-interval-slider",
-                                                        min=2,
-                                                        max=60,
-                                                        value=5,
-                                                        marks={
-                                                            i: str(i)
-                                                            for i in [
-                                                                2,
-                                                                5,
-                                                                10,
-                                                                15,
-                                                                30,
-                                                                60,
-                                                            ]
-                                                        },
-                                                        step=1,
-                                                        tooltip={
-                                                            "placement": "bottom",
-                                                            "always_visible": True,
-                                                        },
-                                                    ),
-                                                ],
-                                                width=8,
-                                            ),
-                                            dbc.Col(
-                                                [
-                                                    dbc.Label(
-                                                        "Auto-start on Login",
-                                                        className="filter-label",
-                                                    ),
-                                                    dbc.Checklist(
-                                                        id="auto-start-checkbox",
-                                                        options=[
-                                                            {
-                                                                "label": (
-                                                                    "Enable auto-start"
-                                                                ),
-                                                                "value": "enable",
-                                                            }
-                                                        ],
-                                                        value=[],
-                                                        className="mt-2",
-                                                    ),
-                                                ],
-                                                width=4,
-                                            ),
+                                            dbc.Button(
+                                                "Manual Sync Now",
+                                                id="manual-sync-btn",
+                                                className="btn-admin-style w-100",
+                                            )
                                         ],
-                                        className="mb-3",
+                                        width=12,
                                     ),
-                                    # Botones de control
-                                    dbc.Row(
-                                        [
-                                            dbc.Col(
-                                                [
-                                                    dbc.Button(
-                                                        "Start Auto-Sync",
-                                                        id="start-auto-sync-btn",
-                                                        color="success",
-                                                        className="w-100",
-                                                        style={"border-radius": "20px"},
-                                                    )
-                                                ],
-                                                width=6,
-                                            ),
-                                            dbc.Col(
-                                                [
-                                                    dbc.Button(
-                                                        "Stop Auto-Sync",
-                                                        id="stop-auto-sync-btn",
-                                                        color="danger",
-                                                        className="w-100",
-                                                        style={"border-radius": "20px"},
-                                                    )
-                                                ],
-                                                width=6,
-                                            ),
-                                        ]
-                                    ),
-                                ],
+                                ]
                             ),
                         ]
                     )
@@ -1170,26 +1063,10 @@ def create_edit_user_form_dash():
                                                             dbc.Button(
                                                                 id="edit-user-status-toggle-btn",
                                                                 size="sm",
+                                                                className="btn-admin-style",
                                                                 style={
-                                                                    "background-color": (
-                                                                        "#1D1B1A"
-                                                                    ),
-                                                                    "color": (
-                                                                        "rgba(36, 222, 132, 1)"
-                                                                    ),
-                                                                    "border": (
-                                                                        "1px solid "
-                                                                        "rgba(36, 222, 132, 1)"
-                                                                    ),
-                                                                    "border-radius": (
-                                                                        "15px"
-                                                                    ),
-                                                                    "font-size": (
-                                                                        "0.8rem"
-                                                                    ),
-                                                                    "padding": (
-                                                                        "0.2rem 0.8rem"
-                                                                    ),
+                                                                    "font-size": "0.8rem",
+                                                                    "padding": "0.2rem 0.8rem",
                                                                 },
                                                             ),
                                                         ],
@@ -1490,18 +1367,7 @@ def create_edit_user_form_dash():
                                                 id="save-user-changes-btn",
                                                 className="btn-admin-style",
                                                 style={
-                                                    "background-color": "#1D1B1A",
-                                                    "color": "rgba(36, 222, 132, 1)",
-                                                    "border": "2px solid #1D1B1A",
-                                                    "border-radius": "20px",
-                                                    "font-weight": "500",
-                                                    "padding": "0.4rem 1.2rem",
-                                                    "transition": "all 0.3s ease",
-                                                    "cursor": "pointer",
-                                                    "display": "inline-block",
-                                                    "width": "auto",
                                                     "margin-right": "15px",
-                                                    "font-size": "0.9rem",
                                                 },
                                             ),
                                             dbc.Button(
@@ -1514,17 +1380,7 @@ def create_edit_user_form_dash():
                                                 id="show-delete-confirmation-btn",
                                                 className="btn-delete",
                                                 style={
-                                                    "background-color": "#1D1B1A",
                                                     "color": "#dc3545",
-                                                    "border": "2px solid #1D1B1A",
-                                                    "border-radius": "20px",
-                                                    "font-weight": "500",
-                                                    "padding": "0.4rem 1.2rem",
-                                                    "transition": "all 0.3s ease",
-                                                    "cursor": "pointer",
-                                                    "display": "inline-block",
-                                                    "width": "auto",
-                                                    "font-size": "0.9rem",
                                                 },
                                             ),
                                         ],

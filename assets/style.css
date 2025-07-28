@@ -1023,15 +1023,9 @@ input[type="date"]#filter-to-date:focus,
     margin: 0 !important;
 }
 
-/* Show only status icon for autosync when collapsed */
+/* Collapsed sidebar styling */
 .sidebar-collapsed .alert {
     display: none !important;
-}
-
-/* Create a simplified autosync status indicator when collapsed */
-.sidebar-collapsed::after {
-    content: "";
-    /* Will be handled by JavaScript callback */
 }
 
 /* Force text alignment for logout when expanded */
@@ -2126,8 +2120,8 @@ input[type="date"].simple-date-input:hover {
     margin-bottom: 1.5rem !important;
 }
 
-/* Estilos para el área de Auto-Sync */
-.sidebar-autosync-container {
+/* Estilos para el área de Webhook Status (future) */
+.sidebar-webhook-container {
     background-color: #1D1B1A !important;
     border-radius: 10px !important;
     padding: 10px !important;
@@ -2214,7 +2208,7 @@ input[type="date"].simple-date-input:hover {
     margin-bottom: 8px !important;
 }
 
-/* Quitar margin-bottom específico para auto-sync-status cuando está minimizado */
+/* Sidebar collapsed sync area styling */
 .sidebar-collapsed .sidebar-sync-area > div {
     margin-bottom: 0 !important;
 }
@@ -2625,52 +2619,12 @@ input[type="date"].simple-date-input:hover {
     font-size: 20px !important;
 }
 
-/* Auto-sync solo icono de estado */
-.sidebar-collapsed #auto-sync-area {
+/* Webhook status styling (future implementation) */
+.sidebar-collapsed #webhook-status-area {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
     margin-bottom: 8px !important;
-}
-
-.sidebar-collapsed #auto-sync-status {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    margin-bottom: 0 !important;
-}
-
-.sidebar-collapsed #auto-sync-status > div {
-    background-color: transparent !important;
-    padding: 0.5rem !important;
-    width: 50px !important;
-    height: 50px !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    margin-bottom: 0 !important;
-}
-
-/* Ocultar icono inicial de auto-sync */
-.sidebar-collapsed #auto-sync-status .bi-arrow-clockwise {
-    display: none !important;
-}
-
-/* Mostrar solo icono de pausa/play */
-.sidebar-collapsed #auto-sync-status .bi-pause-circle {
-    display: block !important;
-    margin: 0 !important;
-    font-size: 20px !important;
-    color: #007BFF !important;
-}
-
-.sidebar-collapsed #auto-sync-status span {
-    display: none !important;
-}
-
-.sidebar-collapsed #sync-result-alert {
-    display: none !important;
 }
 
 /* Quick Sync como icono */

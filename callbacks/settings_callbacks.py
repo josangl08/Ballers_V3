@@ -122,10 +122,10 @@ def register_settings_callbacks(app):
     )
     def update_settings_main_content(active_tab):
         """Actualiza contenido principal de Settings según pestaña activa."""
-        from pages.settings_dash import create_sync_settings_dash
+        from pages.settings_dash import create_system_settings_dash
 
         if active_tab == "system-tab":
-            return create_sync_settings_dash()
+            return create_system_settings_dash()
         elif active_tab == "users-tab":
             # Users tab con 3 subtabs (Delete User integrado en Edit User)
             return html.Div(
@@ -1884,3 +1884,284 @@ def register_settings_callbacks(app):
 
         except Exception as e:
             return f"❌ Error: {str(e)}", True, "danger"
+
+
+    # ========================================================================
+    # CALLBACKS PARA SYSTEM SETTINGS TAB
+    # ========================================================================
+
+    # Auto-sync status callback removed - replaced with webhook-based real-time sync
+
+    @app.callback(
+        [
+            Output("system-settings-alert", "children"),
+            Output("system-settings-alert", "is_open"),
+            Output("system-settings-alert", "color"),
+        ],
+        [
+            Input("backup-db-btn", "n_clicks"),
+            Input("refresh-sheets-btn", "n_clicks"),
+            Input("sync-to-calendar-btn", "n_clicks"),
+            Input("sync-from-calendar-btn", "n_clicks"),
+            Input("manual-sync-btn", "n_clicks"),
+            Input("clear-sync-results-btn", "n_clicks"),
+        ],
+        prevent_initial_call=True,
+    )
+    def handle_system_settings_actions(
+        backup_clicks,
+        refresh_clicks,
+        sync_to_clicks,
+        sync_from_clicks,
+        manual_sync_clicks,
+        clear_results_clicks,
+    ):
+        """Maneja todas las acciones de System Settings."""
+        ctx = callback_context
+        if not ctx.triggered:
+            return "", False, "info"
+
+        trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+        try:
+            if trigger_id == "backup-db-btn" and backup_clicks:
+                import os
+                import shutil
+                import datetime as dt
+
+                backup_dir = "backups"
+                if not os.path.exists(backup_dir):
+                    os.makedirs(backup_dir)
+
+                timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_file = f"{backup_dir}/ballers_app_{timestamp}.db"
+
+                try:
+                    shutil.copy2("data/ballers_app.db", backup_file)
+                    return (
+                        f"✅ Backup created successfully: {backup_file}",
+                        True,
+                        "success",
+                    )
+                except Exception as e:
+                    return f"❌ Error creating backup: {str(e)}", True, "danger"
+
+            elif trigger_id == "refresh-sheets-btn" and refresh_clicks:
+                from controllers.sheets_controller import get_accounting_df
+
+                try:
+                    get_accounting_df.clear()
+                    df = get_accounting_df()
+                    return "✅ Google Sheets updated successfully", True, "success"
+                except Exception as e:
+                    return f"❌ Error updating Google Sheets: {e}", True, "danger"
+
+            elif trigger_id == "sync-to-calendar-btn" and sync_to_clicks:
+                from controllers.calendar_sync_core import sync_db_to_calendar
+
+                try:
+                    pushed, updated = sync_db_to_calendar()
+                    return (
+                        f"✅ {pushed} new sessions sent, {updated} sessions updated in Google Calendar",
+                        True,
+                        "success",
+                    )
+                except Exception as e:
+                    return f"❌ Error syncing to calendar: {e}", True, "danger"
+
+            elif trigger_id == "sync-from-calendar-btn" and sync_from_clicks:
+                from controllers.sync_coordinator import force_manual_sync
+
+                try:
+                    result = force_manual_sync()
+
+                    if result["success"]:
+                        duration = result["duration"]
+                        imported = result.get("imported", 0)
+                        updated = result.get("updated", 0)
+                        deleted = result.get("deleted", 0)
+                        rejected_events = result.get("rejected_events", [])
+                        warning_events = result.get("warning_events", [])
+
+                        changes = []
+                        if imported > 0:
+                            changes.append(f"{imported} imported")
+                        if updated > 0:
+                            changes.append(f"{updated} updated")
+                        if deleted > 0:
+                            changes.append(f"{deleted} deleted")
+
+                        changes_text = ", ".join(changes) if changes else "no changes"
+
+                        if len(rejected_events) > 0:
+                            return (
+                                f"⚠️ Sync completed with {len(rejected_events)} rejected events ({duration:.1f}s) | {changes_text}",
+                                True,
+                                "warning",
+                            )
+                        elif len(warning_events) > 0:
+                            return (
+                                f"⚠️ Sync completed with {len(warning_events)} warnings ({duration:.1f}s) | {changes_text}",
+                                True,
+                                "warning",
+                            )
+                        elif imported + updated + deleted > 0:
+                            return (
+                                f"✅ Sync completed successfully ({duration:.1f}s) | {changes_text}",
+                                True,
+                                "success",
+                            )
+                        else:
+                            return (
+                                f"ℹ️ Sync completed - no changes ({duration:.1f}s)",
+                                True,
+                                "info",
+                            )
+                    else:
+                        return f"❌ Sync failed: {result['error']}", True, "danger"
+                except Exception as e:
+                    return f"❌ Error during manual sync: {e}", True, "danger"
+
+            elif trigger_id == "manual-sync-btn" and manual_sync_clicks:
+                from controllers.sync_coordinator import force_manual_sync
+
+                try:
+                    result = force_manual_sync()
+                    if result["success"]:
+                        total_changes = (
+                            result.get("imported", 0)
+                            + result.get("updated", 0)
+                            + result.get("deleted", 0)
+                        )
+                        if total_changes > 0:
+                            return (
+                                f"✅ Manual sync completed: {total_changes} changes",
+                                True,
+                                "success",
+                            )
+                        else:
+                            return "✅ Manual sync completed: No changes", True, "success"
+                    else:
+                        return f"❌ Manual sync failed: {result['error']}", True, "danger"
+                except Exception as e:
+                    return f"❌ Error during manual sync: {e}", True, "danger"
+
+            elif trigger_id == "clear-sync-results-btn" and clear_results_clicks:
+                from controllers.notification_controller import clear_sync_problems
+
+                try:
+                    clear_sync_problems()
+                    return "✅ Sync results cleared successfully", True, "success"
+                except Exception as e:
+                    return f"❌ Error clearing sync results: {e}", True, "danger"
+
+            return "", False, "info"
+
+        except Exception as e:
+            return f"❌ Unexpected error: {str(e)}", True, "danger"
+
+    @app.callback(
+        Output("sync-results-content", "children"),
+        [
+            Input("settings-main-tabs", "active_tab"),
+            Input("clear-sync-results-btn", "n_clicks"),
+        ],
+        prevent_initial_call=False,
+    )
+    def update_sync_results_display(active_tab, clear_clicks):
+        """Actualiza la visualización de resultados de sync."""
+        if active_tab != "system-tab":
+            return ""
+
+        try:
+            from controllers.notification_controller import get_sync_problems
+
+            problems = get_sync_problems()
+            if not problems:
+                return dbc.Alert(
+                    "ℹ️ No recent sync data available",
+                    color="info",
+                    style={"font-size": "0.9rem"},
+                )
+
+            # Mostrar estadísticas si están disponibles
+            if "stats" in problems:
+                stats = problems["stats"]
+                imported = stats.get("imported", 0)
+                updated = stats.get("updated", 0)
+                deleted = stats.get("deleted", 0)
+                duration = stats.get("duration", 0)
+
+                metrics = dbc.Row(
+                    [
+                        dbc.Col(
+                            dbc.Alert(
+                                f"📥 {imported}",
+                                color="primary",
+                                style={"text-align": "center", "font-size": "0.8rem"},
+                            ),
+                            width=2,
+                        ),
+                        dbc.Col(
+                            dbc.Alert(
+                                f"🔄 {updated}",
+                                color="info",
+                                style={"text-align": "center", "font-size": "0.8rem"},
+                            ),
+                            width=2,
+                        ),
+                        dbc.Col(
+                            dbc.Alert(
+                                f"🗑️ {deleted}",
+                                color="secondary",
+                                style={"text-align": "center", "font-size": "0.8rem"},
+                            ),
+                            width=2,
+                        ),
+                        dbc.Col(
+                            dbc.Alert(
+                                f"🚫 {len(problems.get('rejected', []))}",
+                                color="danger",
+                                style={"text-align": "center", "font-size": "0.8rem"},
+                            ),
+                            width=2,
+                        ),
+                        dbc.Col(
+                            dbc.Alert(
+                                f"⚠️ {len(problems.get('warnings', []))}",
+                                color="warning",
+                                style={"text-align": "center", "font-size": "0.8rem"},
+                            ),
+                            width=2,
+                        ),
+                        dbc.Col(
+                            dbc.Alert(
+                                f"⏱️ {duration:.1f}s",
+                                color="light",
+                                style={
+                                    "text-align": "center",
+                                    "font-size": "0.8rem",
+                                    "color": "#000000",
+                                },
+                            ),
+                            width=2,
+                        ),
+                    ],
+                    className="mb-3",
+                )
+
+                return html.Div([metrics])
+            else:
+                return dbc.Alert(
+                    f"📊 Sync problems detected: {len(problems.get('rejected', []))} rejected, {len(problems.get('warnings', []))} warnings",
+                    color="warning",
+                    style={"font-size": "0.9rem"},
+                )
+
+        except Exception as e:
+            return dbc.Alert(
+                f"❌ Error loading sync results: {str(e)}",
+                color="danger",
+                style={"font-size": "0.9rem"},
+            )
+

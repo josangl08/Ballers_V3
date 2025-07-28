@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import streamlit as st
 
-from .sync_coordinator import _auto_sync, get_sync_stats_unified, is_auto_sync_running
+from .sync_coordinator import get_sync_stats_unified, is_auto_sync_running
 
 
 class MenuController:
@@ -132,20 +132,13 @@ class MenuController:
     def prepare_logout_cleanup(self) -> None:
         """
         Prepara limpieza de datos antes del logout.
-        Limpia estadísticas de auto-sync y otros datos temporales.
+        Limpia datos temporales (auto-sync stats removed with webhook migration).
         """
         try:
-            # Limpiar estadísticas del auto-sync
-
-            _auto_sync.stats.last_sync_time = None
-            _auto_sync.stats.last_sync_duration = 0
-            _auto_sync.stats.last_changes = None
-            _auto_sync.stats.last_changes_time = None
-            _auto_sync.stats.changes_notified = True
-
-            print("🔄 Auto-sync stats cleared on logout")
+            # Auto-sync stats cleanup removed - migrated to webhook-based sync
+            print("🔄 Logout cleanup completed (auto-sync stats deprecated)")
         except Exception as e:
-            print(f"Warning: Could not clear auto-sync stats: {e}")
+            print(f"Warning: Could not complete logout cleanup: {e}")
 
     # Validaciones y permisos
 
