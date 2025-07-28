@@ -4,13 +4,10 @@ Webhook server for Google Calendar push notifications.
 Runs as separate Flask server to receive real-time calendar events.
 """
 import datetime as dt
-import hashlib
-import hmac
-import json
 import logging
 import threading
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from flask import Flask, jsonify, request
 from werkzeug.serving import make_server
@@ -185,7 +182,7 @@ class WebhookServer:
 
                 # Actualizar estadísticas
                 self.stats["webhooks_processed"] += 1
-                
+
                 # Notificar cambios a la UI para auto-refresh
                 self._notify_ui_changes(total_changes)
 
@@ -265,7 +262,7 @@ class WebhookServer:
             "webhook_url": f"http://localhost:{self.port}/webhook/calendar",
             "stats": self.stats.copy(),
         }
-    
+
     def _notify_ui_changes(self, changes_count: int):
         """
         Notifica cambios a la UI via Server-Sent Events.
@@ -275,10 +272,13 @@ class WebhookServer:
             try:
                 # Importar y enviar evento SSE
                 from main_dash import trigger_webhook_ui_refresh
+
                 trigger_webhook_ui_refresh()
-                
-                logger.debug(f"📢 SSE event sent for UI refresh: {changes_count} changes")
-                
+
+                logger.debug(
+                    f"📢 SSE event sent for UI refresh: {changes_count} changes"
+                )
+
             except Exception as e:
                 logger.error(f"⚠️ Failed to send SSE event: {e}")
 

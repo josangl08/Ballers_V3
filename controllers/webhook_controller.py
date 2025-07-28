@@ -187,7 +187,7 @@ class WebhookController:
                 if old_channel_id and old_resource_id:
                     self.stop_webhook_channel(old_channel_id, old_resource_id)
 
-                logger.info(f"✅ Webhook channel renewed successfully")
+                logger.info("✅ Webhook channel renewed successfully")
                 return new_channel
 
             return None

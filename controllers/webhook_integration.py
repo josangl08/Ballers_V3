@@ -6,7 +6,7 @@ Combina webhook server + Google Calendar push notifications para sync en tiempo 
 import logging
 import threading
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from controllers.webhook_controller import (
     auto_renew_webhook_if_needed,

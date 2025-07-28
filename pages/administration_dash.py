@@ -23,7 +23,6 @@ def show_administration_content_dash():
 
     return dbc.Container(
         [
-            
             # Título principal
             dbc.Row(
                 [

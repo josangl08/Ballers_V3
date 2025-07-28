@@ -6,7 +6,7 @@ import time
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output, no_update
+from dash import Input, Output, dcc, html, no_update
 
 from callbacks.administration_callbacks import register_administration_callbacks
 from callbacks.ballers_callbacks import register_ballers_callbacks
@@ -67,7 +67,7 @@ def get_app_layout():
                 interval=5000,  # 5 segundos por defecto (lento)
                 disabled=False,  # Siempre habilitado
                 max_intervals=-1,  # Sin limite
-                n_intervals=0
+                n_intervals=0,
             ),
             # Layout principal
             html.Div(id="main-content"),
@@ -99,75 +99,58 @@ def register_all_callbacks():
 
     # Registrar callbacks comunes para datepickers
     register_datepicker_callbacks(app)
-    
+
     # Webhook Activation Trigger - Activar cuando hay webhook
     @app.callback(
         Output("webhook-activation", "data"),
         [Input("smart-interval", "n_intervals")],
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def trigger_activation_on_webhook(n_intervals):
         """Trigger interno - convierte webhook flag en Store update"""
         global _webhook_pending
-        print(f"🔍 DEBUG: trigger_activation_on_webhook called - n_intervals={n_intervals}, _webhook_pending={_webhook_pending}")
-        
+
         if _webhook_pending:
             _webhook_pending = False
             timestamp = int(time.time())
-            print(f"🔄 Webhook activation triggered: {timestamp}")
-            print(f"🔍 DEBUG: Returning NEW timestamp to webhook-activation Store: {timestamp}")
-            print(f"🔍 DEBUG: This should trigger manage_smart_interval callback")
             return timestamp
-        
-        print(f"🔍 DEBUG: No webhook pending, returning no_update")
+
         return no_update
 
-    # Smart Interval Manager - Control por velocidad basado en webhook activation  
+    # Smart Interval Manager - Control por velocidad basado en webhook activation
     @app.callback(
         Output("smart-interval", "interval"),
-        [Input("webhook-activation", "data"),
-         Input("smart-interval", "n_intervals")],
-        prevent_initial_call=False
+        [Input("webhook-activation", "data"), Input("smart-interval", "n_intervals")],
+        prevent_initial_call=False,
     )
     def manage_smart_interval(activation_data, n_intervals):
         """Gestiona el smart interval: acelerar cuando hay webhook, desacelerar después de inactividad"""
-        print(f"🔍 DEBUG: manage_smart_interval called - activation_data={activation_data}, n_intervals={n_intervals}")
-        
+
         if activation_data and activation_data > 0:
             # Acelerar interval cuando hay webhook activation (1 segundo)
-            print(f"🔄 Smart interval accelerated by webhook at timestamp {activation_data}")
-            print(f"🔍 DEBUG: Setting interval to 1000ms (fast)")
             return 1000  # 1 segundo - rápido
         elif n_intervals > 10:  # Después de 10 intervals sin webhook
             # Desacelerar después de inactividad (5 segundos)
-            print(f"🔄 Smart interval decelerated after inactivity")
-            print(f"🔍 DEBUG: Setting interval to 5000ms (slow)")
             return 5000  # 5 segundos - lento
         else:
             # No cambios necesarios
-            print(f"🔍 DEBUG: No changes needed, keeping current interval")
             return no_update
 
     # Smart Interval Update - Actualiza Store cuando interval está activo
     @app.callback(
         Output("webhook-trigger", "data"),
         [Input("smart-interval", "n_intervals")],
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def update_store_from_smart_interval(n_intervals):
         """Actualiza webhook-trigger Store cuando smart interval está activo"""
-        print(f"🔍 DEBUG: update_store_from_smart_interval called - n_intervals={n_intervals}")
-        
+
         if n_intervals > 0:
             timestamp = int(time.time())
-            print(f"🔄 Smart interval update #{n_intervals} - Store updated: {timestamp}")
-            print(f"🔍 DEBUG: Updating webhook-trigger Store with timestamp: {timestamp}")
             return timestamp
-        
-        print(f"🔍 DEBUG: n_intervals <= 0, returning no_update")
+
         return no_update
-    
-    
+
 
 def trigger_webhook_ui_refresh():
     """
@@ -176,26 +159,13 @@ def trigger_webhook_ui_refresh():
     """
     global _webhook_pending
     try:
-        current_time = int(time.time())
-        print(f"🔍 DEBUG: trigger_webhook_ui_refresh called at {current_time}")
-        print(f"🔍 DEBUG: _webhook_pending before: {_webhook_pending}")
-        
         _webhook_pending = True
-        print(f"🔄 Webhook detected - smart interval activation requested")
-        print(f"🔍 DEBUG: _webhook_pending after: {_webhook_pending}")
-        
-        # NUEVO: Intentar actualizar Stores directamente
-        try:
-            # Esto forzará la reactivación del smart interval
-            print(f"🔄 Attempting to force Store updates...")
-        except Exception as store_error:
-            print(f"⚠️ Error updating Stores directly: {store_error}")
-        
+
     except Exception as e:
         print(f"⚠️ Error activating smart interval: {e}")
         import traceback
+
         traceback.print_exc()
-    
 
 
 def initialize_dash_app():
@@ -249,8 +219,6 @@ def _initialize_webhook_integration():
         print("📝 Fallback: Manual sync remains available")
 
 
-
-
 def _cleanup_webhook_integration():
     """Limpia la integración completa de webhooks al cerrar la aplicación."""
     try:
@@ -265,14 +233,13 @@ if __name__ == "__main__":
     app = initialize_dash_app()
 
     # Solo mostrar mensajes en el proceso principal (no en Flask reloader)
-    if os.getenv('WERKZEUG_RUN_MAIN') != 'true':
+    if os.getenv("WERKZEUG_RUN_MAIN") != "true":
         print("🚀 Starting Ballers Dash Application...")
         print("📊 Main app: http://127.0.0.1:8050")
         print("📡 Webhook integration: http://127.0.0.1:8001/webhook/calendar")
 
         # Verificar estado de integración después de inicialización
         try:
-            from controllers.webhook_integration import is_webhook_integration_healthy
             if is_webhook_integration_healthy():
                 print("💚 Real-time sync: ACTIVE")
             else:

@@ -6,10 +6,8 @@ Anteriormente: sync.py
 
 import datetime as dt
 import logging
-import threading
 import time
-from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import streamlit as st
 
@@ -324,7 +322,7 @@ def force_manual_sync() -> Dict[str, Any]:
                 f"🔧 Manual sync completed with issues: {len(rejected_events)} rejected, {len(warning_events)} warnings"
             )
         else:
-            logger.info(f"✅ Manual sync completed successfully")
+            logger.info("✅ Manual sync completed successfully")
 
         return {
             "success": True,
