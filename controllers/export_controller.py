@@ -29,7 +29,7 @@ from sqlalchemy.orm import joinedload
 
 from controllers.db import get_db_session
 from controllers.player_controller import get_player_profile_data
-from controllers.sheets_controller import get_accounting_df
+from controllers.sheets_controller_dash import get_accounting_df
 from models import Coach, Player, Session, SessionStatus, TestResult
 
 

@@ -1946,7 +1946,7 @@ def register_settings_callbacks(app):
                     return f"❌ Error creating backup: {str(e)}", True, "danger"
 
             elif trigger_id == "refresh-sheets-btn" and refresh_clicks:
-                from controllers.sheets_controller import get_accounting_df
+                from controllers.sheets_controller_dash import get_accounting_df
 
                 try:
                     get_accounting_df.clear()
