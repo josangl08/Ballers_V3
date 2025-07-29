@@ -276,7 +276,7 @@ def register_player_callbacks(app):
             get_player_profile_data,
         )
 
-        print(f"🔍 PERFORMANCE CHART DEBUG:")
+        print("🔍 PERFORMANCE CHART DEBUG:")
         print(f"  - player_id: {player_id}")
         print(f"  - selected_metrics: {selected_metrics}")
 
@@ -452,7 +452,7 @@ def register_player_callbacks(app):
 
         Migrado de Streamlit.
         """
-        print(f"🔍 TEST HISTORY DEBUG:")
+        print("🔍 TEST HISTORY DEBUG:")
         print(f"  - active_tab: {active_tab}")
         print(f"  - player_id: {player_id}")
 

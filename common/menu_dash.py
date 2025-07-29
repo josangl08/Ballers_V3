@@ -2,11 +2,12 @@
 from typing import Dict, Optional
 
 import dash_bootstrap_components as dbc
-from dash import Input, Output, dcc, html, no_update
+from dash import html
 
-from controllers.menu_controller import MenuController, get_sync_status_for_ui
+from controllers.menu_controller import MenuController
 
 # force_manual_sync importado solo donde se necesita (settings_callbacks.py)
+# get_sync_status_for_ui no utilizado - eliminado para cumplir flake8
 
 
 def get_sync_status_component_dash(stats: dict):

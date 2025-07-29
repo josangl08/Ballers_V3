@@ -473,7 +473,7 @@ def register_administration_callbacks(app):
     ):
         """Actualiza calendario y tabla según filtros con control de rol."""
 
-        print(f"🔍 DEBUG Admin Calendar Callback:")
+        print("🔍 DEBUG Admin Calendar Callback:")
         print(f"  - active_tab: {active_tab}")
         print(f"  - user_type: {user_type}")
         print(f"  - from_date: {from_date}, to_date: {to_date}")
@@ -481,7 +481,7 @@ def register_administration_callbacks(app):
         print(f"  - status_filter: {status_filter}")
 
         if active_tab != "sessions-tab":
-            print(f"  ❌ Not sessions-tab, returning empty")
+            print("  ❌ Not sessions-tab, returning empty")
             return html.Div(), html.Div()
 
         try:

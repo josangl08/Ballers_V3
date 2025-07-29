@@ -133,7 +133,7 @@ def register_ballers_callbacks(app):
     ):
         """Actualiza la tabla de sesiones según los filtros con control de rol."""
 
-        print(f"🔍 DEBUG Ballers Sessions Callback:")
+        print("🔍 DEBUG Ballers Sessions Callback:")
         print(f"  - from_date: {from_date}, to_date: {to_date}")
         print(f"  - status_filters: {status_filters}")
         print(f"  - user_type: {user_type}")
@@ -174,7 +174,7 @@ def register_ballers_callbacks(app):
             print(f"  - initial effective_player_id: {effective_player_id}")
 
             if user_type == "player" and not selected_player_id:
-                print(f"  🎯 PLAYER MODE: Getting player_id from user_id")
+                print("  🎯 PLAYER MODE: Getting player_id from user_id")
                 # Obtener el player_id del usuario logueado
                 user_id = session_data.get("user_id")
                 print(f"  - user_id from session: {user_id}")
@@ -189,7 +189,7 @@ def register_ballers_callbacks(app):
                         else:
                             print(f"  ❌ No player found for user_id={user_id}")
                 else:
-                    print(f"  ❌ No user_id in session data")
+                    print("  ❌ No user_id in session data")
 
             print(f"  - final effective_player_id: {effective_player_id}")
 
