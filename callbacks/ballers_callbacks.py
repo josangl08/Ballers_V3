@@ -110,15 +110,44 @@ def register_ballers_callbacks(app):
             ),
             Input("status-filters", "data"),
             Input("webhook-trigger", "data"),  # SSE trigger para auto-refresh
+            Input("user-type-store", "data"),  # Para determinar filtrado por rol
         ],
-        [State("selected-player-id", "data")],
+        [
+            State("selected-player-id", "data"),
+            State("session-store", "data"),
+            State("persistent-session-store", "data"),
+            State("session-activity", "data"),
+        ],
         prevent_initial_call=True,
     )
     def update_sessions_table(
-        from_date, to_date, status_filters, webhook_trigger, selected_player_id
+        from_date,
+        to_date,
+        status_filters,
+        webhook_trigger,
+        user_type,
+        selected_player_id,
+        session_data,
+        persistent_session_data,
+        activity_data,
     ):
-        """Actualiza la tabla de sesiones según los filtros"""
+        """Actualiza la tabla de sesiones según los filtros con control de rol."""
+
+        print(f"🔍 DEBUG Ballers Sessions Callback:")
+        print(f"  - from_date: {from_date}, to_date: {to_date}")
+        print(f"  - status_filters: {status_filters}")
+        print(f"  - user_type: {user_type}")
+        print(f"  - selected_player_id: {selected_player_id}")
+
         try:
+            # Determinar qué session_data usar (misma lógica que en navigation_callbacks)
+            if activity_data and activity_data.get("remember_me"):
+                session_data = persistent_session_data or {}
+            else:
+                session_data = session_data or {}
+
+            print(f"  - session_data: {session_data}")
+
             # Convertir strings de fecha a objetos date si están disponibles
             from_date_obj = None
             to_date_obj = None
@@ -140,10 +169,34 @@ def register_ballers_callbacks(app):
                 else ["scheduled", "completed", "canceled"]
             )
 
+            # Si el usuario es jugador y no hay selected_player_id, usar su propio player_id
+            effective_player_id = selected_player_id
+            print(f"  - initial effective_player_id: {effective_player_id}")
+
+            if user_type == "player" and not selected_player_id:
+                print(f"  🎯 PLAYER MODE: Getting player_id from user_id")
+                # Obtener el player_id del usuario logueado
+                user_id = session_data.get("user_id")
+                print(f"  - user_id from session: {user_id}")
+                if user_id:
+                    from controllers.player_controller import PlayerController
+
+                    with PlayerController() as controller:
+                        player = controller.get_player_by_user_id(user_id)
+                        if player:
+                            effective_player_id = player.player_id
+                            print(f"  ✅ Found player: player_id={effective_player_id}")
+                        else:
+                            print(f"  ❌ No player found for user_id={user_id}")
+                else:
+                    print(f"  ❌ No user_id in session data")
+
+            print(f"  - final effective_player_id: {effective_player_id}")
+
             from pages.ballers_dash import create_sessions_table_dash
 
             return create_sessions_table_dash(
-                player_id=selected_player_id,
+                player_id=effective_player_id,
                 from_date=from_date_obj,
                 to_date=to_date_obj,
                 status_filter=status_filter,

@@ -18,11 +18,16 @@ def create_fixed_calendar_component():
         )
 
 
-def show_administration_content_dash():
+def show_administration_content_dash(session_data=None):
     """Función principal para mostrar el contenido de Administration"""
 
     return dbc.Container(
         [
+            # Global user type store - needed for navigation callbacks
+            dcc.Store(
+                id="user-type-store",
+                data=session_data.get("user_type") if session_data else None,
+            ),
             # Título principal
             dbc.Row(
                 [
@@ -66,8 +71,8 @@ def show_administration_content_dash():
             ),
             # Tab content
             html.Div(id="admin-main-content"),
-            # Store for user type
-            dcc.Store(id="admin-user-type-store", data="admin"),
+            # Store for user type - will be populated dynamically from session
+            dcc.Store(id="admin-user-type-store", data=None),
             # Store for status filters
             dcc.Store(
                 id="admin-status-filters", data=["scheduled", "completed", "canceled"]

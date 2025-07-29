@@ -3,7 +3,7 @@
 Callbacks relacionados con navegación entre páginas.
 """
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, html, no_update
+from dash import Input, Output, State, dcc, html, no_update
 
 
 def register_navigation_callbacks(app):
@@ -168,6 +168,11 @@ def register_navigation_callbacks(app):
                         "width": "calc(100vw - 300px)",
                     },
                 ),
+                # Global user type store - populated from session data
+                dcc.Store(
+                    id="user-type-store",
+                    data=session_data.get("user_type") if session_data else None,
+                ),
             ],
             style={"overflow-x": "hidden"},
         )
@@ -213,11 +218,27 @@ def register_navigation_callbacks(app):
                             show_administration_content_dash,
                         )
 
-                        return show_administration_content_dash()
+                        # Determinar qué session_data usar (misma lógica que otros callbacks)
+                        if activity_data and activity_data.get("remember_me"):
+                            effective_session_data = persistent_session_data or {}
+                        else:
+                            effective_session_data = session_data or {}
+
+                        return show_administration_content_dash(
+                            session_data=effective_session_data
+                        )
                     elif content_module_path == "pages.settings":
                         from pages.settings_dash import show_settings_content_dash
 
-                        return show_settings_content_dash()
+                        # Determinar qué session_data usar (misma lógica que otros callbacks)
+                        if activity_data and activity_data.get("remember_me"):
+                            effective_session_data = persistent_session_data or {}
+                        else:
+                            effective_session_data = session_data or {}
+
+                        return show_settings_content_dash(
+                            session_data=effective_session_data
+                        )
                     else:
                         return html.Div(
                             [
@@ -273,14 +294,14 @@ def register_navigation_callbacks(app):
         [
             Input("menu-ballers", "n_clicks"),
             Input("menu-administration", "n_clicks"),
-            Input("menu-settings", "n_clicks"),
+        ],
+        [
+            State("user-type-store", "data"),
         ],
         prevent_initial_call=True,
     )
-    def update_selected_menu_item_callback(
-        ballers_clicks, admin_clicks, settings_clicks
-    ):
-        """Callback para navegación del menú con IDs simples."""
+    def update_selected_menu_item_callback(ballers_clicks, admin_clicks, user_type):
+        """Callback para navegación del menú - maneja dinámicamente según rol."""
         from dash import callback_context
 
         if not callback_context.triggered:
@@ -294,8 +315,26 @@ def register_navigation_callbacks(app):
         elif trigger_id == "menu-administration":
             print("DEBUG: Menu clicked: Administration")
             return "Administration"
-        elif trigger_id == "menu-settings":
-            print("DEBUG: Menu clicked: Settings")
-            return "Settings"
 
         return no_update
+
+    # Callback separado para menu-settings solo para admin
+    @app.callback(
+        Output("selected-menu-item", "data", allow_duplicate=True),
+        [Input("menu-settings", "n_clicks")],
+        [State("user-type-store", "data")],
+        prevent_initial_call=True,
+    )
+    def update_selected_menu_item_settings_callback(settings_clicks, user_type):
+        """Callback para menu-settings - solo activo para admin."""
+        from dash import callback_context
+
+        # Solo procesar si el usuario es admin
+        if user_type != "admin":
+            return no_update
+
+        if not callback_context.triggered or not settings_clicks:
+            return no_update
+
+        print("DEBUG: Menu clicked: Settings")
+        return "Settings"

@@ -1108,9 +1108,16 @@ def create_calendar_display_dash(player_id=None):
 
 
 def create_sessions_table_dash(
-    player_id=None, from_date=None, to_date=None, status_filter=None
+    player_id=None, coach_id=None, from_date=None, to_date=None, status_filter=None
 ):
-    """Crea la tabla de sesiones usando el controller existente"""
+    """Crea la tabla de sesiones usando el controller existente - soporta player_id y coach_id"""
+
+    print(f"🔍 DEBUG Sessions Table Creation:")
+    print(f"  - player_id: {player_id}")
+    print(f"  - coach_id: {coach_id}")
+    print(f"  - from_date: {from_date}, to_date: {to_date}")
+    print(f"  - status_filter: {status_filter}")
+
     try:
         from datetime import datetime, timedelta
 
@@ -1128,8 +1135,18 @@ def create_sessions_table_dash(
                 start_date=from_date,
                 end_date=to_date,
                 player_id=player_id,
+                coach_id=coach_id,  # Añadir soporte para coach_id
                 status_filter=status_filter,  # Usar el filtro ya implementado
             )
+
+            print(f"  - sessions found: {len(sessions)} sessions")
+            if sessions:
+                print(
+                    f"  - first session player_id: {sessions[0].player_id if sessions else 'N/A'}"
+                )
+                print(
+                    f"  - all player_ids: {[s.player_id for s in sessions[:3]]}"
+                )  # First 3 only
 
             if not sessions:
                 return dbc.Alert(

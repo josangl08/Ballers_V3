@@ -5,7 +5,8 @@ import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html, no_update
 
 from controllers.menu_controller import MenuController, get_sync_status_for_ui
-from controllers.sync_coordinator import force_manual_sync
+
+# force_manual_sync importado solo donde se necesita (settings_callbacks.py)
 
 
 def get_sync_status_component_dash(stats: dict):
@@ -72,82 +73,10 @@ def get_sync_status_component_dash(stats: dict):
 def get_auto_sync_area_dash(session_data: Optional[Dict] = None):
     """
     Retorna componentes de área de auto-sync para Dash.
+    ELIMINADO: Auto-sync funcionalidad removida - solo sync manual en settings.
     """
-    # Usar MenuController para obtener datos
-    sync_data = get_sync_status_for_ui(session_data)
-
-    if not sync_data or not sync_data["show_sync_area"]:
-        return []
-
-    components = []
-
-    # Mostrar estadísticas si hay datos
-    if sync_data["sync_stats"]:
-        components.append(html.Hr())
-        components.extend(get_sync_status_component_dash(sync_data["sync_stats"]))
-        components.append(html.Hr())
-
-    # Mostrar estado de auto-sync
-    # auto_status = sync_data["auto_sync_status"]  # noqa: F841
-    # Determinar color basado en estado
-    # color = "success" if auto_status["type"] == "success" else "info"
-
-    # Auto-Sync status con fondo negro y iconos
-    components.append(
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.I(
-                            className="bi bi-arrow-clockwise",
-                            style={
-                                "color": "#1DDD6E",
-                                "font-size": "16px",
-                                "margin-right": "10px",
-                            },
-                        ),
-                        html.Span(
-                            "Auto-Sync:",
-                            style={
-                                "color": "#FFFFFF",
-                                "font-size": "14px",
-                                "margin-right": "10px",
-                            },
-                        ),
-                        html.I(
-                            className="bi bi-pause-circle",
-                            style={
-                                "color": "#007BFF",
-                                "font-size": "16px",
-                                "cursor": "pointer",
-                            },
-                        ),
-                    ],
-                    style={
-                        "display": "flex",
-                        "align-items": "center",
-                        "padding": "10px",
-                        "background-color": "#1D1B1A",
-                        "border-radius": "10px",
-                        "margin-bottom": "10px",
-                    },
-                ),
-            ],
-            id="auto-sync-status",
-            className="mb-2",
-        )
-    )
-
-    # Quick sync button moved to action buttons section
-
-    # Alert para mostrar resultado de sync
-    components.append(
-        dbc.Alert(
-            id="sync-result-alert", is_open=False, dismissable=True, className="mb-2"
-        )
-    )
-
-    return components
+    # Auto-sync funcionalidad eliminada - solo sync manual disponible en settings
+    return []
 
 
 def create_sidebar_menu_dash(session_data: Optional[Dict] = None):
@@ -309,18 +238,6 @@ def create_sidebar_menu_dash(session_data: Optional[Dict] = None):
             [
                 dbc.Button(
                     [
-                        html.I(
-                            className="bi bi-lightning-charge",
-                            style={"margin-right": "8px"},
-                        ),
-                        html.Span("Quick Sync"),
-                    ],
-                    id="quick-sync-button",
-                    className="sidebar-action-button w-100",
-                    style={"margin-bottom": "8px"},
-                ),
-                dbc.Button(
-                    [
                         html.I(className="bi bi-box-arrow-right me-2"),
                         html.Span(
                             "Log Out",
@@ -375,27 +292,7 @@ def register_menu_callbacks(app):
     """Registra los callbacks del menú manteniendo separación de responsabilidades."""
 
     # Callback removido - ya existe en navigation_callbacks.py
-
-    @app.callback(
-        [
-            Output("sync-result-alert", "children"),
-            Output("sync-result-alert", "color"),
-            Output("sync-result-alert", "is_open"),
-        ],
-        [Input("quick-sync-button", "n_clicks")],
-        prevent_initial_call=True,
-    )
-    def handle_quick_sync(n_clicks):
-        if not n_clicks:
-            return no_update, no_update, no_update
-
-        # Usar controller para lógica de negocio (separación de responsabilidades)
-        result = force_manual_sync()
-
-        if result["success"]:
-            return "✅ Sync completed successfully", "success", True
-        else:
-            return f"❌ Error: {result['error']}", "danger", True
+    # Quick sync callback eliminado - funcionalidad movida a settings
 
     # TEMPORAL: Callback de logout movido a auth_callbacks.py para evitar duplicación
     # @app.callback(

@@ -75,93 +75,131 @@ def register_player_callbacks(app):
         return "admin"
 
     @app.callback(
-        Output("ballers-user-content", "children"),
+        [
+            Output("ballers-user-content", "children"),
+            Output("selected-player-id", "data", allow_duplicate=True),
+        ],
         [
             Input("user-type-store", "data"),
             Input("selected-player-id", "data"),
             Input("session-store", "data"),
         ],
+        prevent_initial_call="initial_duplicate",
     )
     def update_ballers_content_callback(user_type, selected_player_id, session_data):
         """Actualiza contenido de Ballers según tipo de usuario y selección."""
+        from dash import no_update
+
         from pages.ballers_dash import (
             create_player_profile_dash,
             create_players_list_dash,
         )
 
         if user_type == "player":
-            # Para players, usar su propio user_id si está disponible
+            # Para players, obtener su player_id desde user_id y establecerlo en el store
             user_id = session_data.get("user_id") if session_data else None
-            return create_player_profile_dash(player_id=None, user_id=user_id)
+            if user_id:
+                from controllers.player_controller import PlayerController
+
+                try:
+                    with PlayerController() as controller:
+                        player = controller.get_player_by_user_id(user_id)
+                        if player:
+                            player_id = player.player_id
+                            print(
+                                f"🎯 PLAYER MODE: user_id={user_id} -> player_id={player_id}"
+                            )
+                            return (
+                                create_player_profile_dash(
+                                    player_id=player_id, user_id=user_id
+                                ),
+                                player_id,
+                            )
+                        else:
+                            print(f"❌ No player found for user_id={user_id}")
+                except Exception as e:
+                    print(f"❌ Error getting player_id for user_id={user_id}: {e}")
+
+            # Fallback sin player_id
+            return (
+                create_player_profile_dash(player_id=None, user_id=user_id),
+                no_update,
+            )
         elif user_type in ["coach", "admin"]:
             if selected_player_id:
-                return html.Div(
-                    [
-                        # Fila con botones de navegación y acción
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        dbc.Button(
-                                            [
-                                                html.I(
-                                                    className="bi bi-arrow-left me-2"
-                                                ),
-                                                "Back to list",
-                                            ],
-                                            id="back-to-list-btn",
-                                            className="custom-button",
-                                            style={
-                                                "border-radius": "20px",
-                                                "background-color": "#333333",
-                                                "color": "#24DE84",
-                                                "border": "none",
-                                                "padding": "0.5rem 1rem",
-                                                "font-weight": "500",
-                                                "transition": "all 0.3s ease",
-                                            },
-                                        )
-                                    ],
-                                    width="auto",
-                                ),
-                                dbc.Col(
-                                    [
-                                        dbc.Button(
-                                            [
-                                                html.I(
-                                                    className=(
-                                                        "bi bi-file-earmark-pdf me-2"
-                                                    )
-                                                ),
-                                                "Export Profile PDF",
-                                            ],
-                                            id="export-profile-btn",
-                                            className="custom-button",
-                                            style={
-                                                "border-radius": "20px",
-                                                "background-color": "#333333",
-                                                "color": "#24DE84",
-                                                "border": "none",
-                                                "padding": "0.5rem 1rem",
-                                                "font-weight": "500",
-                                                "transition": "all 0.3s ease",
-                                            },
-                                        )
-                                    ],
-                                    width="auto",
-                                    className="ms-auto",  # Empujar hacia la derecha
-                                ),
-                            ],
-                            className="mb-3 align-items-center",
-                        ),
-                        create_player_profile_dash(selected_player_id),
-                    ]
+                return (
+                    html.Div(
+                        [
+                            # Fila con botones de navegación y acción
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            dbc.Button(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-arrow-left me-2"
+                                                    ),
+                                                    "Back to list",
+                                                ],
+                                                id="back-to-list-btn",
+                                                className="custom-button",
+                                                style={
+                                                    "border-radius": "20px",
+                                                    "background-color": "#333333",
+                                                    "color": "#24DE84",
+                                                    "border": "none",
+                                                    "padding": "0.5rem 1rem",
+                                                    "font-weight": "500",
+                                                    "transition": "all 0.3s ease",
+                                                },
+                                            )
+                                        ],
+                                        width="auto",
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Button(
+                                                [
+                                                    html.I(
+                                                        className=(
+                                                            "bi bi-file-earmark-pdf me-2"
+                                                        )
+                                                    ),
+                                                    "Export Profile PDF",
+                                                ],
+                                                id="export-profile-btn",
+                                                className="custom-button",
+                                                style={
+                                                    "border-radius": "20px",
+                                                    "background-color": "#333333",
+                                                    "color": "#24DE84",
+                                                    "border": "none",
+                                                    "padding": "0.5rem 1rem",
+                                                    "font-weight": "500",
+                                                    "transition": "all 0.3s ease",
+                                                },
+                                            )
+                                        ],
+                                        width="auto",
+                                        className="ms-auto",  # Empujar hacia la derecha
+                                    ),
+                                ],
+                                className="mb-3 align-items-center",
+                            ),
+                            create_player_profile_dash(selected_player_id),
+                        ]
+                    ),
+                    no_update,
                 )
             else:
-                return create_players_list_dash()
+                return create_players_list_dash(), no_update
         else:
-            return dbc.Alert(
-                "No tienes permisos para acceder a esta sección.", color="danger"
+            return (
+                dbc.Alert(
+                    "No tienes permisos para acceder a esta sección.", color="danger"
+                ),
+                no_update,
             )
 
     @app.callback(
@@ -237,6 +275,10 @@ def register_player_callbacks(app):
             PlayerController,
             get_player_profile_data,
         )
+
+        print(f"🔍 PERFORMANCE CHART DEBUG:")
+        print(f"  - player_id: {player_id}")
+        print(f"  - selected_metrics: {selected_metrics}")
 
         # Si no hay player_id o métricas, mostrar gráfico vacío
         if not player_id or not selected_metrics:
@@ -410,7 +452,14 @@ def register_player_callbacks(app):
 
         Migrado de Streamlit.
         """
+        print(f"🔍 TEST HISTORY DEBUG:")
+        print(f"  - active_tab: {active_tab}")
+        print(f"  - player_id: {player_id}")
+
         if active_tab != "test-results" or not player_id:
+            print(
+                f"  ❌ Returning empty div - tab: {active_tab}, player_id: {player_id}"
+            )
             return html.Div()
 
         try:

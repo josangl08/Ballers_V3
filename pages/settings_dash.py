@@ -1598,11 +1598,16 @@ def create_users_list_dash():
 
 
 # Función principal para mostrar contenido (migrada exactamente de settings.py)
-def show_settings_content_dash():
+def show_settings_content_dash(session_data=None):
     """Función principal para mostrar el contenido de la sección Settings."""
 
     return dbc.Container(
         [
+            # Global user type store - needed for navigation callbacks
+            dcc.Store(
+                id="user-type-store",
+                data=session_data.get("user_type") if session_data else None,
+            ),
             # Título principal con estilo consistente
             dbc.Row(
                 [

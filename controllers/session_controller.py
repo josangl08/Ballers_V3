@@ -928,3 +928,13 @@ def get_sessions_for_editing(
     """Función de conveniencia para obtener sesiones para editar."""
     with SessionController() as controller:
         return controller.get_sessions_for_editing(coach_id, date_filter, search_query)
+
+
+def get_coach_by_user_id(user_id: int):
+    """Obtiene un coach por su user_id."""
+    from controllers.db import get_db_session
+    from models import Coach
+
+    with get_db_session() as db:
+        coach = db.query(Coach).filter(Coach.user_id == user_id).first()
+        return coach
