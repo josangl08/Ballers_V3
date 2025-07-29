@@ -58,15 +58,33 @@ def get_app_layout():
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
+            # SISTEMA HÍBRIDO DE SESIONES:
+            # Store principal (expira al cerrar navegador si no hay "Remember Me")
             dcc.Store(id="session-store", storage_type="session"),
+            # Store persistente para "Remember Me" (localStorage, 30 días)
+            dcc.Store(id="persistent-session-store", storage_type="local"),
+            # Store para gestión de timeout e inactividad
+            dcc.Store(
+                id="session-activity",
+                storage_type="memory",
+                data={"last_activity": None, "remember_me": False},
+            ),
             dcc.Store(id="webhook-trigger", storage_type="memory", data=0),
             dcc.Store(id="webhook-activation", storage_type="memory", data=0),
-            # Smart interval para real-time updates (siempre activo pero lento cuando no hay webhooks)
+            # Smart interval para real-time updates (activo, lento sin webhooks)  # noqa: E501
             dcc.Interval(
                 id="smart-interval",
                 interval=5000,  # 5 segundos por defecto (lento)
                 disabled=False,  # Siempre habilitado
                 max_intervals=-1,  # Sin limite
+                n_intervals=0,
+            ),
+            # Interval para verificar timeout de sesión (cada 30 segundos)
+            dcc.Interval(
+                id="session-timeout-check",
+                interval=30000,  # 30 segundos
+                disabled=False,
+                max_intervals=-1,
                 n_intervals=0,
             ),
             # Layout principal
@@ -85,9 +103,9 @@ app.layout = get_app_layout()
 # Registrar todos los callbacks organizados
 def register_all_callbacks():
     """Registra todos los callbacks de la aplicación."""
-    # register_auth_callbacks(app)  # Deshabilitado - usando login_dash.py callbacks
+    # register_auth_callbacks(app)  # DESHABILITADO: duplica callbacks con login_dash.py
     register_login_callbacks(app)  # Callbacks de login con pausa
-    register_menu_callbacks(app)  # Callbacks del menú y logout
+    register_menu_callbacks(app)  # Callbacks del menú (logout movido a login_dash.py)
     register_navigation_callbacks(app)
     register_player_callbacks(app)
     register_administration_callbacks(app)
@@ -124,7 +142,7 @@ def register_all_callbacks():
         prevent_initial_call=False,
     )
     def manage_smart_interval(activation_data, n_intervals):
-        """Gestiona el smart interval: acelerar cuando hay webhook, desacelerar después de inactividad"""
+        """Gestiona el smart interval: acelerar cuando hay webhook, desacelerar después de inactividad"""  # noqa: E501
 
         if activation_data and activation_data > 0:
             # Acelerar interval cuando hay webhook activation (1 segundo)
@@ -211,7 +229,9 @@ def _initialize_webhook_integration():
             # Registrar cleanup al cerrar la aplicación
             atexit.register(_cleanup_webhook_integration)
         else:
-            print("⚠️ Failed to initialize webhook integration - using manual sync only")
+            print(
+                "⚠️ Failed to initialize webhook integration - using manual sync only"
+            )  # noqa: E501
             print("📝 Real-time sync disabled, manual sync remains available")
 
     except Exception as e:

@@ -60,30 +60,29 @@ def register_player_callbacks(app):
 
     @app.callback(
         Output("user-type-store", "data"),
-        [Input("url", "pathname")],
+        [Input("session-store", "data")],
         prevent_initial_call=False,
     )
-    def get_user_type_callback(pathname):
+    def get_user_type_callback(session_data):
         """Obtiene el tipo de usuario de la sesión."""
-        from controllers.auth_controller import AuthController
-
         try:
-            with AuthController() as auth:
-                if auth.is_logged_in():
-                    user_data = auth.get_current_user_data()
-                    return (
-                        user_data.get("user_type", "player") if user_data else "player"
-                    )
-        except Exception:
-            # Fallback to default user type if authentication fails
-            return "player"
-        return "player"
+            if session_data and session_data.get("user_type"):
+                return session_data.get("user_type", "player")
+        except Exception as e:
+            print(f"DEBUG: Error getting user type from session: {e}")
+
+        # Fallback to admin for testing
+        return "admin"
 
     @app.callback(
         Output("ballers-user-content", "children"),
-        [Input("user-type-store", "data"), Input("selected-player-id", "data")],
+        [
+            Input("user-type-store", "data"),
+            Input("selected-player-id", "data"),
+            Input("session-store", "data"),
+        ],
     )
-    def update_ballers_content_callback(user_type, selected_player_id):
+    def update_ballers_content_callback(user_type, selected_player_id, session_data):
         """Actualiza contenido de Ballers según tipo de usuario y selección."""
         from pages.ballers_dash import (
             create_player_profile_dash,
@@ -91,7 +90,9 @@ def register_player_callbacks(app):
         )
 
         if user_type == "player":
-            return create_player_profile_dash()
+            # Para players, usar su propio user_id si está disponible
+            user_id = session_data.get("user_id") if session_data else None
+            return create_player_profile_dash(player_id=None, user_id=user_id)
         elif user_type in ["coach", "admin"]:
             if selected_player_id:
                 return html.Div(

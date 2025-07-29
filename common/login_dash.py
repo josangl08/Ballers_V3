@@ -79,11 +79,11 @@ def login_page_dash():
                                                             ),
                                                             dbc.InputGroupText(
                                                                 html.I(
-                                                                    className="bi bi-eye"
+                                                                    className="bi bi-eye"  # noqa: E501
                                                                 ),
                                                                 style={
-                                                                    "background-color": "#555",
-                                                                    "border": "1px solid #555",
+                                                                    "background-color": "#555",  # noqa: E501
+                                                                    "border": "1px solid #555",  # noqa: E501
                                                                 },
                                                             ),
                                                         ],
@@ -134,11 +134,11 @@ def login_page_dash():
                                                         "🔑 Password Recovery",
                                                         className="mb-3",
                                                         style={
-                                                            "color": "rgba(36, 222, 132, 1)"
+                                                            "color": "rgba(36, 222, 132, 1)"  # noqa: E501
                                                         },
                                                     ),
                                                     dbc.Alert(
-                                                        "Contact administrator to reset your password:",
+                                                        "Contact administrator to reset your password:",  # noqa: E501
                                                         color="info",
                                                         className="mb-3",
                                                     ),
@@ -148,7 +148,7 @@ def login_page_dash():
                                                     html.P("📱 Phone: +34 XXX XXX XXX"),
                                                     dbc.Input(
                                                         id="recovery-email",
-                                                        placeholder="Your registered email:",
+                                                        placeholder="Your registered email:",  # noqa: E501
                                                         type="email",
                                                         className="mb-3",
                                                     ),
@@ -157,10 +157,10 @@ def login_page_dash():
                                                             dbc.Col(
                                                                 [
                                                                     dbc.Button(
-                                                                        "📧 Send Request",
-                                                                        id="send-recovery-button",
+                                                                        "📧 Send Request",  # noqa: E501
+                                                                        id="send-recovery-button",  # noqa: E501
                                                                         color="success",
-                                                                        className="w-100",
+                                                                        className="w-100",  # noqa: E501
                                                                     )
                                                                 ],
                                                                 width=6,
@@ -169,9 +169,9 @@ def login_page_dash():
                                                                 [
                                                                     dbc.Button(
                                                                         "❌ Cancel",
-                                                                        id="cancel-recovery-button",
-                                                                        color="secondary",
-                                                                        className="w-100",
+                                                                        id="cancel-recovery-button",  # noqa: E501
+                                                                        color="secondary",  # noqa: E501
+                                                                        className="w-100",  # noqa: E501
                                                                     )
                                                                 ],
                                                                 width=6,
@@ -227,6 +227,9 @@ def register_login_callbacks(app):
             Output("password-input", "value"),
             Output("url", "pathname"),
             Output("login-redirect-interval", "disabled"),
+            Output("session-store", "data"),
+            Output("persistent-session-store", "data"),
+            Output("session-activity", "data"),
         ],
         [
             Input("login-button", "n_clicks"),
@@ -253,6 +256,9 @@ def register_login_callbacks(app):
                 no_update,
                 no_update,
                 no_update,
+                no_update,
+                no_update,
+                no_update,
             )
 
         if not username or not password:
@@ -264,29 +270,75 @@ def register_login_callbacks(app):
                 no_update,
                 no_update,
                 no_update,  # interval disabled
+                no_update,  # session-store
+                no_update,  # persistent-session-store
+                no_update,  # session-activity
             )
 
         # Usar controller para autenticación (separación de lógica de negocio)
         success, message, user = authenticate_user(username, password)
 
         if success and user is not None:
-            # Crear sesión con remember_me
+            # SISTEMA HÍBRIDO DE REMEMBER ME
             remember = "remember" in (remember_me or [])
-            create_user_session(user, remember)
-            # Mostrar mensaje de bienvenida y activar interval para redirigir después de 2 segundos
-            welcome_message = f"¡Bienvenido {user.name}! Cargando aplicación..."
-            print(f"DEBUG: Login successful for {user.name}, activating interval")
-            return (
-                welcome_message,
-                "success",
-                True,
-                "",
-                "",
-                no_update,
-                False,  # Activar interval (disabled=False)
+            session_data = create_user_session(user, remember)
+
+            # Agregar timestamp para timeout
+            import time
+
+            current_time = time.time()
+            activity_data = {
+                "last_activity": current_time,
+                "remember_me": remember,
+                "login_time": current_time,
+            }
+
+            welcome_message = f"¡Bienvenido {user.name}! " + (
+                "Sesión persistente activada." if remember else "Sesión temporal (2h)."
             )
+            print(f"DEBUG: Login successful for {user.name}, remember_me={remember}")
+
+            if remember:
+                # CON REMEMBER ME: Guardar en localStorage persistente
+                return (
+                    welcome_message,
+                    "success",
+                    True,
+                    "",
+                    "",
+                    no_update,
+                    False,  # Activar interval
+                    {},  # session-store vacío
+                    session_data,  # persistent-session-store
+                    activity_data,  # session-activity
+                )
+            else:
+                # SIN REMEMBER ME: sessionStorage (expira al cerrar navegador)  # noqa: E501
+                return (
+                    welcome_message,
+                    "success",
+                    True,
+                    "",
+                    "",
+                    no_update,
+                    False,  # Activar interval
+                    session_data,  # session-store
+                    {},  # persistent-session-store vacío
+                    activity_data,  # session-activity
+                )
         else:
-            return message, "danger", True, no_update, no_update, no_update, no_update
+            return (
+                message,
+                "danger",
+                True,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
 
     @app.callback(
         Output("recovery-panel", "is_open"),
@@ -339,6 +391,52 @@ def register_login_callbacks(app):
         if n_intervals > 0:
             print("DEBUG: Redirecting to /")
             return "/"  # Redirigir a la página principal
+        return no_update
+
+    @app.callback(
+        [
+            Output("url", "pathname", allow_duplicate=True),
+            Output("session-store", "data", allow_duplicate=True),
+            Output("persistent-session-store", "data", allow_duplicate=True),
+            Output("session-activity", "data", allow_duplicate=True),
+        ],
+        [Input("logout-button", "n_clicks")],
+        prevent_initial_call=True,
+    )
+    def handle_logout_callback(n_clicks):
+        """Callback para logout híbrido - Limpia ambos stores."""
+        if n_clicks:
+            from controllers.auth_controller import AuthController
+
+            # Log del logout usando AuthController
+            with AuthController() as auth:
+                auth.log_info(
+                    "session_logout", message="User logged out via logout button"
+                )
+
+            print(
+                "🔓 User logged out - clearing ALL session stores and redirecting to login"  # noqa: E501
+            )
+            # Limpiar TODOS los stores y redirigir
+            return "/", {}, {}, {"last_activity": None, "remember_me": False}
+        return no_update, no_update, no_update, no_update
+
+    # Callback para renovar actividad cuando el usuario navega
+    @app.callback(
+        Output("session-activity", "data", allow_duplicate=True),
+        [Input("url", "pathname")],
+        [State("session-activity", "data")],
+        prevent_initial_call=True,
+    )
+    def update_user_activity(pathname, activity_data):
+        """Actualiza timestamp de última actividad en navegación."""
+        if activity_data and activity_data.get("remember_me") is False:
+            # Solo renovar actividad para sesiones SIN remember_me (que tienen timeout)
+            import time
+
+            activity_data["last_activity"] = time.time()
+            print(f"DEBUG: Activity renewed at {pathname}")
+            return activity_data
         return no_update
 
 

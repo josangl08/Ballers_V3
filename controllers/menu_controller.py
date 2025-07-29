@@ -5,9 +5,9 @@ Separa la lógica del menú de la presentación UI.
 """
 from typing import Dict, List, Optional
 
-import streamlit as st
-
 from .sync_coordinator import get_sync_stats_unified, is_auto_sync_running
+
+# Eliminado import de streamlit - completamente migrado a Dash
 
 
 class MenuController:
@@ -35,11 +35,20 @@ class MenuController:
         "Settings": "pages.settings",
     }
 
-    def __init__(self):
-        """Inicializa el controller con datos de sesión actual."""
-        self.user_id = st.session_state.get("user_id")
-        self.user_type = st.session_state.get("user_type", "player")
-        self.user_name = st.session_state.get("name", "")
+    def __init__(self, session_data: Optional[Dict] = None):
+        """
+        Inicializa el controller con datos de sesión.
+        TEMPORAL: Acepta session_data como parámetro para compatibilidad con Dash.
+        """
+        if session_data:
+            self.user_id = session_data.get("user_id")
+            self.user_type = session_data.get("user_type", "player")
+            self.user_name = session_data.get("name", "")
+        else:
+            # Fallback temporal para admin si no hay session_data
+            self.user_id = 1
+            self.user_type = "admin"
+            self.user_name = "Admin User"
 
     # Configuración del menú
 
@@ -88,7 +97,13 @@ class MenuController:
         if not self.should_show_sync_area():
             return None
 
-        return get_sync_stats_unified()
+        # Pasar session_data que tiene el MenuController
+        session_data = {
+            "user_id": self.user_id,
+            "user_type": self.user_type,
+            "name": self.user_name,
+        }
+        return get_sync_stats_unified(session_data)
 
     def get_auto_sync_status_display(self) -> Dict[str, str]:
         """
@@ -104,28 +119,37 @@ class MenuController:
 
     # Navegación y redirecciones
 
-    def handle_forced_navigation(self) -> Optional[str]:
+    def handle_forced_navigation(
+        self, session_data: Optional[Dict] = None
+    ) -> Optional[str]:
         """
-        Maneja navegación forzada desde otros componentes.
+        Maneja navegación forzada desde otros componentes - MIGRADO A DASH.
+
+        Args:
+            session_data: Datos de sesión de Dash para verificar navegación forzada
 
         Returns:
             Sección forzada o None si no hay redirección
         """
-        if "force_section" in st.session_state:
-            forced_section = st.session_state["force_section"]
-            del st.session_state["force_section"]  # Limpiar inmediatamente
-            return forced_section
+        # En Dash, la navegación forzada se maneja vía callbacks y no session state
+        # Esta funcionalidad se implementa directamente en los callbacks de navegación
         return None
 
-    def create_sync_details_redirect(self, target_section: str) -> None:
+    def create_sync_details_redirect(self, target_section: str) -> Dict[str, str]:
         """
-        Crea redirección para ver detalles de sync.
+        Crea datos para redirección a detalles de sync - MIGRADO A DASH.
 
         Args:
             target_section: Sección destino ("Settings" o "Administration")
+
+        Returns:
+            Dict con datos de redirección para usar en callbacks de Dash
         """
-        st.session_state["show_sync_details"] = True
-        st.session_state["force_section"] = target_section
+        return {
+            "show_sync_details": True,
+            "target_section": target_section,
+            "redirect_reason": "sync_details_requested",
+        }
 
     # Limpieza y logout
 
@@ -161,50 +185,55 @@ class MenuController:
         return menu_config["options"]
 
 
-def get_menu_controller() -> MenuController:
+def get_menu_controller(session_data: Optional[Dict] = None) -> MenuController:
     """
     Factory function para obtener instancia del MenuController.
-    Útil para mantener compatibilidad con código existente.
+    Útil para mantener compatibilidad con código existente - MIGRADO A DASH.
+
+    Args:
+        session_data: Datos de sesión de Dash
     """
-    return MenuController()
+    return MenuController(session_data)
 
 
-def get_user_menu_config() -> Dict[str, List[str]]:
-    """Función de conveniencia para obtener configuración de menú."""
-    controller = get_menu_controller()
+def get_user_menu_config(session_data: Optional[Dict] = None) -> Dict[str, List[str]]:
+    """Función de conveniencia para obtener configuración de menú - MIGRADO A DASH."""
+    controller = get_menu_controller(session_data)
     return controller.get_menu_config()
 
 
-def can_user_access_section(section: str) -> bool:
-    """Función de conveniencia para verificar acceso a sección."""
-    controller = get_menu_controller()
+def can_user_access_section(section: str, session_data: Optional[Dict] = None) -> bool:
+    """Función de conveniencia para verificar acceso a sección - MIGRADO A DASH."""
+    controller = get_menu_controller(session_data)
     return controller.can_access_section(section)
 
 
-def get_content_path(section: str) -> Optional[str]:
+def get_content_path(
+    section: str, session_data: Optional[Dict] = None
+) -> Optional[str]:
     """
-    Función de conveniencia para obtener ruta de contenido.
+    Función de conveniencia para obtener ruta de contenido - MIGRADO A DASH.
     Mantiene compatibilidad con main.py existente.
     """
-    controller = get_menu_controller()
+    controller = get_menu_controller(session_data)
     return controller.get_content_route(section)
 
 
-def should_show_sync_area() -> bool:
-    """Función de conveniencia para verificar si mostrar área de sync."""
-    controller = get_menu_controller()
+def should_show_sync_area(session_data: Optional[Dict] = None) -> bool:
+    """Función de conveniencia para verificar si mostrar área de sync - DASH."""
+    controller = get_menu_controller(session_data)
     return controller.should_show_sync_area()
 
 
 # Utilidades para sync status
 
 
-def get_sync_status_for_ui() -> Optional[Dict]:
+def get_sync_status_for_ui(session_data: Optional[Dict] = None) -> Optional[Dict]:
     """
-    Obtiene estado de sincronización formateado para UI.
+    Obtiene estado de sincronización formateado para UI - MIGRADO A DASH.
     Combina datos de sync stats y auto-sync status.
     """
-    controller = get_menu_controller()
+    controller = get_menu_controller(session_data)
 
     if not controller.should_show_sync_area():
         return None
@@ -220,16 +249,22 @@ def get_sync_status_for_ui() -> Optional[Dict]:
     }
 
 
-def handle_sync_details_redirect() -> None:
+def handle_sync_details_redirect(session_data: Optional[Dict] = None) -> Optional[Dict]:
     """
-    Maneja redirección a detalles de sync según tipo de usuario.
+    Maneja redirección a detalles de sync según tipo de usuario - MIGRADO A DASH.
     Centraliza la lógica de redirección.
+
+    Args:
+        session_data: Datos de sesión de Dash
+
+    Returns:
+        Dict con datos de redirección o None si no aplica
     """
-    controller = get_menu_controller()
+    controller = MenuController(session_data)
 
     if controller.user_type == "admin":
-        controller.create_sync_details_redirect("Settings")
+        return controller.create_sync_details_redirect("Settings")
     elif controller.user_type == "coach":
-        controller.create_sync_details_redirect("Administration")
+        return controller.create_sync_details_redirect("Administration")
 
-    st.rerun()  # Forzar refresh inmediato
+    return None

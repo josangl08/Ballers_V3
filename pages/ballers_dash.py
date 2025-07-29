@@ -22,12 +22,11 @@ def show_cloud_mode_info():
     return "Running in local mode"
 
 
-def create_player_profile_dash(player_id=None):
+def create_player_profile_dash(player_id=None, user_id=None):
     """Crea el perfil de un jugador para Dash - migrado exactamente de Streamlit"""
 
     try:
         # Obtener datos usando controller (lógica mantenida de Streamlit)
-        user_id = None  # Para coaches/admin no se usa user_id
         profile_data = get_player_profile_data(player_id=player_id, user_id=user_id)
 
         if not profile_data:

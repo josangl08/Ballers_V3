@@ -12,9 +12,13 @@ def register_navigation_callbacks(app):
     @app.callback(
         Output("main-content", "children"),
         [Input("url", "pathname")],
-        [State("session-store", "data")],
+        [
+            State("session-store", "data"),
+            State("persistent-session-store", "data"),
+            State("session-activity", "data"),
+        ],
     )
-    def display_page(pathname, session_data):
+    def display_page(pathname, session_data, persistent_session_data, activity_data):
         """Maneja la navegación principal y muestra el contenido apropiado."""
         import logging
         import os
@@ -49,7 +53,7 @@ def register_navigation_callbacks(app):
                         html.Br(),
                         "2. Verify write permissions on the `data/` folder",
                         html.Br(),
-                        "3. Run `python data/seed_database.py` to recreate the database",
+                        "3. Run `python data/seed_database.py` to recreate the database",  # noqa: E501
                     ],
                     color="danger",
                 )
@@ -58,13 +62,47 @@ def register_navigation_callbacks(app):
                 f"❌ Error initializing application: {str(e)}", color="danger"
             )
 
-        # Verificar sesión activa
+        # SISTEMA HÍBRIDO: Combinar session stores
+        print(f"DEBUG navigation_callbacks: session_data: {session_data}")
+        print(
+            f"DEBUG navigation_callbacks: persistent_session_data: {persistent_session_data}"  # noqa: E501
+        )
+        print(f"DEBUG navigation_callbacks: activity_data: {activity_data}")
+
+        # Determinar qué store usar basado en remember_me
+        if activity_data and activity_data.get("remember_me"):
+            # Usar persistent store si remember_me está activo
+            session_data = persistent_session_data or {}
+            print("DEBUG: Using persistent session (Remember Me active)")
+        else:
+            # Usar session store temporal
+            session_data = session_data or {}
+            print("DEBUG: Using temporary session (Remember Me inactive)")
+
+            # Verificar timeout de 2 horas para sesiones sin remember_me
+            if activity_data and activity_data.get("last_activity"):
+                import time
+
+                current_time = time.time()
+                last_activity = activity_data["last_activity"]
+                inactive_time = current_time - last_activity
+                TIMEOUT_SECONDS = 2 * 60 * 60  # 2 horas
+
+                if inactive_time > TIMEOUT_SECONDS:
+                    print(
+                        f"DEBUG: Session timeout ({inactive_time/3600:.1f}h > 2h), clearing session"  # noqa: E501
+                    )
+                    session_data = {}
+
+        print(f"DEBUG navigation_callbacks: Final session_data: {session_data}")
+
         with AuthController() as auth:
-            if not auth.is_logged_in():
+            if not auth.is_logged_in(session_data):
                 success, message = auth.restore_session_from_url()
                 if success:
                     print(f"Auto-login: {message}")
-            has_session = auth.is_logged_in()
+            has_session = auth.is_logged_in(session_data)
+            print(f"DEBUG navigation_callbacks: has_session = {has_session}")
 
         # Si no hay sesión, mostrar página de login
         if not has_session:
@@ -75,7 +113,7 @@ def register_navigation_callbacks(app):
             [
                 # Sidebar colapsible
                 html.Div(
-                    [create_sidebar_menu_dash()],
+                    [create_sidebar_menu_dash(session_data)],
                     id="sidebar-container",
                     style={
                         "position": "fixed",
@@ -96,7 +134,7 @@ def register_navigation_callbacks(app):
                                         dbc.Col(
                                             [
                                                 html.Img(
-                                                    src="/assets/ballers/logo_white.png",
+                                                    src="/assets/ballers/logo_white.png",  # noqa: E501
                                                     style={
                                                         "width": "400px",
                                                         "max-width": "100%",
@@ -137,9 +175,16 @@ def register_navigation_callbacks(app):
     @app.callback(
         Output("dynamic-content", "children"),
         [Input("selected-menu-item", "data")],
+        [
+            State("session-store", "data"),
+            State("persistent-session-store", "data"),
+            State("session-activity", "data"),
+        ],
         prevent_initial_call=False,
     )
-    def load_dynamic_content(selected_section):
+    def load_dynamic_content(
+        selected_section, session_data, persistent_session_data, activity_data
+    ):
         """Carga contenido dinámico según la sección seleccionada del menú."""
         from common.menu_dash import get_content_path_dash
 
@@ -148,8 +193,14 @@ def register_navigation_callbacks(app):
 
         print(f"DEBUG: Loading content for section: {selected_section}")
 
+        # Determinar qué session_data usar (mismo lógica híbrida que en display_page)
+        if activity_data and activity_data.get("remember_me"):
+            session_data = persistent_session_data or {}
+        else:
+            session_data = session_data or {}
+
         try:
-            content_module_path = get_content_path_dash(selected_section)
+            content_module_path = get_content_path_dash(selected_section, session_data)
 
             if content_module_path:
                 try:
@@ -188,7 +239,7 @@ def register_navigation_callbacks(app):
                                 style={"color": "rgba(36, 222, 132, 1)"},
                             ),
                             dbc.Alert(
-                                f"Error importing module {content_module_path}: {str(e)}",
+                                f"Error importing module {content_module_path}: {str(e)}",  # noqa: E501
                                 color="danger",
                             ),
                         ]

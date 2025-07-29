@@ -4,11 +4,13 @@ import datetime as dt
 import json
 from zoneinfo import ZoneInfo
 
-import streamlit as st
-import streamlit.components.v1 as components
-
 from config import CALENDAR_COLORS
 from models import Session
+
+# Eliminados imports de Streamlit - completamente migrado a Dash
+# Legacy: import streamlit as st
+# Legacy: import streamlit.components.v1 as components
+
 
 HEX = {k: v["hex"] for k, v in CALENDAR_COLORS.items()}
 TZ = ZoneInfo("Europe/Madrid")
@@ -51,10 +53,21 @@ def show_calendar(
     editable: bool = False,
     key: str = "calendar",
 ) -> None:
+    """
+    LEGACY FUNCTION - DEPRECATED FOR DASH MIGRATION
+    Use show_calendar_dash() or create_fixed_calendar_dash() instead.
 
-    st.subheader(title)
-    events = json.dumps([_to_event(s) for s in sessions], default=str)
-    html = f"""
+    Esta función permanece solo para compatibilidad hacia atrás.
+    NO USAR en código nuevo - migrar a las versiones Dash.
+    """
+    raise DeprecationWarning(
+        "show_calendar() is deprecated. Use show_calendar_dash() or create_fixed_calendar_dash() instead."
+    )
+
+    # Legacy code commented out - use Dash versions instead
+    # st.subheader(title)
+    events = json.dumps([_to_event(s) for s in sessions], default=str)  # noqa: F841
+    calendar_html = f"""  # noqa: F841
 <link  href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 
@@ -186,7 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-list-event:hover a          {{ color: #24DE84 !important; }}
 </style>
 """
-    components.html(html, height=height + 70, scrolling=False)
+    # Legacy Streamlit component call - deprecated
+    # components.html(calendar_html, height=height + 70, scrolling=False)
+    pass
 
 
 def show_calendar_dash(

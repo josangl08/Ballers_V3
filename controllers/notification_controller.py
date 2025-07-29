@@ -8,7 +8,11 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-import streamlit as st
+# Eliminado import de streamlit - completamente migrado a Dash
+# Legacy: import streamlit as st
+
+# Almacenamiento global para notificaciones (reemplaza st.session_state)
+_global_notifications_store = {}
 
 
 @dataclass
@@ -47,11 +51,11 @@ class SyncProblemsData:
 
 class NotificationController:
     """
-    Controlador para manejo de notificaciones de problemas de sync.
+    Controlador para manejo de notificaciones de problemas de sync - MIGRADO A DASH.
     Centraliza toda la lógica de datos sin depender de UI.
     """
 
-    # Clave para session_state
+    # Clave para almacenamiento global (reemplaza session_state)
     STORAGE_KEY = "sync_problems"
 
     def save_problems(
@@ -77,13 +81,15 @@ class NotificationController:
                 seen=False,
             )
 
-            # Guardar en session_state usando dataclass
-            st.session_state[self.STORAGE_KEY] = problems_data
+            # Guardar en almacenamiento global usando dataclass
+            global _global_notifications_store
+            _global_notifications_store[self.STORAGE_KEY] = problems_data
 
             # Log solo si hay datos útiles
             if rejected_events or warning_events:
                 print(
-                    f"💾 Sync problems saved: {len(rejected_events)} rejected, {len(warning_events)} warnings ({current_timestamp})"
+                    f"💾 Sync problems saved: {len(rejected_events)} rejected, "
+                    f"{len(warning_events)} warnings ({current_timestamp})"
                 )
             else:
                 # Log de limpieza solo en debug
@@ -100,13 +106,14 @@ class NotificationController:
         Returns:
             SyncProblemsData o None si no hay datos válidos
         """
+        global _global_notifications_store
         try:
-            # Verificar si existe
-            if self.STORAGE_KEY not in st.session_state:
+            # Verificar si existe en almacenamiento global
+            if self.STORAGE_KEY not in _global_notifications_store:
                 return self._try_autosync_fallback()
 
             # Obtener el valor
-            problems = st.session_state[self.STORAGE_KEY]
+            problems = _global_notifications_store[self.STORAGE_KEY]
 
             # Si es el formato anterior (dict), convertir a dataclass
             if isinstance(problems, dict):
@@ -126,8 +133,8 @@ class NotificationController:
                 return fallback_result
 
             # Si no hay fallback, limpiar datos corruptos
-            if self.STORAGE_KEY in st.session_state:
-                del st.session_state[self.STORAGE_KEY]
+            if self.STORAGE_KEY in _global_notifications_store:
+                del _global_notifications_store[self.STORAGE_KEY]
             print(f"⚠️ Error getting sync problems: {e}")
             return None
 
@@ -144,7 +151,8 @@ class NotificationController:
 
             if (rejected_events or warning_events) and problems_timestamp:
                 print(
-                    f"🔍 Fallback AutoSyncStats: {len(rejected_events)} rejected, {len(warning_events)} warnings"
+                    f"🔍 Fallback AutoSyncStats: {len(rejected_events)} rejected, "
+                    f"{len(warning_events)} warnings"
                 )
 
                 # Crear SyncProblemsData extendida con stats adicionales
@@ -186,6 +194,7 @@ class NotificationController:
 
     def clear_all(self) -> None:
         """Limpia todos los problemas guardados."""
+        global _global_notifications_store
         keys_to_remove = [
             self.STORAGE_KEY,
             "last_rejected_events",
@@ -194,15 +203,16 @@ class NotificationController:
         ]
 
         for key in keys_to_remove:
-            if key in st.session_state:
-                del st.session_state[key]
+            if key in _global_notifications_store:
+                del _global_notifications_store[key]
 
     def mark_as_seen(self) -> None:
         """Marca los problemas como vistos por el usuario."""
+        global _global_notifications_store
         problems = self.get_problems()
         if problems:
             problems.seen = True
-            st.session_state[self.STORAGE_KEY] = problems
+            _global_notifications_store[self.STORAGE_KEY] = problems
 
     def cleanup_old_problems(self, max_age_hours: int = 24) -> None:
         """

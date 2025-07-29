@@ -59,18 +59,28 @@ def register_auth_callbacks(app):
             return message, "danger", True, no_update, no_update, no_update
 
     @app.callback(
-        Output("url", "pathname", allow_duplicate=True),
+        [
+            Output("url", "pathname", allow_duplicate=True),
+            Output("session-store", "data", allow_duplicate=True),
+        ],
         [Input("logout-button", "n_clicks")],
         prevent_initial_call=True,
     )
     def handle_logout_callback(n_clicks):
-        """Callback para logout."""
+        """Callback para logout - MIGRADO A DASH."""
         if n_clicks:
-            from controllers.auth_controller import clear_user_session
+            from controllers.auth_controller import AuthController
 
-            clear_user_session(show_message=False)
-            return "/"
-        return "/"
+            # Log del logout usando AuthController
+            with AuthController() as auth:
+                auth.log_info(
+                    "session_logout", message="User logged out via logout button"
+                )
+
+            print("🔓 User logged out - clearing session and redirecting to login")
+            # Limpiar session-store y redirigir
+            return "/", {}
+        return "/", no_update
 
     @app.callback(
         Output("recovery-panel", "is_open"),

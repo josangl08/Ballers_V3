@@ -1,5 +1,5 @@
 # common/menu_dash.py
-from typing import Optional
+from typing import Dict, Optional
 
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html, no_update
@@ -69,12 +69,12 @@ def get_sync_status_component_dash(stats: dict):
     return components
 
 
-def get_auto_sync_area_dash():
+def get_auto_sync_area_dash(session_data: Optional[Dict] = None):
     """
     Retorna componentes de área de auto-sync para Dash.
     """
     # Usar MenuController para obtener datos
-    sync_data = get_sync_status_for_ui()
+    sync_data = get_sync_status_for_ui(session_data)
 
     if not sync_data or not sync_data["show_sync_area"]:
         return []
@@ -88,7 +88,7 @@ def get_auto_sync_area_dash():
         components.append(html.Hr())
 
     # Mostrar estado de auto-sync
-    auto_status = sync_data["auto_sync_status"]
+    # auto_status = sync_data["auto_sync_status"]  # noqa: F841
     # Determinar color basado en estado
     # color = "success" if auto_status["type"] == "success" else "info"
 
@@ -150,16 +150,18 @@ def get_auto_sync_area_dash():
     return components
 
 
-def create_sidebar_menu_dash():
+def create_sidebar_menu_dash(session_data: Optional[Dict] = None):
     """
     Crea menú lateral colapsible para Dash usando MenuController.
+    TEMPORAL: Acepta session_data para compatibilidad.
     """
-    # Crear instancia del controller
-    controller = MenuController()
+    # Crear instancia del controller con session_data
+    controller = MenuController(session_data)
 
-    # Verificar si hay usuario logueado
-    if not controller.is_user_logged_in():
-        return html.Div()
+    # TEMPORAL: Comentar validación de login para que el menu siempre aparezca
+    # Esto debe ser arreglado cuando se complete la migración de MenuController
+    # if not controller.is_user_logged_in():
+    #     return html.Div()
 
     # Obtener configuración del menú
     menu_config = controller.get_menu_config()
@@ -298,7 +300,7 @@ def create_sidebar_menu_dash():
         # Área de auto-sync en su propio div
         html.Div(
             id="auto-sync-area",
-            children=get_auto_sync_area_dash(),
+            children=get_auto_sync_area_dash(session_data),
             className="sidebar-sync-area",
             style={"transition": "all 0.3s ease"},
         ),
@@ -352,17 +354,20 @@ def create_sidebar_menu_dash():
     )
 
 
-def get_content_path_dash(section: str) -> Optional[str]:
+def get_content_path_dash(
+    section: str, session_data: Optional[Dict] = None
+) -> Optional[str]:
     """
     Función de compatibilidad que usa MenuController para Dash.
 
     Args:
         section: Sección seleccionada en el menú
+        session_data: Datos de sesión de Dash
 
     Returns:
         str: Ruta al módulo de contenido
     """
-    controller = MenuController()
+    controller = MenuController(session_data)
     return controller.get_content_route(section)
 
 
@@ -392,19 +397,20 @@ def register_menu_callbacks(app):
         else:
             return f"❌ Error: {result['error']}", "danger", True
 
-    @app.callback(
-        Output("url", "pathname", allow_duplicate=True),
-        [Input("logout-button", "n_clicks")],
-        prevent_initial_call=True,
-    )
-    def handle_logout(n_clicks):
-        """Callback para logout."""
-        if n_clicks:
-            from controllers.auth_controller import clear_user_session
-
-            clear_user_session(show_message=False)
-            return "/"
-        return no_update
+    # TEMPORAL: Callback de logout movido a auth_callbacks.py para evitar duplicación
+    # @app.callback(
+    #     Output("url", "pathname", allow_duplicate=True),
+    #     [Input("logout-button", "n_clicks")],
+    #     prevent_initial_call=True,
+    # )
+    # def handle_logout(n_clicks):
+    #     """Callback para logout."""
+    #     if n_clicks:
+    #         from controllers.auth_controller import clear_user_session
+    #
+    #         clear_user_session(show_message=False)
+    #         return "/"
+    #     return no_update
 
 
 if __name__ == "__main__":

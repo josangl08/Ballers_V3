@@ -9,8 +9,6 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-import streamlit as st
-
 from controllers.db import get_db_session
 from controllers.notification_controller import save_sync_problems
 from models import Coach, User
@@ -18,7 +16,14 @@ from models import Coach, User
 from .calendar_sync_core import sync_calendar_to_db_with_feedback, sync_db_to_calendar
 from .session_controller import update_past_sessions
 
+# Eliminado import de streamlit - completamente migrado a Dash
+# Legacy: import streamlit as st
+
+
 logger = logging.getLogger(__name__)
+
+# Variable global para almacenar último mensaje de sync (para callbacks de Dash)
+_last_sync_message = {"message": "", "icon": "", "timestamp": None}
 
 
 # Funciones simples para reemplazar cloud_utils (eliminado)
@@ -40,37 +45,49 @@ def safe_database_operation(operation, *args, **kwargs):
 
 
 def _toast(msg: str, icon: str = "") -> None:
-    """Muestra un mensaje flotante con duración extendida."""
-    if hasattr(st, "toast"):
-        st.toast(msg, icon=icon)
-        if "Auto-Sync" in msg and (
-            "importada" in msg or "actualizada" in msg or "eliminada" in msg
-        ):
-            if "sync_notification" not in st.session_state:
-                st.session_state["sync_notification"] = msg
-                st.session_state["sync_notification_time"] = dt.datetime.now()
-    else:
-        # Fallback para versiones sin toast
-        if icon == "✅":
-            st.success(msg)
-        elif icon == "⚠️":
-            st.warning(msg)
-        else:
-            st.info(msg)
+    """Muestra un mensaje flotante - MIGRADO A DASH."""
+    # En Dash, los mensajes se manejan a través de callback returns y alerts
+    # Esta función ahora solo registra el mensaje para uso interno
+    logger.info(f"Sync message: {icon} {msg}")
+
+    # Almacenar mensaje para callbacks de Dash (usando variable global temporal)
+    global _last_sync_message
+    _last_sync_message = {"message": msg, "icon": icon, "timestamp": dt.datetime.now()}
+
+    # Legacy Streamlit code commented out
+    # if hasattr(st, "toast"):
+    #     st.toast(msg, icon=icon)
+    #     if "Auto-Sync" in msg and (
+    #         "importada" in msg or "actualizada" in msg or "eliminada" in msg
+    #     ):
+    #         if "sync_notification" not in st.session_state:
+    #             st.session_state["sync_notification"] = msg
+    #             st.session_state["sync_notification_time"] = dt.datetime.now()
+    # else:
+    #     # Fallback para versiones sin toast
+    #     if icon == "✅":
+    #         st.success(msg)
+    #     elif icon == "⚠️":
+    #         st.warning(msg)
+    #     else:
+    #         st.info(msg)
 
 
 # Lógica de sync
 
 
-def get_coach_id_if_needed() -> Optional[int]:
+def get_coach_id_if_needed(session_data: Optional[Dict] = None) -> Optional[int]:
     """Obtiene coach_id si el usuario actual es coach, None en caso contrario."""
-    user_type = st.session_state.get("user_type")
+    if not session_data:
+        logger.warning("get_coach_id_if_needed called without session_data")
+        return None
+
+    user_type = session_data.get("user_type")
     if user_type != "coach":
         return None
 
     try:
-
-        user_id = st.session_state.get("user_id")
+        user_id = session_data.get("user_id")
         db = get_db_session()
         coach = db.query(Coach).join(User).filter(User.user_id == user_id).first()
         db.close()
@@ -149,84 +166,113 @@ def build_stats_from_auto_sync(auto_status: Dict[str, Any]) -> Optional[Dict[str
     return None
 
 
-def get_sync_stats_unified() -> Optional[Dict[str, Any]]:
+def get_sync_stats_unified(
+    session_data: Optional[Dict] = None,
+) -> Optional[Dict[str, Any]]:
     """
-    Simplified sync stats - only uses manual sync data (auto-sync removed)
+    Simplified sync stats - only uses manual sync data (auto-sync removed) - MIGRADO A DASH.  # noqa: E501
     """
-    # Evitar bucles infinitos
-    if getattr(st.session_state, "_reading_stats", False):
+    # En Dash, los stats se manejan via stores y callbacks
+    # Esta función ahora usa el último mensaje de sync almacenado globalmente
+
+    global _last_sync_message
+
+    if not _last_sync_message.get("timestamp"):
         return None
 
-    st.session_state._reading_stats = True
+    # Verificar si el mensaje es reciente (90 segundos)
+    timestamp = _last_sync_message["timestamp"]
+    seconds_ago = (dt.datetime.now() - timestamp).total_seconds()
 
-    try:
-        # Only check manual sync results
-        if "last_sync_result" in st.session_state:
-            result = st.session_state["last_sync_result"]
-            timestamp = result.get("timestamp")
+    if seconds_ago < 90:
+        # Construir stats básicos desde el mensaje
+        message = _last_sync_message["message"]
+        icon = _last_sync_message["icon"]
 
-            if timestamp:
-                try:
-                    sync_time = dt.datetime.fromisoformat(timestamp)
-                    seconds_ago = (dt.datetime.now() - sync_time).total_seconds()
+        # Extraer información básica del mensaje para stats
+        changes = 0
+        warnings = 0
+        rejected = 0
 
-                    if seconds_ago < 90:  # 90 segundos
-                        return build_stats_from_manual_sync(result)
-                    else:
-                        # Auto-limpiar datos expirados
-                        del st.session_state["last_sync_result"]
-                except Exception:
-                    # Si hay error, limpiar
-                    if "last_sync_result" in st.session_state:
-                        del st.session_state["last_sync_result"]
+        if "cambios" in message.lower():
+            # Intentar extraer número de cambios del mensaje
+            import re
 
-        # No manual sync data available
-        return None
+            match = re.search(r"(\d+)\s+cambios", message.lower())
+            if match:
+                changes = int(match.group(1))
 
-    finally:
-        # Limpiar flag siempre
-        if hasattr(st.session_state, "_reading_stats"):
-            del st.session_state._reading_stats
+        if "advertencias" in message.lower() or icon == "⚠️":
+            warnings = 1
+
+        if "rechazados" in message.lower():
+            rejected = 1
+
+        return {
+            "imported": changes if "importad" in message.lower() else 0,
+            "updated": changes if "actualizad" in message.lower() else 0,
+            "deleted": changes if "eliminad" in message.lower() else 0,
+            "rejected": rejected,
+            "warnings": warnings,
+            "sync_time": 1.0,  # Tiempo estimado
+        }
+
+    return None
 
 
 # Funciones públicas
 
 
-def run_sync_once(force: bool = False) -> None:
+def run_sync_once(
+    force: bool = False, session_data: Optional[Dict] = None
+) -> Dict[str, Any]:
     """
-    Ejecuta la sincronización completa usando force_manual_sync.
+    Ejecuta la sincronización completa usando force_manual_sync - MIGRADO A DASH.
     Mantiene compatibilidad con interfaz anterior pero simplifica lógica.
     """
-    # Verificar si ya se ejecutó (solo si no es forzado)
-    if st.session_state.get("_synced") and not force:
-        return
+    # En Dash, callbacks manejan la prevención de duplicados  # noqa: E501
 
-    st.session_state["_synced"] = True
+    # Usar force_manual_sync como función principal (sin st.spinner en Dash)
+    result = force_manual_sync()
 
-    # Usar force_manual_sync como función principal
-    with st.spinner("Sincronizando..."):
-        result = force_manual_sync()
+    if result["success"]:
+        # Mostrar mensajes de éxito basados en resultado
+        total_changes = (
+            result.get("imported", 0)
+            + result.get("updated", 0)
+            + result.get("deleted", 0)
+        )
+        rejected = len(result.get("rejected_events", []))
+        warnings = len(result.get("warning_events", []))
 
-        if result["success"]:
-            # Mostrar mensajes de éxito basados en resultado
-            total_changes = (
-                result.get("imported", 0)
-                + result.get("updated", 0)
-                + result.get("deleted", 0)
-            )
-            rejected = len(result.get("rejected_events", []))
-            warnings = len(result.get("warning_events", []))
-
-            if rejected > 0:
-                _toast(f"Sync completado con {rejected} eventos rechazados", "⚠️")
-            elif warnings > 0:
-                _toast(f"Sync completado con {warnings} advertencias", "⚠️")
-            elif total_changes > 0:
-                _toast(f"Sync completado: {total_changes} cambios", "✅")
-            else:
-                _toast("Sync completado sin cambios", "✅")
+        if rejected > 0:
+            _toast(f"Sync completado con {rejected} eventos rechazados", "⚠️")
+        elif warnings > 0:
+            _toast(f"Sync completado con {warnings} advertencias", "⚠️")
+        elif total_changes > 0:
+            _toast(f"Sync completado: {total_changes} cambios", "✅")
         else:
-            _toast(f"Error en sync: {result.get('error', 'Unknown')}", "❌")
+            _toast("Sync completado sin cambios", "✅")
+    else:
+        _toast(f"Error en sync: {result.get('error', 'Unknown')}", "❌")
+
+    return result
+
+
+def get_last_sync_message() -> Dict[str, Any]:
+    """
+    Obtiene el último mensaje de sync para callbacks de Dash.
+    """
+    global _last_sync_message
+    return _last_sync_message.copy()
+
+
+def clear_sync_message() -> None:
+    """
+    Limpia el mensaje de sync almacenado.
+    """
+    global _last_sync_message
+    _last_sync_message = {"message": "", "icon": "", "timestamp": None}
 
 
 # Auto-Sync Clases y funciones
@@ -275,7 +321,7 @@ def is_auto_sync_running() -> bool:
 
 
 def has_pending_notifications() -> bool:
-    """DEPRECATED: Always returns False as auto-sync notifications replaced with webhook notifications"""
+    """DEPRECATED: Always returns False as auto-sync notifications replaced with webhook notifications"""  # noqa: E501
     return False
 
 
@@ -319,7 +365,7 @@ def force_manual_sync() -> Dict[str, Any]:
         total_problems = len(rejected_events) + len(warning_events)
         if total_problems > 0:
             logger.warning(
-                f"🔧 Manual sync completed with issues: {len(rejected_events)} rejected, {len(warning_events)} warnings"
+                f"🔧 Manual sync completed with issues: {len(rejected_events)} rejected, {len(warning_events)} warnings"  # noqa: E501
             )
         else:
             logger.info("✅ Manual sync completed successfully")
