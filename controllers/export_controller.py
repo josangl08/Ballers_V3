@@ -29,7 +29,7 @@ from sqlalchemy.orm import joinedload
 
 from controllers.db import get_db_session
 from controllers.player_controller import get_player_profile_data
-from controllers.sheets_controller_dash import get_accounting_df
+from controllers.sheets_controller_dash import get_accounting_df_dash
 from models import Coach, Player, Session, SessionStatus, TestResult
 
 
@@ -158,9 +158,6 @@ class ExportController:
         # Información personal con foto
         story.append(Paragraph("Personal Information", self.styles["CustomSubtitle"]))
 
-        # Crear tabla con foto y datos personales
-        personal_data = []
-
         # Intentar añadir la foto
         photo_cell = ""
         try:
@@ -173,7 +170,7 @@ class ExportController:
                 photo_cell = Paragraph(
                     "No photo available", self.styles["CustomNormal"]
                 )
-        except Exception as e:
+        except Exception:
             photo_cell = Paragraph("Photo not available", self.styles["CustomNormal"])
 
         # Datos personales en formato de texto
@@ -505,7 +502,9 @@ class ExportController:
             Tuple (PDF buffer, filename)
         """
         # Obtener datos financieros
-        df = get_accounting_df()
+        df, error_msg = get_accounting_df_dash()
+        if error_msg:
+            raise ValueError(f"Error obteniendo datos financieros: {error_msg}")
         df_no_total = df.iloc[:-1].copy()
 
         # Crear PDF en orientación horizontal
@@ -575,7 +574,7 @@ class ExportController:
                     # Formatear números como moneda
                     try:
                         formatted_row.append(f"€{float(val):,.2f}")
-                    except:
+                    except (ValueError, TypeError):
                         formatted_row.append(str(val))
                 else:
                     formatted_row.append(str(val))

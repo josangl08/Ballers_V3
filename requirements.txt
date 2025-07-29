@@ -1,7 +1,7 @@
 # requirements.txt - Ballers App Dependencies
 
 # Core Web Framework
-streamlit>=1.28.0  # Legacy - to be removed after migration
+# streamlit>=1.28.0  # REMOVED - Legacy dependency, migration to Dash completed
 dash>=2.14.0
 dash-bootstrap-components>=1.5.0
 dash-table>=5.0.0
@@ -31,7 +31,7 @@ python-dateutil>=2.8.2
 python-dotenv>=1.0.0
 
 # UI Components
-streamlit-option-menu>=0.3.6  # Legacy - to be removed after migration
+# streamlit-option-menu>=0.3.6  # REMOVED - Legacy dependency, migration to Dash completed
 
 # Utilities
 unidecode>=1.3.7

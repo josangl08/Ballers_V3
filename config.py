@@ -4,66 +4,48 @@ import json
 import os
 from pathlib import Path
 
-import streamlit as st
 from dotenv import load_dotenv
+
+from common.logging_config import get_logger, setup_logging
 
 # Cargar variables de entorno si existe el archivo .env
 load_dotenv()
-
-# Configurar logging temprano
-from common.logging_config import get_logger, setup_logging
 
 logger = setup_logging()
 
 
 def get_config_value(key, default=None):
     """
-    Obtiene valor de configuración desde múltiples fuentes con debug mejorado.
+    Obtiene valor de configuración desde variables de entorno con debug mejorado.
+
+    Orden de prioridad:
+    1. Variables de entorno del sistema
+    2. Archivo .env (cargado por dotenv)
+    3. Valor por defecto
     """
     # Debug: mostrar qué se está buscando
     debug_logger = get_logger("config.debug")
     if os.getenv("DEBUG") == "True":
         debug_logger.debug("config_lookup", extra={"extra_data": {"key": key}})
 
-    # 1. Intentar obtener desde Streamlit secrets (despliegue)
-    try:
-        if hasattr(st, "secrets"):
-            # Verificar si la key existe directamente en secrets
-            if key in st.secrets:
-                value = st.secrets[key]
-                if os.getenv("DEBUG") == "True":
-                    debug_logger.debug(
-                        "config_found_in_secrets",
-                        extra={
-                            "extra_data": {"key": key, "value_preview": str(value)[:50]}
-                        },
-                    )
-                return value
-
-            # Para debug: mostrar todas las keys disponibles
-            if os.getenv("DEBUG") == "True":
-                try:
-                    available_keys = (
-                        list(st.secrets.keys()) if hasattr(st.secrets, "keys") else []
-                    )
-                    print(f"📋 Keys disponibles en secrets: {available_keys}")
-                except:
-                    print("⚠️ No se pudieron listar las keys de secrets")
-
-    except Exception as e:
-        if os.getenv("DEBUG") == "True":
-            print(f"⚠️ Error accediendo a st.secrets para {key}: {e}")
-
-    # 2. Intentar obtener desde variables de entorno (local)
+    # Obtener desde variables de entorno
     env_value = os.getenv(key, default)
     if env_value != default:
         if os.getenv("DEBUG") == "True":
-            print(f"✅ Encontrado en env: {key} = {str(env_value)[:50]}...")
+            debug_logger.debug(
+                "config_found_in_env",
+                extra={
+                    "extra_data": {"key": key, "value_preview": str(env_value)[:50]}
+                },
+            )
         return env_value
 
-    # 3. Usar valor por defecto
+    # Usar valor por defecto
     if os.getenv("DEBUG") == "True":
-        print(f"❌ No encontrado {key}, usando default: {default}")
+        debug_logger.debug(
+            "config_using_default",
+            extra={"extra_data": {"key": key, "default": default}},
+        )
 
     return default
 
@@ -87,33 +69,65 @@ DATABASE_PATH = get_config_value(
 DEFAULT_PROFILE_PHOTO = os.path.join(ASSETS_DIR, "default_profile.png")
 CSS_FILE = os.path.join(STYLES_DIR, "style.css")
 
-# Configuración de la aplicación Streamlit
+# Configuración de la aplicación (Dash)
 APP_NAME = "Ballers App"
 APP_ICON = "assets/ballers/favicon.ico"
 
 
 # Configuración de Google Services
 def get_google_service_account_info():
-    """Obtiene información de la cuenta de servicio de Google con debug."""
+    """
+    Obtiene información de la cuenta de servicio de Google con debug.
+
+    Orden de prioridad:
+    1. Variables de entorno como JSON string (GOOGLE_SERVICE_ACCOUNT_JSON)
+    2. Archivo JSON especificado en GOOGLE_SA_PATH
+    3. Archivo por defecto en data/google_service_account.json
+    """
     try:
-        # Para despliegue en Streamlit Cloud
-        if hasattr(st, "secrets") and "google" in st.secrets:
-            if os.getenv("DEBUG") == "True":
-                print("✅ Credenciales Google encontradas en st.secrets")
-            return dict(st.secrets["google"])
+        # 1. Intentar desde variable de entorno como JSON string
+        google_json_str = get_config_value("GOOGLE_SERVICE_ACCOUNT_JSON")
+        if google_json_str:
+            try:
+                credentials = json.loads(google_json_str)
+                if os.getenv("DEBUG") == "True":
+                    print(
+                        "✅ Credenciales Google cargadas desde "
+                        "variable de entorno JSON"
+                    )
+                return credentials
+            except json.JSONDecodeError as e:
+                if os.getenv("DEBUG") == "True":
+                    print(
+                        f"⚠️ Error parseando JSON de "
+                        f"GOOGLE_SERVICE_ACCOUNT_JSON: {e}"
+                    )
+
+        # 2. Intentar desde archivo especificado en GOOGLE_SA_PATH
+        google_sa_path = get_config_value("GOOGLE_SA_PATH")
+        if google_sa_path and os.path.exists(google_sa_path):
+            with open(google_sa_path, "r") as f:
+                if os.getenv("DEBUG") == "True":
+                    print(
+                        f"✅ Credenciales Google cargadas desde "
+                        f"archivo: {google_sa_path}"
+                    )
+                return json.load(f)
+
+        # 3. Intentar archivo por defecto
+        default_path = os.path.join(DATA_DIR, "google_service_account.json")
+        if os.path.exists(default_path):
+            with open(default_path, "r") as f:
+                if os.getenv("DEBUG") == "True":
+                    print(
+                        f"✅ Credenciales Google cargadas desde "
+                        f"archivo por defecto: {default_path}"
+                    )
+                return json.load(f)
+
     except Exception as e:
         if os.getenv("DEBUG") == "True":
-            print(f"⚠️ Error obteniendo credenciales Google de secrets: {e}")
-
-    # Para desarrollo local - usar archivo JSON
-    google_sa_path = get_config_value("GOOGLE_SA_PATH")
-    if google_sa_path and os.path.exists(google_sa_path):
-        with open(google_sa_path, "r") as f:
-            if os.getenv("DEBUG") == "True":
-                print(
-                    f"✅ Credenciales Google cargadas desde archivo: {google_sa_path}"
-                )
-            return json.load(f)
+            print(f"⚠️ Error obteniendo credenciales Google: {e}")
 
     if os.getenv("DEBUG") == "True":
         print("❌ No se pudieron cargar credenciales de Google")
@@ -175,7 +189,7 @@ SESSION_DURATION = {
 
 # Información para logging
 if DEBUG:
-    print(f"🔧 Configuración cargada:")
+    print("🔧 Configuración cargada:")
     print(f"   - Entorno: {ENVIRONMENT}")
     print(f"   - Base de datos: {DATABASE_PATH}")
     print(
