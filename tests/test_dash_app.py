@@ -16,7 +16,10 @@ class TestDashAppBasics:
         TEST: La aplicación Dash se inicializa sin errores
         """
         # ACT
-        with patch("main_dash.initialize_database"):
+        with (
+            patch("main_dash.initialize_database"),
+            patch("main_dash._initialize_webhook_integration", return_value=True),
+        ):
             dash_app = initialize_dash_app()
 
         # ASSERT
@@ -29,7 +32,10 @@ class TestDashAppBasics:
         TEST: El layout tiene los componentes básicos requeridos
         """
         # ACT
-        with patch("main_dash.initialize_database"):
+        with (
+            patch("main_dash.initialize_database"),
+            patch("main_dash._initialize_webhook_integration", return_value=True),
+        ):
             dash_app = initialize_dash_app()
 
         # ASSERT

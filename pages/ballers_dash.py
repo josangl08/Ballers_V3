@@ -7,6 +7,7 @@ import dash_bootstrap_components as dbc
 from dash import Input, Output, State, dcc, html  # noqa: F401
 
 from controllers.player_controller import get_player_profile_data, get_players_for_list
+from controllers.thai_league_controller import ThaiLeagueController
 
 
 # Funciones simples para reemplazar cloud_utils removido
@@ -313,9 +314,15 @@ def create_player_profile_dash(player_id=None, user_id=None):
                     "opacity": "1",
                 }
             ),
-            # Filtros de fecha y estado - directo sobre fondo
+            # Tabs condicionales para jugadores profesionales (Info/Stats) - REUBICADAS
+            html.Div(id="professional-tabs-container"),
+            # Contenido de las tabs profesionales
+            html.Div(id="professional-tab-content", style={"margin-bottom": "30px"}),
+            # Contenido para jogadores amateur (sin tabs profesionales)
             html.Div(
-                [
+                id="amateur-content",
+                children=[
+                    # Filtros de fecha y estado - directo sobre fondo
                     html.H5(
                         [
                             html.I(className="bi bi-calendar-week me-2"),
@@ -360,7 +367,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                         style={"display": "none"},
                                     ),
                                 ],
-                                width=3,  # Reducir de 4 a 3
+                                width=3,
                             ),
                             dbc.Col(
                                 [
@@ -393,7 +400,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                         style={"display": "none"},
                                     ),
                                 ],
-                                width=3,  # Reducir de 4 a 3
+                                width=3,
                             ),
                             dbc.Col(
                                 [
@@ -411,9 +418,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                                         },
                                                     ),
                                                 ],
-                                                style={
-                                                    "text-align": "left"
-                                                },  # Alinear label a la izquierda
+                                                style={"text-align": "left"},
                                             ),
                                             html.Div(
                                                 [
@@ -439,20 +444,16 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                                         "Canceled",
                                                         id="status-canceled",
                                                         className="status-canceled",
-                                                        style={
-                                                            "cursor": "pointer",
-                                                        },
+                                                        style={"cursor": "pointer"},
                                                     ),
                                                 ],
-                                                style={
-                                                    "text-align": "left"
-                                                },  # Alinear badges a la izquierda
+                                                style={"text-align": "left"},
                                             ),
                                         ],
                                         style={
                                             "margin-left": "auto",
                                             "width": "fit-content",
-                                        },  # Mover todo el conjunto a la derecha manteniendo alineación interna izquierda
+                                        },
                                     )
                                 ],
                                 width=6,
@@ -486,37 +487,45 @@ def create_player_profile_dash(player_id=None, user_id=None):
                 ],
                 style={"margin-bottom": "30px"},
             ),
-            # Tabs de Test Results y Notes - estilo minimalista
-            dbc.Tabs(
-                [
-                    dbc.Tab(
-                        label="Test Results",
-                        tab_id="test-results",
-                        active_label_style={
-                            "color": "rgba(36, 222, 132, 1)",
-                            "font-size": "0.9rem",
-                        },
-                        label_style={"font-size": "0.9rem"},
+            # Tabs de Test Results y Notes - solo para jugadores amateur
+            html.Div(
+                id="amateur-test-notes-tabs",
+                children=[
+                    dbc.Tabs(
+                        [
+                            dbc.Tab(
+                                label="Test Results",
+                                tab_id="test-results",
+                                active_label_style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "0.9rem",
+                                },
+                                label_style={"font-size": "0.9rem"},
+                            ),
+                            dbc.Tab(
+                                label="Notes",
+                                tab_id="notes",
+                                active_label_style={
+                                    "color": "rgba(36, 222, 132, 1)",
+                                    "font-size": "0.9rem",
+                                },
+                                label_style={"font-size": "0.9rem"},
+                            ),
+                        ],
+                        id="profile-tabs",
+                        active_tab="test-results",
+                        style={"margin-bottom": "20px"},
                     ),
-                    dbc.Tab(
-                        label="Notes",
-                        tab_id="notes",
-                        active_label_style={
-                            "color": "rgba(36, 222, 132, 1)",
-                            "font-size": "0.9rem",
-                        },
-                        label_style={"font-size": "0.9rem"},
+                    # Contenido de las tabs - directo sobre fondo
+                    html.Div(id="profile-tab-content", style={"margin-top": "20px"}),
+                    # Alerta para mensajes
+                    dbc.Alert(
+                        id="profile-alert",
+                        is_open=False,
+                        dismissable=True,
+                        className="mb-3",
                     ),
                 ],
-                id="profile-tabs",
-                active_tab="test-results",
-                style={"margin-bottom": "20px"},
-            ),
-            # Contenido de las tabs - directo sobre fondo
-            html.Div(id="profile-tab-content", style={"margin-top": "20px"}),
-            # Alerta para mensajes
-            dbc.Alert(
-                id="profile-alert", is_open=False, dismissable=True, className="mb-3"
             ),
         ]
     )
@@ -1105,6 +1114,299 @@ def create_calendar_display_dash(player_id=None):
             f"Error loading calendar: {str(e)}",
             style={"color": "#F44336", "text-align": "center", "padding": "20px"},
         )
+
+
+def create_professional_tabs(player, user):
+    """
+    Crea tabs condicionales Info/Stats para jugadores profesionales.
+
+    Args:
+        player: Objeto Player con información del jugador
+        user: Objeto User con información del usuario
+
+    Returns:
+        Componente Dash con tabs condicionales o div vacío
+    """
+    # Verificar si es jugador profesional
+    if not hasattr(player, "is_professional") or not player.is_professional:
+        return html.Div()  # Sin tabs para jugadores amateur
+
+    # Crear tabs para jugadores profesionales
+    tabs = dbc.Tabs(
+        [
+            dbc.Tab(
+                label="Info",
+                tab_id="professional-info",
+                active_label_style={
+                    "color": "rgba(36, 222, 132, 1)",
+                    "font-size": "0.9rem",
+                },
+                label_style={"font-size": "0.9rem"},
+            ),
+            dbc.Tab(
+                label="Stats",
+                tab_id="professional-stats",
+                active_label_style={
+                    "color": "rgba(36, 222, 132, 1)",
+                    "font-size": "0.9rem",
+                },
+                label_style={"font-size": "0.9rem"},
+            ),
+        ],
+        id="professional-tabs",
+        active_tab="professional-info",
+        style={"margin-bottom": "20px", "margin-top": "20px"},
+    )
+
+    return html.Div(
+        [
+            html.H6(
+                [
+                    html.I(className="bi bi-trophy me-2"),
+                    "Professional Player",
+                ],
+                style={
+                    "color": "rgba(36, 222, 132, 1)",
+                    "margin-bottom": "15px",
+                    "font-size": "1rem",
+                },
+            ),
+            tabs,
+        ]
+    )
+
+
+def create_professional_info_content(player, user):
+    """
+    Crea contenido de la tab Info para jugadores profesionales.
+
+    Returns minimal informative content to avoid DOM element ID duplication.
+    The actual functional elements (filters, calendar, sessions table) are already
+    visible through the amateur-content container and will be controlled by
+    existing callbacks in ballers_callbacks.py.
+
+    Args:
+        player: Objeto Player
+        user: Objeto User
+
+    Returns:
+        Minimal informative HTML content without duplicated form elements
+    """
+    return html.Div(
+        [
+            dbc.Alert(
+                [
+                    html.I(className="bi bi-info-circle me-2"),
+                    f"Professional player view for {user.name}. ",
+                    "Use the calendar and session controls below to manage training sessions and view performance data.",
+                ],
+                color="info",
+                style={
+                    "background-color": "rgba(36, 222, 132, 0.1)",
+                    "border": "1px solid rgba(36, 222, 132, 0.3)",
+                    "color": "#FFFFFF",
+                    "margin-bottom": "20px",
+                },
+            )
+        ]
+    )
+
+
+def create_professional_stats_content(player, user):
+    """
+    Crea contenido de la tab Stats para jugadores profesionales.
+
+    Args:
+        player: Objeto Player
+        user: Objeto User
+
+    Returns:
+        Contenido HTML con estadísticas profesionales
+    """
+    try:
+        # Obtener estadísticas usando ThaiLeagueController
+        controller = ThaiLeagueController()
+
+        # TODO: Implementar obtención de estadísticas específicas del jugador
+        # Por ahora, mostrar placeholder con información básica
+
+        return dbc.Container(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                dbc.Alert(
+                                    [
+                                        html.I(className="bi bi-info-circle me-2"),
+                                        f"Professional statistics for {user.name} will be displayed here.",
+                                        html.Br(),
+                                        f"WyscoutID: {player.wyscout_id or 'Not assigned'}",
+                                        html.Br(),
+                                        "Statistics synchronization in development...",
+                                    ],
+                                    color="info",
+                                    className="mb-3",
+                                ),
+                            ],
+                            width=12,
+                        ),
+                    ]
+                ),
+                dbc.Row(
+                    [
+                        # Placeholder para estadísticas básicas
+                        dbc.Col(
+                            [
+                                dbc.Card(
+                                    [
+                                        dbc.CardBody(
+                                            [
+                                                html.H6(
+                                                    "Basic Stats",
+                                                    className="card-title",
+                                                    style={
+                                                        "color": "rgba(36, 222, 132, 1)"
+                                                    },
+                                                ),
+                                                html.P(
+                                                    "Goals: --",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    "Assists: --",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    "Matches: --",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                            ]
+                                        )
+                                    ],
+                                    style={
+                                        "background-color": "#2B2B2B",
+                                        "border-color": "rgba(36, 222, 132, 0.3)",
+                                    },
+                                ),
+                            ],
+                            width=12,
+                            md=4,
+                        ),
+                        # Placeholder para estadísticas defensivas
+                        dbc.Col(
+                            [
+                                dbc.Card(
+                                    [
+                                        dbc.CardBody(
+                                            [
+                                                html.H6(
+                                                    "Defensive Stats",
+                                                    className="card-title",
+                                                    style={
+                                                        "color": "rgba(36, 222, 132, 1)"
+                                                    },
+                                                ),
+                                                html.P(
+                                                    "Tackles: --",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    "Interceptions: --",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    "Duels Won: --",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                            ]
+                                        )
+                                    ],
+                                    style={
+                                        "background-color": "#2B2B2B",
+                                        "border-color": "rgba(36, 222, 132, 0.3)",
+                                    },
+                                ),
+                            ],
+                            width=12,
+                            md=4,
+                        ),
+                        # Placeholder para estadísticas ofensivas
+                        dbc.Col(
+                            [
+                                dbc.Card(
+                                    [
+                                        dbc.CardBody(
+                                            [
+                                                html.H6(
+                                                    "Offensive Stats",
+                                                    className="card-title",
+                                                    style={
+                                                        "color": "rgba(36, 222, 132, 1)"
+                                                    },
+                                                ),
+                                                html.P(
+                                                    "Shots: --",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    "Dribbles: --",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    "Pass Accuracy: --",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                            ]
+                                        )
+                                    ],
+                                    style={
+                                        "background-color": "#2B2B2B",
+                                        "border-color": "rgba(36, 222, 132, 0.3)",
+                                    },
+                                ),
+                            ],
+                            width=12,
+                            md=4,
+                        ),
+                    ]
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    [
+                                        html.H6(
+                                            "Performance Chart",
+                                            style={
+                                                "color": "rgba(36, 222, 132, 1)",
+                                                "margin-top": "20px",
+                                            },
+                                        ),
+                                        html.Div(
+                                            "📊 Performance charts will be implemented here",
+                                            style={
+                                                "color": "#FFFFFF",
+                                                "text-align": "center",
+                                                "padding": "40px",
+                                                "border": "1px dashed rgba(36, 222, 132, 0.3)",
+                                                "margin-top": "10px",
+                                            },
+                                        ),
+                                    ]
+                                )
+                            ],
+                            width=12,
+                        ),
+                    ],
+                    className="mt-3",
+                ),
+            ]
+        )
+
+    except Exception as e:
+        return dbc.Alert(f"Error loading professional stats: {str(e)}", color="danger")
 
 
 def create_sessions_table_dash(

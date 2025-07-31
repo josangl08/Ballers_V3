@@ -20,6 +20,9 @@ google-api-python-client>=2.100.0
 # Data Processing
 pandas>=2.1.0
 numpy>=1.24.0
+fuzzywuzzy>=0.18.0  # For fuzzy string matching
+python-Levenshtein>=0.21.0  # Speed up fuzzywuzzy
+requests>=2.31.0  # For HTTP requests to GitHub
 
 # Visualization
 plotly>=5.17.0

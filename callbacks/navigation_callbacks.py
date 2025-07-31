@@ -293,15 +293,14 @@ def register_navigation_callbacks(app):
         Output("selected-menu-item", "data"),
         [
             Input("menu-ballers", "n_clicks"),
-            Input("menu-administration", "n_clicks"),
         ],
         [
             State("user-type-store", "data"),
         ],
         prevent_initial_call=True,
     )
-    def update_selected_menu_item_callback(ballers_clicks, admin_clicks, user_type):
-        """Callback para navegación del menú - maneja dinámicamente según rol."""
+    def update_selected_menu_item_callback(ballers_clicks, user_type):
+        """Callback para navegación del menú - maneja solo Ballers."""
         from dash import callback_context
 
         if not callback_context.triggered:
@@ -312,7 +311,26 @@ def register_navigation_callbacks(app):
         if trigger_id == "menu-ballers":
             print("DEBUG: Menu clicked: Ballers")
             return "Ballers"
-        elif trigger_id == "menu-administration":
+
+        return no_update
+
+    # Callback separado para menu-administration solo para coach/admin
+    @app.callback(
+        Output("selected-menu-item", "data", allow_duplicate=True),
+        [Input("menu-administration", "n_clicks")],
+        [State("user-type-store", "data")],
+        prevent_initial_call=True,
+    )
+    def update_selected_menu_item_administration_callback(admin_clicks, user_type):
+        """Callback para menu-administration - solo activo para coach/admin."""
+        from dash import callback_context
+
+        if not callback_context.triggered:
+            return no_update
+
+        trigger_id = callback_context.triggered[0]["prop_id"].split(".")[0]
+
+        if trigger_id == "menu-administration":
             print("DEBUG: Menu clicked: Administration")
             return "Administration"
 

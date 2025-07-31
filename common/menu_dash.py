@@ -2,7 +2,7 @@
 from typing import Dict, Optional
 
 import dash_bootstrap_components as dbc
-from dash import html
+from dash import dcc, html
 
 from controllers.menu_controller import MenuController
 

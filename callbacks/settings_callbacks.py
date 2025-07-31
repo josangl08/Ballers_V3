@@ -260,6 +260,8 @@ def register_settings_callbacks(app):
             Output("new-player-notes", "value"),
             Output("new-internal-role", "value"),
             Output("new-permit-level", "value"),
+            Output("new-is-professional", "value"),
+            Output("new-wyscout-id", "value"),
         ],
         [Input("create-user-btn", "n_clicks")],
         [
@@ -279,6 +281,8 @@ def register_settings_callbacks(app):
             State("new-player-notes", "value"),
             State("new-internal-role", "value"),
             State("new-permit-level", "value"),
+            State("new-is-professional", "value"),
+            State("new-wyscout-id", "value"),
         ],
         prevent_initial_call=True,
     )
@@ -300,10 +304,12 @@ def register_settings_callbacks(app):
         player_notes,
         internal_role,
         permit_level,
+        is_professional_value,
+        wyscout_id,
     ):
         """Crea un nuevo usuario usando el controlador existente."""
         if not n_clicks:
-            return "", False, "info", *([no_update] * 14)
+            return "", False, "info", *([no_update] * 16)
 
         # Validar campos requeridos
         if not all([name, username, email, password, confirm_password]):
@@ -311,7 +317,7 @@ def register_settings_callbacks(app):
                 "Please fill in all required fields (*)",
                 True,
                 "danger",
-                *([no_update] * 14),
+                *([no_update] * 16),
             )
 
         # Validar coincidencia de contraseñas usando controlador existente
@@ -319,18 +325,27 @@ def register_settings_callbacks(app):
             password, confirm_password
         )
         if not is_valid:
-            return error, True, "danger", *([no_update] * 14)
+            return error, True, "danger", *([no_update] * 16)
 
         # Preparar datos específicos del tipo de usuario
         profile_data = {}
         if user_type == "coach":
             profile_data["license"] = license_name or ""
         elif user_type == "player":
+            # Procesar estado profesional
+            is_professional = (
+                is_professional_value and "professional" in is_professional_value
+            )
+
             profile_data.update(
                 {
                     "services": service_types or [],
                     "enrolment": enrolled_sessions or 0,
                     "notes": player_notes or "",
+                    "is_professional": is_professional,
+                    "wyscout_id": (
+                        wyscout_id if is_professional and wyscout_id else None
+                    ),
                 }
             )
         elif user_type == "admin":
@@ -351,7 +366,7 @@ def register_settings_callbacks(app):
                     f"Error processing profile picture: {str(e)}",
                     True,
                     "danger",
-                    *([no_update] * 14),
+                    *([no_update] * 16),
                 )
 
         # Preparar datos de usuario
@@ -393,9 +408,11 @@ def register_settings_callbacks(app):
                 "",  # player_notes
                 "",  # internal_role
                 1,  # permit_level
+                [],  # is_professional (empty list to uncheck)
+                "",  # wyscout_id
             )
         else:
-            return f"❌ {message}", True, "danger", *([no_update] * 14)
+            return f"❌ {message}", True, "danger", *([no_update] * 16)
 
     @app.callback(
         Output("users-management-table", "children"),
@@ -821,6 +838,8 @@ def register_settings_callbacks(app):
             Output("edit-player-notes", "value"),
             Output("edit-internal-role", "value"),
             Output("edit-permit-level", "value"),
+            Output("edit-is-professional", "value"),
+            Output("edit-wyscout-id", "value"),
         ],
         [Input("edit-user-selector", "value")],
         prevent_initial_call=True,
@@ -850,6 +869,8 @@ def register_settings_callbacks(app):
                 "",  # player_notes
                 "",  # internal_role
                 1,  # permit_level
+                [],  # is_professional (empty)
+                "",  # wyscout_id
             )
 
         try:
@@ -876,6 +897,8 @@ def register_settings_callbacks(app):
                     "",
                     "",
                     1,
+                    [],  # is_professional (empty)
+                    "",  # wyscout_id
                 )
 
             # Prepare user info display with Bootstrap icons
@@ -959,6 +982,11 @@ def register_settings_callbacks(app):
             internal_role = user_data.get("admin_role", "") or ""
             permit_level = user_data.get("permit_level", 1) or 1
 
+            # Professional player fields
+            is_professional = user_data.get("is_professional", False) or False
+            professional_value = ["professional"] if is_professional else []
+            wyscout_id = user_data.get("wyscout_id", "") or ""
+
             # Status display with icon
             status_icon = (
                 html.I(
@@ -1000,6 +1028,8 @@ def register_settings_callbacks(app):
                 player_notes,  # player_notes
                 internal_role,  # internal_role
                 permit_level,  # permit_level
+                professional_value,  # is_professional
+                wyscout_id,  # wyscout_id
             )
 
         except Exception as e:
@@ -1024,6 +1054,8 @@ def register_settings_callbacks(app):
                 "",
                 "",
                 1,
+                [],  # is_professional (empty)
+                "",  # wyscout_id
             )
 
     @app.callback(
@@ -1307,6 +1339,8 @@ def register_settings_callbacks(app):
             State("edit-player-notes", "value"),
             State("edit-internal-role", "value"),
             State("edit-permit-level", "value"),
+            State("edit-is-professional", "value"),
+            State("edit-wyscout-id", "value"),
         ],
         prevent_initial_call=True,
     )
@@ -1330,6 +1364,8 @@ def register_settings_callbacks(app):
         player_notes,
         internal_role,
         permit_level,
+        is_professional_value,
+        wyscout_id,
     ):
         """Guarda los cambios del usuario editado."""
         if not n_clicks or not selected_user_id:
@@ -1357,11 +1393,20 @@ def register_settings_callbacks(app):
         if user_type == "coach":
             profile_data["license"] = license_name or ""
         elif user_type == "player":
+            # Procesar estado profesional
+            is_professional = (
+                is_professional_value and "professional" in is_professional_value
+            )
+
             profile_data.update(
                 {
                     "services": service_types or [],
                     "enrolment": enrolled_sessions or 0,
                     "notes": player_notes or "",
+                    "is_professional": is_professional,
+                    "wyscout_id": (
+                        wyscout_id if is_professional and wyscout_id else None
+                    ),
                 }
             )
         elif user_type == "admin":
@@ -2171,3 +2216,131 @@ def register_settings_callbacks(app):
                 color="danger",
                 style={"font-size": "0.9rem"},
             )
+
+
+# ================================
+# Professional Player Callbacks
+# ================================
+
+
+@dash.callback(
+    [
+        Output("new-wyscout-section", "style"),
+        Output("new-wyscout-id", "disabled"),
+    ],
+    [Input("new-is-professional", "value")],
+)
+def toggle_new_wyscout_section(is_professional_value):
+    """Toggle WyscoutID section visibility based on professional checkbox."""
+    if is_professional_value and "professional" in is_professional_value:
+        # Show WyscoutID section and enable field
+        return {"display": "block"}, False
+    else:
+        # Hide WyscoutID section and disable field
+        return {"display": "none"}, True
+
+
+@dash.callback(
+    [
+        Output("edit-wyscout-section", "style"),
+        Output("edit-wyscout-id", "disabled"),
+    ],
+    [Input("edit-is-professional", "value")],
+)
+def toggle_edit_wyscout_section(is_professional_value):
+    """Toggle WyscoutID section visibility based on professional checkbox in edit form."""
+    if is_professional_value and "professional" in is_professional_value:
+        # Show WyscoutID section and enable field
+        return {"display": "block"}, False
+    else:
+        # Hide WyscoutID section and disable field
+        return {"display": "none"}, True
+
+
+@dash.callback(
+    [
+        Output("new-player-alert", "children"),
+        Output("new-player-alert", "is_open"),
+        Output("new-player-alert", "color"),
+    ],
+    [
+        Input("new-is-professional", "value"),
+        State("new-fullname", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def auto_search_thai_league_new(is_professional_value, player_name):
+    """Búsqueda automática en Thai League cuando se marca como profesional (nuevo jugador)."""
+    if not is_professional_value or "professional" not in is_professional_value:
+        return "", False, "info"
+
+    if not player_name or not player_name.strip():
+        return "Enter player name first to search Thai League data", True, "warning"
+
+    try:
+        from controllers.thai_league_controller import ThaiLeagueController
+
+        controller = ThaiLeagueController()
+        matches = controller.search_player_by_name(player_name.strip())
+
+        if matches:
+            # Tomar el mejor match (el primero en la lista ordenada)
+            best_match = matches[0]
+
+            message = f"✅ Match found: {best_match.get('player_name', '')} ({best_match.get('team_name', '')}). WyscoutID will be set automatically."
+            return message, True, "success"
+        else:
+            message = f"❌ No matches found for '{player_name}' in Thai League database"
+            return message, True, "warning"
+
+    except Exception as e:
+        error_msg = f"⚠️ Error searching Thai League: {str(e)}"
+        return error_msg, True, "danger"
+
+
+@dash.callback(
+    [
+        Output("edit-alert", "children"),
+        Output("edit-alert", "is_open"),
+        Output("edit-alert", "color"),
+    ],
+    [
+        Input("edit-is-professional", "value"),
+        State("edit-fullname", "value"),
+        State("edit-wyscout-id", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def auto_search_thai_league_edit(
+    is_professional_value, player_name, current_wyscout_id
+):
+    """Búsqueda automática en Thai League cuando se marca como profesional (editar jugador)."""
+    if not is_professional_value or "professional" not in is_professional_value:
+        return "", False, "info"
+
+    # Si ya tiene WyscoutID, no hacer búsqueda automática
+    if current_wyscout_id and current_wyscout_id.strip():
+        return "", False, "info"
+
+    if not player_name or not player_name.strip():
+        return "Enter player name first to search Thai League data", True, "warning"
+
+    try:
+        from controllers.thai_league_controller import ThaiLeagueController
+
+        controller = ThaiLeagueController()
+        matches = controller.search_player_by_name(player_name.strip())
+
+        if matches:
+            # Tomar el mejor match (el primero en la lista ordenada)
+            best_match = matches[0]
+
+            message = f"✅ Match found: {best_match.get('player_name', '')} ({best_match.get('team_name', '')}). WyscoutID will be set automatically when you save."
+            return message, True, "success"
+        else:
+            message = f"❌ No matches found for '{player_name}' in Thai League database"
+            return message, True, "warning"
+
+    except Exception as e:
+        error_msg = f"⚠️ Error searching Thai League: {str(e)}"
+        return error_msg, True, "danger"

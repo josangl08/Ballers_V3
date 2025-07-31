@@ -490,6 +490,8 @@ class UserController:
                     service=service_str,
                     enrolment=profile_data.get("enrolment", 0),
                     notes=profile_data.get("notes", ""),
+                    is_professional=profile_data.get("is_professional", False),
+                    wyscout_id=profile_data.get("wyscout_id", None),
                 )
                 self.db.add(player_profile)
 
@@ -531,6 +533,15 @@ class UserController:
 
                 if "notes" in profile_data:
                     user.player_profile.notes = profile_data["notes"]
+
+                # Campos profesionales
+                if "is_professional" in profile_data:
+                    user.player_profile.is_professional = profile_data[
+                        "is_professional"
+                    ]
+
+                if "wyscout_id" in profile_data:
+                    user.player_profile.wyscout_id = profile_data["wyscout_id"]
 
             elif user.user_type == UserType.admin and user.admin_profile:
                 if "role" in profile_data:
@@ -678,6 +689,11 @@ def get_user_with_profile(user_id: int) -> Optional[Dict[str, Any]]:
             user_data["player_service"] = user.player_profile.service
             user_data["player_enrolment"] = user.player_profile.enrolment
             user_data["player_notes"] = user.player_profile.notes
+            # Campos profesionales
+            user_data["is_professional"] = getattr(
+                user.player_profile, "is_professional", False
+            )
+            user_data["wyscout_id"] = getattr(user.player_profile, "wyscout_id", None)
         elif user.user_type == UserType.admin and user.admin_profile:
             user_data["admin_role"] = user.admin_profile.role
 

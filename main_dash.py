@@ -14,6 +14,7 @@ from callbacks.ballers_callbacks import register_ballers_callbacks
 # Importar callbacks organizados
 from callbacks.navigation_callbacks import register_navigation_callbacks
 from callbacks.player_callbacks import register_player_callbacks
+from callbacks.professional_tabs_callbacks import register_professional_tabs_callbacks
 from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
 from common.datepicker_utils import (
@@ -114,6 +115,7 @@ def register_all_callbacks():
 
     # Registrar callbacks específicos de páginas
     register_ballers_callbacks(app)
+    register_professional_tabs_callbacks(app)
 
     # Registrar callbacks comunes para datepickers
     register_datepicker_callbacks(app)

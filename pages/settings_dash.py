@@ -354,6 +354,75 @@ def create_user_form_dash():
                                             "font-size": "0.9rem",
                                         },
                                     ),
+                                    # Professional Player Fields
+                                    html.Hr(
+                                        style={
+                                            "border-color": "#555",
+                                            "margin": "1.5rem 0",
+                                        }
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Checklist(
+                                                        options=[
+                                                            {
+                                                                "label": "Professional Player",
+                                                                "value": "professional",
+                                                            }
+                                                        ],
+                                                        value=[],
+                                                        id="new-is-professional",
+                                                        inline=True,
+                                                        style={
+                                                            "color": "#FFFFFF",
+                                                            "font-weight": "bold",
+                                                        },
+                                                    ),
+                                                    html.Small(
+                                                        "Mark this player as professional to enable statistics tracking from Thai League",
+                                                        style={
+                                                            "color": "#888",
+                                                            "font-style": "italic",
+                                                        },
+                                                    ),
+                                                ],
+                                                width=12,
+                                            ),
+                                        ],
+                                        className="mb-3",
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        "WyscoutID (Optional)",
+                                                        className="filter-label",
+                                                    ),
+                                                    dbc.Input(
+                                                        id="new-wyscout-id",
+                                                        type="text",
+                                                        placeholder="Enter WyscoutID for manual matching...",
+                                                        className="dash-input",
+                                                        disabled=True,  # Enabled when professional is checked
+                                                    ),
+                                                    html.Small(
+                                                        "WyscoutID is used for precise matching with Thai League statistics. Leave empty for automatic matching by name.",
+                                                        style={
+                                                            "color": "#888",
+                                                            "font-style": "italic",
+                                                        },
+                                                    ),
+                                                ],
+                                                width=12,
+                                            ),
+                                        ],
+                                        className="mb-3",
+                                        id="new-wyscout-section",
+                                        style={"display": "none"},  # Hidden initially
+                                    ),
                                 ],
                                 id="player-fields",
                                 style={"display": "block"},
@@ -1224,6 +1293,77 @@ def create_edit_user_form_dash():
                                                     "transition": "all 0.3s ease",
                                                     "font-size": "0.9rem",
                                                 },
+                                            ),
+                                            # Professional Player Fields
+                                            html.Hr(
+                                                style={
+                                                    "border-color": "#555",
+                                                    "margin": "1.5rem 0",
+                                                }
+                                            ),
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Checklist(
+                                                                options=[
+                                                                    {
+                                                                        "label": "Professional Player",
+                                                                        "value": "professional",
+                                                                    }
+                                                                ],
+                                                                value=[],
+                                                                id="edit-is-professional",
+                                                                inline=True,
+                                                                style={
+                                                                    "color": "#FFFFFF",
+                                                                    "font-weight": "bold",
+                                                                },
+                                                            ),
+                                                            html.Small(
+                                                                "Mark this player as professional to enable statistics tracking from Thai League",
+                                                                style={
+                                                                    "color": "#888",
+                                                                    "font-style": "italic",
+                                                                },
+                                                            ),
+                                                        ],
+                                                        width=12,
+                                                    ),
+                                                ],
+                                                className="mb-3",
+                                            ),
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Label(
+                                                                "WyscoutID (Optional)",
+                                                                className="filter-label",
+                                                            ),
+                                                            dbc.Input(
+                                                                id="edit-wyscout-id",
+                                                                type="text",
+                                                                placeholder="Enter WyscoutID for manual matching...",
+                                                                className="dash-input",
+                                                                disabled=True,  # Enabled when professional is checked
+                                                            ),
+                                                            html.Small(
+                                                                "WyscoutID is used for precise matching with Thai League statistics. Leave empty for automatic matching by name.",
+                                                                style={
+                                                                    "color": "#888",
+                                                                    "font-style": "italic",
+                                                                },
+                                                            ),
+                                                        ],
+                                                        width=12,
+                                                    ),
+                                                ],
+                                                className="mb-3",
+                                                id="edit-wyscout-section",
+                                                style={
+                                                    "display": "none"
+                                                },  # Hidden initially
                                             ),
                                         ],
                                         id="edit-player-fields",
