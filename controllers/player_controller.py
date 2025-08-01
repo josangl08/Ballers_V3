@@ -98,7 +98,13 @@ class PlayerController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
 
-        return self.db.query(Player).join(User).filter(User.is_active.is_(True)).order_by(User.name).all()
+        return (
+            self.db.query(Player)
+            .join(User)
+            .filter(User.is_active.is_(True))
+            .order_by(User.name)
+            .all()
+        )
 
     def search_players(self, search_term: str) -> List[Player]:
         """

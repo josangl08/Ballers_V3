@@ -9,7 +9,7 @@ import os
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, callback_context, html, no_update, ALL
+from dash import ALL, Input, Output, State, callback_context, html, no_update
 from dash.exceptions import PreventUpdate
 
 from controllers.user_controller import (
@@ -388,7 +388,7 @@ def register_settings_callbacks(app):
 
         if success:
             success_message = f"✅ {message}"
-            
+
             # Limpiar formulario tras éxito
             return (
                 success_message,
@@ -683,7 +683,6 @@ def register_settings_callbacks(app):
         except Exception as e:
             return dbc.Alert(f"Error loading users: {str(e)}", color="danger")
 
-
     @app.callback(
         [
             Output("settings-alert", "children", allow_duplicate=True),
@@ -959,16 +958,20 @@ def register_settings_callbacks(app):
                     style={"font-weight": "500", "color": "#FFFFFF"},
                 ),
                 # Professional/Amateur info - solo para jugadores
-                html.P(
-                    [
-                        html.I(
-                            className="bi bi-speedometer2 me-1",
-                            style={"color": "#24DE84"},
-                        ),
-                        f"Baller Level: {'Professional' if (user_data['user_type'] == 'player' and is_professional) else 'Amateur' if user_data['user_type'] == 'player' else 'N/A'}",
-                    ],
-                    style={"font-weight": "500", "color": "#FFFFFF"},
-                ) if user_data["user_type"] == "player" else html.P("", style={"display": "none"}),
+                (
+                    html.P(
+                        [
+                            html.I(
+                                className="bi bi-speedometer2 me-1",
+                                style={"color": "#24DE84"},
+                            ),
+                            f"Baller Level: {'Professional' if (user_data['user_type'] == 'player' and is_professional) else 'Amateur' if user_data['user_type'] == 'player' else 'N/A'}",
+                        ],
+                        style={"font-weight": "500", "color": "#FFFFFF"},
+                    )
+                    if user_data["user_type"] == "player"
+                    else html.P("", style={"display": "none"})
+                ),
                 html.P(
                     [
                         status_icon,
@@ -985,7 +988,11 @@ def register_settings_callbacks(app):
                     # Formato BD: "2010-04-09 00:00:00.000000" → Extraer: "2010-04-09"
                     birth_date = str(birth_date)[:10] if birth_date else ""
                     # Validar que el formato sea YYYY-MM-DD
-                    if len(birth_date) == 10 and birth_date[4] == "-" and birth_date[7] == "-":
+                    if (
+                        len(birth_date) == 10
+                        and birth_date[4] == "-"
+                        and birth_date[7] == "-"
+                    ):
                         pass  # Formato correcto
                     else:
                         birth_date = ""  # Formato incorrecto, dejar vacío
@@ -1498,7 +1505,7 @@ def register_settings_callbacks(app):
 
         if success:
             success_message = f"✅ {message}"
-            
+
             return (
                 success_message,
                 True,
@@ -2285,20 +2292,24 @@ def register_settings_callbacks(app):
         ],
         prevent_initial_call=True,
     )
-    def update_baller_level_dynamically(is_professional_value, selected_user_id, player_name):
+    def update_baller_level_dynamically(
+        is_professional_value, selected_user_id, player_name
+    ):
         """Actualiza dinámicamente el Baller Level cuando se cambia el checkbox professional."""
         if not selected_user_id:
             return no_update
-        
+
         try:
             # Obtener datos del usuario
             user_data = get_user_with_profile(selected_user_id)
             if not user_data or user_data["user_type"] != "player":
                 return no_update
-            
+
             # Determinar si es profesional
-            is_professional = bool(is_professional_value and "professional" in is_professional_value)
-            
+            is_professional = bool(
+                is_professional_value and "professional" in is_professional_value
+            )
+
             # Recrear la información del usuario con el Baller Level actualizado
             status_icon = (
                 html.I(
@@ -2393,34 +2404,96 @@ def register_settings_callbacks(app):
     [State("new-fullname", "value")],
     prevent_initial_call=True,
 )
-def toggle_new_wyscout_section_and_modal(is_professional_value, cancel_clicks, player_name):
+def toggle_new_wyscout_section_and_modal(
+    is_professional_value, cancel_clicks, player_name
+):
     """Toggle WyscoutID section and open matching modal when professional is checked."""
     ctx = dash.callback_context
-    
+
     if not ctx.triggered:
-        return {"display": "none"}, {"display": "none"}, True, True, False, "", "", False, "info"
-    
+        return (
+            {"display": "none"},
+            {"display": "none"},
+            True,
+            True,
+            False,
+            "",
+            "",
+            False,
+            "info",
+        )
+
     trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    
+
     if trigger_id == "new-is-professional":
         if is_professional_value and "professional" in is_professional_value:
             # Check if player name exists
             if player_name and player_name.strip():
                 # Show WyscoutID section and help, enable field and button, open modal, clear any alert
-                return {"display": "block"}, {"display": "block"}, False, False, True, player_name.strip(), "", False, "info"
+                return (
+                    {"display": "block"},
+                    {"display": "block"},
+                    False,
+                    False,
+                    True,
+                    player_name.strip(),
+                    "",
+                    False,
+                    "info",
+                )
             else:
                 # Show warning message, keep section hidden
                 warning_msg = "⚠️ Please enter the player's name first to enable professional player matching."
-                return {"display": "none"}, {"display": "none"}, True, True, False, "", warning_msg, True, "warning"
+                return (
+                    {"display": "none"},
+                    {"display": "none"},
+                    True,
+                    True,
+                    False,
+                    "",
+                    warning_msg,
+                    True,
+                    "warning",
+                )
         else:
             # Hide WyscoutID section and help, disable field and button, close modal, clear alert
-            return {"display": "none"}, {"display": "none"}, True, True, False, "", "", False, "info"
-    
+            return (
+                {"display": "none"},
+                {"display": "none"},
+                True,
+                True,
+                False,
+                "",
+                "",
+                False,
+                "info",
+            )
+
     elif trigger_id == "matching-cancel-btn":
         # Close modal, keep WyscoutID section and help visible, keep button enabled, clear alert
-        return {"display": "block"}, {"display": "block"}, False, False, False, "", "", False, "info"
-    
-    return {"display": "none"}, {"display": "none"}, True, True, False, "", "", False, "info"
+        return (
+            {"display": "block"},
+            {"display": "block"},
+            False,
+            False,
+            False,
+            "",
+            "",
+            False,
+            "info",
+        )
+
+    return (
+        {"display": "none"},
+        {"display": "none"},
+        True,
+        True,
+        False,
+        "",
+        "",
+        False,
+        "info",
+    )
 
 
 @dash.callback(
@@ -2442,15 +2515,17 @@ def toggle_new_wyscout_section_and_modal(is_professional_value, cancel_clicks, p
     ],
     prevent_initial_call=True,
 )
-def toggle_edit_wyscout_section_and_modal(is_professional_value, cancel_clicks, player_name, current_wyscout_id):
+def toggle_edit_wyscout_section_and_modal(
+    is_professional_value, cancel_clicks, player_name, current_wyscout_id
+):
     """Toggle WyscoutID section and open matching modal when professional is checked in edit form."""
     ctx = dash.callback_context
-    
+
     if not ctx.triggered:
         return {"display": "none"}, True, True, False, "", {"display": "none"}
-    
+
     trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    
+
     if trigger_id == "edit-is-professional":
         if is_professional_value and "professional" in is_professional_value:
             # Show WyscoutID section, enable field and search button, show help text
@@ -2459,13 +2534,12 @@ def toggle_edit_wyscout_section_and_modal(is_professional_value, cancel_clicks, 
         else:
             # Hide WyscoutID section, disable field and search button, close modal, hide help text
             return {"display": "none"}, True, True, False, "", {"display": "none"}
-    
+
     elif trigger_id == "edit-matching-cancel-btn":
         # Close modal, keep WyscoutID section visible with enabled buttons and help text
         return {"display": "block"}, False, False, False, "", {"display": "block"}
-    
-    return {"display": "none"}, True, True, False, "", {"display": "none"}
 
+    return {"display": "none"}, True, True, False, "", {"display": "none"}
 
 
 @dash.callback(
@@ -2486,37 +2560,45 @@ def toggle_edit_wyscout_section_and_modal(is_professional_value, cancel_clicks, 
     ],
     prevent_initial_call=True,
 )
-def auto_search_thai_league_new(is_professional_value, search_btn_clicks, player_name, search_term):
+def auto_search_thai_league_new(
+    is_professional_value, search_btn_clicks, player_name, search_term
+):
     """Búsqueda automática y manual en Thai League para formulario de creación."""
     ctx = dash.callback_context
-    
+
     # Determinar qué triggered el callback
     if not ctx.triggered:
         return [], "", False, "info", False
-    
+
     trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    
+
     # Búsqueda manual desde el modal
     if trigger_id == "matching-search-btn":
         if not search_btn_clicks or not search_term or not search_term.strip():
             return [], "Enter a player name to search", True, "info", True
-        
+
         search_name = search_term.strip()
         # Retornar valores vacíos para alerts del formulario principal
         main_alert = ("", False, "info")
-    
+
     # Búsqueda automática al marcar checkbox
     elif trigger_id == "new-is-professional":
         if not is_professional_value or "professional" not in is_professional_value:
             return [], "", False, "info", False
-        
+
         if not player_name or not player_name.strip():
-            return [], "Enter player name first to search Thai League data", True, "warning", False
-        
+            return (
+                [],
+                "Enter player name first to search Thai League data",
+                True,
+                "warning",
+                False,
+            )
+
         search_name = player_name.strip()
         # Retornar valores vacíos para contenedores del modal
         modal_results = ([], "", False, "info")
-    
+
     else:
         return [], "", False, "info", False
 
@@ -2530,48 +2612,84 @@ def auto_search_thai_league_new(is_professional_value, search_btn_clicks, player
             # Búsqueda automática - mantener modal abierto para permitir selección manual
             if trigger_id == "new-is-professional":
                 return [], "", False, "info", True
-            
+
             # Búsqueda manual - mostrar resultados en modal
             elif trigger_id == "matching-search-btn":
                 results = []
                 for idx, match in enumerate(matches[:10]):  # Máximo 10 resultados
-                    confidence = match.get('confidence', 0)
-                    player_name_result = match.get('player_name', 'N/A')
-                    full_name = match.get('full_name', player_name_result)
-                    team_name = match.get('team_name', 'N/A')
-                    wyscout_id = match.get('wyscout_id', 'N/A')
-                    birthday = match.get('birthday', 'N/A')
-                    
+                    confidence = match.get("confidence", 0)
+                    player_name_result = match.get("player_name", "N/A")
+                    full_name = match.get("full_name", player_name_result)
+                    team_name = match.get("team_name", "N/A")
+                    wyscout_id = match.get("wyscout_id", "N/A")
+                    birthday = match.get("birthday", "N/A")
+
                     # Crear card para cada resultado
-                    card = dbc.Card([
-                        dbc.CardBody([
-                            html.H6(f"{full_name} ({confidence}%)", className="card-title mb-1", style={"color": "#FFFFFF"}),
-                            html.P([
-                                html.Small(f"Team: {team_name}", style={"color": "#CCCCCC"}),
-                                html.Br(),
-                                html.Small(f"Wyscout ID: {wyscout_id} | Birthday: {birthday}", style={"color": "#CCCCCC"})
-                            ], className="mb-2"),
-                            dbc.Button(
-                                "Select This Player",
-                                id={"type": "select-player", "index": idx, "wyscout_id": wyscout_id},
-                                className="btn-modal-cancel btn-sm w-100",
+                    card = dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H6(
+                                        f"{full_name} ({confidence}%)",
+                                        className="card-title mb-1",
+                                        style={"color": "#FFFFFF"},
+                                    ),
+                                    html.P(
+                                        [
+                                            html.Small(
+                                                f"Team: {team_name}",
+                                                style={"color": "#CCCCCC"},
+                                            ),
+                                            html.Br(),
+                                            html.Small(
+                                                f"Wyscout ID: {wyscout_id} | Birthday: {birthday}",
+                                                style={"color": "#CCCCCC"},
+                                            ),
+                                        ],
+                                        className="mb-2",
+                                    ),
+                                    dbc.Button(
+                                        "Select This Player",
+                                        id={
+                                            "type": "select-player",
+                                            "index": idx,
+                                            "wyscout_id": wyscout_id,
+                                        },
+                                        className="btn-modal-cancel btn-sm w-100",
+                                    ),
+                                ],
+                                style={"padding": "1rem"},
                             ),
-                        ], style={"padding": "1rem"}),
-                    ], className="mb-2", style={
-                        "background-color": "rgba(51,51,51,1)", 
-                        "border": "1px solid #555", 
-                        "border-radius": "8px",
-                        "margin-right": "10px"
-                    })
+                        ],
+                        className="mb-2",
+                        style={
+                            "background-color": "rgba(51,51,51,1)",
+                            "border": "1px solid #555",
+                            "border-radius": "8px",
+                            "margin-right": "10px",
+                        },
+                    )
                     results.append(card)
-                
+
                 return results, f"Found {len(matches)} matches", True, "success", True
         else:
             # Sin resultados
             if trigger_id == "new-is-professional":
-                return [], f"❌ No matches found for '{search_name}' in Thai League database", True, "warning", True
+                return (
+                    [],
+                    f"❌ No matches found for '{search_name}' in Thai League database",
+                    True,
+                    "warning",
+                    True,
+                )
             elif trigger_id == "matching-search-btn":
-                return [], f"No matches found for '{search_name}'", True, "warning", True
+                return (
+                    [],
+                    f"No matches found for '{search_name}'",
+                    True,
+                    "warning",
+                    True,
+                )
 
     except Exception as e:
         error_msg = f"⚠️ Error searching Thai League: {str(e)}"
@@ -2606,51 +2724,75 @@ def auto_search_thai_league_new(is_professional_value, search_btn_clicks, player
     prevent_initial_call=True,
 )
 def auto_search_thai_league_edit(
-    is_professional_value, search_btn_clicks, wyscout_search_clicks, player_name, current_wyscout_id, search_term
+    is_professional_value,
+    search_btn_clicks,
+    wyscout_search_clicks,
+    player_name,
+    current_wyscout_id,
+    search_term,
 ):
     """Búsqueda automática y manual en Thai League para formulario de edición."""
     ctx = dash.callback_context
-    
+
     # Determinar qué triggered el callback
     if not ctx.triggered:
         return "", False, "info", [], "", False, "info", False, ""
-    
+
     trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    
+
     # Búsqueda manual desde el modal
     if trigger_id == "edit-matching-search-btn":
         if not search_btn_clicks or not search_term or not search_term.strip():
-            return "", False, "info", [], "Enter a player name to search", True, "info", True, ""
-        
+            return (
+                "",
+                False,
+                "info",
+                [],
+                "Enter a player name to search",
+                True,
+                "info",
+                True,
+                "",
+            )
+
         search_name = search_term.strip()
-    
+
     # Búsqueda manual desde botón Search junto al WyscoutID (Edit User)
     elif trigger_id == "edit-wyscout-search-btn":
         if not wyscout_search_clicks or not player_name or not player_name.strip():
-            return "", False, "info", [], "Player name is required to search", True, "warning", False, ""
-        
+            return (
+                "",
+                False,
+                "info",
+                [],
+                "Player name is required to search",
+                True,
+                "warning",
+                False,
+                "",
+            )
+
         # Abrir modal con nombre del jugador pre-rellenado para búsqueda manual
         return "", False, "info", [], "", False, "info", True, player_name.strip()
-        
+
         search_name = player_name.strip()
-    
-    
+
     # Búsqueda automática SELECTIVA: solo para amateur → professional sin WyscoutID
     elif trigger_id == "edit-is-professional":
         if not is_professional_value or "professional" not in is_professional_value:
             return "", False, "info", [], "", False, "info", False, ""
-        
+
         # Si ya tiene WyscoutID, NO hacer búsqueda automática (ya es profesional)
         if current_wyscout_id and current_wyscout_id.strip():
             return "", False, "info", [], "", False, "info", False, ""
-        
+
         # Si no tiene nombre del jugador, no hacer búsqueda
         if not player_name or not player_name.strip():
             return "", False, "info", [], "", False, "info", False, ""
-        
+
         # Amateur → Professional: hacer búsqueda automática con modal
         search_name = player_name.strip()
-    
+
     else:
         return "", False, "info", [], "", False, "info", False, ""
 
@@ -2662,58 +2804,143 @@ def auto_search_thai_league_edit(
 
         if matches:
             # Búsqueda automática y manual - mostrar resultados en modal
-            if trigger_id == "edit-is-professional" or trigger_id == "edit-matching-search-btn" or trigger_id == "edit-wyscout-search-btn":
+            if (
+                trigger_id == "edit-is-professional"
+                or trigger_id == "edit-matching-search-btn"
+                or trigger_id == "edit-wyscout-search-btn"
+            ):
                 results = []
                 for idx, match in enumerate(matches[:10]):  # Máximo 10 resultados
-                    confidence = match.get('confidence', 0)
-                    player_name_result = match.get('player_name', 'N/A')
-                    full_name = match.get('full_name', player_name_result)
-                    team_name = match.get('team_name', 'N/A')
-                    wyscout_id = match.get('wyscout_id', 'N/A')
-                    birthday = match.get('birthday', 'N/A')
-                    
+                    confidence = match.get("confidence", 0)
+                    player_name_result = match.get("player_name", "N/A")
+                    full_name = match.get("full_name", player_name_result)
+                    team_name = match.get("team_name", "N/A")
+                    wyscout_id = match.get("wyscout_id", "N/A")
+                    birthday = match.get("birthday", "N/A")
+
                     # Crear card para cada resultado
-                    card = dbc.Card([
-                        dbc.CardBody([
-                            html.H6(f"{full_name} ({confidence}%)", className="card-title mb-1", style={"color": "#FFFFFF"}),
-                            html.P([
-                                html.Small(f"Team: {team_name}", style={"color": "#CCCCCC"}),
-                                html.Br(),
-                                html.Small(f"Wyscout ID: {wyscout_id} | Birthday: {birthday}", style={"color": "#CCCCCC"})
-                            ], className="mb-2"),
-                            dbc.Button(
-                                "Select This Player",
-                                id={"type": "edit-select-player", "index": idx, "wyscout_id": wyscout_id},
-                                className="btn-modal-cancel btn-sm w-100",
+                    card = dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H6(
+                                        f"{full_name} ({confidence}%)",
+                                        className="card-title mb-1",
+                                        style={"color": "#FFFFFF"},
+                                    ),
+                                    html.P(
+                                        [
+                                            html.Small(
+                                                f"Team: {team_name}",
+                                                style={"color": "#CCCCCC"},
+                                            ),
+                                            html.Br(),
+                                            html.Small(
+                                                f"Wyscout ID: {wyscout_id} | Birthday: {birthday}",
+                                                style={"color": "#CCCCCC"},
+                                            ),
+                                        ],
+                                        className="mb-2",
+                                    ),
+                                    dbc.Button(
+                                        "Select This Player",
+                                        id={
+                                            "type": "edit-select-player",
+                                            "index": idx,
+                                            "wyscout_id": wyscout_id,
+                                        },
+                                        className="btn-modal-cancel btn-sm w-100",
+                                    ),
+                                ]
                             ),
-                        ]),
-                    ], className="mb-2", style={
-                        "background-color": "rgba(51,51,51,1)",
-                        "border": "1px solid #555",
-                        "border-radius": "8px",
-                        "margin-right": "10px"
-                    })
+                        ],
+                        className="mb-2",
+                        style={
+                            "background-color": "rgba(51,51,51,1)",
+                            "border": "1px solid #555",
+                            "border-radius": "8px",
+                            "margin-right": "10px",
+                        },
+                    )
                     results.append(card)
-                
+
                 # Para búsqueda automática de amateur → professional, pre-rellenar input y abrir modal
                 if trigger_id == "edit-is-professional":
-                    return "", False, "info", results, f"Found {len(matches)} matches", True, "success", True, search_name
+                    return (
+                        "",
+                        False,
+                        "info",
+                        results,
+                        f"Found {len(matches)} matches",
+                        True,
+                        "success",
+                        True,
+                        search_name,
+                    )
                 else:
-                    return "", False, "info", results, f"Found {len(matches)} matches", True, "success", True, ""
+                    return (
+                        "",
+                        False,
+                        "info",
+                        results,
+                        f"Found {len(matches)} matches",
+                        True,
+                        "success",
+                        True,
+                        "",
+                    )
         else:
             # Sin resultados
             if trigger_id == "edit-is-professional":
-                message = f"❌ No matches found for '{search_name}' in Thai League database"
-                return message, True, "warning", [], "", False, "info", True, search_name
-            elif trigger_id == "edit-matching-search-btn" or trigger_id == "edit-wyscout-search-btn":
-                return "", False, "info", [], f"No matches found for '{search_name}'", True, "warning", True, ""
+                message = (
+                    f"❌ No matches found for '{search_name}' in Thai League database"
+                )
+                return (
+                    message,
+                    True,
+                    "warning",
+                    [],
+                    "",
+                    False,
+                    "info",
+                    True,
+                    search_name,
+                )
+            elif (
+                trigger_id == "edit-matching-search-btn"
+                or trigger_id == "edit-wyscout-search-btn"
+            ):
+                return (
+                    "",
+                    False,
+                    "info",
+                    [],
+                    f"No matches found for '{search_name}'",
+                    True,
+                    "warning",
+                    True,
+                    "",
+                )
 
     except Exception as e:
         error_msg = f"⚠️ Error searching Thai League: {str(e)}"
         if trigger_id == "edit-is-professional":
             return error_msg, True, "danger", [], "", False, "info", True, search_name
-        elif trigger_id == "edit-matching-search-btn" or trigger_id == "edit-wyscout-search-btn":
-            return "", False, "info", [], f"Error searching: {str(e)}", True, "danger", True, ""
+        elif (
+            trigger_id == "edit-matching-search-btn"
+            or trigger_id == "edit-wyscout-search-btn"
+        ):
+            return (
+                "",
+                False,
+                "info",
+                [],
+                f"Error searching: {str(e)}",
+                True,
+                "danger",
+                True,
+                "",
+            )
 
 
 @dash.callback(
@@ -2733,13 +2960,13 @@ def handle_new_thai_search_btn(search_clicks, player_name):
     """Manejar click del botón Search en Create User - abrir modal con nombre pre-rellenado."""
     if not search_clicks or not player_name or not player_name.strip():
         return False, ""
-    
+
     # Abrir modal con nombre del jugador pre-rellenado para búsqueda manual
     return True, player_name.strip()
 
 
-
 # ===== CALLBACKS PARA ASIGNACIÓN DE WYSCOUT_ID =====
+
 
 @dash.callback(
     [
@@ -2754,20 +2981,26 @@ def handle_new_thai_search_btn(search_clicks, player_name):
     prevent_initial_call=True,
 )
 def assign_wyscout_id_create(n_clicks_list, button_ids):
-    """Asignar wyscout_id cuando se selecciona un jugador en formulario de creación.""" 
+    """Asignar wyscout_id cuando se selecciona un jugador en formulario de creación."""
     ctx = dash.callback_context
-    
+
     if not ctx.triggered or not any(n_clicks_list):
         raise PreventUpdate
-    
+
     # Encontrar cuál botón fue presionado
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
     button_data = eval(triggered_id)  # Convertir string a dict
-    
+
     wyscout_id = button_data.get("wyscout_id", "")
-    
+
     if wyscout_id and wyscout_id != "N/A":
-        return wyscout_id, False, f"✅ WyscoutID {wyscout_id} assigned successfully!", True, "success"
+        return (
+            wyscout_id,
+            False,
+            f"✅ WyscoutID {wyscout_id} assigned successfully!",
+            True,
+            "success",
+        )
     else:
         return "", True, "❌ Error: Invalid WyscoutID", True, "danger"
 
@@ -2780,24 +3013,34 @@ def assign_wyscout_id_create(n_clicks_list, button_ids):
         Output("edit-matching-search-alert", "is_open", allow_duplicate=True),
         Output("edit-matching-search-alert", "color", allow_duplicate=True),
     ],
-    [Input({"type": "edit-select-player", "index": ALL, "wyscout_id": ALL}, "n_clicks")],
+    [
+        Input(
+            {"type": "edit-select-player", "index": ALL, "wyscout_id": ALL}, "n_clicks"
+        )
+    ],
     [State({"type": "edit-select-player", "index": ALL, "wyscout_id": ALL}, "id")],
     prevent_initial_call=True,
 )
 def assign_wyscout_id_edit(n_clicks_list, button_ids):
     """Asignar wyscout_id cuando se selecciona un jugador en formulario de edición."""
     ctx = dash.callback_context
-    
+
     if not ctx.triggered or not any(n_clicks_list):
         raise PreventUpdate
-    
+
     # Encontrar cuál botón fue presionado
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
     button_data = eval(triggered_id)  # Convertir string a dict
-    
+
     wyscout_id = button_data.get("wyscout_id", "")
-    
+
     if wyscout_id and wyscout_id != "N/A":
-        return wyscout_id, False, f"✅ WyscoutID {wyscout_id} assigned successfully!", True, "success"
+        return (
+            wyscout_id,
+            False,
+            f"✅ WyscoutID {wyscout_id} assigned successfully!",
+            True,
+            "success",
+        )
     else:
         return "", True, "❌ Error: Invalid WyscoutID", True, "danger"

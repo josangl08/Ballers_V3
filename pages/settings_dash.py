@@ -419,8 +419,10 @@ def create_user_form_dash():
                                                     ),
                                                     dbc.Button(
                                                         [
-                                                            html.I(className="bi bi-search me-2"),
-                                                            "Search"
+                                                            html.I(
+                                                                className="bi bi-search me-2"
+                                                            ),
+                                                            "Search",
                                                         ],
                                                         id="new-thai-search-btn",
                                                         className="btn-modal-cancel w-100",
@@ -448,7 +450,6 @@ def create_user_form_dash():
                                         id="new-wyscout-help",
                                         style={"display": "none"},  # Hidden initially
                                     ),
-                                    
                                     # Modal de matching manual
                                     dbc.Modal(
                                         [
@@ -483,22 +484,36 @@ def create_user_form_dash():
                                                         id="matching-search-alert",
                                                         is_open=False,
                                                     ),
-                                                    dbc.Row([
-                                                        dbc.Col([
-                                                            dbc.Label("Player Name:", className="form-label", style={"color": "#FFFFFF"}),
-                                                            dbc.Input(
-                                                                id="matching-search-input",
-                                                                type="text",
-                                                                placeholder="Enter player name to search...",
-                                                                className="dash-input",
+                                                    dbc.Row(
+                                                        [
+                                                            dbc.Col(
+                                                                [
+                                                                    dbc.Label(
+                                                                        "Player Name:",
+                                                                        className="form-label",
+                                                                        style={
+                                                                            "color": "#FFFFFF"
+                                                                        },
+                                                                    ),
+                                                                    dbc.Input(
+                                                                        id="matching-search-input",
+                                                                        type="text",
+                                                                        placeholder="Enter player name to search...",
+                                                                        className="dash-input",
+                                                                    ),
+                                                                ],
+                                                                width=12,
                                                             ),
-                                                        ], width=12),
-                                                    ], className="mb-3"),
-                                                    
+                                                        ],
+                                                        className="mb-3",
+                                                    ),
                                                     # Contenedor de resultados
                                                     html.Div(
                                                         id="matching-results-container",
-                                                        style={"max-height": "400px", "overflow-y": "auto"},
+                                                        style={
+                                                            "max-height": "400px",
+                                                            "overflow-y": "auto",
+                                                        },
                                                     ),
                                                 ],
                                                 className="modal-body-standard",
@@ -507,7 +522,9 @@ def create_user_form_dash():
                                                 [
                                                     dbc.Button(
                                                         [
-                                                            html.I(className="bi bi-search me-2"),
+                                                            html.I(
+                                                                className="bi bi-search me-2"
+                                                            ),
                                                             "Search",
                                                         ],
                                                         id="matching-search-btn",
@@ -1049,8 +1066,8 @@ def create_edit_user_form_dash():
                                                         style={
                                                             "text-align": "center",
                                                             "margin-top": "10px",
-                                                            "display": "none"
-                                                        }
+                                                            "display": "none",
+                                                        },
                                                     ),
                                                 ],
                                                 width=4,
@@ -1475,8 +1492,10 @@ def create_edit_user_form_dash():
                                                             ),
                                                             dbc.Button(
                                                                 [
-                                                                    html.I(className="bi bi-search me-2"),
-                                                                    "Search"
+                                                                    html.I(
+                                                                        className="bi bi-search me-2"
+                                                                    ),
+                                                                    "Search",
                                                                 ],
                                                                 id="edit-wyscout-search-btn",
                                                                 className="btn-modal-cancel w-100",
@@ -1508,7 +1527,6 @@ def create_edit_user_form_dash():
                                                     "display": "none"
                                                 },  # Hidden initially
                                             ),
-                                            
                                             # Modal de matching manual para edición
                                             dbc.Modal(
                                                 [
@@ -1543,22 +1561,36 @@ def create_edit_user_form_dash():
                                                                 id="edit-matching-search-alert",
                                                                 is_open=False,
                                                             ),
-                                                            dbc.Row([
-                                                                dbc.Col([
-                                                                    dbc.Label("Player Name:", className="form-label", style={"color": "#FFFFFF"}),
-                                                                    dbc.Input(
-                                                                        id="edit-matching-search-input",
-                                                                        type="text",
-                                                                        placeholder="Enter player name to search...",
-                                                                        className="dash-input",
+                                                            dbc.Row(
+                                                                [
+                                                                    dbc.Col(
+                                                                        [
+                                                                            dbc.Label(
+                                                                                "Player Name:",
+                                                                                className="form-label",
+                                                                                style={
+                                                                                    "color": "#FFFFFF"
+                                                                                },
+                                                                            ),
+                                                                            dbc.Input(
+                                                                                id="edit-matching-search-input",
+                                                                                type="text",
+                                                                                placeholder="Enter player name to search...",
+                                                                                className="dash-input",
+                                                                            ),
+                                                                        ],
+                                                                        width=12,
                                                                     ),
-                                                                ], width=12),
-                                                            ], className="mb-3"),
-                                                            
+                                                                ],
+                                                                className="mb-3",
+                                                            ),
                                                             # Contenedor de resultados
                                                             html.Div(
                                                                 id="edit-matching-results-container",
-                                                                style={"max-height": "400px", "overflow-y": "auto"},
+                                                                style={
+                                                                    "max-height": "400px",
+                                                                    "overflow-y": "auto",
+                                                                },
                                                             ),
                                                         ],
                                                         className="modal-body-standard",
@@ -1567,7 +1599,9 @@ def create_edit_user_form_dash():
                                                         [
                                                             dbc.Button(
                                                                 [
-                                                                    html.I(className="bi bi-search me-2"),
+                                                                    html.I(
+                                                                        className="bi bi-search me-2"
+                                                                    ),
                                                                     "Search",
                                                                 ],
                                                                 id="edit-matching-search-btn",

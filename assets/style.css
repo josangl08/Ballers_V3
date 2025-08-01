@@ -536,7 +536,7 @@ div.stExpander {
 }
 
 /* Fix para selectores y otros elementos de formulario */
-.form-select:focus, 
+.form-select:focus,
 select:focus,
 select.form-select:focus {
     color: #fafafa !important;

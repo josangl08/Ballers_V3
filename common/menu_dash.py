@@ -238,11 +238,13 @@ def create_sidebar_menu_dash(session_data: Optional[Dict] = None):
         html.Div(
             [
                 # Línea separadora antes de Log Out
-                html.Hr(style={
-                    "border-color": "#555", 
-                    "margin": "20px 0 15px 0",
-                    "opacity": "0.8"
-                }),
+                html.Hr(
+                    style={
+                        "border-color": "#555",
+                        "margin": "20px 0 15px 0",
+                        "opacity": "0.8",
+                    }
+                ),
                 dbc.Button(
                     [
                         html.I(className="bi bi-box-arrow-right me-2"),

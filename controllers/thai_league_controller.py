@@ -838,10 +838,10 @@ class ThaiLeagueController:
     def get_player_stats(self, player_id: int) -> List[Dict]:
         """
         Obtiene estadísticas profesionales de un jugador específico.
-        
+
         Args:
             player_id: ID del jugador en la base de datos
-            
+
         Returns:
             Lista de diccionarios con estadísticas por temporada
         """
@@ -853,54 +853,58 @@ class ThaiLeagueController:
                     .order_by(ProfessionalStats.season)
                     .all()
                 )
-                
+
                 result = []
                 for stat in stats:
-                    result.append({
-                        'season': stat.season,
-                        'team': stat.team,
-                        'age': stat.age,
-                        'matches_played': stat.matches_played,
-                        'minutes_played': stat.minutes_played,
-                        'goals': stat.goals,
-                        'assists': stat.assists,
-                        'shots': stat.shots,
-                        'shots_on_target': stat.shots_on_target,
-                        'shot_accuracy': stat.shot_accuracy,
-                        'pass_accuracy': stat.pass_accuracy,
-                        'defensive_actions': stat.defensive_actions,
-                        'interceptions': stat.interceptions,
-                        'expected_goals': stat.expected_goals,
-                        'expected_assists': stat.expected_assists,
-                        'market_value': stat.market_value
-                    })
-                
+                    result.append(
+                        {
+                            "season": stat.season,
+                            "team": stat.team,
+                            "age": stat.age,
+                            "matches_played": stat.matches_played,
+                            "minutes_played": stat.minutes_played,
+                            "goals": stat.goals,
+                            "assists": stat.assists,
+                            "shots": stat.shots,
+                            "shots_on_target": stat.shots_on_target,
+                            "shot_accuracy": stat.shot_accuracy,
+                            "pass_accuracy": stat.pass_accuracy,
+                            "defensive_actions": stat.defensive_actions,
+                            "interceptions": stat.interceptions,
+                            "expected_goals": stat.expected_goals,
+                            "expected_assists": stat.expected_assists,
+                            "market_value": stat.market_value,
+                        }
+                    )
+
                 return result
-                
+
         except Exception as e:
             logger.error(f"Error obteniendo estadísticas del jugador {player_id}: {e}")
             return []
 
-    def search_player_by_name(self, player_name: str, threshold: int = 75) -> List[Dict]:
+    def search_player_by_name(
+        self, player_name: str, threshold: int = 75
+    ) -> List[Dict]:
         """
         Busca jugadores por nombre en la base de datos de estadísticas profesionales.
-        
+
         Args:
             player_name: Nombre del jugador a buscar
             threshold: Umbral de similitud para fuzzy matching (0-100)
-            
+
         Returns:
             Lista de jugadores ordenada por confidence score
         """
         try:
             if not player_name or not player_name.strip():
                 return []
-            
+
             # Normalizar el nombre de búsqueda
             search_name = self._normalize_name(player_name.strip())
             if not search_name:
                 return []
-            
+
             with self.session_factory() as session:
                 # Obtener jugadores únicos con su temporada más reciente
                 subquery = (
@@ -919,160 +923,186 @@ class ThaiLeagueController:
                     .distinct(ProfessionalStats.wyscout_id)
                     .subquery()
                 )
-                
+
                 # Obtener todos los jugadores únicos
                 unique_players = session.query(subquery).all()
-                
+
                 matches = []
                 for player_stats in unique_players:
                     # Calcular similitud con el nombre completo
-                    full_name_normalized = self._normalize_name(player_stats.full_name or "")
-                    player_name_normalized = self._normalize_name(player_stats.player_name or "")
-                    
+                    full_name_normalized = self._normalize_name(
+                        player_stats.full_name or ""
+                    )
+                    player_name_normalized = self._normalize_name(
+                        player_stats.player_name or ""
+                    )
+
                     # Probar múltiples algoritmos de fuzzy matching para mayor precisión
                     confidence_full = 0
                     confidence_player = 0
-                    
+
                     if full_name_normalized:
                         # Usar múltiples algoritmos y tomar el mejor score
                         ratio_full = fuzz.ratio(search_name, full_name_normalized)
-                        partial_full = fuzz.partial_ratio(search_name, full_name_normalized)
-                        token_set_full = fuzz.token_set_ratio(search_name, full_name_normalized)
+                        partial_full = fuzz.partial_ratio(
+                            search_name, full_name_normalized
+                        )
+                        token_set_full = fuzz.token_set_ratio(
+                            search_name, full_name_normalized
+                        )
                         confidence_full = max(ratio_full, partial_full, token_set_full)
-                    
+
                     if player_name_normalized:
                         # Usar múltiples algoritmos y tomar el mejor score
                         ratio_player = fuzz.ratio(search_name, player_name_normalized)
-                        partial_player = fuzz.partial_ratio(search_name, player_name_normalized)
-                        token_set_player = fuzz.token_set_ratio(search_name, player_name_normalized)
-                        confidence_player = max(ratio_player, partial_player, token_set_player)
-                    
+                        partial_player = fuzz.partial_ratio(
+                            search_name, player_name_normalized
+                        )
+                        token_set_player = fuzz.token_set_ratio(
+                            search_name, player_name_normalized
+                        )
+                        confidence_player = max(
+                            ratio_player, partial_player, token_set_player
+                        )
+
                     # Usar el mejor confidence score
                     best_confidence = max(confidence_full, confidence_player)
                     best_match_name = (
-                        player_stats.full_name if confidence_full >= confidence_player 
+                        player_stats.full_name
+                        if confidence_full >= confidence_player
                         else player_stats.player_name
                     )
-                    
-                    
+
                     # Solo incluir si supera el threshold
                     if best_confidence >= threshold:
-                        matches.append({
-                            'wyscout_id': player_stats.wyscout_id,
-                            'player_name': best_match_name,
-                            'full_name': player_stats.full_name,
-                            'team_name': player_stats.team,
-                            'season': player_stats.season,
-                            'position': player_stats.primary_position,
-                            'goals': player_stats.goals or 0,
-                            'assists': player_stats.assists or 0,
-                            'matches': player_stats.matches_played or 0,
-                            'confidence': best_confidence,
-                        })
-                
+                        matches.append(
+                            {
+                                "wyscout_id": player_stats.wyscout_id,
+                                "player_name": best_match_name,
+                                "full_name": player_stats.full_name,
+                                "team_name": player_stats.team,
+                                "season": player_stats.season,
+                                "position": player_stats.primary_position,
+                                "goals": player_stats.goals or 0,
+                                "assists": player_stats.assists or 0,
+                                "matches": player_stats.matches_played or 0,
+                                "confidence": best_confidence,
+                            }
+                        )
+
                 # Ordenar por confidence score (mayor a menor)
-                matches.sort(key=lambda x: x['confidence'], reverse=True)
-                
-                logger.info(f"Búsqueda '{player_name}': {len(matches)} matches encontrados")
+                matches.sort(key=lambda x: x["confidence"], reverse=True)
+
+                logger.info(
+                    f"Búsqueda '{player_name}': {len(matches)} matches encontrados"
+                )
                 return matches
-                
+
         except Exception as e:
             logger.error(f"Error buscando jugador por nombre '{player_name}': {e}")
             return []
 
-    def search_players_in_csv(self, player_name: str, threshold: int = 60) -> List[Dict]:
+    def search_players_in_csv(
+        self, player_name: str, threshold: int = 60
+    ) -> List[Dict]:
         """
         Busca jugadores directamente en el archivo CSV más reciente.
         Útil para encontrar jugadores que aún no están importados en la base de datos.
-        
+
         Args:
             player_name: Nombre del jugador a buscar
             threshold: Umbral de similitud para fuzzy matching (0-100)
-            
+
         Returns:
             Lista de jugadores ordenada por confidence score
         """
         try:
             if not player_name or not player_name.strip():
                 return []
-            
+
             # Normalizar el nombre de búsqueda
             search_name = self._normalize_name(player_name.strip())
             if not search_name:
                 return []
-            
+
             # Buscar el archivo CSV más reciente
             csv_file = self.cache_dir / "thai_league_2024-25.csv"
             if not csv_file.exists():
                 logger.warning(f"Archivo CSV no encontrado: {csv_file}")
                 return []
-            
+
             # Leer y limpiar datos del CSV
             df = pd.read_csv(csv_file)
-            
+
             # Limpiar datos nulos y normalizar nombres
-            df['Player'] = df['Player'].fillna('').astype(str)
-            df['Full name'] = df['Full name'].fillna('').astype(str)
-            df['Team'] = df['Team'].fillna('').astype(str)
-            df['Wyscout id'] = df['Wyscout id'].fillna('').astype(str)
-            df['Position'] = df['Position'].fillna('').astype(str)
-            df['Birthday'] = df['Birthday'].fillna('').astype(str)
-            
+            df["Player"] = df["Player"].fillna("").astype(str)
+            df["Full name"] = df["Full name"].fillna("").astype(str)
+            df["Team"] = df["Team"].fillna("").astype(str)
+            df["Wyscout id"] = df["Wyscout id"].fillna("").astype(str)
+            df["Position"] = df["Position"].fillna("").astype(str)
+            df["Birthday"] = df["Birthday"].fillna("").astype(str)
+
             # Eliminar filas completamente vacías
-            df = df[(df['Player'] != '') | (df['Full name'] != '')]
-            
+            df = df[(df["Player"] != "") | (df["Full name"] != "")]
+
             matches = []
             for _, row in df.iterrows():
                 # Normalizar nombres para comparación
-                player_name_norm = self._normalize_name(row['Player'] or "")
-                full_name_norm = self._normalize_name(row['Full name'] or "")
-                
+                player_name_norm = self._normalize_name(row["Player"] or "")
+                full_name_norm = self._normalize_name(row["Full name"] or "")
+
                 if not player_name_norm and not full_name_norm:
                     continue
-                
+
                 # Calcular similitud con múltiples algoritmos
                 confidences = []
-                
+
                 # Fuzzy matching con nombre del jugador
                 if player_name_norm:
-                    confidences.extend([
-                        fuzz.ratio(search_name, player_name_norm),
-                        fuzz.partial_ratio(search_name, player_name_norm),
-                        fuzz.token_set_ratio(search_name, player_name_norm),
-                        fuzz.token_sort_ratio(search_name, player_name_norm)
-                    ])
-                
+                    confidences.extend(
+                        [
+                            fuzz.ratio(search_name, player_name_norm),
+                            fuzz.partial_ratio(search_name, player_name_norm),
+                            fuzz.token_set_ratio(search_name, player_name_norm),
+                            fuzz.token_sort_ratio(search_name, player_name_norm),
+                        ]
+                    )
+
                 # Fuzzy matching con nombre completo
                 if full_name_norm:
-                    confidences.extend([
-                        fuzz.ratio(search_name, full_name_norm),
-                        fuzz.partial_ratio(search_name, full_name_norm),
-                        fuzz.token_set_ratio(search_name, full_name_norm),
-                        fuzz.token_sort_ratio(search_name, full_name_norm)
-                    ])
-                
+                    confidences.extend(
+                        [
+                            fuzz.ratio(search_name, full_name_norm),
+                            fuzz.partial_ratio(search_name, full_name_norm),
+                            fuzz.token_set_ratio(search_name, full_name_norm),
+                            fuzz.token_sort_ratio(search_name, full_name_norm),
+                        ]
+                    )
+
                 # Tomar la mejor puntuación
                 if confidences:
                     max_confidence = max(confidences)
-                    
+
                     if max_confidence >= threshold:
-                        matches.append({
-                            'wyscout_id': str(row['Wyscout id']),
-                            'player_name': row['Player'],
-                            'full_name': row['Full name'],
-                            'team_name': row['Team'],
-                            'position': row['Position'],
-                            'birthday': row['Birthday'],
-                            'confidence': max_confidence,
-                            'season': '2024-25'
-                        })
-            
+                        matches.append(
+                            {
+                                "wyscout_id": str(row["Wyscout id"]),
+                                "player_name": row["Player"],
+                                "full_name": row["Full name"],
+                                "team_name": row["Team"],
+                                "position": row["Position"],
+                                "birthday": row["Birthday"],
+                                "confidence": max_confidence,
+                                "season": "2024-25",
+                            }
+                        )
+
             # Ordenar por confidence score descendente
-            matches.sort(key=lambda x: x['confidence'], reverse=True)
-            
+            matches.sort(key=lambda x: x["confidence"], reverse=True)
+
             logger.info(f"Búsqueda CSV para '{player_name}': {len(matches)} resultados")
             return matches
-            
+
         except Exception as e:
             logger.error(f"Error buscando en CSV para '{player_name}': {e}")
             return []
