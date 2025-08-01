@@ -178,8 +178,8 @@ cython_debug/
 data/test/
 data/usuarios_generados.txt
 data/google_service_account.json
-#data/ballers_app.db
-#data/ballers_app.db*
+data/ballers_app.db
+data/ballers_app.db*
 *.db-journal
 assets/ballers
 assets/profile_photos

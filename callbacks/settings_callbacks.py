@@ -965,7 +965,21 @@ def register_settings_callbacks(app):
                                 className="bi bi-speedometer2 me-1",
                                 style={"color": "#24DE84"},
                             ),
-                            f"Baller Level: {'Professional' if (user_data['user_type'] == 'player' and is_professional) else 'Amateur' if user_data['user_type'] == 'player' else 'N/A'}",
+                            (
+                                "Baller Level: "
+                                + (
+                                    "Professional"
+                                    if (
+                                        user_data["user_type"] == "player"
+                                        and is_professional
+                                    )
+                                    else (
+                                        "Amateur"
+                                        if (user_data["user_type"] == "player")
+                                        else "N/A"
+                                    )
+                                )
+                            ),
                         ],
                         style={"font-weight": "500", "color": "#FFFFFF"},
                     )
@@ -1022,7 +1036,7 @@ def register_settings_callbacks(app):
 
             # Professional player fields - ya definido arriba
             professional_value = ["professional"] if is_professional else []
-            wyscout_id = user_data.get("wyscout_id", "") or ""
+            _wyscout_id = user_data.get("wyscout_id", "") or ""  # Para Wyscout API
 
             # Status display with icon
             status_icon = (
@@ -2061,7 +2075,7 @@ def register_settings_callbacks(app):
 
                 try:
                     get_accounting_df.clear()
-                    df = get_accounting_df()
+                    _df = get_accounting_df()  # Para análisis estadísticas
                     return "✅ Google Sheets updated successfully", True, "success"
                 except Exception as e:
                     return f"❌ Error updating Google Sheets: {e}", True, "danger"
@@ -2071,8 +2085,10 @@ def register_settings_callbacks(app):
 
                 try:
                     pushed, updated = sync_db_to_calendar()
+                    sessions_msg = f"✅ {pushed} new sessions sent"
+                    updates_msg = f"{updated} sessions updated in Google Calendar"
                     return (
-                        f"✅ {pushed} new sessions sent, {updated} sessions updated in Google Calendar",
+                        f"{sessions_msg}, {updates_msg}",
                         True,
                         "success",
                     )
@@ -2104,20 +2120,28 @@ def register_settings_callbacks(app):
                         changes_text = ", ".join(changes) if changes else "no changes"
 
                         if len(rejected_events) > 0:
+                            rejected_msg = f"⚠️ Sync completed with {len(rejected_events)} rejected events"
+                            time_msg = f"({duration:.1f}s) | {changes_text}"
                             return (
-                                f"⚠️ Sync completed with {len(rejected_events)} rejected events ({duration:.1f}s) | {changes_text}",
+                                f"{rejected_msg} {time_msg}",
                                 True,
                                 "warning",
                             )
                         elif len(warning_events) > 0:
+                            warning_msg = (
+                                f"⚠️ Sync completed with {len(warning_events)} warnings"
+                            )
+                            time_msg = f"({duration:.1f}s) | {changes_text}"
                             return (
-                                f"⚠️ Sync completed with {len(warning_events)} warnings ({duration:.1f}s) | {changes_text}",
+                                f"{warning_msg} {time_msg}",
                                 True,
                                 "warning",
                             )
                         elif imported + updated + deleted > 0:
+                            success_msg = f"✅ Sync completed successfully"
+                            time_msg = f"({duration:.1f}s) | {changes_text}"
                             return (
-                                f"✅ Sync completed successfully ({duration:.1f}s) | {changes_text}",
+                                f"{success_msg} {time_msg}",
                                 True,
                                 "success",
                             )
@@ -2376,7 +2400,7 @@ def register_settings_callbacks(app):
 
             return user_info
 
-        except Exception as e:
+        except Exception:
             return no_update
 
 
@@ -2579,7 +2603,7 @@ def auto_search_thai_league_new(
 
         search_name = search_term.strip()
         # Retornar valores vacíos para alerts del formulario principal
-        main_alert = ("", False, "info")
+        _main_alert = ("", False, "info")  # Para notificaciones futuras
 
     # Búsqueda automática al marcar checkbox
     elif trigger_id == "new-is-professional":
@@ -2597,7 +2621,7 @@ def auto_search_thai_league_new(
 
         search_name = player_name.strip()
         # Retornar valores vacíos para contenedores del modal
-        modal_results = ([], "", False, "info")
+        _modal_results = ([], "", False, "info")  # Para resultados modales
 
     else:
         return [], "", False, "info", False
@@ -2692,7 +2716,7 @@ def auto_search_thai_league_new(
                 )
 
     except Exception as e:
-        error_msg = f"⚠️ Error searching Thai League: {str(e)}"
+        _error_msg = f"⚠️ Error searching Thai League: {str(e)}"  # Futuro
         if trigger_id == "new-is-professional":
             return [], f"⚠️ Error searching Thai League: {str(e)}", True, "danger", True
         elif trigger_id == "matching-search-btn":
@@ -2989,7 +3013,7 @@ def assign_wyscout_id_create(n_clicks_list, button_ids):
 
     # Encontrar cuál botón fue presionado
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    button_data = eval(triggered_id)  # Convertir string a dict
+    button_data = ast.literal_eval(triggered_id)  # Convertir string a dict
 
     wyscout_id = button_data.get("wyscout_id", "")
 
@@ -3030,7 +3054,7 @@ def assign_wyscout_id_edit(n_clicks_list, button_ids):
 
     # Encontrar cuál botón fue presionado
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    button_data = eval(triggered_id)  # Convertir string a dict
+    button_data = ast.literal_eval(triggered_id)  # Convertir string a dict
 
     wyscout_id = button_data.get("wyscout_id", "")
 

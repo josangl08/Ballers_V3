@@ -4,7 +4,6 @@ from __future__ import annotations
 import datetime
 
 import dash_bootstrap_components as dbc
-import plotly.express as px
 import plotly.graph_objects as go
 from dash import Input, Output, State, dcc, html  # noqa: F401
 
@@ -753,7 +752,11 @@ def create_player_card(player_data):
                     html.Div(
                         [
                             html.P(
-                                f"Age: {player_data['age'] if player_data['age'] else 'N/A'} years",
+                                (
+                                    f"Age: "
+                                    f"{player_data['age'] if player_data['age'] else 'N/A'} "
+                                    "years"
+                                ),
                                 className="text-center text-muted mb-1",
                             ),
                             html.P(
@@ -774,7 +777,10 @@ def create_player_card(player_data):
                     html.Div(
                         [
                             html.P(
-                                f"Next Session: {player_data.get('next_session', 'To be confirmed')}",
+                                (
+                                    f"Next Session: "
+                                    f"{player_data.get('next_session', 'To be confirmed')}"
+                                ),
                                 className="text-center text-muted mb-3",
                                 style={"font-size": "0.85rem", "font-style": "italic"},
                             ),
@@ -1040,7 +1046,10 @@ def create_overview_content_dash():
 
 # Función principal para mostrar contenido (migrada de ballers.py)
 def show_ballers_content_dash():
-    """Función principal para mostrar el contenido de la sección Ballers - MIGRADA DE STREAMLIT."""
+    """
+    Función principal para mostrar el contenido de la sección Ballers -
+    MIGRADA DE STREAMLIT.
+    """
 
     return html.Div(
         [
@@ -1063,7 +1072,8 @@ def show_ballers_content_dash():
 
 def create_test_results_content_dash():
     """Crea el contenido de Test Results - migrado de lines 188-245 en ballers.py"""
-    # Obtener lista de métricas del controller usando la misma lógica que Streamlit
+    # Obtener lista de métricas del controller usando la misma
+    # lógica que Streamlit
     from controllers.player_controller import PlayerController
 
     with PlayerController() as controller:
@@ -1125,7 +1135,9 @@ def create_test_results_content_dash():
                                 "paper_bgcolor": "#333333",
                                 "font": {"color": "#FFFFFF"},
                                 "title": {
-                                    "text": "Select metrics to display performance evolution",
+                                    "text": (
+                                        "Select metrics to display performance evolution"
+                                    ),
                                     "font": {"color": "#24DE84"},
                                 },
                                 "xaxis": {
@@ -1383,7 +1395,10 @@ def create_professional_info_content(player, user):
                 [
                     html.I(className="bi bi-info-circle me-2"),
                     f"Professional player view for {user.name}. ",
-                    "Use the calendar and session controls below to manage training sessions and view performance data.",
+                    (
+                        "Use the calendar and session controls below to manage "
+                        "training sessions and view performance data."
+                    ),
                 ],
                 color="info",
                 style={
@@ -1664,7 +1679,7 @@ def create_sessions_table_dash(
 ):
     """Crea la tabla de sesiones usando el controller existente - soporta player_id y coach_id"""
 
-    print(f"🔍 DEBUG Sessions Table Creation:")
+    print("🔍 DEBUG Sessions Table Creation:")
     print(f"  - player_id: {player_id}")
     print(f"  - coach_id: {coach_id}")
     print(f"  - from_date: {from_date}, to_date: {to_date}")

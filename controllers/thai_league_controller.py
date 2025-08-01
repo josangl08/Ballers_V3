@@ -5,7 +5,6 @@ Maneja la descarga, limpieza y matching de estadísticas de la liga tailandesa
 
 import hashlib
 import logging
-import os
 import re
 from datetime import datetime, timezone
 from io import StringIO
@@ -14,8 +13,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 import requests
-from fuzzywuzzy import fuzz, process
-from sqlalchemy.orm import Session
+from fuzzywuzzy import fuzz
 from unidecode import unidecode
 
 from config import DATABASE_PATH
@@ -240,7 +238,10 @@ class ThaiLeagueController:
             return False, None, f"Temporada {season} no disponible"
 
         filename = self.AVAILABLE_SEASONS[season]
-        url = f"{self.GITHUB_BASE_URL}/{self.COMMIT_HASH}/Main App/{filename.replace(' ', '%20')}"
+        url = (
+            f"{self.GITHUB_BASE_URL}/{self.COMMIT_HASH}/Main App/"
+            f"{filename.replace(' ', '%20')}"
+        )
 
         try:
             # Paso 1: Verificar si tenemos cache válido (sin descargar)
@@ -412,7 +413,7 @@ class ThaiLeagueController:
                 session.query(Player, User)
                 .join(User, Player.user_id == User.user_id)
                 .filter(
-                    Player.is_professional == True, User.user_type == UserType.player
+                    Player.is_professional is True, User.user_type == UserType.player
                 )
                 .all()
             )
@@ -579,7 +580,7 @@ class ThaiLeagueController:
         Returns:
             Hash MD5 del contenido
         """
-        return hashlib.md5(content.encode("utf-8")).hexdigest()
+        return hashlib.md5(content.encode("utf-8"), usedforsecurity=False).hexdigest()
 
     def get_season_status(self, season: str) -> Optional[ThaiLeagueSeason]:
         """
@@ -747,12 +748,18 @@ class ThaiLeagueController:
 
                 if stats["errors"] == 0:
                     season_obj.mark_completed()
-                    message = f"Importación exitosa para {season}: {stats['imported_records']} registros"
+                    message = (
+                        f"Importación exitosa para {season}: "
+                        f"{stats['imported_records']} registros"
+                    )
                 else:
                     season_obj.import_status = (
                         ImportStatus.completed
                     )  # Completado con errores
-                    message = f"Importación completada con {stats['errors']} errores para {season}"
+                    message = (
+                        f"Importación completada con {stats['errors']} errores "
+                        f"para {season}"
+                    )
 
                 session.commit()
                 logger.info(message)
@@ -773,8 +780,8 @@ class ThaiLeagueController:
                     if season_obj:
                         season_obj.mark_failed(error_msg)
                         session.commit()
-            except:
-                pass  # No fallar si no se puede actualizar el estado
+            except Exception as e:
+                logging.warning(f"No se pudo actualizar estado de temporada: {e}")
 
             return False, error_msg, stats
 
@@ -1136,7 +1143,10 @@ class ThaiLeagueController:
                     reason = "Primera importación"
                 elif season_obj.needs_update:
                     needs_update = True
-                    reason = f"Última actualización hace {(datetime.now(timezone.utc) - season_obj.last_import_attempt).days} días"
+                    days_since_update = (
+                        datetime.now(timezone.utc) - season_obj.last_import_attempt
+                    ).days
+                    reason = f"Última actualización hace {days_since_update} días"
                 elif season_obj.import_status == ImportStatus.failed:
                     needs_update = True
                     reason = "Importación anterior falló"
@@ -1159,7 +1169,8 @@ class ThaiLeagueController:
                     )
 
         logger.info(
-            f"Verificación de actualizaciones: {len(updates_needed)} temporadas necesitan actualización"
+            f"Verificación de actualizaciones: {len(updates_needed)} "
+            f"temporadas necesitan actualización"
         )
         return updates_needed
 
