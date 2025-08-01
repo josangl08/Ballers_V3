@@ -531,7 +531,18 @@ div.stExpander {
     border-color: #24DE84 !important;
     box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
     background-color: #3b3b3a !important;
+    color: #fafafa !important;
     outline: none !important;
+}
+
+/* Fix para selectores y otros elementos de formulario */
+.form-select:focus, 
+select:focus,
+select.form-select:focus {
+    color: #fafafa !important;
+    background-color: #3b3b3a !important;
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
 }
 
 /* Player cards styling for Dash */
@@ -738,6 +749,10 @@ div.stExpander {
     background-color: rgba(36, 222, 132, 0.2) !important;
 }
 
+.standard-dropdown .Select-input input {
+    color: #fafafa !important;
+}
+
 /* Sistema unificado de date inputs para toda la aplicación */
 input[type="date"].custom-date-input,
 input[type="date"].date-filter-input,
@@ -870,6 +885,30 @@ input[type="date"]#filter-to-date:focus,
     display: block !important;
     height: 20px !important; /* Altura fija para label */
     line-height: 20px !important;
+}
+
+/* Layout horizontal para secciones WyscoutID - Solo cuando están visibles */
+#new-wyscout-section.row:not([style*="display: none"]),
+#edit-wyscout-section.row:not([style*="display: none"]) {
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+
+#new-wyscout-section:not([style*="display: none"]) .col,
+#new-wyscout-section:not([style*="display: none"]) .col-6,
+#new-wyscout-section:not([style*="display: none"]) .col-3,
+#edit-wyscout-section:not([style*="display: none"]) .col,
+#edit-wyscout-section:not([style*="display: none"]) .col-6,
+#edit-wyscout-section:not([style*="display: none"]) .col-3 {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Labels en layout horizontal */
+#new-wyscout-section .filter-label,
+#edit-wyscout-section .filter-label {
+    display: block !important;
+    margin-bottom: 8px !important;
 }
 
 .filter-container,
@@ -2949,6 +2988,43 @@ iframe[id*="dash-calendar"] * {
 }
 
 /* Los botones de confirmación de delete usan la clase .btn-delete ya definida */
+
+/* Ocultar scroll en contenedores de búsqueda del modal */
+#matching-results-container::-webkit-scrollbar,
+#edit-matching-results-container::-webkit-scrollbar {
+    display: none !important;
+}
+#matching-results-container,
+#edit-matching-results-container {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+    overflow-y: auto !important;
+}
+
+/* Checkbox verde cuando está marcado (Professional Player) */
+.form-check-input:checked {
+    background-color: #24DE84 !important;
+    border-color: #24DE84 !important;
+}
+.form-check-input:focus {
+    border-color: #24DE84 !important;
+    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+}
+
+/* ===== CLASES COMUNES PARA MODALES ===== */
+.modal-body-standard {
+    background-color: rgba(51,51,51,1) !important;
+    padding: 2rem 1.5rem !important;
+    border: none !important;
+}
+
+.modal-footer-standard {
+    background-color: rgba(51,51,51,1) !important;
+    border-top: 2px solid #24DE84 !important;
+    padding: 1rem 1.5rem !important;
+    justify-content: flex-start !important;
+    display: flex !important;
+}
 
 /* ===== SOLUCIÓN SIMPLE Y CORRECTA ===== */
 /* Override directo de la regla específica que causa el problema */

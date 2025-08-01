@@ -408,20 +408,127 @@ def create_user_form_dash():
                                                         className="dash-input",
                                                         disabled=True,  # Enabled when professional is checked
                                                     ),
-                                                    html.Small(
-                                                        "WyscoutID is used for precise matching with Thai League statistics. Leave empty for automatic matching by name.",
-                                                        style={
-                                                            "color": "#888",
-                                                            "font-style": "italic",
-                                                        },
+                                                ],
+                                                width=6,
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    dbc.Label(
+                                                        " ",  # Espaciador para alineación
+                                                        className="filter-label",
+                                                    ),
+                                                    dbc.Button(
+                                                        [
+                                                            html.I(className="bi bi-search me-2"),
+                                                            "Search"
+                                                        ],
+                                                        id="new-thai-search-btn",
+                                                        className="btn-modal-cancel w-100",
+                                                        disabled=True,  # Enabled when professional is checked
                                                     ),
                                                 ],
-                                                width=12,
+                                                width=3,
+                                            ),
+                                        ],
+                                        className="mb-2",
+                                        id="new-wyscout-section",
+                                        style={"display": "none"},  # Hidden initially
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Small(
+                                                "WyscoutID is used for precise matching with Thai League statistics. Leave empty for automatic matching by name.",
+                                                style={
+                                                    "color": "#888",
+                                                    "font-style": "italic",
+                                                },
                                             ),
                                         ],
                                         className="mb-3",
-                                        id="new-wyscout-section",
+                                        id="new-wyscout-help",
                                         style={"display": "none"},  # Hidden initially
+                                    ),
+                                    
+                                    # Modal de matching manual
+                                    dbc.Modal(
+                                        [
+                                            dbc.ModalHeader(
+                                                dbc.ModalTitle(
+                                                    [
+                                                        html.I(
+                                                            className="bi bi-search me-2",
+                                                            style={
+                                                                "color": "#24DE84",
+                                                                "font-size": "1.0rem",
+                                                            },
+                                                        ),
+                                                        "Search Thai League Player",
+                                                    ],
+                                                    style={
+                                                        "color": "#FFFFFF",
+                                                        "font-weight": "600",
+                                                        "font-size": "1.0rem",
+                                                    },
+                                                ),
+                                                close_button=True,
+                                                style={
+                                                    "background-color": "rgba(51,51,51,1)",
+                                                    "border-bottom": "2px solid #24DE84",
+                                                    "padding": "1rem 1.5rem",
+                                                },
+                                            ),
+                                            dbc.ModalBody(
+                                                [
+                                                    dbc.Alert(
+                                                        id="matching-search-alert",
+                                                        is_open=False,
+                                                    ),
+                                                    dbc.Row([
+                                                        dbc.Col([
+                                                            dbc.Label("Player Name:", className="form-label", style={"color": "#FFFFFF"}),
+                                                            dbc.Input(
+                                                                id="matching-search-input",
+                                                                type="text",
+                                                                placeholder="Enter player name to search...",
+                                                                className="dash-input",
+                                                            ),
+                                                        ], width=12),
+                                                    ], className="mb-3"),
+                                                    
+                                                    # Contenedor de resultados
+                                                    html.Div(
+                                                        id="matching-results-container",
+                                                        style={"max-height": "400px", "overflow-y": "auto"},
+                                                    ),
+                                                ],
+                                                className="modal-body-standard",
+                                            ),
+                                            dbc.ModalFooter(
+                                                [
+                                                    dbc.Button(
+                                                        [
+                                                            html.I(className="bi bi-search me-2"),
+                                                            "Search",
+                                                        ],
+                                                        id="matching-search-btn",
+                                                        className="btn-modal-cancel me-2",
+                                                    ),
+                                                    dbc.Button(
+                                                        "Cancel",
+                                                        id="matching-cancel-btn",
+                                                        className="btn-modal-cancel",
+                                                    ),
+                                                ],
+                                                className="modal-footer-standard",
+                                            ),
+                                        ],
+                                        id="thai-league-matching-modal",
+                                        size="md",
+                                        is_open=False,
+                                        style={"z-index": "1060"},
+                                        backdrop="static",
+                                        fade=True,
+                                        centered=True,
                                     ),
                                 ],
                                 id="player-fields",
@@ -932,10 +1039,19 @@ def create_edit_user_form_dash():
                                                         style={
                                                             "width": "150px",
                                                             "height": "150px",
-                                                            "border-radius": "10px",
+                                                            "border-radius": "50%",
                                                             "object-fit": "cover",
                                                         },
-                                                    )
+                                                    ),
+                                                    # Badge Professional/Amateur
+                                                    html.Div(
+                                                        id="edit-user-professional-badge",
+                                                        style={
+                                                            "text-align": "center",
+                                                            "margin-top": "10px",
+                                                            "display": "none"
+                                                        }
+                                                    ),
                                                 ],
                                                 width=4,
                                             ),
@@ -981,7 +1097,7 @@ def create_edit_user_form_dash():
                                             "color": "rgba(36, 222, 132, 1)",
                                             "font-size": "1rem",
                                         },
-                                        className="mb-3",
+                                        className="mb-3 mt-4",
                                     ),
                                     dbc.Row(
                                         [
@@ -1348,22 +1464,131 @@ def create_edit_user_form_dash():
                                                                 className="dash-input",
                                                                 disabled=True,  # Enabled when professional is checked
                                                             ),
-                                                            html.Small(
-                                                                "WyscoutID is used for precise matching with Thai League statistics. Leave empty for automatic matching by name.",
-                                                                style={
-                                                                    "color": "#888",
-                                                                    "font-style": "italic",
-                                                                },
+                                                        ],
+                                                        width=6,
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Label(
+                                                                " ",  # Espaciador para alineación
+                                                                className="filter-label",
+                                                            ),
+                                                            dbc.Button(
+                                                                [
+                                                                    html.I(className="bi bi-search me-2"),
+                                                                    "Search"
+                                                                ],
+                                                                id="edit-wyscout-search-btn",
+                                                                className="btn-modal-cancel w-100",
+                                                                disabled=True,  # Enabled when user is selected
                                                             ),
                                                         ],
-                                                        width=12,
+                                                        width=3,
                                                     ),
                                                 ],
-                                                className="mb-3",
+                                                className="mb-2",
                                                 id="edit-wyscout-section",
                                                 style={
                                                     "display": "none"
                                                 },  # Hidden initially
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Small(
+                                                        "Click 'Search Player' to find and match players from Thai League database. WyscoutID is used for precise statistical matching.",
+                                                        style={
+                                                            "color": "#888",
+                                                            "font-style": "italic",
+                                                        },
+                                                    ),
+                                                ],
+                                                id="edit-wyscout-help",
+                                                className="mb-3",
+                                                style={
+                                                    "display": "none"
+                                                },  # Hidden initially
+                                            ),
+                                            
+                                            # Modal de matching manual para edición
+                                            dbc.Modal(
+                                                [
+                                                    dbc.ModalHeader(
+                                                        dbc.ModalTitle(
+                                                            [
+                                                                html.I(
+                                                                    className="bi bi-search me-2",
+                                                                    style={
+                                                                        "color": "#24DE84",
+                                                                        "font-size": "1.0rem",
+                                                                    },
+                                                                ),
+                                                                "Search Thai League Player",
+                                                            ],
+                                                            style={
+                                                                "color": "#FFFFFF",
+                                                                "font-weight": "600",
+                                                                "font-size": "1.0rem",
+                                                            },
+                                                        ),
+                                                        close_button=True,
+                                                        style={
+                                                            "background-color": "rgba(51,51,51,1)",
+                                                            "border-bottom": "2px solid #24DE84",
+                                                            "padding": "1rem 1.5rem",
+                                                        },
+                                                    ),
+                                                    dbc.ModalBody(
+                                                        [
+                                                            dbc.Alert(
+                                                                id="edit-matching-search-alert",
+                                                                is_open=False,
+                                                            ),
+                                                            dbc.Row([
+                                                                dbc.Col([
+                                                                    dbc.Label("Player Name:", className="form-label", style={"color": "#FFFFFF"}),
+                                                                    dbc.Input(
+                                                                        id="edit-matching-search-input",
+                                                                        type="text",
+                                                                        placeholder="Enter player name to search...",
+                                                                        className="dash-input",
+                                                                    ),
+                                                                ], width=12),
+                                                            ], className="mb-3"),
+                                                            
+                                                            # Contenedor de resultados
+                                                            html.Div(
+                                                                id="edit-matching-results-container",
+                                                                style={"max-height": "400px", "overflow-y": "auto"},
+                                                            ),
+                                                        ],
+                                                        className="modal-body-standard",
+                                                    ),
+                                                    dbc.ModalFooter(
+                                                        [
+                                                            dbc.Button(
+                                                                [
+                                                                    html.I(className="bi bi-search me-2"),
+                                                                    "Search",
+                                                                ],
+                                                                id="edit-matching-search-btn",
+                                                                className="btn-modal-cancel me-2",
+                                                            ),
+                                                            dbc.Button(
+                                                                "Cancel",
+                                                                id="edit-matching-cancel-btn",
+                                                                className="btn-modal-cancel",
+                                                            ),
+                                                        ],
+                                                        className="modal-footer-standard",
+                                                    ),
+                                                ],
+                                                id="edit-thai-league-matching-modal",
+                                                size="md",
+                                                is_open=False,
+                                                style={"z-index": "1060"},
+                                                backdrop="static",
+                                                fade=True,
+                                                centered=True,
                                             ),
                                         ],
                                         id="edit-player-fields",
@@ -1609,11 +1834,7 @@ def create_edit_user_form_dash():
                                 },
                             ),
                         ],
-                        style={
-                            "background-color": "rgba(51,51,51,1)",
-                            "padding": "2rem 1.5rem",
-                            "border": "none",
-                        },
+                        className="modal-body-standard",
                     ),
                     dbc.ModalFooter(
                         [
@@ -1635,13 +1856,7 @@ def create_edit_user_form_dash():
                                 disabled=True,
                             ),
                         ],
-                        style={
-                            "background-color": "rgba(51,51,51,1)",
-                            "border-top": "2px solid #24DE84",
-                            "padding": "1rem 1.5rem",
-                            "justify-content": "flex-start",
-                            "display": "flex",
-                        },
+                        className="modal-footer-standard",
                     ),
                 ],
                 id="delete-confirmation-modal",
@@ -1816,6 +2031,13 @@ def show_settings_content_dash(session_data=None):
                     "box-shadow": "0 8px 16px rgba(0, 0, 0, 0.15)",
                     "border-radius": "8px",
                 },
+            ),
+            # Interval para auto-hide del alert después de 5 segundos
+            dcc.Interval(
+                id="settings-alert-timer",
+                interval=5000,  # 5 segundos
+                n_intervals=0,
+                disabled=True,  # Disabled por defecto
             ),
         ]
     )

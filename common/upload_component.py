@@ -142,7 +142,10 @@ def create_upload_preview_callback_function(contents, filename, clear_btn_id=Non
 
         # Agregar botón de eliminar si se proporciona el ID
         if clear_btn_id:
-            preview_content[0]["children"].append(
+            # Acceder correctamente a los children del html.Div
+            text_div = preview_content[0]
+            # Agregar botón de eliminar a los children existentes
+            text_div.children.append(
                 dbc.Button(
                     html.I(className="bi bi-x-circle"),
                     id=clear_btn_id,

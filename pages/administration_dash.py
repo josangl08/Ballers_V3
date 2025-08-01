@@ -1113,11 +1113,7 @@ def create_edit_session_form():
                                 },
                             )
                         ],
-                        style={
-                            "background-color": "rgba(51,51,51,1)",
-                            "padding": "2rem 1.5rem",
-                            "border": "none",
-                        },
+                        className="modal-body-standard",
                     ),
                     dbc.ModalFooter(
                         [
@@ -1135,13 +1131,7 @@ def create_edit_session_form():
                                 className="btn-delete",
                             ),
                         ],
-                        style={
-                            "background-color": "rgba(51,51,51,1)",
-                            "border-top": "2px solid #24DE84",
-                            "padding": "1rem 1.5rem",
-                            "justify-content": "flex-start",
-                            "display": "flex",
-                        },
+                        className="modal-footer-standard",
                     ),
                 ],
                 id="admin-delete-confirmation-modal",

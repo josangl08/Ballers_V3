@@ -4,6 +4,8 @@ from __future__ import annotations
 import datetime
 
 import dash_bootstrap_components as dbc
+import plotly.express as px
+import plotly.graph_objects as go
 from dash import Input, Output, State, dcc, html  # noqa: F401
 
 from controllers.player_controller import get_player_profile_data, get_players_for_list
@@ -21,6 +23,179 @@ def show_cloud_feature_limitation(feature_name):
 
 def show_cloud_mode_info():
     return "Running in local mode"
+
+
+def create_evolution_chart(player_stats):
+    """
+    Crea gráfico de evolución temporal de estadísticas principales.
+    
+    Args:
+        player_stats: Lista de diccionarios con estadísticas por temporada
+        
+    Returns:
+        Componente dcc.Graph con el gráfico de evolución
+    """
+    if not player_stats:
+        return dbc.Alert("No statistical data available", color="warning")
+    
+    # Extraer datos para el gráfico
+    seasons = [stat['season'] for stat in player_stats]
+    goals = [stat['goals'] or 0 for stat in player_stats]
+    assists = [stat['assists'] or 0 for stat in player_stats]
+    matches = [stat['matches_played'] or 0 for stat in player_stats]
+    
+    # Crear gráfico con múltiples líneas
+    fig = go.Figure()
+    
+    # Línea de goles
+    fig.add_trace(go.Scatter(
+        x=seasons,
+        y=goals,
+        mode='lines+markers',
+        name='Goals',
+        line=dict(color='#24DE84', width=3),
+        marker=dict(size=8)
+    ))
+    
+    # Línea de asistencias
+    fig.add_trace(go.Scatter(
+        x=seasons,
+        y=assists,
+        mode='lines+markers',
+        name='Assists',
+        line=dict(color='#FFA726', width=3),
+        marker=dict(size=8)
+    ))
+    
+    # Línea de partidos (escala reducida para mejor visualización)
+    fig.add_trace(go.Scatter(
+        x=seasons,
+        y=[m/5 for m in matches],  # Dividir por 5 para escalar
+        mode='lines+markers',
+        name='Matches (/5)',
+        line=dict(color='#42A5F5', width=2, dash='dash'),
+        marker=dict(size=6)
+    ))
+    
+    # Personalizar layout
+    fig.update_layout(
+        title={
+            'text': 'Performance Evolution by Season',
+            'x': 0.5,
+            'font': {'color': '#24DE84', 'size': 16}
+        },
+        xaxis_title='Season',
+        yaxis_title='Statistical Value',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font={'color': '#FFFFFF'},
+        xaxis=dict(
+            gridcolor='rgba(255,255,255,0.1)',
+            linecolor='rgba(255,255,255,0.2)'
+        ),
+        yaxis=dict(
+            gridcolor='rgba(255,255,255,0.1)',
+            linecolor='rgba(255,255,255,0.2)'
+        ),
+        legend=dict(
+            bgcolor='rgba(0,0,0,0.5)',
+            bordercolor='rgba(36,222,132,0.3)',
+            borderwidth=1
+        ),
+        height=400
+    )
+    
+    return dcc.Graph(
+        figure=fig,
+        style={'height': '400px'},
+        config={'displayModeBar': False}
+    )
+
+
+def create_radar_chart(player_stats):
+    """
+    Crea radar chart de habilidades del jugador basado en estadísticas recientes.
+    
+    Args:
+        player_stats: Lista de diccionarios con estadísticas por temporada
+        
+    Returns:
+        Componente dcc.Graph con el radar chart
+    """
+    if not player_stats:
+        return dbc.Alert("No statistical data available", color="warning")
+    
+    # Usar la temporada más reciente
+    latest_stats = player_stats[-1] if player_stats else {}
+    
+    # Definir categorías y normalizar valores (0-100)
+    categories = ['Attack', 'Passing', 'Defense', 'Shooting', 'Consistency']
+    
+    # Calcular métricas normalizadas
+    goals = latest_stats.get('goals', 0) or 0
+    assists = latest_stats.get('assists', 0) or 0
+    shot_acc = latest_stats.get('shot_accuracy', 0) or 0
+    pass_acc = latest_stats.get('pass_accuracy', 0) or 0
+    def_actions = latest_stats.get('defensive_actions', 0) or 0
+    matches = latest_stats.get('matches_played', 0) or 0
+    
+    # Normalizar valores a escala 0-100
+    attack_score = min(100, (goals + assists) * 10)  # Máximo razonable: 10 goles+asistencias
+    passing_score = min(100, pass_acc) if pass_acc > 0 else 50
+    defense_score = min(100, def_actions * 2)  # Máximo razonable: 50 acciones defensivas
+    shooting_score = min(100, shot_acc) if shot_acc > 0 else 50
+    consistency_score = min(100, matches * 3)  # Máximo: ~33 partidos
+    
+    values = [attack_score, passing_score, defense_score, shooting_score, consistency_score]
+    
+    # Crear radar chart
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatterpolar(
+        r=values,
+        theta=categories,
+        fill='toself',
+        fillcolor='rgba(36, 222, 132, 0.3)',
+        line=dict(color='#24DE84', width=2),
+        marker=dict(size=8, color='#24DE84'),
+        name='Player Stats'
+    ))
+    
+    # Personalizar layout
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100],
+                gridcolor='rgba(255,255,255,0.2)',
+                linecolor='rgba(255,255,255,0.3)',
+                tickcolor='rgba(255,255,255,0.5)',
+                tickfont=dict(color='#FFFFFF', size=10)
+            ),
+            angularaxis=dict(
+                gridcolor='rgba(255,255,255,0.2)',
+                linecolor='rgba(255,255,255,0.3)',
+                tickcolor='rgba(255,255,255,0.5)',
+                tickfont=dict(color='#FFFFFF', size=12)
+            ),
+            bgcolor='rgba(0,0,0,0)'
+        ),
+        showlegend=False,
+        title={
+            'text': f'Player Skills Profile - {latest_stats.get("season", "Current")}',
+            'x': 0.5,
+            'font': {'color': '#24DE84', 'size': 16}
+        },
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        height=400
+    )
+    
+    return dcc.Graph(
+        figure=fig,
+        style={'height': '400px'},
+        config={'displayModeBar': False}
+    )
 
 
 def create_player_profile_dash(player_id=None, user_id=None):
@@ -1226,26 +1401,53 @@ def create_professional_stats_content(player, user):
     try:
         # Obtener estadísticas usando ThaiLeagueController
         controller = ThaiLeagueController()
-
-        # TODO: Implementar obtención de estadísticas específicas del jugador
-        # Por ahora, mostrar placeholder con información básica
-
+        player_stats = controller.get_player_stats(player.player_id)
+        
+        # Si no hay estadísticas, mostrar mensaje informativo
+        if not player_stats:
+            return dbc.Container(
+                [
+                    dbc.Alert(
+                        [
+                            html.I(className="bi bi-info-circle me-2"),
+                            f"No professional statistics found for {user.name}.",
+                            html.Br(),
+                            f"WyscoutID: {player.wyscout_id or 'Not assigned'}",
+                            html.Br(),
+                            "Statistics will appear here once the player data is synchronized with Thai League database.",
+                        ],
+                        color="info",
+                        className="mb-3",
+                    ),
+                ],
+                fluid=True,
+                className="p-0",
+            )
+        
+        # Calcular estadísticas resumidas de todas las temporadas
+        total_goals = sum(stat.get('goals', 0) or 0 for stat in player_stats)
+        total_assists = sum(stat.get('assists', 0) or 0 for stat in player_stats)
+        total_matches = sum(stat.get('matches_played', 0) or 0 for stat in player_stats)
+        latest_season = player_stats[-1] if player_stats else {}
+        current_team = latest_season.get('team', 'Unknown')
+        
         return dbc.Container(
             [
+                # Header con información del jugador
                 dbc.Row(
                     [
                         dbc.Col(
                             [
                                 dbc.Alert(
                                     [
-                                        html.I(className="bi bi-info-circle me-2"),
-                                        f"Professional statistics for {user.name} will be displayed here.",
+                                        html.I(className="bi bi-trophy me-2"),
+                                        f"Professional Stats for {user.name}",
                                         html.Br(),
-                                        f"WyscoutID: {player.wyscout_id or 'Not assigned'}",
+                                        f"Current Team: {current_team} | WyscoutID: {player.wyscout_id}",
                                         html.Br(),
-                                        "Statistics synchronization in development...",
+                                        f"Career: {total_goals} goals, {total_assists} assists in {total_matches} matches",
                                     ],
-                                    color="info",
+                                    color="success",
                                     className="mb-3",
                                 ),
                             ],
@@ -1253,36 +1455,26 @@ def create_professional_stats_content(player, user):
                         ),
                     ]
                 ),
+                
+                # Gráficos principales
                 dbc.Row(
                     [
-                        # Placeholder para estadísticas básicas
+                        # Gráfico de evolución temporal
                         dbc.Col(
                             [
                                 dbc.Card(
                                     [
+                                        dbc.CardHeader(
+                                            html.H6(
+                                                "Performance Evolution",
+                                                className="card-title mb-0",
+                                                style={"color": "rgba(36, 222, 132, 1)"},
+                                            )
+                                        ),
                                         dbc.CardBody(
-                                            [
-                                                html.H6(
-                                                    "Basic Stats",
-                                                    className="card-title",
-                                                    style={
-                                                        "color": "rgba(36, 222, 132, 1)"
-                                                    },
-                                                ),
-                                                html.P(
-                                                    "Goals: --",
-                                                    style={"color": "#FFFFFF"},
-                                                ),
-                                                html.P(
-                                                    "Assists: --",
-                                                    style={"color": "#FFFFFF"},
-                                                ),
-                                                html.P(
-                                                    "Matches: --",
-                                                    style={"color": "#FFFFFF"},
-                                                ),
-                                            ]
-                                        )
+                                            [create_evolution_chart(player_stats)],
+                                            className="p-2"
+                                        ),
                                     ],
                                     style={
                                         "background-color": "#2B2B2B",
@@ -1291,36 +1483,26 @@ def create_professional_stats_content(player, user):
                                 ),
                             ],
                             width=12,
-                            md=4,
+                            lg=8,
+                            className="mb-3",
                         ),
-                        # Placeholder para estadísticas defensivas
+                        
+                        # Radar chart de habilidades
                         dbc.Col(
                             [
                                 dbc.Card(
                                     [
+                                        dbc.CardHeader(
+                                            html.H6(
+                                                "Skills Profile",
+                                                className="card-title mb-0",
+                                                style={"color": "rgba(36, 222, 132, 1)"},
+                                            )
+                                        ),
                                         dbc.CardBody(
-                                            [
-                                                html.H6(
-                                                    "Defensive Stats",
-                                                    className="card-title",
-                                                    style={
-                                                        "color": "rgba(36, 222, 132, 1)"
-                                                    },
-                                                ),
-                                                html.P(
-                                                    "Tackles: --",
-                                                    style={"color": "#FFFFFF"},
-                                                ),
-                                                html.P(
-                                                    "Interceptions: --",
-                                                    style={"color": "#FFFFFF"},
-                                                ),
-                                                html.P(
-                                                    "Duels Won: --",
-                                                    style={"color": "#FFFFFF"},
-                                                ),
-                                            ]
-                                        )
+                                            [create_radar_chart(player_stats)],
+                                            className="p-2"
+                                        ),
                                     ],
                                     style={
                                         "background-color": "#2B2B2B",
@@ -1329,9 +1511,16 @@ def create_professional_stats_content(player, user):
                                 ),
                             ],
                             width=12,
-                            md=4,
+                            lg=4,
+                            className="mb-3",
                         ),
-                        # Placeholder para estadísticas ofensivas
+                    ]
+                ),
+                
+                # Cards con estadísticas resumidas por categoría
+                dbc.Row(
+                    [
+                        # Estadísticas ofensivas
                         dbc.Col(
                             [
                                 dbc.Card(
@@ -1341,21 +1530,19 @@ def create_professional_stats_content(player, user):
                                                 html.H6(
                                                     "Offensive Stats",
                                                     className="card-title",
-                                                    style={
-                                                        "color": "rgba(36, 222, 132, 1)"
-                                                    },
+                                                    style={"color": "rgba(36, 222, 132, 1)"},
                                                 ),
                                                 html.P(
-                                                    "Shots: --",
+                                                    f"Goals: {total_goals}",
                                                     style={"color": "#FFFFFF"},
                                                 ),
                                                 html.P(
-                                                    "Dribbles: --",
+                                                    f"Assists: {total_assists}",
                                                     style={"color": "#FFFFFF"},
                                                 ),
                                                 html.P(
-                                                    "Pass Accuracy: --",
-                                                    style={"color": "#FFFFFF"},
+                                                    f"G+A per Match: {((total_goals + total_assists) / max(total_matches, 1)):.2f}",
+                                                    style={"color": "#FFA726"},
                                                 ),
                                             ]
                                         )
@@ -1368,41 +1555,89 @@ def create_professional_stats_content(player, user):
                             ],
                             width=12,
                             md=4,
+                            className="mb-3",
+                        ),
+                        
+                        # Estadísticas de participación
+                        dbc.Col(
+                            [
+                                dbc.Card(
+                                    [
+                                        dbc.CardBody(
+                                            [
+                                                html.H6(
+                                                    "Participation",
+                                                    className="card-title",
+                                                    style={"color": "rgba(36, 222, 132, 1)"},
+                                                ),
+                                                html.P(
+                                                    f"Total Matches: {total_matches}",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    f"Seasons: {len(player_stats)}",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    f"Avg per Season: {(total_matches / max(len(player_stats), 1)):.1f}",
+                                                    style={"color": "#42A5F5"},
+                                                ),
+                                            ]
+                                        )
+                                    ],
+                                    style={
+                                        "background-color": "#2B2B2B",
+                                        "border-color": "rgba(36, 222, 132, 0.3)",
+                                    },
+                                ),
+                            ],
+                            width=12,
+                            md=4,
+                            className="mb-3",
+                        ),
+                        
+                        # Estadísticas actuales
+                        dbc.Col(
+                            [
+                                dbc.Card(
+                                    [
+                                        dbc.CardBody(
+                                            [
+                                                html.H6(
+                                                    f"Current Season ({latest_season.get('season', 'N/A')})",
+                                                    className="card-title",
+                                                    style={"color": "rgba(36, 222, 132, 1)"},
+                                                ),
+                                                html.P(
+                                                    f"Goals: {latest_season.get('goals', 0) or 0}",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    f"Assists: {latest_season.get('assists', 0) or 0}",
+                                                    style={"color": "#FFFFFF"},
+                                                ),
+                                                html.P(
+                                                    f"Matches: {latest_season.get('matches_played', 0) or 0}",
+                                                    style={"color": "#E57373"},
+                                                ),
+                                            ]
+                                        )
+                                    ],
+                                    style={
+                                        "background-color": "#2B2B2B",
+                                        "border-color": "rgba(36, 222, 132, 0.3)",
+                                    },
+                                ),
+                            ],
+                            width=12,
+                            md=4,
+                            className="mb-3",
                         ),
                     ]
                 ),
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                html.Div(
-                                    [
-                                        html.H6(
-                                            "Performance Chart",
-                                            style={
-                                                "color": "rgba(36, 222, 132, 1)",
-                                                "margin-top": "20px",
-                                            },
-                                        ),
-                                        html.Div(
-                                            "📊 Performance charts will be implemented here",
-                                            style={
-                                                "color": "#FFFFFF",
-                                                "text-align": "center",
-                                                "padding": "40px",
-                                                "border": "1px dashed rgba(36, 222, 132, 0.3)",
-                                                "margin-top": "10px",
-                                            },
-                                        ),
-                                    ]
-                                )
-                            ],
-                            width=12,
-                        ),
-                    ],
-                    className="mt-3",
-                ),
-            ]
+            ],
+            fluid=True,
+            className="p-0",
         )
 
     except Exception as e:

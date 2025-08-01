@@ -190,7 +190,7 @@ def register_player_callbacks(app):
                             create_player_profile_dash(selected_player_id),
                         ]
                     ),
-                    no_update,
+                    selected_player_id,  # Asegurar que el store se actualice para activar tabs profesionales
                 )
             else:
                 return create_players_list_dash(), no_update
