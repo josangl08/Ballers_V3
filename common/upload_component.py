@@ -37,7 +37,7 @@ def create_upload_component(
                             className="bi bi-cloud-upload me-2",
                             style={
                                 "font-size": "1.5rem",
-                                "color": "rgba(36, 222, 132, 1)",
+                                "color": "var(--color-primary)",
                             },
                         ),
                         html.Div(
@@ -68,7 +68,7 @@ def create_upload_component(
                         "flex-direction": "row",
                         "text-align": "center",
                         "padding": "20px",
-                        "border": "2px dashed rgba(36, 222, 132, 0.5)",
+                        "border": "2px dashed var(--color-primary-alpha-50)",
                         "border-radius": "10px",
                         "background-color": "transparent",
                         "cursor": "pointer",
@@ -114,7 +114,7 @@ def create_upload_preview_callback_function(contents, filename, clear_btn_id=Non
                     html.P(
                         f"Selected: {filename}",
                         style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "font-weight": "500",
                             "margin-bottom": "10px",
                             "font-size": "0.9rem",
@@ -134,7 +134,7 @@ def create_upload_preview_callback_function(contents, filename, clear_btn_id=Non
                     "max-width": "150px",
                     "max-height": "150px",
                     "border-radius": "10px",
-                    "border": "2px solid rgba(36, 222, 132, 0.5)",
+                    "border": "2px solid var(--color-primary-alpha-50)",
                     "object-fit": "cover",
                 },
             ),

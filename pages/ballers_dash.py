@@ -241,7 +241,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                     "height": "180px",
                                     "object-fit": "cover",
                                     "border-radius": "50%",
-                                    "border": "3px solid rgba(36, 222, 132, 1)",
+                                    "border": "3px solid var(--color-primary)",
                                 },
                                 className="mx-auto d-block ms-3 mt-2",
                             )
@@ -255,8 +255,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                 [
                                     html.H2(
                                         user.name,
-                                        style={"color": "rgba(36, 222, 132, 1)"},
-                                        className="title-lg mb-3",
+                                        className="title-lg mb-3 text-primary",
                                     ),
                                     html.P(
                                         [
@@ -349,10 +348,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                         [
                                             html.H4(
                                                 html.I(className="bi bi-check-circle"),
-                                                className="text-center",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="text-center text-primary",
                                             ),
                                             html.H2(
                                                 str(stats.get("completed", 0)),
@@ -386,10 +382,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                                 html.I(
                                                     className="bi bi-calendar-event"
                                                 ),
-                                                className="text-center",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="text-center text-primary",
                                             ),
                                             html.H2(
                                                 str(stats.get("scheduled", 0)),
@@ -421,10 +414,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                         [
                                             html.H4(
                                                 html.I(className="bi bi-arrow-repeat"),
-                                                className="text-center",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="text-center text-primary",
                                             ),
                                             html.H2(
                                                 str(stats.get("remaining", 0)),
@@ -456,10 +446,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                         [
                                             html.H4(
                                                 html.I(className="bi bi-calendar-plus"),
-                                                className="text-center",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="text-center text-primary",
                                             ),
                                             html.H2(
                                                 "Next",
@@ -513,7 +500,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                             f"Sessions Calendar of {user.name}",
                         ],
                         style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "margin-bottom": "20px",
                             "font-size": "1.1rem",
                         },
@@ -659,7 +646,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                     "Sessions List",
                                 ],
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "margin-bottom": "15px",
                                     "font-size": "1rem",
                                 },
@@ -681,7 +668,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                 label="Test Results",
                                 tab_id="test-results",
                                 active_label_style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "0.9rem",
                                 },
                                 label_style={"font-size": "0.9rem"},
@@ -690,7 +677,7 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                 label="Notes",
                                 tab_id="notes",
                                 active_label_style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "0.9rem",
                                 },
                                 label_style={"font-size": "0.9rem"},
@@ -867,10 +854,7 @@ def create_overview_content_dash():
                                         [
                                             html.H4(
                                                 "👥",
-                                                className="text-center",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="text-center text-primary",
                                             ),
                                             html.H2(
                                                 "0",
@@ -904,10 +888,7 @@ def create_overview_content_dash():
                                                 html.I(
                                                     className="bi bi-calendar-event"
                                                 ),
-                                                className="text-center",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="text-center text-primary",
                                             ),
                                             html.H2(
                                                 "0",
@@ -939,10 +920,7 @@ def create_overview_content_dash():
                                         [
                                             html.H4(
                                                 "✅",
-                                                className="text-center",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="text-center text-primary",
                                             ),
                                             html.H2(
                                                 "0",
@@ -974,10 +952,7 @@ def create_overview_content_dash():
                                         [
                                             html.H4(
                                                 html.I(className="bi bi-arrow-repeat"),
-                                                className="text-center",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="text-center text-primary",
                                             ),
                                             html.H2(
                                                 "0",
@@ -1020,10 +995,7 @@ def create_overview_content_dash():
                                                     ),
                                                     "Session Trends",
                                                 ],
-                                                className="card-title",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="card-title text-primary",
                                             ),
                                             dcc.Graph(id="session-trends-chart"),
                                         ]
@@ -1121,7 +1093,7 @@ def create_test_results_content_dash():
                             "Performance Evolution",
                         ],
                         style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "margin-bottom": "15px",
                             "font-size": "1rem",
                         },
@@ -1167,7 +1139,7 @@ def create_test_results_content_dash():
                             "Test History",
                         ],
                         style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "margin-bottom": "15px",
                             "font-size": "1rem",
                         },
@@ -1190,7 +1162,7 @@ def create_notes_content_dash():
                     "Player Notes",
                 ],
                 style={
-                    "color": "rgba(36, 222, 132, 1)",
+                    "color": "var(--color-primary)",
                     "margin-bottom": "15px",
                     "font-size": "1rem",
                 },
@@ -1335,7 +1307,7 @@ def create_professional_tabs(player, user):
                 label="Info",
                 tab_id="professional-info",
                 active_label_style={
-                    "color": "rgba(36, 222, 132, 1)",
+                    "color": "var(--color-primary)",
                     "font-size": "0.9rem",
                 },
                 label_style={"font-size": "0.9rem"},
@@ -1344,7 +1316,7 @@ def create_professional_tabs(player, user):
                 label="Stats",
                 tab_id="professional-stats",
                 active_label_style={
-                    "color": "rgba(36, 222, 132, 1)",
+                    "color": "var(--color-primary)",
                     "font-size": "0.9rem",
                 },
                 label_style={"font-size": "0.9rem"},
@@ -1363,7 +1335,7 @@ def create_professional_tabs(player, user):
                     "Professional Player",
                 ],
                 style={
-                    "color": "rgba(36, 222, 132, 1)",
+                    "color": "var(--color-primary)",
                     "margin-bottom": "15px",
                     "font-size": "1rem",
                 },
@@ -1491,10 +1463,7 @@ def create_professional_stats_content(player, user):
                                         dbc.CardHeader(
                                             html.H6(
                                                 "Performance Evolution",
-                                                className="card-title mb-0",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="card-title mb-0 text-primary",
                                             )
                                         ),
                                         dbc.CardBody(
@@ -1520,10 +1489,7 @@ def create_professional_stats_content(player, user):
                                         dbc.CardHeader(
                                             html.H6(
                                                 "Skills Profile",
-                                                className="card-title mb-0",
-                                                style={
-                                                    "color": "rgba(36, 222, 132, 1)"
-                                                },
+                                                className="card-title mb-0 text-primary",
                                             )
                                         ),
                                         dbc.CardBody(
@@ -1555,10 +1521,7 @@ def create_professional_stats_content(player, user):
                                             [
                                                 html.H6(
                                                     "Offensive Stats",
-                                                    className="card-title",
-                                                    style={
-                                                        "color": "rgba(36, 222, 132, 1)"
-                                                    },
+                                                    className="card-title text-primary",
                                                 ),
                                                 html.P(
                                                     f"Goals: {total_goals}",
@@ -1594,10 +1557,7 @@ def create_professional_stats_content(player, user):
                                             [
                                                 html.H6(
                                                     "Participation",
-                                                    className="card-title",
-                                                    style={
-                                                        "color": "rgba(36, 222, 132, 1)"
-                                                    },
+                                                    className="card-title text-primary",
                                                 ),
                                                 html.P(
                                                     f"Total Matches: {total_matches}",
@@ -1633,10 +1593,7 @@ def create_professional_stats_content(player, user):
                                             [
                                                 html.H6(
                                                     f"Current Season ({latest_season.get('season', 'N/A')})",
-                                                    className="card-title",
-                                                    style={
-                                                        "color": "rgba(36, 222, 132, 1)"
-                                                    },
+                                                    className="card-title text-primary",
                                                 ),
                                                 html.P(
                                                     f"Goals: {latest_season.get('goals', 0) or 0}",

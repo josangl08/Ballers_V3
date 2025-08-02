@@ -1,98 +1,139 @@
 /* styles/styles.css - Archivo CSS completo */
 
-/* header */
-header[data-testid="stHeader"] {
-    position: absolute !important;
-    top: 0 !important;
-    z-index: 999 !important;
-    height: auto !important;
+/* === VARIABLES CSS CORPORATIVAS === */
+:root {
+  /* ===== COLORES CORPORATIVOS ===== */
+  /* Color corporativo principal */
+  --color-primary: #24DE84;
+  --color-primary-rgb: 36, 222, 132;
+
+  /* Variaciones del color primario para transparencias */
+  --color-primary-alpha-10: rgba(36, 222, 132, 0.1);
+  --color-primary-alpha-15: rgba(36, 222, 132, 0.15);
+  --color-primary-alpha-20: rgba(36, 222, 132, 0.2);
+  --color-primary-alpha-25: rgba(36, 222, 132, 0.25);
+  --color-primary-alpha-30: rgba(36, 222, 132, 0.3);
+  --color-primary-alpha-40: rgba(36, 222, 132, 0.4);
+  --color-primary-alpha-50: rgba(36, 222, 132, 0.5);
+  --color-primary-alpha-80: rgba(36, 222, 132, 0.8);
+
+  /* Colores del sistema */
+  --color-white: #FFFFFF;
+  --color-white-faded: #fafafa;
+  --color-light-gray: #CCCCCC;
+  --color-border: #555;
+  --color-danger: #dc3545;
+  --color-danger-alt: #F44336;
+  --color-muted: #6c757d;
+
+  /* Colores de estado de sesiones */
+  --status-scheduled-bg: rgba(30, 136, 229, 0.4);
+  --status-completed-bg: rgba(76, 175, 80, 0.4);
+  --status-canceled-bg: rgba(244, 67, 54, 0.4);
+
+  /* ===== BACKGROUNDS ===== */
+  --bg-main: #1D1B1A;
+  --bg-card: #333333;
+  --bg-input: #3b3b3a;
+  --bg-sidebar: #2b2b2b;
+  --bg-hover: #1a1a1a;
+
+  /* ===== SPACING ===== */
+  --spacing-xs: 0.25rem;  /* 4px */
+  --spacing-sm: 0.5rem;   /* 8px */
+  --spacing-md: 0.75rem;  /* 12px */
+  --spacing-lg: 1rem;     /* 16px */
+  --spacing-xl: 1.2rem;   /* 19.2px */
+  --spacing-xxl: 1.5rem;  /* 24px */
+  --spacing-xxxl: 2rem;   /* 32px */
+
+  /* ===== BORDER RADIUS ===== */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 10px;
+  --radius-xl: 20px;
+
+  /* ===== TRANSITIONS ===== */
+  --transition-fast: all 0.15s ease;
+  --transition-normal: all 0.3s ease;
+  --transition-slow: all 0.5s ease;
+
+  /* ===== SHADOWS ===== */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 6px 12px rgba(36, 222, 132, 0.3);
+  --shadow-focus: 0 0 0 0.2rem rgba(36, 222, 132, 0.25);
+
+  /* ===== FONT SIZES ===== */
+  --font-xs: 0.7rem;
+  --font-sm: 0.8rem;
+  --font-md: 0.85rem;
+  --font-base: 0.9rem;
+  --font-lg: 1rem;
+  --font-xl: 1.2rem;
+
+  /* ===== HEIGHTS ===== */
+  --input-height: 38px;
+  --button-height: 38px;
+  --card-height: 320px;
 }
+
+/* === UTILITY CLASSES BÁSICAS === */
+/* Solo aplicar color primario a elementos que no sean tabs */
+.text-primary:not(.nav-link):not(.nav-item):not([data-bs-toggle="tab"]) {
+  color: var(--color-primary) !important;
+}
+
+/* === CORRECCIÓN PARA TABS === */
+/* Eliminar recuadro verde de focus en tabs, solo mantener línea inferior */
+.nav-tabs .nav-link:focus {
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+}
+
 #login{
     color: rgb(36, 222, 132) !important;
-}
-/* Hacer que el formulario de login sea semitransparente */
-[data-testid="stForm"] {
-    background-color: rgba(51,51,51,0.6);
-    backdrop-filter: blur(10px);
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Estilos para el formulario de login */
 form {
-    background-color: #333333;
+    background-color: var(--bg-card);
     padding: 1.5rem;
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 1rem;
     width: 100%;
     max-width: 500px;
 }
-
-/* Centrar el formulario */
-div.row-widget.stForm {
-    background-color: #333333 !important;
-    max-width: 500px !important;
-    margin: 0 auto 1rem auto !important;
-    border-radius: 10px !important;
-    padding: 10px !important;
-}
-
-/* Alineación de columnas dentro del formulario */
-.stForm .row-widget.stHorizontal {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-/* contenedor principal */
-[data-testid="stMainBlockContainer"] {
-    padding-top: 0rem !important;
-    margin-top: 0rem !important;
-    padding-bottom: 50px !important;
-    margin-bottom: 0rem !important;
-}
-
-/* Ajustar posición vertical del logo en el sidebar */
-[data-testid="stSidebarContent"] img {
-    margin-top: -40px !important;
-    margin-bottom: 40px !important;
-    padding-top: 0 !important;
-}
-/* Clase de Streamlit eliminada - ya no necesaria en Dash */
-/* Datos personales del perfil */
-.st-emotion-cache-my1ldo{
-    margin-left: 50px;
-}
-
 /* Estilos para textarea de notas */
 #notes-editor::placeholder {
-    color: #CCCCCC !important;
+    color: var(--color-light-gray) !important;
     opacity: 1 !important;
 }
 
 /* Estilos para textarea del formulario de administración */
 .form-textarea::placeholder {
-    color: #CCCCCC !important;
+    color: var(--color-light-gray) !important;
     opacity: 1 !important;
 }
 
 .form-textarea:hover {
-    border-color: rgba(36, 222, 132, 1) !important;
+    border-color: var(--color-primary) !important;
     box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
 }
 
 .form-textarea:focus {
-    border-color: rgba(36, 222, 132, 1) !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
     outline: none !important;
 }
 
 /* Estilo para botón de Save Notes - igual que View Profile */
 #save-notes-profile-btn {
-    background-color: #1D1B1A !important;
-    border: 2px solid #1D1B1A !important;
-    border-radius: 20px !important;
+    background-color: var(--bg-main) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
     color: white !important;
     padding: 0.4rem 1.2rem !important;
     font-size: 1rem !important;
@@ -101,29 +142,29 @@ div.row-widget.stForm {
 }
 
 #save-notes-profile-btn:hover {
-    border-color: rgba(36, 222, 132, 1) !important;
-    color: rgba(36, 222, 132, 1) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
 }
 
 #save-notes-profile-btn:active {
-    background-color: rgba(36, 222, 132, 1) !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
     transform: translateY(1px) !important;
 }
 
 /* Estilos para botones Save Session y Save Changes - igual que View Profile de player cards */
 #admin-save-session-btn:hover,
 #admin-update-session-btn:hover {
-    background-color: #1D1B1A !important;  /* Mantener mismo fondo */
-    color: #24DE84 !important;  /* Letras verdes al hover */
-    border-color: #24DE84 !important;  /* Borde verde al hover */
+    background-color: var(--bg-main) !important;  /* Mantener mismo fondo */
+    color: var(--color-primary) !important;  /* Letras verdes al hover */
+    border-color: var(--color-primary) !important;  /* Borde verde al hover */
     transform: translateY(-1px) !important;
 }
 
 #admin-save-session-btn:active,
 #admin-update-session-btn:active {
-    background-color: #24DE84 !important;  /* Fondo verde al clickear */
-    color: #1D1B1A !important;  /* Letras oscuras al clickear */
+    background-color: var(--color-primary) !important;  /* Fondo verde al clickear */
+    color: var(--bg-main) !important;  /* Letras oscuras al clickear */
     transform: translateY(1px) !important;
 }
 
@@ -134,35 +175,35 @@ div.row-widget.stForm {
     line-height: 40px !important;
     border-width: 1px !important;
     border-style: dashed !important;
-    border-radius: 10px !important;
+    border-radius: var(--radius-lg) !important;
     text-align: center !important;
     margin: 0px !important;
-    border: 1px solid #555 !important;
-    background-color: #3b3b3a !important;
-    color: #FFFFFF !important;
+    border: 1px solid var(--color-border) !important;
+    background-color: var(--bg-input) !important;
+    color: var(--color-white) !important;
     font-size: 0.9rem !important;
     transition: all 0.3s ease !important;
     cursor: pointer !important;
 }
 
 .upload-area:hover {
-    border-color: rgba(36, 222, 132, 1) !important;
+    border-color: var(--color-primary) !important;
     transform: translateY(-1px) !important;
 }
 
 .upload-area:active {
-    border-color: rgba(36, 222, 132, 1) !important;
-    background-color: #24DE84 !important;
-    color: #1D1B1A !important;
+    border-color: var(--color-primary) !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-main) !important;
     transform: translateY(1px) !important;
 }
 
 /* Estilos para botones con clase btn-admin-style (como Create User) */
 .btn-admin-style {
-    background-color: #1D1B1A !important;
-    color: #FFFFFF !important;
-    border: 2px solid #1D1B1A !important;
-    border-radius: 20px !important;
+    background-color: var(--bg-main) !important;
+    color: var(--color-white) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
     font-weight: 500 !important;
     padding: 0.4rem 1.2rem !important;
     transition: all 0.3s ease !important;
@@ -173,107 +214,29 @@ div.row-widget.stForm {
 }
 
 .btn-admin-style:hover {
-    background-color: #1D1B1A !important;  /* Mantener mismo fondo */
-    color: #24DE84 !important;  /* Letras verdes al hover */
-    border-color: #24DE84 !important;  /* Borde verde al hover */
+    background-color: var(--bg-main) !important;  /* Mantener mismo fondo */
+    color: var(--color-primary) !important;  /* Letras verdes al hover */
+    border-color: var(--color-primary) !important;  /* Borde verde al hover */
     transform: translateY(-1px) !important;
 }
 
 .btn-admin-style:active {
-    background-color: #24DE84 !important;  /* Fondo verde al clickear */
-    color: #1D1B1A !important;  /* Letras oscuras al clickear */
+    background-color: var(--color-primary) !important;  /* Fondo verde al clickear */
+    color: var(--bg-main) !important;  /* Letras oscuras al clickear */
     transform: translateY(1px) !important;
 }
-.st-emotion-cache-seewz2 h1{
-    text-align: center;
-}
+
+/* === BASE STYLES === */
 body {
-    color: #333333;
+    color: var(--bg-card);
     font-family: 'Roboto', sans-serif;
-    font-size: 0.9rem;
-}
-/* Tarjetas y contenedores */
-div.stContainer {
-    border-radius: 10px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    background-attachment: #333333;
-}
-/* Botones personalizados */
-.stButton>button {
-    border-radius: 20px;
-    font-weight: 500;
-    background-color: #333333;
-    color: rgba(36, 222, 132, 1);
-    border: none;
-    padding: 0.5rem 1rem;
-    transition: all 0.3s ease;
-}
-
-.stButton>button:hover {
-    background-color: rgba(36, 222, 132, 1);
-    box-shadow: 0 4px 8px rgba(251, 250, 250, 0.1);
-    color: #333333;
-}
-
-[data-testid="stSidebarContent"] .stButton button,
-button[key="logout_button"],
-.stButton button[data-testid="baseButton-secondary"]:last-child {
-    background-color: #1D1B1A !important;
-    color: rgba(36, 222, 132, 1) !important;
-}
-
-[data-testid="stSidebarContent"] .stButton button:hover,
-button[key="logout_button"],
-.stButton button[data-testid="baseButton-secondary"]:last-child {
-    background-color: rgba(36, 222, 132, 1) !important;
-    color: #333333 !important;
-}
-/* Formularios */
-.stTextInput>div>div>input,
-.stSelectbox>div>div>select,
-.stMultiselect>div>div>div>div {
-    border-radius: 5px;
-    border: 1px solid #e0e0e0;
-}
-/* Métricas */
-div.stMetric {
-    background-color: #3b3b3a;
-    padding: 1rem;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    margin-bottom: 1rem;
-}
-
-div.stMetric label {
-    color: rgba(36, 222, 132, 1);
-    font-weight: 600;
-}
-
-/* Tablas */
-div.stDataFrame {
-    border: 1px solid #1DDD6E;
-    border-radius: 5px;
-    margin-bottom: 1rem;
-}
-
-/* Pestañas */
-button.stTab {
-    background-color: rgba(36, 222, 132, 1);
-    color:#333333;
-    border-radius: 5px 5px 0 0;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-}
-button.stTab[aria-selected="true"] {
-    background-color: rgba(36, 222, 132, 1);
-    color: #333333;
+    font-size: var(--font-base);
 }
 
 /* Gráficos - Adaptado para Dash */
 #performance-evolution-chart {
-    background-color: #333333 !important;
-    border-radius: 5px;
+    background-color: var(--bg-card) !important;
+    border-radius: var(--radius-md);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     padding: 0.5rem;
     margin-bottom: 0.5rem;
@@ -283,12 +246,12 @@ button.stTab[aria-selected="true"] {
 
 /* Forzar fondo gris en contenedores de plotly */
 .plotly-graph-div {
-    background-color: #333333 !important;
+    background-color: var(--bg-card) !important;
 }
 
 /* Mensajes de alerta - Adaptado para Dash */
 .alert {
-    border-radius: 5px;
+    border-radius: var(--radius-md);
     padding: 0.5rem 1rem;
     margin-bottom: 1rem;
 }
@@ -296,7 +259,7 @@ button.stTab[aria-selected="true"] {
 /* Estilos para los calendarios */
 div.calendar-container {
     background-color: transparent;
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     padding: 1rem;
     margin-bottom: 1rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -326,7 +289,7 @@ div.calendar-container {
     color: white !important;
     padding: 8px 12px !important;
     border-radius: 3px !important;
-    font-size: 0.8rem !important;
+    font-size: var(--font-sm) !important;
     min-width: 85px !important;
     text-align: center !important;
     display: inline-flex !important;
@@ -334,59 +297,30 @@ div.calendar-container {
     justify-content: center !important;
     font-weight: normal !important;
     cursor: pointer !important;
-    height: 38px !important; /* Altura unificada para filtros */
-    min-height: 38px !important;
-    max-height: 38px !important;
+    height: var(--input-height) !important; /* Altura unificada para filtros */
+    min-height: var(--input-height) !important;
+    max-height: var(--input-height) !important;
     transition: all 0.3s ease !important;
     box-sizing: border-box !important;
     margin: 0 !important;
 }
 
 .status-scheduled {
-    background-color: rgba(30, 136, 229, 0.4) !important;
+    background-color: var(--status-scheduled-bg) !important;
 }
 
 .status-completed {
-    background-color: rgba(76, 175, 80, 0.4) !important;
+    background-color: var(--status-completed-bg) !important;
 }
 
 .status-canceled {
-    background-color: rgba(244, 67, 54, 0.4) !important;
+    background-color: var(--status-canceled-bg) !important;
 }
 
 .status-inactive {
-    background-color: #6c757d !important;
+    background-color: var(--color-muted) !important;
     opacity: 0.6 !important;
 }
-
-/* Personalización de tooltips */
-div.tooltip {
-    position: relative;
-    display: inline-block;
-}
-
-div.tooltip .tooltiptext {
-    visibility: hidden;
-    width: 120px;
-    background-color: black;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px 0;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -60px;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-div.tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-}
-
 /* Desactivar zoom en imágenes */
 img {
     pointer-events: none !important;
@@ -395,18 +329,6 @@ img {
 button[kind="icon"][aria-label="Fullscreen"] {
     display: none !important;
 }
-
-div[data-testid="stImage"] {
-    pointer-events: none !important;
-}
-
-
-/* Estilos para Markdown y texto en general */
-.stMarkdown {
-    font-size: 1rem;
-    line-height: 1.6;
-}
-
 /* Estilos para los enlaces */
 a {
     color: #1E88E5;
@@ -418,27 +340,12 @@ a:hover {
     color: #0D47A1;
     text-decoration: underline;
 }
-/* Hide scrollbars in DataFrames */
-[data-testid="stDataFrame"] div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
-    overflow: visible !important;
-}
 
-[data-testid="stDataFrame"] div[style*="overflow: auto"] {
-    overflow: visible !important;
-}
-
-div.stDataFrame > div {
-    overflow: visible !important;
-}
-/* For Streamlit versions that use different CSS structure */
-.stDataFrame div[style*="overflow:"] {
-    overflow: visible !important;
-}
 /* Estilos para el panel de recuperación de contraseña */
 #forgotPasswordInfo {
     background-color: #f9f9f9;
     padding: 15px;
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     margin-top: -10px;
     margin-bottom: 20px;
     border: 1px solid #eee;
@@ -455,83 +362,50 @@ div.stDataFrame > div {
     margin-bottom: 10px;
 }
 
-/* Ajuste para expanders */
-.streamlit-expanderHeader {
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto !important;
-    background-color: #f5f7f9 !important;
-    border-radius: 10px !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-}
-
-.streamlit-expanderContent {
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto !important;
-    background-color: white !important;
-    border-radius: 0 0 10px 10px !important;
-    padding: 1rem !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Estilo para los textos dentro del expander */
-.streamlit-expanderContent p {
-    color: #555;
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-}
-
-/* Ajustes para la información de debug */
-div.stExpander {
-    max-width: 500px;
-    margin: 0 auto;
-}
-
 /* Estilos para Dash - Botones personalizados */
 .custom-button {
-    border-radius: 20px;
+    border-radius: var(--radius-xl);
     font-weight: 500;
-    background-color: #333333;
-    color: #24DE84;
+    background-color: var(--bg-card);
+    color: var(--color-primary);
     border: none;
     padding: 0.5rem 1rem;
     transition: all 0.3s ease;
 }
 
 .custom-button:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Estilos para inputs de Dash */
 .dash-input {
-    border-radius: 10px;
-    border: 1px solid #555;
-    background-color: #3b3b3a;
-    color: #fafafa;
-    font-size: 0.75rem;
-    height: 38px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background-color: var(--bg-input);
+    color: var(--color-white-faded);
+    font-size: var(--font-xs);
+    height: var(--input-height);
     padding: 8px 12px;
     transition: all 0.3s ease;
 }
 
 .dash-input::placeholder {
-    color: #FFFFFF !important;
+    color: var(--color-white) !important;
     opacity: 0.8 !important;
 }
 
 .dash-input:hover {
-    border-color: rgba(36, 222, 132, 1);
+    border-color: var(--color-primary);
     transition: all 0.3s ease;
 }
 
 .dash-input:focus {
-    border-color: #24DE84 !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
-    background-color: #3b3b3a !important;
-    color: #fafafa !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+    background-color: var(--bg-input) !important;
+    color: var(--color-white-faded) !important;
     outline: none !important;
 }
 
@@ -539,16 +413,16 @@ div.stExpander {
 .form-select:focus,
 select:focus,
 select.form-select:focus {
-    color: #fafafa !important;
-    background-color: #3b3b3a !important;
-    border-color: #24DE84 !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    color: var(--color-white-faded) !important;
+    background-color: var(--bg-input) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
 }
 
 /* Player cards styling for Dash */
 .player-card {
-    background-color: #333333;
-    border-radius: 10px;
+    background-color: var(--bg-card);
+    border-radius: var(--radius-lg);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border: none;
     overflow: hidden;
@@ -570,7 +444,7 @@ select.form-select:focus {
 .player-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(36, 222, 132, 0.3);  /* Sombra verde */
-    border: 1px solid #24DE84;  /* Borde verde al hacer hover */
+    border: 1px solid var(--color-primary);  /* Borde verde al hacer hover */
 }
 
 /* Fix para evitar overflow horizontal */
@@ -587,7 +461,7 @@ select.form-select:focus {
 /* Container principal sin overflow */
 #main-content-area {
     overflow-x: hidden;
-    background-color: #1D1B1A !important;
+    background-color: var(--bg-main) !important;
     min-height: 100vh;
     padding: 20px;
 }
@@ -603,17 +477,9 @@ select.form-select:focus {
     }
 }
 
-/* Estilo duplicado removido - consolidado arriba */
-
-/* Placeholder color for inputs */
-.dash-input::placeholder {
-    color: #fafafa;
-    opacity: 0.8;
-}
-
 /* Placeholder color for search input in edit session */
 .custom-date-input::placeholder {
-    color: #FFFFFF !important;
+    color: var(--color-white) !important;
     opacity: 0.8 !important;
 }
 
@@ -630,8 +496,8 @@ select.form-select:focus {
 }
 
 .status-chip-active {
-    background-color: rgba(36, 222, 132, 1) !important;
-    color: #FFFFFF !important;
+    background-color: var(--color-primary) !important;
+    color: var(--color-white) !important;
     opacity: 1;
 }
 
@@ -650,62 +516,58 @@ select.form-select:focus {
 /* Prioridad máxima: selectores específicos para evitar conflictos */
 
 /* Control principal del dropdown coach */
-/* Estilos específicos para admin-filter-coach eliminados - ahora usa .standard-dropdown */
 
 /* ===== CLASE ESTÁNDAR PARA TODOS LOS DROPDOWNS ===== */
 .standard-dropdown .Select-control {
-    background-color: #3b3b3a !important;
-    border-color: #555 !important;
-    border-radius: 10px !important;
-    color: #FFFFFF !important;
-    height: 38px !important;
+    background-color: var(--bg-input) !important;
+    border-color: var(--color-border) !important;
+    border-radius: var(--radius-lg) !important;
+    color: var(--color-white) !important;
+    height: var(--input-height) !important;
     display: flex !important;
     align-items: center !important;
     margin: 0 !important;
-    line-height: 38px !important;
+    line-height: var(--input-height) !important;
     transition: all 0.3s ease !important;
 }
 
 .standard-dropdown .Select-control:hover,
 .standard-dropdown .Select-control:hover:not([class*="admin-filter"]) {
-    border-color: rgba(36, 222, 132, 1) !important;
+    border-color: var(--color-primary) !important;
 }
-
-/* Estilos obsoletos removidos - ahora se usan selectores CSS modernos */
-
 .standard-dropdown .Select-multi-value-wrapper {
-    background-color: rgb(51, 51, 51) !important;
+    background-color: var(--bg-card) !important;
     display: flex !important;
     align-items: center !important;
     flex: 1 !important;
     padding: 0 !important;
     margin: 0 !important;
-    line-height: 38px !important;
+    line-height: var(--input-height) !important;
 }
 
 .standard-dropdown .Select-value,
 .standard-dropdown .Select-value-label {
-    color: #FFFFFF !important;
-    font-size: 0.85rem !important;
+    color: var(--color-white) !important;
+    font-size: var(--font-md) !important;
     text-align: left !important;
     flex: 1 !important;
     padding: 0 4px !important;
     display: flex !important;
     align-items: center !important;
     margin: 0 !important;
-    line-height: 38px !important;
+    line-height: var(--input-height) !important;
 }
 
 .standard-dropdown .Select-placeholder {
     color: rgba(255, 255, 255, 0.7) !important;
-    font-size: 0.85rem !important;
+    font-size: var(--font-md) !important;
     text-align: left !important;
     flex: 1 !important;
     padding: 0 4px !important;
     display: flex !important;
     align-items: center !important;
     margin: 0 !important;
-    line-height: 38px !important;
+    line-height: var(--input-height) !important;
 }
 
 .standard-dropdown .Select-clear-zone {
@@ -714,7 +576,7 @@ select.form-select:focus {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    height: 38px !important;
+    height: var(--input-height) !important;
     margin: 0 !important;
 }
 
@@ -724,33 +586,33 @@ select.form-select:focus {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    height: 38px !important;
+    height: var(--input-height) !important;
     margin: 0 !important;
 }
 
 .standard-dropdown .Select-menu-outer {
-    background-color: rgb(51, 51, 51) !important;
+    background-color: var(--bg-card) !important;
     border: 1px solid rgba(36, 222, 132, 0.3) !important;
-    border-radius: 10px !important;
+    border-radius: var(--radius-lg) !important;
     margin-top: 2px !important;
     z-index: 1000 !important;
 }
 
 .standard-dropdown .Select-option {
-    background-color: rgb(51, 51, 51) !important;
-    color: #FFFFFF !important;
-    font-size: 0.85rem !important;
+    background-color: var(--bg-card) !important;
+    color: var(--color-white) !important;
+    font-size: var(--font-md) !important;
     padding: 8px 12px !important;
     border: none !important;
     margin: 0 !important;
 }
 
 .standard-dropdown .Select-option:hover {
-    background-color: rgba(36, 222, 132, 0.2) !important;
+    background-color: var(--color-primary-alpha-20) !important;
 }
 
 .standard-dropdown .Select-input input {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 /* Sistema unificado de date inputs para toda la aplicación */
@@ -760,13 +622,13 @@ input[type="date"]#filter-from-date,
 input[type="date"]#filter-to-date,
 .custom-date-input,
 .date-filter-input {
-    background-color: #3b3b3a !important;
-    border: 1px solid #555 !important;
-    border-radius: 10px !important;
-    color: #FFFFFF !important;
+    background-color: var(--bg-input) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: var(--radius-lg) !important;
+    color: var(--color-white) !important;
     padding: 8px 12px !important;
-    height: 38px !important;
-    font-size: 0.75rem !important; /* Texto aún más pequeño */
+    height: var(--input-height) !important;
+    font-size: var(--font-xs) !important; /* Texto aún más pequeño */
     transition: all 0.3s ease !important;
     color-scheme: dark !important;
     text-align: center !important; /* Centrado horizontal */
@@ -782,7 +644,7 @@ input[type="date"]#filter-from-date:hover,
 input[type="date"]#filter-to-date:hover,
 .custom-date-input:hover,
 .date-filter-input:hover {
-    border-color: rgba(36, 222, 132, 1) !important;
+    border-color: var(--color-primary) !important;
     box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
 }
 
@@ -792,34 +654,34 @@ input[type="date"]#filter-from-date:focus,
 input[type="date"]#filter-to-date:focus,
 .custom-date-input:focus,
 .date-filter-input:focus {
-    border-color: rgba(36, 222, 132, 1) !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
     outline: none !important;
 }
 
 /* Estilo minimalista para tabla de sesiones */
 .table-dark {
     background-color: transparent !important;
-    border: 1px solid #24DE84 !important;
+    border: 1px solid var(--color-primary) !important;
     border-radius: 8px !important;
-    font-size: 0.85rem !important;
-    border-bottom: 1.5px solid #24DE84 !important;
+    font-size: var(--font-md) !important;
+    border-bottom: 1.5px solid var(--color-primary) !important;
 }
 
 .table-dark th {
     background-color: #333 !important;
     border: none !important;
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
     font-weight: 600 !important;
-    font-size: 0.8rem !important;
+    font-size: var(--font-sm) !important;
     padding: 8px 12px !important;
 }
 
 /* Estilo base para celdas sin background específico */
 .table-dark td {
     border: none !important;
-    color: #FFFFFF !important;
-    font-size: 0.8rem !important;
+    color: var(--color-white) !important;
+    font-size: var(--font-sm) !important;
     padding: 8px 12px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
@@ -829,37 +691,37 @@ input[type="date"]#filter-to-date:focus,
     background-color: transparent !important;
 }
 .table-dark tbody tr:nth-child(even) td {
-    background-color: #333333 !important;
+    background-color: var(--bg-card) !important;
 }
 
 .table-dark tr:hover td {
-    background-color: rgba(36, 222, 132, 0.1) !important;
+    background-color: var(--color-primary-alpha-10) !important;
 }
 
 /* Login specific input styling */
 #username-input, #password-input {
-    background-color: #333333 !important;
-    border: 1px solid #555 !important;
-    color: #fafafa !important;
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-white-faded) !important;
     border-radius: 6px !important;
 }
 
 #username-input::placeholder, #password-input::placeholder {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     opacity: 0.8 !important;
 }
 
 #username-input:focus, #password-input:focus {
-    border-color: #24DE84 !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
 }
 
 /* View Profile button styling - para cards de jugadores */
 .player-card .btn {
-    background-color: #1D1B1A !important;  /* Mismo fondo que Save Notes */
-    color: #FFFFFF !important;  /* Letras blancas */
-    border: 2px solid #1D1B1A !important;  /* Borde igual que Save Notes */
-    border-radius: 20px !important;
+    background-color: var(--bg-main) !important;  /* Mismo fondo que Save Notes */
+    color: var(--color-white) !important;  /* Letras blancas */
+    border: 2px solid var(--bg-main) !important;  /* Borde igual que Save Notes */
+    border-radius: var(--radius-xl) !important;
     font-weight: 500 !important;
     padding: 0.4rem 1.2rem !important;
     transition: all 0.3s ease !important;
@@ -867,18 +729,18 @@ input[type="date"]#filter-to-date:focus,
 }
 
 .player-card .btn:hover {
-    background-color: #1D1B1A !important;  /* Mantener mismo fondo */
-    color: #24DE84 !important;  /* Letras verdes al hover */
-    border-color: #24DE84 !important;  /* Borde verde al hover */
+    background-color: var(--bg-main) !important;  /* Mantener mismo fondo */
+    color: var(--color-primary) !important;  /* Letras verdes al hover */
+    border-color: var(--color-primary) !important;  /* Borde verde al hover */
     transform: translateY(-1px) !important;
-    box-shadow: 0 2px 4px rgba(36, 222, 132, 0.2) !important;
+    box-shadow: 0 2px 4px var(--color-primary-alpha-20) !important;
 }
 
 /* ===== FILTROS DE ADMINISTRACIÓN - SISTEMA UNIFICADO ===== */
 
 /* Clases base para filtros - altura unificada */
 .filter-label {
-    color: #FFFFFF !important;
+    color: var(--color-white) !important;
     font-weight: 500 !important;
     font-size: 0.9rem !important;
     margin-bottom: 8px !important;
@@ -935,18 +797,18 @@ input[type="date"]#filter-to-date:focus,
     align-items: center !important;
     gap: 10px !important;
     flex-wrap: wrap !important;
-    height: 38px !important; /* Altura exacta igual que inputs */
-    min-height: 38px !important;
-    max-height: 38px !important;
+    height: var(--input-height) !important; /* Altura exacta igual que inputs */
+    min-height: var(--input-height) !important;
+    max-height: var(--input-height) !important;
     margin: 0 !important;
     padding: 0 !important;
 }
 
 .status-badge {
     /* Hereda estilos del sistema unificado de status badges */
-    height: 38px !important; /* Altura exacta igual que inputs */
-    min-height: 38px !important;
-    max-height: 38px !important;
+    height: var(--input-height) !important; /* Altura exacta igual que inputs */
+    min-height: var(--input-height) !important;
+    max-height: var(--input-height) !important;
     margin: 0 !important;
     padding: 8px 12px !important;
     box-sizing: border-box !important;
@@ -954,29 +816,29 @@ input[type="date"]#filter-to-date:focus,
 
 /* Asegurar que el texto dentro de las cards sea blanco */
 .player-card h5 {
-    color: #FFFFFF !important;  /* Nombres en blanco */
+    color: var(--color-white) !important;  /* Nombres en blanco */
 }
 
 .player-card .text-muted {
-    color: #CCCCCC !important;  /* Texto secundario en gris claro */
+    color: var(--color-light-gray) !important;  /* Texto secundario en gris claro */
 }
 
 /* Estilo antiguo eliminado - ya no se usa */
 
 /* Checkbox styling */
 #remember-me .form-check-input {
-    background-color: #555;
-    border-color: #24DE84;
+    background-color: var(--color-border);
+    border-color: var(--color-primary);
 }
 
 #remember-me .form-check-input:checked {
-    background-color: #24DE84;
-    border-color: #24DE84;
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
 }
 
 #remember-me .form-check-input:focus {
-    border-color: #24DE84;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus);
 }
 
 /* Remove padding from main container */
@@ -995,38 +857,38 @@ input[type="date"]#filter-to-date:focus,
 .custom-menu-button {
     background: transparent !important;
     border: none !important;
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     transition: all 0.3s ease !important;
-    border-radius: 20px !important;  /* Curved like other buttons */
+    border-radius: var(--radius-xl) !important;  /* Curved like other buttons */
 }
 
 .custom-menu-button:hover {
-    background-color: #24DE84 !important;  /* Same corporate green as other buttons */
-    color: #333333 !important;  /* Dark text on green background */
+    background-color: var(--color-primary) !important;  /* Same corporate green as other buttons */
+    color: var(--bg-card) !important;  /* Dark text on green background */
     border: none !important;
 }
 
 .custom-menu-button:hover .bi {
-    color: #333333 !important;  /* Dark icon on green background */
+    color: var(--bg-card) !important;  /* Dark icon on green background */
 }
 
 .custom-menu-button:hover .menu-text {
-    color: #333333 !important;  /* Dark text on green background */
+    color: var(--bg-card) !important;  /* Dark text on green background */
 }
 
 .custom-menu-button:focus {
     box-shadow: none !important;
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 /* Quick sync and logout buttons inherit menu button styling via custom-menu-button class */
 
 /* Sync alerts styling */
 .alert {
-    border-radius: 10px !important;
+    border-radius: var(--radius-lg) !important;
     border: none !important;
-    font-size: 0.85rem;
+    font-size: var(--font-md);
     padding: 0.6rem 0.8rem;
 }
 
@@ -1075,16 +937,16 @@ input[type="date"]#filter-to-date:focus,
 
 /* Hover effect for collapsed quick sync button */
 #quick-sync-icon-collapsed:hover {
-    background-color: #24DE84 !important;
+    background-color: var(--color-primary) !important;
 }
 
 #quick-sync-icon-collapsed:hover .bi {
-    color: #333333 !important;
+    color: var(--bg-card) !important;
 }
 
 .alert-success {
-    background-color: rgba(36, 222, 132, 0.2) !important;
-    color: #24DE84 !important;
+    background-color: var(--color-primary-alpha-20) !important;
+    color: var(--color-primary) !important;
 }
 
 .alert-info {
@@ -1122,7 +984,7 @@ input[type="date"]#filter-to-date:focus,
 
 .metric-card:hover {
     transform: translateY(-3px) !important;
-    box-shadow: 0 8px 16px rgba(36, 222, 132, 0.2) !important;
+    box-shadow: 0 8px 16px var(--color-primary-alpha-20) !important;
 }
 
 /* Iconos en títulos - espaciado consistente */
@@ -1147,27 +1009,27 @@ h4 .bi, h5 .bi {
 /* Cards de test history mejoradas */
 .test-history-card {
     background-color: #2A2A2A !important;
-    border: 1px solid #555 !important;
+    border: 1px solid var(--color-border) !important;
     border-radius: 8px !important;
     margin-bottom: 1rem !important;
     transition: all 0.2s ease !important;
 }
 
 .test-history-card:hover {
-    border-color: #24DE84 !important;
-    box-shadow: 0 4px 8px rgba(36, 222, 132, 0.1) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 4px 8px var(--color-primary-alpha-10) !important;
 }
 
 /* Headers de test history con iconos */
 .test-history-header {
-    background-color: #333333 !important;
-    border-bottom: 1px solid #555 !important;
+    background-color: var(--bg-card) !important;
+    border-bottom: 1px solid var(--color-border) !important;
     padding: 1rem !important;
 }
 
 .test-history-header h5 {
     margin: 0 !important;
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
     display: flex !important;
     align-items: center !important;
 }
@@ -1179,28 +1041,28 @@ h4 .bi, h5 .bi {
 
 /* Estilos para dropdown de filtros de estado - fondo como las cards */
 .VirtualizedSelectOption {
-    background-color: #3b3b3a !important;  /* Mismo color que las cards */
-    color: #fafafa !important;
+    background-color: var(--bg-input) !important;  /* Mismo color que las cards */
+    color: var(--color-white-faded) !important;
 }
 
 .VirtualizedSelectFocusedOption {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 /* ===== SELECTORES GENÉRICOS - SOLO PARA CASOS NO ESPECÍFICOS ===== */
 /* Estos solo se aplicarán si no hay un selector más específico */
 .Select-control:not([class*="admin-filter"]):not([class*="custom-dropdown"]) {
-    background-color: #3b3b3a !important;
-    border-color: #555 !important;
+    background-color: var(--bg-input) !important;
+    border-color: var(--color-border) !important;
 }
 
 .Select-multi-value-wrapper:not([class*="admin-filter"]):not([class*="custom-dropdown"]) {
-    background-color: #3b3b3a !important;
+    background-color: var(--bg-input) !important;
 }
 
 .Select-value:not([class*="admin-filter"]):not([class*="custom-dropdown"]) {
-    border-radius: 20px !important;
+    border-radius: var(--radius-xl) !important;
     padding: 0.25rem 0.75rem !important;
     margin: 0.125rem !important;
     font-weight: 500 !important;
@@ -1208,50 +1070,50 @@ h4 .bi, h5 .bi {
 
 /* Colores específicos para cada estado - iguales que session list */
 .Select-value.completed {
-    background-color: rgba(76, 175, 80, 0.4) !important;
+    background-color: var(--status-completed-bg) !important;
     color: white !important;
 }
 
 .Select-value.scheduled {
-    background-color: rgba(30, 136, 229, 0.4) !important;
+    background-color: var(--status-scheduled-bg) !important;
     color: white !important;
 }
 
 .Select-value.canceled {
-    background-color: rgba(244, 67, 54, 0.4) !important;
+    background-color: var(--status-canceled-bg) !important;
     color: white !important;
 }
 
 .Select-value-label {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 .Select-clear {
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
 }
 
 /* Tags de filtros - solo borde verde corporativo y letras blancas */
 .dash-dropdown .Select-multi-value,
 .Select--multi .Select-value {
     background-color: transparent !important;
-    color: #fafafa !important;  /* Letras blancas */
-    border-radius: 20px !important;
+    color: var(--color-white-faded) !important;  /* Letras blancas */
+    border-radius: var(--radius-xl) !important;
     padding: 0.25rem 0.75rem !important;
     font-weight: 500 !important;
-    border: 1px solid #24DE84 !important;  /* Borde más sutil */
+    border: 1px solid var(--color-primary) !important;  /* Borde más sutil */
     transition: all 0.3s ease !important;
 }
 
 /* Asegurar que el texto interno también sea blanco */
 .dash-dropdown .Select-multi-value .Select-value-label,
 .Select--multi .Select-value .Select-value-label {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     font-weight: 500 !important;
 }
 
 .dash-dropdown .Select-multi-value:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 .dash-dropdown .Select-multi-value .Select-value-label {
@@ -1264,35 +1126,35 @@ h4 .bi, h5 .bi {
 }
 
 .dash-dropdown .Select-multi-value .Select-value-icon:hover {
-    background-color: rgba(36, 222, 132, 0.2) !important;
-    color: #333333 !important;
+    background-color: var(--color-primary-alpha-20) !important;
+    color: var(--bg-card) !important;
 }
 
 /* Calendario - texto blanco para fechas y números */
 .fc-event-title {
-    color: #fafafa !important;
-    font-size: 0.75rem !important;
+    color: var(--color-white-faded) !important;
+    font-size: var(--font-xs) !important;
 }
 
 .fc-daygrid-event {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     border: none !important;
     background: transparent !important;
     padding: 2px 4px !important;
 }
 
 .fc-event {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     border: none !important;
     background: transparent !important;
 }
 
 .fc-daygrid-day-number {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 .fc-col-header-cell {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 .fc-day-today {
@@ -1300,7 +1162,7 @@ h4 .bi, h5 .bi {
 }
 
 .fc-day-today .fc-daygrid-day-top {
-    background-color: rgba(36, 222, 132, 0.2) !important;
+    background-color: var(--color-primary-alpha-20) !important;
     border-radius: 4px 4px 0 0 !important;
 }
 
@@ -1308,14 +1170,14 @@ h4 .bi, h5 .bi {
 .fc-button {
     background-color: rgb(59, 59, 58) !important;
     border-color: rgb(59, 59, 58) !important;
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
     transition: all 0.3s ease !important;
 }
 
 .fc-button:hover {
-    background-color: #24DE84 !important;
-    border-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 4px 8px rgba(36, 222, 132, 0.3) !important;
 }
@@ -1330,7 +1192,7 @@ h4 .bi, h5 .bi {
 
 /* Título del calendario - mes y año en blanco */
 .fc-toolbar-title {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 /* Override para asegurar texto blanco en calendario */
@@ -1340,33 +1202,33 @@ h4 .bi, h5 .bi {
 #player-calendar .fc-event-title,
 #player-calendar .fc-daygrid-event,
 #player-calendar .fc-event {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     font-weight: 500 !important;
 }
 
 /* Estilos para inputs de fecha con fondo gris del sidebar */
 #calendar-start-date-input,
 #calendar-end-date-input {
-    background-color: #1D1B1A !important;
-    border: 1px solid #555 !important;
-    color: #fafafa !important;
+    background-color: var(--bg-main) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-white-faded) !important;
     height: 32px !important;
     padding: 4px 8px !important;
-    font-size: 0.85rem !important;
+    font-size: var(--font-md) !important;
 }
 
 #calendar-start-date-input:focus,
 #calendar-end-date-input:focus {
-    border-color: #24DE84 !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
-    background-color: #1D1B1A !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+    background-color: var(--bg-main) !important;
 }
 
 /* Dropdown de filtros de estado */
 #calendar-status-filter-dropdown .Select-control {
-    background-color: #1D1B1A !important;
-    border-color: #555 !important;
-    color: #fafafa !important;
+    background-color: var(--bg-main) !important;
+    border-color: var(--color-border) !important;
+    color: var(--color-white-faded) !important;
 }
 
 #calendar-status-filter-dropdown .Select-placeholder {
@@ -1374,22 +1236,22 @@ h4 .bi, h5 .bi {
 }
 
 #calendar-status-filter-dropdown .Select-input > input {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 /* Estilos adicionales para tags de estado por colores - iguales que session list */
 .status-tag-completed {
-    background-color: rgba(76, 175, 80, 0.4) !important;
+    background-color: var(--status-completed-bg) !important;
     color: white !important;
 }
 
 .status-tag-scheduled {
-    background-color: rgba(30, 136, 229, 0.4) !important;
+    background-color: var(--status-scheduled-bg) !important;
     color: white !important;
 }
 
 .status-tag-canceled {
-    background-color: rgba(244, 67, 54, 0.4) !important;
+    background-color: var(--status-canceled-bg) !important;
     color: white !important;
 }
 
@@ -1423,8 +1285,8 @@ h4 .bi, h5 .bi {
 div[id*="status-filter"] span[title="Completed"],
 div[id*="status-filter"] span[title="completed"] {
     background-color: #4CAF50 !important;
-    color: #fafafa !important;
-    border-radius: 20px !important;
+    color: var(--color-white-faded) !important;
+    border-radius: var(--radius-xl) !important;
     padding: 0.25rem 0.75rem !important;
     font-weight: 500 !important;
 }
@@ -1433,8 +1295,8 @@ div[id*="status-filter"] span[title="completed"] {
 div[id*="status-filter"] span[title="Scheduled"],
 div[id*="status-filter"] span[title="scheduled"] {
     background-color: #9C27B0 !important;
-    color: #fafafa !important;
-    border-radius: 20px !important;
+    color: var(--color-white-faded) !important;
+    border-radius: var(--radius-xl) !important;
     padding: 0.25rem 0.75rem !important;
     font-weight: 500 !important;
 }
@@ -1443,32 +1305,32 @@ div[id*="status-filter"] span[title="scheduled"] {
 div[id*="status-filter"] span[title="Canceled"],
 div[id*="status-filter"] span[title="canceled"] {
     background-color: #F44336 !important;
-    color: #fafafa !important;
-    border-radius: 20px !important;
+    color: var(--color-white-faded) !important;
+    border-radius: var(--radius-xl) !important;
     padding: 0.25rem 0.75rem !important;
     font-weight: 500 !important;
 }
 
 /* Estilos para tags en el dropdown de Dash */
 .dash-dropdown .dropdown-content .VirtualizedSelectOption {
-    background-color: #3b3b3a !important;
-    color: #fafafa !important;
+    background-color: var(--bg-input) !important;
+    color: var(--color-white-faded) !important;
     padding: 0.5rem !important;
-    border-bottom: 1px solid #555 !important;
+    border-bottom: 1px solid var(--color-border) !important;
 }
 
 .dash-dropdown .dropdown-content .VirtualizedSelectOption:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 /* Tags seleccionados con colores de estado */
 .dash-dropdown .multi-value {
-    border-radius: 20px !important;
+    border-radius: var(--radius-xl) !important;
     font-weight: 500 !important;
     margin: 0.125rem !important;
     padding: 0.25rem 0.75rem !important;
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 /* Intentar capturar por contenido de texto */
@@ -1493,22 +1355,22 @@ div[id*="calendar-start-date"] input,
 div[id*="calendar-end-date"] input,
 #calendar-start-date-input,
 #calendar-end-date-input {
-    background-color: #3b3b3a !important;
-    border: 1px solid #555 !important;
-    color: #fafafa !important;
+    background-color: var(--bg-input) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-white-faded) !important;
     border-radius: 8px !important;
     padding: 0.4rem 0.6rem !important;
     height: 32px !important;
-    font-size: 0.85rem !important;
+    font-size: var(--font-md) !important;
 }
 
 div[id*="calendar-start-date"] input:focus,
 div[id*="calendar-end-date"] input:focus,
 #calendar-start-date-input:focus,
 #calendar-end-date-input:focus {
-    border-color: #24DE84 !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
-    background-color: #3b3b3a !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+    background-color: var(--bg-input) !important;
 }
 
 /* Dropdown completo - fondo gris claro correcto para todo el contenedor */
@@ -1520,51 +1382,51 @@ div[id*="status-filter"] .Select-control,
 #calendar-status-filter-dropdown > div,
 #calendar-status-filter-dropdown .Select,
 #calendar-status-filter-dropdown .Select-control {
-    background-color: #3b3b3a !important;
+    background-color: var(--bg-input) !important;
     border-radius: 8px !important;
 }
 
 /* Placeholder y texto */
 div[id*="status-filter"] .Select-placeholder,
 div[id*="status-filter"] .Select-value {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 /* Input interno */
 div[id*="status-filter"] .Select-input input {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 /* Menu desplegable */
 div[id*="status-filter"] .Select-menu-outer {
-    background-color: #3b3b3a !important;
-    border: 1px solid #555 !important;
+    background-color: var(--bg-input) !important;
+    border: 1px solid var(--color-border) !important;
     border-radius: 8px !important;
 }
 
 /* Opciones del menu */
 div[id*="status-filter"] .Select-option {
-    background-color: #3b3b3a !important;
-    color: #fafafa !important;
+    background-color: var(--bg-input) !important;
+    color: var(--color-white-faded) !important;
 }
 
 div[id*="status-filter"] .Select-option:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 /* Hover effect para filas de tabla */
 .table-row-hover:hover {
-    background-color: rgba(36, 222, 132, 0.1) !important;
+    background-color: var(--color-primary-alpha-10) !important;
 }
 
 .table-row-hover:hover td {
-    background-color: rgba(36, 222, 132, 0.1) !important;
+    background-color: var(--color-primary-alpha-10) !important;
 }
 
-/* Estilos para tabs de Test Results y Notes - como Streamlit original */
+/* Estilos para tabs de Test Results y Notes */
 .nav-tabs .nav-link {
-    color: #fafafa !important;  /* Letras blancas por defecto */
+    color: var(--color-white-faded) !important;  /* Letras blancas por defecto */
     border: none !important;
     border-bottom: 3px solid transparent !important;
     background-color: transparent !important;
@@ -1573,26 +1435,26 @@ div[id*="status-filter"] .Select-option:hover {
 }
 
 .nav-tabs .nav-link.active {
-    color: #24DE84 !important;  /* Texto verde cuando activo */
-    border-bottom: 3px solid #24DE84 !important;  /* Línea inferior verde */
+    color: var(--color-primary) !important;  /* Texto verde cuando activo */
+    border-bottom: 3px solid var(--color-primary) !important;  /* Línea inferior verde */
     background-color: transparent !important;
 }
 
 .nav-tabs .nav-link:hover {
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
     border-bottom: 3px solid rgba(36, 222, 132, 0.5) !important;
     background-color: transparent !important;
 }
 
 /* Eliminar borde superior de las tabs */
 .nav-tabs {
-    border-bottom: 1px solid #555 !important;
+    border-bottom: 1px solid var(--color-border) !important;
 }
 
 /* Estilos para acordeones de test history */
 .accordion-item {
     background-color: #2A2A2A !important;
-    border: 1px solid #555 !important;
+    border: 1px solid var(--color-border) !important;
     margin-bottom: 0.5rem !important;
 }
 
@@ -1608,33 +1470,33 @@ div[id*="status-filter"] .Select-option:hover {
 }
 
 .accordion-button {
-    background-color: #333333 !important;
-    color: #fafafa !important;  /* Texto blanco por defecto */
+    background-color: var(--bg-card) !important;
+    color: var(--color-white-faded) !important;  /* Texto blanco por defecto */
     border: none !important;
     font-weight: 500 !important;
     font-size: 0.875rem !important;  /* Tamaño más apropiado */
 }
 
 .accordion-button:not(.collapsed) {
-    background-color: #24DE84 !important;  /* Fondo verde cuando abierto */
+    background-color: var(--color-primary) !important;  /* Fondo verde cuando abierto */
     color: #333 !important;  /* Mismo gris que hover de botones */
     box-shadow: none !important;
 }
 
 .accordion-button:focus {
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    box-shadow: var(--shadow-focus) !important;
 }
 
 .accordion-body {
     background-color: #2A2A2A !important;
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     padding: 1.5rem !important;
     font-size: 0.9rem !important;  /* Tamaño de fuente consistente */
 }
 
 /* Asegurar que los iconos mantengan su color */
 .accordion-button .bi {
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
 }
 
 .accordion-button:not(.collapsed) .bi {
@@ -1649,7 +1511,7 @@ div[id*="status-filter"] .Select-option:hover {
 
 .text-lg { font-size: 1rem !important; }      /* Texto grande */
 .text-base { font-size: 0.9rem !important; }      /* Texto por defecto */
-.text-sm { font-size: 0.8rem !important; }    /* Texto pequeño */
+.text-sm { font-size: var(--font-sm) !important; }    /* Texto pequeño */
 .text-xs { font-size: 0.7rem !important; }     /* Texto extra pequeño */
 
 /* Correcciones específicas para elementos que estaban demasiado grandes */
@@ -1711,34 +1573,34 @@ h5, .h5 { font-size: 0.95rem !important; font-weight: 600 !important; }
 }
 
 .fc-list-event {
-    background-color: #333333 !important;
-    border-left: 4px solid #24DE84 !important;
+    background-color: var(--bg-card) !important;
+    border-left: 4px solid var(--color-primary) !important;
     margin-bottom: 0.5rem !important;
     border-radius: 6px !important;
     transition: all 0.2s ease !important;
 }
 
 .fc-list-event:hover {
-    background-color: #3b3b3a !important;
+    background-color: var(--bg-input) !important;
     transform: translateX(4px) !important;
-    box-shadow: 0 2px 8px rgba(36, 222, 132, 0.2) !important;
+    box-shadow: 0 2px 8px var(--color-primary-alpha-20) !important;
 }
 
 .fc-list-day-cushion {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
     font-weight: 600 !important;
     padding: 0.75rem 1rem !important;
     border-radius: 6px 6px 0 0 !important;
 }
 
 .fc-list-event-title {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     font-weight: 500 !important;
 }
 
 .fc-list-event-time {
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
     font-weight: 600 !important;
 }
 
@@ -1750,14 +1612,14 @@ h5, .h5 { font-size: 0.95rem !important; font-weight: 600 !important; }
     background-color: transparent !important;
 }
 
-/* Estilos para inputs de fecha HTML nativos - Simple y elegante como Streamlit */
+/* Estilos para inputs de fecha HTML nativos - Simple y elegante */
 /* IMPORTANTE: Estos estilos deben tener prioridad sobre otros estilos */
 .simple-date-input,
 input[type="date"].simple-date-input,
 .form-control[type="date"] {
     background-color: transparent !important;
-    border: 1px solid #24DE84 !important;
-    color: #fafafa !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-white-faded) !important;
     border-radius: 8px !important;
     padding: 0.75rem 1rem !important;
     font-family: 'Roboto', sans-serif !important;
@@ -1769,7 +1631,7 @@ input[type="date"].simple-date-input,
 
 .simple-date-input:focus,
 input[type="date"].simple-date-input:focus {
-    border-color: #24DE84 !important;
+    border-color: var(--color-primary) !important;
     box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.3) !important;
     background-color: transparent !important;
     outline: none !important;
@@ -1783,40 +1645,40 @@ input[type="date"].simple-date-input:hover {
 
 /* Calendario nativo del navegador - Tema oscuro */
 .simple-date-input::-webkit-calendar-picker-indicator {
-    background-color: #24DE84 !important;
+    background-color: var(--color-primary) !important;
     border-radius: 4px !important;
     cursor: pointer !important;
     filter: invert(1) !important;
 }
 
 .simple-date-input::-webkit-datetime-edit {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 .simple-date-input::-webkit-datetime-edit-text {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 .simple-date-input::-webkit-datetime-edit-month-field {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 .simple-date-input::-webkit-datetime-edit-day-field {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 .simple-date-input::-webkit-datetime-edit-year-field {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
 }
 
 /* Firefox */
 .simple-date-input::-moz-calendar-picker-indicator {
-    background-color: #24DE84 !important;
+    background-color: var(--color-primary) !important;
     border-radius: 4px !important;
     cursor: pointer !important;
 }
 
-/* Calendario desplegable - Réplica exacta del Streamlit de la imagen */
+/* Calendario desplegable - Estilo corporativo */
 .DayPicker,
 .DayPickerNavigation,
 .DayPickerKeyboardShortcuts_panel,
@@ -1837,7 +1699,7 @@ input[type="date"].simple-date-input:hover {
     font-weight: 400 !important;
     border-bottom: none !important;
     text-transform: uppercase !important;
-    font-size: 0.75rem !important;
+    font-size: var(--font-xs) !important;
     letter-spacing: 0.5px !important;
 }
 
@@ -1846,7 +1708,7 @@ input[type="date"].simple-date-input:hover {
     color: #8a8a8a !important;  /* Gris tenue Mo Tu We Th Fr Sa Su */
     font-weight: 400 !important;
     text-transform: uppercase !important;
-    font-size: 0.75rem !important;
+    font-size: var(--font-xs) !important;
 }
 
 /* Contenedor del mes */
@@ -1882,7 +1744,7 @@ input[type="date"].simple-date-input:hover {
 .CalendarDay__selected,
 .CalendarDay__selected_span,
 .CalendarDay__selected:hover {
-    background-color: #24DE84 !important;  /* Verde corporativo circular */
+    background-color: var(--color-primary) !important;  /* Verde corporativo circular */
     color: #ffffff !important;
     border: none !important;
     font-weight: 600 !important;
@@ -1900,7 +1762,7 @@ input[type="date"].simple-date-input:hover {
 .CalendarDay__blocked_out_of_range,
 .CalendarDay__outside {
     background-color: transparent !important;
-    color: #555 !important;
+    color: var(--color-border) !important;
 }
 
 /* Header del calendario con mes/año - Como en la imagen */
@@ -1941,7 +1803,7 @@ input[type="date"].simple-date-input:hover {
 .DayPicker_yearPicker {
     background-color: #2b2b2b !important;
     color: #ffffff !important;
-    border: 1px solid #555 !important;
+    border: 1px solid var(--color-border) !important;
     border-radius: 6px !important;
 }
 
@@ -1955,7 +1817,7 @@ input[type="date"].simple-date-input:hover {
 /* Input inferior del calendario - Como en la imagen */
 .SingleDatePickerInput__display-text {
     background-color: #2b2b2b !important;
-    border: 1px solid #24DE84 !important;
+    border: 1px solid var(--color-primary) !important;
     border-radius: 8px !important;
     color: #ffffff !important;
     padding: 0.75rem 1rem !important;
@@ -1987,7 +1849,7 @@ input[type="date"].simple-date-input:hover {
 /* Estilos específicos para login Dash - diseño original */
 .login-container {
     min-height: 100vh !important;
-    background-color: #1D1B1A !important;
+    background-color: var(--bg-main) !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
@@ -2007,7 +1869,7 @@ input[type="date"].simple-date-input:hover {
 .login-form-container {
     background-color: rgba(51, 51, 51, 0.6) !important;
     backdrop-filter: blur(10px) !important;
-    border-radius: 10px !important;
+    border-radius: var(--radius-lg) !important;
     padding: 1.5rem !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
     max-width: 500px !important;
@@ -2015,7 +1877,7 @@ input[type="date"].simple-date-input:hover {
 }
 
 .login-title {
-    color: rgba(36, 222, 132, 1) !important;
+    color: var(--color-primary) !important;
     font-size: 2rem !important;
     font-weight: 500 !important;
     margin-bottom: 2rem !important;
@@ -2031,9 +1893,9 @@ input[type="date"].simple-date-input:hover {
 }
 
 .login-button {
-    background-color: #1D1B1A !important;
-    border: 2px solid #1D1B1A !important;
-    border-radius: 20px !important;
+    background-color: var(--bg-main) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
     color: white !important;
     padding: 0.75rem !important;
     font-size: 1rem !important;
@@ -2044,13 +1906,13 @@ input[type="date"].simple-date-input:hover {
 }
 
 .login-button:hover {
-    border-color: rgba(36, 222, 132, 1) !important;
-    color: rgba(36, 222, 132, 1) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
 }
 
 .login-button:active {
-    background-color: rgba(36, 222, 132, 1) !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
     transform: translateY(1px) !important;
 }
 
@@ -2060,9 +1922,9 @@ input[type="date"].simple-date-input:hover {
 }
 
 .forgot-password-button {
-    background-color: #333333 !important;
+    background-color: var(--bg-card) !important;
     border: 2px solid #333333 !important;
-    border-radius: 20px !important;
+    border-radius: var(--radius-xl) !important;
     color: white !important;
     padding: 0.75rem !important;
     font-size: 1rem !important;
@@ -2073,13 +1935,13 @@ input[type="date"].simple-date-input:hover {
 }
 
 .forgot-password-button:hover {
-    border-color: rgba(36, 222, 132, 1) !important;
-    color: rgba(36, 222, 132, 1) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
 }
 
 .forgot-password-button:active {
-    background-color: rgba(36, 222, 132, 1) !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
     transform: translateY(1px) !important;
 }
 
@@ -2089,18 +1951,18 @@ input[type="date"].simple-date-input:hover {
 }
 
 .login-checkbox .form-check-input {
-    background-color: #555 !important;
-    border-color: #24DE84 !important;
+    background-color: var(--color-border) !important;
+    border-color: var(--color-primary) !important;
 }
 
 .login-checkbox .form-check-input:checked {
-    background-color: #24DE84 !important;
-    border-color: #24DE84 !important;
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
 }
 
 .login-checkbox .form-check-input:focus {
-    border-color: #24DE84 !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
 }
 
 /* ===== SIDEBAR STYLES ===== */
@@ -2112,7 +1974,7 @@ input[type="date"].simple-date-input:hover {
     border: none !important;
     background: transparent !important;
     text-decoration: none !important;
-    color: #FFFFFF !important;
+    color: var(--color-white) !important;
     padding: 0.5rem 1rem !important;
     border-radius: 8px !important;
     transition: all 0.3s ease !important;
@@ -2120,12 +1982,10 @@ input[type="date"].simple-date-input:hover {
 }
 
 .sidebar-menu-button:hover {
-    background-color: rgba(36, 222, 132, 0.1) !important;
-    border: 1px solid #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary-alpha-10) !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
-
-
 /* Botones Quick Sync y Logout */
 .sidebar-action-button {
     font-size: 16px !important;
@@ -2133,7 +1993,7 @@ input[type="date"].simple-date-input:hover {
     border: none !important;
     background: transparent !important;
     text-decoration: none !important;
-    color: #FFFFFF !important;
+    color: var(--color-white) !important;
     padding: 0.5rem 1rem !important;
     border-radius: 8px !important;
     transition: all 0.3s ease !important;
@@ -2142,37 +2002,37 @@ input[type="date"].simple-date-input:hover {
 }
 
 .sidebar-action-button:hover {
-    background-color: rgba(36, 222, 132, 0.1) !important;
-    border: 1px solid #24DE84 !important;
-    color: #24DE84 !important;
+    background-color: var(--color-primary-alpha-10) !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-primary) !important;
 }
 
 .sidebar-action-button:hover .bi {
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
 }
 
 /* Estilos para el contenedor de usuario */
 .sidebar-user-container {
     background-color: transparent !important;
-    border-radius: 10px !important;
+    border-radius: var(--radius-lg) !important;
     padding: 0 !important;
     margin-bottom: 1.5rem !important;
 }
 
 /* Estilos para el área de Webhook Status (future) */
 .sidebar-webhook-container {
-    background-color: #1D1B1A !important;
-    border-radius: 10px !important;
+    background-color: var(--bg-main) !important;
+    border-radius: var(--radius-lg) !important;
     padding: 10px !important;
     margin-bottom: 1.5rem !important;
 }
 
 /* Estilos para botones del menú de navegación */
 .sidebar-menu-button {
-    border-radius: 20px !important;
+    border-radius: var(--radius-xl) !important;
     font-weight: 500 !important;
-    background-color: #333333 !important;
-    color: #FFFFFF !important;
+    background-color: var(--bg-card) !important;
+    color: var(--color-white) !important;
     border: 1px solid transparent !important;
     padding: 0.5rem 1rem !important;
     transition: all 0.3s ease !important;
@@ -2181,57 +2041,57 @@ input[type="date"].simple-date-input:hover {
 }
 
 .sidebar-menu-button:hover {
-    background-color: #1D1B1A !important;
-    border: 1px solid #24DE84 !important;
-    color: #24DE84 !important;
+    background-color: var(--bg-main) !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-primary) !important;
 }
 
 .sidebar-menu-button:hover .bi {
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
 }
 
 .sidebar-menu-button:active {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 .sidebar-menu-button:active .bi {
-    color: #333333 !important;
+    color: var(--bg-card) !important;
 }
 
 /* Estilos para botones de acción (quicksync, logout) */
 .sidebar-action-button {
-    border-radius: 20px !important;
+    border-radius: var(--radius-xl) !important;
     font-weight: 500 !important;
-    background-color: #333333 !important;
-    color: #FFFFFF !important;
+    background-color: var(--bg-card) !important;
+    color: var(--color-white) !important;
     border: 1px solid transparent !important;
     padding: 0.5rem 1rem !important;
     transition: all 0.3s ease !important;
 }
 
 .sidebar-action-button .bi {
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
     margin-right: 8px !important;
 }
 
 .sidebar-action-button:hover {
-    background-color: #1D1B1A !important;
-    border: 1px solid #24DE84 !important;
-    color: #24DE84 !important;
+    background-color: var(--bg-main) !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-primary) !important;
 }
 
 .sidebar-action-button:hover .bi {
-    color: #24DE84 !important;
+    color: var(--color-primary) !important;
 }
 
 .sidebar-action-button:active {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 .sidebar-action-button:active .bi {
-    color: #333333 !important;
+    color: var(--bg-card) !important;
 }
 
 /* Espaciado para sidebar expandido */
@@ -2275,17 +2135,17 @@ input[type="date"].simple-date-input:hover {
 #status-scheduled.btn-secondary,
 #status-completed.btn-secondary,
 #status-canceled.btn-secondary {
-    background-color: #6c757d !important;
-    border-color: #6c757d !important;
+    background-color: var(--color-muted) !important;
+    border-color: var(--color-muted) !important;
     color: white !important;
 }
 
 /* Estilos específicos para las etiquetas del dropdown de métricas */
 #metrics-selector .Select-multi-value {
     background-color: transparent !important;
-    border: 1px solid #24DE84 !important;
-    border-radius: 20px !important;
-    color: #fafafa !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: var(--radius-xl) !important;
+    color: var(--color-white-faded) !important;
 }
 
 #metrics-selector .Select-multi-value-wrapper {
@@ -2293,92 +2153,92 @@ input[type="date"].simple-date-input:hover {
 }
 
 #metrics-selector .Select-multi-value .Select-value-label {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     font-weight: normal !important;
 }
 
 #metrics-selector .Select-multi-value .Select-value-icon {
-    border-left: 1px solid #24DE84 !important;
+    border-left: 1px solid var(--color-primary) !important;
     background-color: transparent !important;
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     border-radius: 0 20px 20px 0 !important;
 }
 
 #metrics-selector .Select-multi-value .Select-value-icon:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 /* Targeting React-Select specific classes for metrics selector */
 #metrics-selector .css-12jo7m5 {
-    border-left: 1px solid #24DE84 !important;
+    border-left: 1px solid var(--color-primary) !important;
 }
 
 #metrics-selector .css-12jo7m5:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 /* Estilos específicos para service types badges - copiando estilo de metrics-selector */
 /* Estilos base del dropdown */
 #new-service-types .Select-control {
-    background-color: #3b3b3a !important;
-    border-color: #555 !important;
-    border-radius: 10px !important;
-    color: #FFFFFF !important;
-    height: 38px !important;
+    background-color: var(--bg-input) !important;
+    border-color: var(--color-border) !important;
+    border-radius: var(--radius-lg) !important;
+    color: var(--color-white) !important;
+    height: var(--input-height) !important;
     display: flex !important;
     align-items: center !important;
     margin: 0 !important;
-    line-height: 38px !important;
+    line-height: var(--input-height) !important;
     transition: all 0.3s ease !important;
 }
 
 #new-service-types .Select-control:hover {
-    border-color: rgba(36, 222, 132, 1) !important;
+    border-color: var(--color-primary) !important;
 }
 
 /* Estilo obsoleto removido - se usa selector CSS moderno */
 
 #new-service-types .Select-placeholder {
     color: rgba(255, 255, 255, 0.7) !important;
-    font-size: 0.85rem !important;
+    font-size: var(--font-md) !important;
     text-align: left !important;
     flex: 1 !important;
     padding: 0 4px !important;
     display: flex !important;
     align-items: center !important;
     margin: 0 !important;
-    line-height: 38px !important;
+    line-height: var(--input-height) !important;
 }
 
 #new-service-types .Select-menu-outer {
-    background-color: rgb(51, 51, 51) !important;
+    background-color: var(--bg-card) !important;
     border: 1px solid rgba(36, 222, 132, 0.3) !important;
-    border-radius: 10px !important;
+    border-radius: var(--radius-lg) !important;
     margin-top: 2px !important;
     z-index: 1000 !important;
 }
 
 #new-service-types .Select-option {
-    background-color: rgb(51, 51, 51) !important;
-    color: #FFFFFF !important;
-    font-size: 0.85rem !important;
+    background-color: var(--bg-card) !important;
+    color: var(--color-white) !important;
+    font-size: var(--font-md) !important;
     padding: 8px 12px !important;
     border: none !important;
     margin: 0 !important;
 }
 
 #new-service-types .Select-option:hover {
-    background-color: rgba(36, 222, 132, 0.2) !important;
+    background-color: var(--color-primary-alpha-20) !important;
 }
 
 /* Estilos específicos para los badges multi-value */
 #new-service-types .Select-multi-value {
     background-color: transparent !important;
-    border: 1px solid #24DE84 !important;
-    border-radius: 20px !important;
-    color: #fafafa !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: var(--radius-xl) !important;
+    color: var(--color-white-faded) !important;
 }
 
 #new-service-types .Select-multi-value-wrapper {
@@ -2386,30 +2246,30 @@ input[type="date"].simple-date-input:hover {
 }
 
 #new-service-types .Select-multi-value .Select-value-label {
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     font-weight: normal !important;
 }
 
 #new-service-types .Select-multi-value .Select-value-icon {
-    border-left: 1px solid #24DE84 !important;
+    border-left: 1px solid var(--color-primary) !important;
     background-color: transparent !important;
-    color: #fafafa !important;
+    color: var(--color-white-faded) !important;
     border-radius: 0 20px 20px 0 !important;
 }
 
 #new-service-types .Select-multi-value .Select-value-icon:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 /* Targeting React-Select specific classes for service types selector */
 #new-service-types .css-12jo7m5 {
-    border-left: 1px solid #24DE84 !important;
+    border-left: 1px solid var(--color-primary) !important;
 }
 
 #new-service-types .css-12jo7m5:hover {
-    background-color: #24DE84 !important;
-    color: #333333 !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
 }
 
 /* Estilos para sidebar colapsado */
@@ -2418,29 +2278,29 @@ input[type="date"].simple-date-input:hover {
 }
 
 /* ============================================================================
-   CUSTOM DATE PICKER STYLES - Replicando el minicalendario de Streamlit
+   CUSTOM DATE PICKER STYLES - Estilo corporativo
    ============================================================================ */
 
 /* Contenedor principal del DatePicker */
 .custom-datepicker .DateInput {
-    background-color: #333333 !important;
-    border: 1px solid #24DE84 !important;
-    border-radius: 5px !important;
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: var(--radius-md) !important;
     width: 100% !important;
 }
 
 /* Input del DatePicker */
 .custom-datepicker .DateInput_input {
-    background-color: #333333 !important;
+    background-color: var(--bg-card) !important;
     border: none !important;
     color: #FAFAFA !important;
     font-size: 0.9rem !important;
     padding: 8px 12px !important;
-    border-radius: 5px !important;
+    border-radius: var(--radius-md) !important;
 }
 
 .custom-datepicker .DateInput_input::placeholder {
-    color: #CCCCCC !important;
+    color: var(--color-light-gray) !important;
 }
 
 .custom-datepicker .DateInput_input:focus {
@@ -2451,9 +2311,9 @@ input[type="date"].simple-date-input:hover {
 /* Dropdown del calendario */
 .custom-datepicker .DateRangePickerInput,
 .custom-datepicker .SingleDatePickerInput {
-    background-color: #333333 !important;
-    border: 1px solid #24DE84 !important;
-    border-radius: 5px !important;
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: var(--radius-md) !important;
 }
 
 /* ====== MINICALENDARIO DROPDOWN ====== */
@@ -2462,7 +2322,7 @@ input[type="date"].simple-date-input:hover {
 .DateRangePicker_picker,
 .SingleDatePicker_picker {
     background-color: #1a1a1a !important;
-    border: 1px solid #24DE84 !important;
+    border: 1px solid var(--color-primary) !important;
     border-radius: 8px !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
     z-index: 1000 !important;
@@ -2470,7 +2330,7 @@ input[type="date"].simple-date-input:hover {
 
 /* Cabecera del calendario (navegación de mes/año) */
 .DayPicker__header {
-    background-color: #555555 !important;
+    background-color: var(--color-border)555 !important;
     border-bottom: 1px solid #333 !important;
     border-radius: 8px 8px 0 0 !important;
 }
@@ -2484,7 +2344,7 @@ input[type="date"].simple-date-input:hover {
 }
 
 .DayPicker_nav:hover {
-    background-color: #24DE84 !important;
+    background-color: var(--color-primary) !important;
     color: #1a1a1a !important;
 }
 
@@ -2498,19 +2358,19 @@ input[type="date"].simple-date-input:hover {
 
 /* Nombres de días de la semana */
 .DayPicker_weekHeader {
-    background-color: #555555 !important;
-    color: #CCCCCC !important;
-    font-size: 0.8rem !important;
+    background-color: var(--color-border)555 !important;
+    color: var(--color-light-gray) !important;
+    font-size: var(--font-sm) !important;
     font-weight: normal !important;
     text-transform: uppercase !important;
 }
 
 .DayPicker_weekHeader_ul {
-    background-color: #555555 !important;
+    background-color: var(--color-border)555 !important;
 }
 
 .DayPicker_weekHeader_li {
-    color: #CCCCCC !important;
+    color: var(--color-light-gray) !important;
 }
 
 /* ====== CUERPO DEL CALENDARIO ====== */
@@ -2541,7 +2401,7 @@ input[type="date"].simple-date-input:hover {
 /* Hover sobre días */
 .CalendarDay:hover {
     background-color: #1a1a1a !important;
-    border: 2px solid #24DE84 !important;
+    border: 2px solid var(--color-primary) !important;
     border-radius: 50% !important;
     color: #FAFAFA !important;
 }
@@ -2550,8 +2410,8 @@ input[type="date"].simple-date-input:hover {
 .CalendarDay__selected,
 .CalendarDay__selected:active,
 .CalendarDay__selected:hover {
-    background-color: #24DE84 !important;
-    border: 2px solid #24DE84 !important;
+    background-color: var(--color-primary) !important;
+    border: 2px solid var(--color-primary) !important;
     border-radius: 50% !important;
     color: #1a1a1a !important;
     font-weight: 600 !important;
@@ -2572,7 +2432,7 @@ input[type="date"].simple-date-input:hover {
 /* Día de hoy (sin seleccionar) */
 .CalendarDay__default:hover {
     background-color: #1a1a1a !important;
-    border: 2px solid #24DE84 !important;
+    border: 2px solid var(--color-primary) !important;
     border-radius: 50% !important;
 }
 
@@ -2587,7 +2447,7 @@ input[type="date"].simple-date-input:hover {
 
 /* Navegación de meses */
 .DayPickerNavigation {
-    background-color: #555555 !important;
+    background-color: var(--color-border)555 !important;
 }
 
 .DayPickerNavigation_button {
@@ -2599,7 +2459,7 @@ input[type="date"].simple-date-input:hover {
 }
 
 .DayPickerNavigation_button:hover {
-    background-color: #24DE84 !important;
+    background-color: var(--color-primary) !important;
     color: #1a1a1a !important;
     border-radius: 4px !important;
 }
@@ -2772,7 +2632,7 @@ input[type="date"]#filter-to-date::-webkit-datetime-edit-day-field,
 input[type="date"]#filter-to-date::-webkit-datetime-edit-year-field {
     color: #FAFAFA !important;
     background-color: transparent !important;
-    font-size: 0.75rem !important;
+    font-size: var(--font-xs) !important;
 }
 
 /* Native calendar has no size control - this is a browser/OS limitation */
@@ -2823,8 +2683,8 @@ iframe[id*="dash-calendar"] * {
 /* ===== ESTILOS PARA FILTROS RÁPIDOS EN EDIT SESSION ===== */
 .btn-filter-quick:hover,
 .btn-filter-clear:hover {
-    border-color: rgba(36, 222, 132, 1) !important;
-    color: rgba(36, 222, 132, 1) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
@@ -2837,9 +2697,9 @@ iframe[id*="dash-calendar"] * {
 
 /* Estilo para filtro activo */
 .filter-active {
-    background-color: rgba(36, 222, 132, 1) !important;
-    border-color: rgba(36, 222, 132, 1) !important;
-    color: #1D1B1A !important;
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--bg-main) !important;
     font-weight: 500 !important;
     min-width: fit-content !important;
     width: auto !important;
@@ -2848,18 +2708,18 @@ iframe[id*="dash-calendar"] * {
 /* Hover para filtro activo - mantener el estilo verde */
 .filter-active:hover {
     background-color: rgba(36, 222, 132, 0.9) !important;
-    border-color: rgba(36, 222, 132, 1) !important;
-    color: #1D1B1A !important;
+    border-color: var(--color-primary) !important;
+    color: var(--bg-main) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Estilos específicos para botón Delete - consistente con modales */
 .btn-delete {
-    background-color: #1D1B1A !important;
-    color: #dc3545 !important;
-    border: 2px solid #1D1B1A !important;
-    border-radius: 20px !important;
+    background-color: var(--bg-main) !important;
+    color: var(--color-danger) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
     font-weight: 500 !important;
     padding: 0.4rem 1.2rem !important;
     transition: all 0.3s ease !important;
@@ -2868,9 +2728,9 @@ iframe[id*="dash-calendar"] * {
 }
 
 .btn-delete:hover {
-    background-color: #1D1B1A !important; /* Mantener mismo fondo */
-    border-color: #dc3545 !important; /* Solo cambiar borde a rojo */
-    color: #dc3545 !important;
+    background-color: var(--bg-main) !important; /* Mantener mismo fondo */
+    border-color: var(--color-danger) !important; /* Solo cambiar borde a rojo */
+    color: var(--color-danger) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) !important;
 }
@@ -2879,24 +2739,24 @@ iframe[id*="dash-calendar"] * {
 .btn-delete:active,
 .btn-delete.active,
 .btn-delete:focus {
-    background-color: #dc3545 !important; /* Fondo rojo cuando presionado */
-    color: #6c757d !important; /* Texto gris cuando presionado */
-    border-color: #dc3545 !important;
+    background-color: var(--color-danger) !important; /* Fondo rojo cuando presionado */
+    color: var(--color-muted) !important; /* Texto gris cuando presionado */
+    border-color: var(--color-danger) !important;
     transform: translateY(1px) !important;
     box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) inset !important;
 }
 
 /* Modal cancel button - matches save changes button styling */
 #admin-delete-cancel-btn:hover {
-    background-color: #1D1B1A !important;  /* Mantener mismo fondo */
-    color: #24DE84 !important;  /* Letras verdes al hover */
-    border-color: #24DE84 !important;  /* Borde verde al hover */
+    background-color: var(--bg-main) !important;  /* Mantener mismo fondo */
+    color: var(--color-primary) !important;  /* Letras verdes al hover */
+    border-color: var(--color-primary) !important;  /* Borde verde al hover */
     transform: translateY(-1px) !important;
 }
 
 #admin-delete-cancel-btn:active {
-    background-color: #24DE84 !important;  /* Fondo verde al clickear */
-    color: #1D1B1A !important;  /* Letras oscuras al clickear */
+    background-color: var(--color-primary) !important;  /* Fondo verde al clickear */
+    color: var(--bg-main) !important;  /* Letras oscuras al clickear */
     transform: translateY(1px) !important;
 }
 
@@ -2962,10 +2822,10 @@ iframe[id*="dash-calendar"] * {
 
 /* Botón Cancel común para todos los modales */
 .btn-modal-cancel {
-    background-color: #1D1B1A !important;
-    color: #FFFFFF !important;
-    border: 2px solid #1D1B1A !important;
-    border-radius: 20px !important;
+    background-color: var(--bg-main) !important;
+    color: var(--color-white) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
     font-weight: 500 !important;
     padding: 0.4rem 1.2rem !important;
     transition: all 0.3s ease !important;
@@ -2974,16 +2834,16 @@ iframe[id*="dash-calendar"] * {
 }
 
 .btn-modal-cancel:hover {
-    background-color: #1D1B1A !important;
-    color: #24DE84 !important;
-    border-color: #24DE84 !important;
+    background-color: var(--bg-main) !important;
+    color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 2px 4px rgba(36, 222, 132, 0.2) !important;
+    box-shadow: 0 2px 4px var(--color-primary-alpha-20) !important;
 }
 
 .btn-modal-cancel:active {
-    background-color: #24DE84 !important;
-    color: #1D1B1A !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-main) !important;
     transform: translateY(1px) !important;
 }
 
@@ -3003,12 +2863,12 @@ iframe[id*="dash-calendar"] * {
 
 /* Checkbox verde cuando está marcado (Professional Player) */
 .form-check-input:checked {
-    background-color: #24DE84 !important;
-    border-color: #24DE84 !important;
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
 }
 .form-check-input:focus {
-    border-color: #24DE84 !important;
-    box-shadow: 0 0 0 0.2rem rgba(36, 222, 132, 0.25) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
 }
 
 /* ===== CLASES COMUNES PARA MODALES ===== */
@@ -3020,7 +2880,7 @@ iframe[id*="dash-calendar"] * {
 
 .modal-footer-standard {
     background-color: rgba(51,51,51,1) !important;
-    border-top: 2px solid #24DE84 !important;
+    border-top: 2px solid var(--color-primary) !important;
     padding: 1rem 1.5rem !important;
     justify-content: flex-start !important;
     display: flex !important;
@@ -3029,18 +2889,18 @@ iframe[id*="dash-calendar"] * {
 /* ===== SOLUCIÓN SIMPLE Y CORRECTA ===== */
 /* Override directo de la regla específica que causa el problema */
 .is-focused:not(.is-open) > .Select-control {
-    border-color: rgba(36, 222, 132, 1) !important;
-    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 0 3px rgba(36, 222, 132, 0.1) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 0 3px var(--color-primary-alpha-10) !important;
 }
 
 /* ===== INPUT DELETE CONFIRMATION ===== */
 /* Asegurar que el texto sea blanco cuando se escribe DELETE */
 #delete-confirmation-input {
-    color: #FFFFFF !important;
-    background-color: #3b3b3a !important;
+    color: var(--color-white) !important;
+    background-color: var(--bg-input) !important;
 }
 
 #delete-confirmation-input:focus {
-    color: #FFFFFF !important;
-    background-color: #3b3b3a !important;
+    color: var(--color-white) !important;
+    background-color: var(--bg-input) !important;
 }

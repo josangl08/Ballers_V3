@@ -136,17 +136,17 @@ def register_settings_callbacks(app):
                             dbc.Tab(
                                 label="Create User",
                                 tab_id="create-user",
-                                active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                                active_label_style={"color": "var(--color-primary)"},
                             ),
                             dbc.Tab(
                                 label="Edit User",
                                 tab_id="edit-user",
-                                active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                                active_label_style={"color": "var(--color-primary)"},
                             ),
                             dbc.Tab(
                                 label="User Status",
                                 tab_id="user-status",
-                                active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                                active_label_style={"color": "var(--color-primary)"},
                             ),
                         ],
                         id="users-subtabs",
@@ -487,8 +487,7 @@ def register_settings_callbacks(app):
                     )
                 elif user_type_lower == "player":
                     type_icon = html.I(
-                        className="bi bi-person-fill me-1",
-                        style={"color": "rgba(36, 222, 132, 1)"},
+                        className="bi bi-person-fill me-1 text-primary",
                     )
                 else:
                     type_icon = html.I(
@@ -504,7 +503,7 @@ def register_settings_callbacks(app):
                 elif user_type_lower == "coach":
                     row_style["border-left"] = "4px solid #ffc107"
                 elif user_type_lower == "player":
-                    row_style["border-left"] = "4px solid rgba(36, 222, 132, 1)"
+                    row_style["border-left"] = "4px solid var(--color-primary)"
 
                 table_rows.append(
                     html.Tr(
@@ -584,7 +583,7 @@ def register_settings_callbacks(app):
                                 "Type",
                                 style={
                                     "background-color": "transparent",
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "border": "1px solid rgba(36, 222, 132, 0.5)",
                                     "padding": "12px 8px",
                                     "text-align": "center",
@@ -596,7 +595,7 @@ def register_settings_callbacks(app):
                                 "Name",
                                 style={
                                     "background-color": "transparent",
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "border": "1px solid rgba(36, 222, 132, 0.5)",
                                     "padding": "12px 8px",
                                     "font-weight": "600",
@@ -607,7 +606,7 @@ def register_settings_callbacks(app):
                                 "Username",
                                 style={
                                     "background-color": "transparent",
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "border": "1px solid rgba(36, 222, 132, 0.5)",
                                     "padding": "12px 8px",
                                     "font-weight": "600",
@@ -618,7 +617,7 @@ def register_settings_callbacks(app):
                                 "Email",
                                 style={
                                     "background-color": "transparent",
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "border": "1px solid rgba(36, 222, 132, 0.5)",
                                     "padding": "12px 8px",
                                     "font-weight": "600",
@@ -629,7 +628,7 @@ def register_settings_callbacks(app):
                                 "Status",
                                 style={
                                     "background-color": "transparent",
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "border": "1px solid rgba(36, 222, 132, 0.5)",
                                     "padding": "12px 8px",
                                     "text-align": "center",
@@ -641,7 +640,7 @@ def register_settings_callbacks(app):
                                 "Actions",
                                 style={
                                     "background-color": "transparent",
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "border": "1px solid rgba(36, 222, 132, 0.5)",
                                     "padding": "12px 8px",
                                     "text-align": "center",
@@ -930,8 +929,7 @@ def register_settings_callbacks(app):
                 html.P(
                     [
                         html.I(
-                            className="bi bi-person me-1",
-                            style={"color": "rgba(36, 222, 132, 1)"},
+                            className="bi bi-person me-1 text-primary",
                         ),
                         f"Name: {user_data['name']}",
                     ],
@@ -940,8 +938,7 @@ def register_settings_callbacks(app):
                 html.P(
                     [
                         html.I(
-                            className="bi bi-shield-lock me-1",
-                            style={"color": "rgba(36, 222, 132, 1)"},
+                            className="bi bi-shield-lock me-1 text-primary",
                         ),
                         f"User Type: {user_data['user_type']}",
                     ],
@@ -950,8 +947,7 @@ def register_settings_callbacks(app):
                 html.P(
                     [
                         html.I(
-                            className="bi bi-envelope me-1",
-                            style={"color": "rgba(36, 222, 132, 1)"},
+                            className="bi bi-envelope me-1 text-primary",
                         ),
                         f"Email: {user_data['email']}",
                     ],
@@ -1205,8 +1201,7 @@ def register_settings_callbacks(app):
                     html.P(
                         [
                             html.I(
-                                className="bi bi-person me-1",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                className="bi bi-person me-1 text-primary",
                             ),
                             f"Username: {user_data['username']}",
                         ],
@@ -1215,8 +1210,7 @@ def register_settings_callbacks(app):
                     html.P(
                         [
                             html.I(
-                                className="bi bi-shield-lock me-1",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                className="bi bi-shield-lock me-1 text-primary",
                             ),
                             f"User Type: {user_data['user_type']}",
                         ],
@@ -1225,8 +1219,7 @@ def register_settings_callbacks(app):
                     html.P(
                         [
                             html.I(
-                                className="bi bi-envelope me-1",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                className="bi bi-envelope me-1 text-primary",
                             ),
                             f"Email: {user_data['email']}",
                         ],
@@ -1273,7 +1266,7 @@ def register_settings_callbacks(app):
                             html.P(
                                 f"Selected: {filename}",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-weight": "500",
                                     "margin-bottom": "10px",
                                     "font-size": "0.9rem",
@@ -1581,8 +1574,7 @@ def register_settings_callbacks(app):
                         html.P(
                             [
                                 html.I(
-                                    className="bi bi-person me-1",
-                                    style={"color": "rgba(36, 222, 132, 1)"},
+                                    className="bi bi-person me-1 text-primary",
                                 ),
                                 f"Name: {user_data['name']}",
                             ],
@@ -1591,8 +1583,7 @@ def register_settings_callbacks(app):
                         html.P(
                             [
                                 html.I(
-                                    className="bi bi-person-badge me-1",
-                                    style={"color": "rgba(36, 222, 132, 1)"},
+                                    className="bi bi-person-badge me-1 text-primary",
                                 ),
                                 f"Username: {user_data['username']}",
                             ],
@@ -1601,8 +1592,7 @@ def register_settings_callbacks(app):
                         html.P(
                             [
                                 html.I(
-                                    className="bi bi-shield-lock me-1",
-                                    style={"color": "rgba(36, 222, 132, 1)"},
+                                    className="bi bi-shield-lock me-1 text-primary",
                                 ),
                                 f"User Type: {user_data['user_type']}",
                             ],
@@ -1611,8 +1601,7 @@ def register_settings_callbacks(app):
                         html.P(
                             [
                                 html.I(
-                                    className="bi bi-envelope me-1",
-                                    style={"color": "rgba(36, 222, 132, 1)"},
+                                    className="bi bi-envelope me-1 text-primary",
                                 ),
                                 f"Email: {user_data['email']}",
                             ],
@@ -1801,8 +1790,7 @@ def register_settings_callbacks(app):
                     type_text = "Coach"
                 elif user_type_lower == "player":
                     type_icon = html.I(
-                        className="bi bi-person-fill me-1",
-                        style={"color": "rgba(36, 222, 132, 1)"},
+                        className="bi bi-person-fill me-1 text-primary",
                     )
                     type_text = "Player"
                 else:
@@ -2351,8 +2339,7 @@ def register_settings_callbacks(app):
                 html.P(
                     [
                         html.I(
-                            className="bi bi-person me-1",
-                            style={"color": "rgba(36, 222, 132, 1)"},
+                            className="bi bi-person me-1 text-primary",
                         ),
                         f"Name: {user_data['name']}",
                     ],
@@ -2361,8 +2348,7 @@ def register_settings_callbacks(app):
                 html.P(
                     [
                         html.I(
-                            className="bi bi-shield-lock me-1",
-                            style={"color": "rgba(36, 222, 132, 1)"},
+                            className="bi bi-shield-lock me-1 text-primary",
                         ),
                         f"User Type: {user_data['user_type']}",
                     ],
@@ -2371,8 +2357,7 @@ def register_settings_callbacks(app):
                 html.P(
                     [
                         html.I(
-                            className="bi bi-envelope me-1",
-                            style={"color": "rgba(36, 222, 132, 1)"},
+                            className="bi bi-envelope me-1 text-primary",
                         ),
                         f"Email: {user_data['email']}",
                     ],

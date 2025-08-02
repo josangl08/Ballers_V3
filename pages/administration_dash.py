@@ -39,7 +39,7 @@ def show_administration_content_dash(session_data=None):
                                     "Administration",
                                 ],
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "margin-bottom": "30px",
                                     "font-size": "2.5rem",
                                 },
@@ -55,13 +55,13 @@ def show_administration_content_dash(session_data=None):
                     dbc.Tab(
                         label="Sessions",
                         tab_id="sessions-tab",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        active_label_style={"color": "var(--color-primary)"},
                         label_style={"color": "#FFFFFF"},
                     ),
                     dbc.Tab(
                         label="Financials",
                         tab_id="financials-tab",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        active_label_style={"color": "var(--color-primary)"},
                         label_style={"color": "#FFFFFF"},
                     ),
                 ],
@@ -107,7 +107,7 @@ def create_sessions_content():
                             "Sessions Calendar",
                         ],
                         style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "margin-bottom": "20px",
                             "font-size": "1.1rem",
                         },
@@ -334,7 +334,7 @@ def create_sessions_content():
                                     "Sessions List",
                                 ],
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "margin-bottom": "15px",
                                     "font-size": "1rem",
                                 },
@@ -362,7 +362,7 @@ def create_sessions_content():
                     "Sessions Management",
                 ],
                 style={
-                    "color": "rgba(36, 222, 132, 1)",
+                    "color": "var(--color-primary)",
                     "margin-bottom": "20px",
                     "font-size": "1.1rem",
                 },
@@ -374,7 +374,7 @@ def create_sessions_content():
                         label="Create Session",
                         tab_id="create-session",
                         active_label_style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "font-size": "0.9rem",
                         },
                         label_style={"font-size": "0.9rem"},
@@ -383,7 +383,7 @@ def create_sessions_content():
                         label="Edit Session",
                         tab_id="edit-session",
                         active_label_style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "font-size": "0.9rem",
                         },
                         label_style={"font-size": "0.9rem"},
@@ -412,7 +412,7 @@ def create_session_form():
                             "New Session",
                         ],
                         style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "margin-bottom": "20px",
                             "font-size": "1.1rem",
                         },
@@ -609,7 +609,7 @@ def create_edit_session_form():
                     "Edit / Delete Session",
                 ],
                 style={
-                    "color": "rgba(36, 222, 132, 1)",
+                    "color": "var(--color-primary)",
                     "margin-bottom": "20px",
                     "font-size": "1.1rem",
                 },
@@ -1159,7 +1159,7 @@ def create_financials_content():
                     "Financial Management",
                 ],
                 style={
-                    "color": "rgba(36, 222, 132, 1)",
+                    "color": "var(--color-primary)",
                     "margin-bottom": "20px",
                     "font-size": "1.1rem",
                 },

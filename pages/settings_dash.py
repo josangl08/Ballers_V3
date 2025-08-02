@@ -33,7 +33,7 @@ def create_user_form_dash():
                                 "User Information",
                                 className="card-title",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "1.1rem",
                                 },
                             ),
@@ -77,7 +77,7 @@ def create_user_form_dash():
                             html.H6(
                                 "Basic Information",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "1rem",
                                 },
                                 className="mb-3",
@@ -172,7 +172,7 @@ def create_user_form_dash():
                             html.H6(
                                 "Additional Information",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "1rem",
                                 },
                             ),
@@ -244,7 +244,7 @@ def create_user_form_dash():
                                     html.H6(
                                         "Coach Information",
                                         style={
-                                            "color": "rgba(36, 222, 132, 1)",
+                                            "color": "var(--color-primary)",
                                             "font-size": "1rem",
                                         },
                                     ),
@@ -269,7 +269,7 @@ def create_user_form_dash():
                                     html.H6(
                                         "Player Information",
                                         style={
-                                            "color": "rgba(36, 222, 132, 1)",
+                                            "color": "var(--color-primary)",
                                             "font-size": "1rem",
                                         },
                                     ),
@@ -558,7 +558,7 @@ def create_user_form_dash():
                                     html.H6(
                                         "Admin Information",
                                         style={
-                                            "color": "rgba(36, 222, 132, 1)",
+                                            "color": "var(--color-primary)",
                                             "font-size": "1rem",
                                         },
                                     ),
@@ -641,7 +641,7 @@ def create_sync_settings_dash():
                         "Sync Settings",
                         className="card-title",
                         style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "font-size": "1.1rem",
                         },
                     ),
@@ -758,7 +758,7 @@ def create_system_settings_dash():
                                 "Sync Results & Monitoring",
                                 className="card-title",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "1.1rem",
                                 },
                             ),
@@ -787,7 +787,7 @@ def create_system_settings_dash():
                                 "Database/Google Sheets Management",
                                 className="card-title",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "1.1rem",
                                 },
                             ),
@@ -834,7 +834,7 @@ def create_system_settings_dash():
                                 "Manual Synchronization",
                                 className="card-title",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "1.1rem",
                                 },
                             ),
@@ -881,7 +881,7 @@ def create_system_settings_dash():
                                 "Real-time Sync Management",
                                 className="card-title",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "1.1rem",
                                 },
                             ),
@@ -940,7 +940,7 @@ def create_settings_dashboard_dash():
                             html.H1(
                                 "⚙️ Settings",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "text-align": "center",
                                 },
                             ),
@@ -960,22 +960,22 @@ def create_settings_dashboard_dash():
                     dbc.Tab(
                         label="Users",
                         tab_id="users",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        active_label_style={"color": "var(--color-primary)"},
                     ),
                     dbc.Tab(
                         label="Sync",
                         tab_id="sync",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        active_label_style={"color": "var(--color-primary)"},
                     ),
                     dbc.Tab(
                         label="System",
                         tab_id="system",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        active_label_style={"color": "var(--color-primary)"},
                     ),
                     dbc.Tab(
                         label="Reports",
                         tab_id="reports",
-                        active_label_style={"color": "rgba(36, 222, 132, 1)"},
+                        active_label_style={"color": "var(--color-primary)"},
                     ),
                 ],
                 id="settings-tabs",
@@ -1009,7 +1009,7 @@ def create_edit_user_form_dash():
                                 "Select User to Edit",
                                 className="card-title",
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "font-size": "1.1rem",
                                 },
                             ),
@@ -1041,7 +1041,7 @@ def create_edit_user_form_dash():
                                     html.H5(
                                         "Current User Information",
                                         style={
-                                            "color": "rgba(36, 222, 132, 1)",
+                                            "color": "var(--color-primary)",
                                             "font-size": "1.1rem",
                                             "margin-bottom": "20px",
                                         },
@@ -1103,7 +1103,7 @@ def create_edit_user_form_dash():
                                         "Edit User Information",
                                         className="card-title",
                                         style={
-                                            "color": "rgba(36, 222, 132, 1)",
+                                            "color": "var(--color-primary)",
                                             "font-size": "1.1rem",
                                         },
                                     ),
@@ -1111,7 +1111,7 @@ def create_edit_user_form_dash():
                                     html.H6(
                                         "Basic Information",
                                         style={
-                                            "color": "rgba(36, 222, 132, 1)",
+                                            "color": "var(--color-primary)",
                                             "font-size": "1rem",
                                         },
                                         className="mb-3 mt-4",
@@ -1295,7 +1295,7 @@ def create_edit_user_form_dash():
                                             html.H6(
                                                 "Coach Information",
                                                 style={
-                                                    "color": "rgba(36, 222, 132, 1)",
+                                                    "color": "var(--color-primary)",
                                                     "font-size": "1rem",
                                                 },
                                             ),
@@ -1320,7 +1320,7 @@ def create_edit_user_form_dash():
                                             html.H6(
                                                 "Player Information",
                                                 style={
-                                                    "color": "rgba(36, 222, 132, 1)",
+                                                    "color": "var(--color-primary)",
                                                     "font-size": "1rem",
                                                 },
                                             ),
@@ -1635,7 +1635,7 @@ def create_edit_user_form_dash():
                                             html.H6(
                                                 "Admin Information",
                                                 style={
-                                                    "color": "rgba(36, 222, 132, 1)",
+                                                    "color": "var(--color-primary)",
                                                     "font-size": "1rem",
                                                 },
                                             ),
@@ -1690,7 +1690,7 @@ def create_edit_user_form_dash():
                                     html.H6(
                                         "Change Password (Optional)",
                                         style={
-                                            "color": "rgba(36, 222, 132, 1)",
+                                            "color": "var(--color-primary)",
                                             "font-size": "1rem",
                                         },
                                         className="mb-3",
@@ -1745,7 +1745,7 @@ def create_edit_user_form_dash():
                                     html.H6(
                                         "Change Profile Picture (Optional)",
                                         style={
-                                            "color": "rgba(36, 222, 132, 1)",
+                                            "color": "var(--color-primary)",
                                             "font-size": "1rem",
                                         },
                                         className="mb-3",
@@ -1921,7 +1921,7 @@ def create_users_list_dash():
                         "Users Management",
                         className="card-title",
                         style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "font-size": "1.1rem",
                         },
                     ),
@@ -2008,7 +2008,7 @@ def show_settings_content_dash(session_data=None):
                                     "Settings",
                                 ],
                                 style={
-                                    "color": "rgba(36, 222, 132, 1)",
+                                    "color": "var(--color-primary)",
                                     "margin-bottom": "30px",
                                     "font-size": "2.5rem",
                                 },
@@ -2025,7 +2025,7 @@ def show_settings_content_dash(session_data=None):
                         label="System",
                         tab_id="system-tab",
                         active_label_style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "font-weight": "bold",
                         },
                         label_style={"color": "#CCCCCC"},
@@ -2034,7 +2034,7 @@ def show_settings_content_dash(session_data=None):
                         label="Users",
                         tab_id="users-tab",
                         active_label_style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "font-weight": "bold",
                         },
                         label_style={"color": "#CCCCCC"},
@@ -2088,7 +2088,7 @@ def create_user_status_dash():
                         "User Status Management",
                         className="card-title",
                         style={
-                            "color": "rgba(36, 222, 132, 1)",
+                            "color": "var(--color-primary)",
                             "font-size": "1.1rem",
                         },
                     ),

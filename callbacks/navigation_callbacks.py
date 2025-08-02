@@ -244,7 +244,7 @@ def register_navigation_callbacks(app):
                             [
                                 html.H3(
                                     f"📄 {selected_section}",
-                                    style={"color": "rgba(36, 222, 132, 1)"},
+                                    className="text-primary",
                                 ),
                                 html.P("Esta sección está en desarrollo."),
                                 dbc.Alert(
@@ -257,7 +257,7 @@ def register_navigation_callbacks(app):
                         [
                             html.H3(
                                 "❌ Import Error",
-                                style={"color": "rgba(36, 222, 132, 1)"},
+                                className="text-primary",
                             ),
                             dbc.Alert(
                                 f"Error importing module {content_module_path}: {str(e)}",  # noqa: E501
@@ -270,7 +270,7 @@ def register_navigation_callbacks(app):
                     [
                         html.H3(
                             "⚠️ Sección no encontrada",
-                            style={"color": "rgba(36, 222, 132, 1)"},
+                            className="text-primary",
                         ),
                         dbc.Alert(
                             "La sección seleccionada no está disponible.",
@@ -282,7 +282,7 @@ def register_navigation_callbacks(app):
         except Exception as e:
             return html.Div(
                 [
-                    html.H3("❌ Error", style={"color": "rgba(36, 222, 132, 1)"}),
+                    html.H3("❌ Error", className="text-primary"),
                     dbc.Alert(
                         f"Error al cargar el contenido: {str(e)}", color="danger"
                     ),

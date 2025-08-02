@@ -132,10 +132,7 @@ def login_page_dash():
                                                 [
                                                     html.H5(
                                                         "🔑 Password Recovery",
-                                                        className="mb-3",
-                                                        style={
-                                                            "color": "rgba(36, 222, 132, 1)"  # noqa: E501
-                                                        },
+                                                        className="mb-3 text-primary",
                                                     ),
                                                     dbc.Alert(
                                                         "Contact administrator to reset your password:",  # noqa: E501

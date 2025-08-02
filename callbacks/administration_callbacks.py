@@ -953,8 +953,8 @@ def register_administration_callbacks(app):
                                     style={
                                         # Fondo transparente
                                         "background-color": "transparent",
-                                        "color": "rgba(36, 222, 132, 1)",
-                                        "border": "1px solid rgba(36, 222, 132, 0.5)",
+                                        "color": "var(--color-primary)",
+                                        "border": "1px solid var(--color-primary-alpha-50)",
                                         "padding": "8px 10px",  # Más compacto
                                         "text-align": "center",
                                         "font-weight": "600",
@@ -1053,7 +1053,7 @@ def register_administration_callbacks(app):
                             size="sm",  # Tabla más compacta
                             style={
                                 "background-color": "#1D1B1A !important",
-                                "border": "1px solid rgba(36, 222, 132, 0.4)",
+                                "border": "1px solid var(--color-primary-alpha-40)",
                                 "border-radius": "6px",
                                 "font-size": "0.75rem",
                                 "margin": "0",
@@ -1085,7 +1085,7 @@ def register_administration_callbacks(app):
                                         f"€{balance:,.2f}",
                                         style={
                                             "color": (
-                                                "rgba(36, 222, 132, 1)"
+                                                "var(--color-primary)"
                                                 if balance >= 0
                                                 else "#dc3545"
                                             ),
@@ -1106,12 +1106,12 @@ def register_administration_callbacks(app):
                                 ],
                                 style={
                                     "background-color": (
-                                        "rgba(36, 222, 132, 0.1)"
+                                        "var(--color-primary-alpha-10)"
                                         if balance >= 0
                                         else "rgba(220, 53, 69, 0.1)"
                                     ),
                                     "border": (
-                                        "1px solid rgba(36, 222, 132, 0.3)"
+                                        "1px solid var(--color-primary-alpha-30)"
                                         if balance >= 0
                                         else "1px solid rgba(220, 53, 69, 0.3)"
                                     ),
@@ -1229,8 +1229,8 @@ def register_administration_callbacks(app):
                         x=monthly_summary["Mes"],
                         y=monthly_summary["Balance acumulado"],
                         mode="lines+markers",
-                        line=dict(color="rgba(36, 222, 132, 1)", width=3),
-                        marker=dict(size=8, color="rgba(36, 222, 132, 1)"),
+                        line=dict(color="var(--color-primary)", width=3),
+                        marker=dict(size=8, color="var(--color-primary)"),
                         name="Balance Acumulado",
                     )
                 )
@@ -1239,7 +1239,7 @@ def register_administration_callbacks(app):
                     title={
                         "text": "Accumulated Balance Over Time",
                         "x": 0.5,
-                        "font": {"color": "rgba(36, 222, 132, 1)", "size": 16},
+                        "font": {"color": "var(--color-primary)", "size": 16},
                     },
                     plot_bgcolor="rgba(0,0,0,0)",
                     paper_bgcolor="rgba(0,0,0,0)",
