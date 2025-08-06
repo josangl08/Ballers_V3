@@ -148,11 +148,22 @@ def build_calendar_event_body(session: Session) -> dict:
     """Devuelve el diccionario body que Calendar API espera."""
 
     COLOR = {k: v["google"] for k, v in CALENDAR_COLORS.items()}
+    
+    # Obtener nombres (manejar snapshots)
+    if session.coach_id and session.coach:
+        coach_name = session.coach.user.name
+    else:
+        coach_name = session.coach_name_snapshot or "Coach deleted"
+    
+    if session.player_id and session.player:
+        player_name = session.player.user.name
+    else:
+        player_name = session.player_name_snapshot or "Player deleted"
 
     return {
         "summary": (
-            f"Session: {session.coach.user.name} × {session.player.user.name} "
-            f"#C{session.coach_id} #P{session.player_id}"
+            f"Session: {coach_name} × {player_name} "
+            f"#C{session.coach_id or 'DEL'} #P{session.player_id or 'DEL'}"
         ),
         "description": session.notes or "",
         "start": {
@@ -163,8 +174,8 @@ def build_calendar_event_body(session: Session) -> dict:
         "extendedProperties": {
             "private": {
                 "session_id": str(session.id),
-                "coach_id": str(session.coach_id),
-                "player_id": str(session.player_id),
+                "coach_id": str(session.coach_id or ""),
+                "player_id": str(session.player_id or ""),
             }
         },
     }

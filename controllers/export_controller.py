@@ -150,7 +150,7 @@ class ExportController:
 
         # Título
         title = Paragraph(
-            f"Player Report: {player.user.name}", self.styles["CustomTitle"]
+            f"Player Report: {user.name}", self.styles["CustomTitle"]
         )
         story.append(title)
         story.append(Spacer(1, 20))
@@ -257,10 +257,16 @@ class ExportController:
 
             sessions_data = [["ID", "Coach", "Date", "Time", "Status"]]
             for session in sessions:
+                # Obtener nombre del coach (manejar snapshots)
+                if session.coach_id and session.coach and session.coach.user:
+                    coach_name = session.coach.user.name
+                else:
+                    coach_name = session.coach_name_snapshot or "Coach deleted"
+                    
                 sessions_data.append(
                     [
                         str(session.id),
-                        session.coach.user.name,
+                        coach_name,
                         session.start_time.strftime("%d/%m/%Y"),
                         f"{session.start_time.strftime('%H:%M')}-{session.end_time.strftime('%H:%M')}",
                         session.status.value,
@@ -433,11 +439,22 @@ class ExportController:
 
             sessions_data = [["ID", "Coach", "Player", "Date", "Time", "Status"]]
             for session in sessions:
+                # Obtener nombres (manejar snapshots)
+                if session.coach_id and session.coach and session.coach.user:
+                    coach_name = session.coach.user.name
+                else:
+                    coach_name = session.coach_name_snapshot or "Coach deleted"
+                    
+                if session.player_id and session.player and session.player.user:
+                    player_name = session.player.user.name
+                else:
+                    player_name = session.player_name_snapshot or "Player deleted"
+                    
                 sessions_data.append(
                     [
                         str(session.id),
-                        session.coach.user.name,
-                        session.player.user.name,
+                        coach_name,
+                        player_name,
                         session.start_time.strftime("%d/%m/%Y"),
                         f"{session.start_time.strftime('%H:%M')}-{session.end_time.strftime('%H:%M')}",
                         session.status.value,
@@ -792,9 +809,18 @@ class ExportController:
                 )
 
                 if session_start <= hour < session_end:
-                    session_text = (
-                        f"{session.coach.user.name} × {session.player.user.name}"
-                    )
+                    # Obtener nombres (manejar snapshots)
+                    if session.coach_id and session.coach and session.coach.user:
+                        coach_name = session.coach.user.name
+                    else:
+                        coach_name = session.coach_name_snapshot or "Coach deleted"
+                        
+                    if session.player_id and session.player and session.player.user:
+                        player_name = session.player.user.name
+                    else:
+                        player_name = session.player_name_snapshot or "Player deleted"
+                        
+                    session_text = f"{coach_name} × {player_name}"
                     break
 
             data.append([hour_str, session_text])
@@ -907,7 +933,18 @@ class ExportController:
                             else session.start_time.time()
                         )
                     ):
-                        session_text = f"{session.coach.user.name[:8]}×{session.player.user.name[:8]}"
+                        # Obtener nombres (manejar snapshots)
+                        if session.coach_id and session.coach and session.coach.user:
+                            coach_name = session.coach.user.name[:8]
+                        else:
+                            coach_name = (session.coach_name_snapshot or "Coach deleted")[:8]
+                            
+                        if session.player_id and session.player and session.player.user:
+                            player_name = session.player.user.name[:8]
+                        else:
+                            player_name = (session.player_name_snapshot or "Player deleted")[:8]
+                            
+                        session_text = f"{coach_name}×{player_name}"
                         break
                 row.append(session_text)
 

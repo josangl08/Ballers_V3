@@ -234,7 +234,7 @@ def register_player_callbacks(app):
             Input(
                 "selected-player-id", "data"
             ),  # Mover de State a Input para manejar cambios
-            Input("webhook-trigger", "data"),  # SSE trigger para auto-refresh
+            Input("fallback-trigger", "data"),  # Fallback trigger para auto-refresh
         ],
         prevent_initial_call=False,  # Permitir inicialización
     )

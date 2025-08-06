@@ -544,24 +544,30 @@ class SessionController:
 
         sessions_data = []
         for session in sessions:
-            # Obtener nombres de coach y player
-            coach = (
-                self.db.query(Coach)
-                .join(User)
-                .filter(Coach.coach_id == session.coach_id)
-                .first()
-            )
-            player = (
-                self.db.query(Player)
-                .join(User)
-                .filter(Player.player_id == session.player_id)
-                .first()
-            )
-
-            coach_name = coach.user.name if coach and coach.user else "Coach not found"
-            player_name = (
-                player.user.name if player and player.user else "Player not found"
-            )
+            # Obtener nombres de coach y player (manejar snapshots)
+            if session.coach_id:
+                coach = (
+                    self.db.query(Coach)
+                    .join(User)
+                    .filter(Coach.coach_id == session.coach_id)
+                    .first()
+                )
+                coach_name = coach.user.name if coach and coach.user else "Coach not found"
+            else:
+                # Usar snapshot si coach fue eliminado
+                coach_name = session.coach_name_snapshot or "Coach deleted"
+            
+            if session.player_id:
+                player = (
+                    self.db.query(Player)
+                    .join(User)
+                    .filter(Player.player_id == session.player_id)
+                    .first()
+                )
+                player_name = player.user.name if player and player.user else "Player not found"
+            else:
+                # Usar snapshot si player fue eliminado
+                player_name = session.player_name_snapshot or "Player deleted"
 
             sessions_data.append(
                 {
@@ -699,9 +705,18 @@ class SessionController:
         filtered_sessions = []
 
         for session in sessions:
-            # Buscar en nombres de coach y player
-            coach_name = session.coach.user.name.lower()
-            player_name = session.player.user.name.lower()
+            # Buscar en nombres de coach y player (manejar snapshots)
+            if session.coach:
+                coach_name = session.coach.user.name.lower()
+            else:
+                # Usar snapshot si coach fue eliminado
+                coach_name = (session.coach_name_snapshot or "").lower()
+            
+            if session.player:
+                player_name = session.player.user.name.lower()
+            else:
+                # Usar snapshot si player fue eliminado
+                player_name = (session.player_name_snapshot or "").lower()
 
             # Buscar en ID de sesión
             session_id_str = str(session.id)
@@ -761,9 +776,20 @@ class SessionController:
             else:
                 prefix = "📆 "
 
+            # Obtener nombres (manejar snapshots)
+            if s.coach_id and s.coach:
+                coach_name = s.coach.user.name
+            else:
+                coach_name = s.coach_name_snapshot or "Coach deleted"
+            
+            if s.player_id and s.player:
+                player_name = s.player.user.name
+            else:
+                player_name = s.player_name_snapshot or "Player deleted"
+            
             # Descripción completa
             descriptions[s.id] = (
-                f"{prefix}{s.coach.user.name} with {s.player.user.name} "
+                f"{prefix}{coach_name} with {player_name} "
                 f"({s.start_time:%d/%m %H:%M}) [{s.status.value}]"
             )
 

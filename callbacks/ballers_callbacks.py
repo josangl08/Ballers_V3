@@ -109,7 +109,7 @@ def register_ballers_callbacks(app):
                 {"type": "auto-hide-date", "index": "ballers-filter-to-date"}, "value"
             ),
             Input("status-filters", "data"),
-            Input("webhook-trigger", "data"),  # SSE trigger para auto-refresh
+            Input("fallback-trigger", "data"),  # Fallback trigger para auto-refresh
             Input("user-type-store", "data"),  # Para determinar filtrado por rol
         ],
         [

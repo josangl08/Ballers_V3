@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Date, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Date, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
@@ -25,13 +25,15 @@ class ProfessionalStats(Base):
     player_id: Mapped[int] = mapped_column(
         ForeignKey("players.player_id"), nullable=False
     )
-    wyscout_id: Mapped[str] = mapped_column(String, nullable=False)
+    wyscout_id: Mapped[int] = mapped_column(Integer, nullable=False)
     season: Mapped[str] = mapped_column(String, nullable=False)  # "2024-25"
 
     # Información básica del jugador
     player_name: Mapped[str] = mapped_column(String, nullable=False)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     team: Mapped[str] = mapped_column(String, nullable=False)
+    team_within_timeframe: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    team_logo_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     competition: Mapped[str] = mapped_column(String, default="Thai League")
     age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     birthday: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
@@ -43,54 +45,70 @@ class ProfessionalStats(Base):
     secondary_position: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     third_position: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
-    # Estadísticas básicas de rendimiento
+    # === ESTADÍSTICAS BÁSICAS ===
     matches_played: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     minutes_played: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     goals: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     assists: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    market_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    market_value: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    height: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    weight: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    foot: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
-    # Estadísticas defensivas
-    defensive_actions: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    defensive_duels: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    defensive_duels_won: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    aerial_duels: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    aerial_duels_won: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    sliding_tackles: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    interceptions: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    fouls: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
-    # Estadísticas ofensivas
+    # === RENDIMIENTO OFENSIVO ===
     shots: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    shots_on_target: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    shot_accuracy: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    goal_conversion: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    dribbles: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    dribbles_successful: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    progressive_runs: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    shots_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    shots_on_target_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    goal_conversion_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    goals_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    assists_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    touches_in_box_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    shot_assists_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
-    # Estadísticas de pases
-    passes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    passes_accurate: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    pass_accuracy: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    forward_passes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    back_passes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    long_passes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    long_passes_accurate: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    # === RENDIMIENTO DEFENSIVO ===
+    defensive_actions_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    defensive_duels_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    defensive_duels_won_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    aerial_duels_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    aerial_duels_won_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    sliding_tackles_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    interceptions_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    fouls_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
-    # Métricas avanzadas
+    # === PASES Y DISTRIBUCIÓN ===
+    passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    pass_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    forward_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    forward_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    back_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    back_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    long_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    long_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    progressive_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    progressive_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    key_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    # === DUELOS Y FÍSICO ===
+    duels_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    duels_won_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    offensive_duels_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    offensive_duels_won_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    dribbles_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    dribbles_success_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    progressive_runs_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    # === MÉTRICAS AVANZADAS ===
     expected_goals: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # xG
-    expected_assists: Mapped[Optional[float]] = mapped_column(
-        Float, nullable=True
-    )  # xA
-    progressive_passes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    key_passes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    crosses: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    crosses_accurate: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
-    # Disciplina
+    expected_assists: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # xA
+    xg_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    xa_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    
+    # === DISCIPLINA ===
     yellow_cards: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     red_cards: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    yellow_cards_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    red_cards_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    fouls_suffered_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # Relación con el jugador
     player: Mapped["Player"] = relationship(back_populates="professional_stats")

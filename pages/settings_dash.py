@@ -3,6 +3,7 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 
 from common.upload_component import create_upload_component
+from common.notification_component import NotificationComponent
 
 
 # Funciones simples para reemplazar cloud_utils removido
@@ -2048,31 +2049,8 @@ def show_settings_content_dash(session_data=None):
             ),
             # Contenido de las pestañas
             html.Div(id="settings-main-content", className="mt-4"),
-            # Alert global para mensajes
-            dbc.Alert(
-                "",
-                id="settings-alert",
-                is_open=False,
-                dismissable=True,
-                className="mt-3",
-                style={
-                    "position": "fixed",
-                    "top": "20px",
-                    "right": "20px",
-                    "z-index": "1060",
-                    "min-width": "350px",
-                    "max-width": "500px",
-                    "box-shadow": "0 8px 16px rgba(0, 0, 0, 0.15)",
-                    "border-radius": "8px",
-                },
-            ),
-            # Interval para auto-hide del alert después de 5 segundos
-            dcc.Interval(
-                id="settings-alert-timer",
-                interval=5000,  # 5 segundos
-                n_intervals=0,
-                disabled=True,  # Disabled por defecto
-            ),
+            # Sistema de notificaciones centralizado
+            *NotificationComponent.create_notification_system("settings"),
         ]
     )
 

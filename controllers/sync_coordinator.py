@@ -8,6 +8,8 @@ import datetime as dt
 import logging
 import time
 from typing import Any, Dict, Optional
+import threading
+import schedule
 
 from controllers.db import get_db_session
 from controllers.notification_controller import save_sync_problems
@@ -16,8 +18,7 @@ from models import Coach, User
 from .calendar_sync_core import sync_calendar_to_db_with_feedback, sync_db_to_calendar
 from .session_controller import update_past_sessions
 
-# Eliminado import de streamlit - completamente migrado a Dash
-# Legacy: import streamlit as st
+# Completamente migrado a Dash
 
 
 logger = logging.getLogger(__name__)
@@ -54,23 +55,6 @@ def _toast(msg: str, icon: str = "") -> None:
     global _last_sync_message
     _last_sync_message = {"message": msg, "icon": icon, "timestamp": dt.datetime.now()}
 
-    # Legacy Streamlit code commented out
-    # if hasattr(st, "toast"):
-    #     st.toast(msg, icon=icon)
-    #     if "Auto-Sync" in msg and (
-    #         "importada" in msg or "actualizada" in msg or "eliminada" in msg
-    #     ):
-    #         if "sync_notification" not in st.session_state:
-    #             st.session_state["sync_notification"] = msg
-    #             st.session_state["sync_notification_time"] = dt.datetime.now()
-    # else:
-    #     # Fallback para versiones sin toast
-    #     if icon == "✅":
-    #         st.success(msg)
-    #     elif icon == "⚠️":
-    #         st.warning(msg)
-    #     else:
-    #         st.info(msg)
 
 
 # Lógica de sync
@@ -160,10 +144,6 @@ def build_stats_from_manual_sync(result: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def build_stats_from_auto_sync(auto_status: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """DEPRECATED: Auto-sync stats no longer available"""
-    # Return empty stats as auto-sync has been removed
-    return None
 
 
 def get_sync_stats_unified(
@@ -275,57 +255,7 @@ def clear_sync_message() -> None:
     _last_sync_message = {"message": "", "icon": "", "timestamp": None}
 
 
-# Auto-Sync Clases y funciones
-
-
-# Auto-sync classes removed - migrated to webhook-based real-time sync
-# Legacy manual sync functionality preserved below
-
-
-# Legacy auto-sync functions - deprecated, will be removed in favor of webhooks
-def start_auto_sync(interval_minutes: int = 5) -> bool:
-    """DEPRECATED: Auto-sync replaced with webhook-based real-time sync"""
-    logger.warning("start_auto_sync called but auto-sync has been deprecated")
-    return False
-
-
-def stop_auto_sync() -> bool:
-    """DEPRECATED: Auto-sync replaced with webhook-based real-time sync"""
-    logger.warning("stop_auto_sync called but auto-sync has been deprecated")
-    return False
-
-
-def get_auto_sync_status() -> Dict[str, Any]:
-    """DEPRECATED: Returns empty status as auto-sync has been replaced"""
-    return {
-        "running": False,
-        "last_sync_time": None,
-        "last_sync_duration": 0,
-        "total_syncs": 0,
-        "successful_syncs": 0,
-        "failed_syncs": 0,
-        "last_error": "Auto-sync deprecated - use webhook-based sync",
-        "interval_minutes": 0,
-        "last_changes": None,
-        "last_changes_time": None,
-        "changes_notified": True,
-        "last_rejected_events": [],
-        "last_warning_events": [],
-        "problems_timestamp": None,
-    }
-
-
-def is_auto_sync_running() -> bool:
-    """DEPRECATED: Always returns False as auto-sync has been replaced"""
-    return False
-
-
-def has_pending_notifications() -> bool:
-    """DEPRECATED: Always returns False as auto-sync notifications replaced with webhook notifications"""  # noqa: E501
-    return False
-
-
-# New manual sync function - independent of auto-sync infrastructure
+# Manual sync functionality
 def force_manual_sync() -> Dict[str, Any]:
     """Manual sync independent of auto-sync system"""
 
@@ -398,4 +328,154 @@ def force_manual_sync() -> Dict[str, Any]:
         }
 
 
-# Legacy toast function removed - replaced with webhook-based notifications
+# Toast function replaced with webhook-based notifications
+
+# === THAI LEAGUE SCHEDULING ===
+
+# Variables globales para Thai League scheduler
+_thai_league_scheduler_thread = None
+_thai_league_scheduler_running = False
+
+
+def thai_league_weekly_job():
+    """
+    Job semanal que ejecuta la actualización inteligente de Thai League.
+    Se ejecuta los lunes a las 9:00 AM.
+    """
+    try:
+        logger.info("🕘 Ejecutando job semanal de Thai League")
+        
+        from controllers.thai_league_controller import ThaiLeagueController
+        controller = ThaiLeagueController()
+        result = controller.smart_weekly_update()
+        
+        action = result.get("action", "unknown")
+        success = result.get("success", False)
+        message = result.get("message", "Sin mensaje")
+        
+        if success:
+            logger.info(f"✅ Thai League job exitoso: {action} - {message}")
+        else:
+            logger.error(f"❌ Thai League job falló: {action} - {message}")
+            
+    except Exception as e:
+        logger.error(f"❌ Error crítico en Thai League job: {str(e)}")
+
+
+def _run_thai_league_scheduler():
+    """Ejecuta el scheduler de Thai League en background."""
+    global _thai_league_scheduler_running
+    
+    logger.info("🚀 Iniciando Thai League scheduler...")
+    
+    # Programar job para lunes a las 9:00 AM
+    schedule.every().monday.at("09:00").do(thai_league_weekly_job)
+    
+    _thai_league_scheduler_running = True
+    
+    while _thai_league_scheduler_running:
+        try:
+            schedule.run_pending()
+            time.sleep(60)  # Verificar cada minuto
+        except Exception as e:
+            logger.error(f"Error en Thai League scheduler: {str(e)}")
+            time.sleep(60)
+    
+    logger.info("🛑 Thai League scheduler detenido")
+
+
+def start_thai_league_scheduler():
+    """
+    Inicia el scheduler de Thai League en background.
+    
+    Returns:
+        bool: True si se inició correctamente
+    """
+    global _thai_league_scheduler_thread, _thai_league_scheduler_running
+    
+    if _thai_league_scheduler_running:
+        logger.warning("Thai League scheduler ya está ejecutándose")
+        return True
+    
+    try:
+        _thai_league_scheduler_thread = threading.Thread(
+            target=_run_thai_league_scheduler, 
+            daemon=True,
+            name="ThaiLeagueScheduler"
+        )
+        _thai_league_scheduler_thread.start()
+        
+        logger.info("✅ Thai League scheduler iniciado exitosamente")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Error iniciando Thai League scheduler: {str(e)}")
+        return False
+
+
+def stop_thai_league_scheduler():
+    """
+    Detiene el scheduler de Thai League.
+    
+    Returns:
+        bool: True si se detuvo correctamente
+    """
+    global _thai_league_scheduler_running
+    
+    if not _thai_league_scheduler_running:
+        logger.warning("Thai League scheduler no está ejecutándose")
+        return True
+    
+    try:
+        _thai_league_scheduler_running = False
+        schedule.clear()  # Limpiar jobs programados
+        
+        logger.info("✅ Thai League scheduler detenido exitosamente")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Error deteniendo Thai League scheduler: {str(e)}")
+        return False
+
+
+def get_thai_league_scheduler_status():
+    """
+    Obtiene el estado actual del Thai League scheduler.
+    
+    Returns:
+        Dict con información del scheduler
+    """
+    return {
+        "running": _thai_league_scheduler_running,
+        "jobs_count": len(schedule.jobs),
+        "next_run": str(schedule.next_run()) if schedule.jobs else None,
+        "thread_alive": _thai_league_scheduler_thread.is_alive() if _thai_league_scheduler_thread else False
+    }
+
+
+def force_thai_league_update():
+    """
+    Ejecuta manualmente la actualización de Thai League.
+    
+    Returns:
+        Dict con resultado de la operación
+    """
+    try:
+        logger.info("🔧 Ejecutando actualización manual de Thai League")
+        
+        from controllers.thai_league_controller import ThaiLeagueController
+        controller = ThaiLeagueController()
+        result = controller.smart_weekly_update()
+        
+        logger.info(f"Resultado actualización manual: {result.get('action')} - {result.get('message')}")
+        return result
+        
+    except Exception as e:
+        error_msg = f"Error en actualización manual: {str(e)}"
+        logger.error(error_msg)
+        return {
+            "action": "error",
+            "success": False,
+            "message": error_msg,
+            "stats": {}
+        }

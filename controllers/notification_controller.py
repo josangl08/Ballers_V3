@@ -8,8 +8,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-# Eliminado import de streamlit - completamente migrado a Dash
-# Legacy: import streamlit as st
+# Migrated to Dash - Streamlit imports removed
 
 # Almacenamiento global para notificaciones (reemplaza st.session_state)
 _global_notifications_store = {}

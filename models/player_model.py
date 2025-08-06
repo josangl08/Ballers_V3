@@ -26,8 +26,8 @@ class Player(Base):
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     # Campos para jugadores profesionales
     is_professional: Mapped[bool] = mapped_column(Boolean, default=False)
-    wyscout_id: Mapped[Optional[str]] = mapped_column(
-        String, nullable=True, unique=True
+    wyscout_id: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True, unique=True
     )
 
     user: Mapped["User"] = relationship(back_populates="player_profile")

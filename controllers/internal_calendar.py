@@ -7,9 +7,7 @@ from zoneinfo import ZoneInfo
 from config import CALENDAR_COLORS
 from models import Session
 
-# Eliminados imports de Streamlit - completamente migrado a Dash
-# Legacy: import streamlit as st
-# Legacy: import streamlit.components.v1 as components
+# Migrated to Dash - Streamlit imports removed
 
 
 HEX = {k: v["hex"] for k, v in CALENDAR_COLORS.items()}
@@ -27,14 +25,25 @@ def _to_event(s: Session) -> dict:
     now = dt.datetime.now()  # Sin timezone para comparar con sesiones naive
     is_past = s.end_time and s.end_time < now
 
+    # Obtener nombres (manejar snapshots)
+    if s.coach_id and s.coach and s.coach.user:
+        coach_name = s.coach.user.name
+    else:
+        coach_name = s.coach_name_snapshot or "Coach deleted"
+        
+    if s.player_id and s.player and s.player.user:
+        player_name = s.player.user.name
+    else:
+        player_name = s.player_name_snapshot or "Player deleted"
+    
     event = {
         "id": s.id,
-        "title": f"{s.coach.user.name} × {s.player.user.name}",
+        "title": f"{coach_name} × {player_name}",
         "start": _fmt_local(s.start_time),  # 13:00 «tal cual»
         "end": _fmt_local(s.end_time) if s.end_time else "",
         "description": s.notes or "",
-        "player": s.player.user.name,
-        "coach": s.coach.user.name,
+        "player": player_name,
+        "coach": coach_name,
         "color": HEX[s.status.value],
     }
 
@@ -64,7 +73,7 @@ def show_calendar(
         "show_calendar() is deprecated. Use show_calendar_dash() or create_fixed_calendar_dash() instead."
     )
 
-    # Legacy code commented out - use Dash versions instead
+    # Deprecated - use Dash versions instead
     # st.subheader(title)
     events = json.dumps([_to_event(s) for s in sessions], default=str)  # noqa: F841
     calendar_html = f"""  # noqa: F841
@@ -111,10 +120,20 @@ document.addEventListener("DOMContentLoaded", () => {{
         const f = new Intl.DateTimeFormat("en-GB",{{ hour:'2-digit', minute:'2-digit', hourCycle:'h23'}});
         const eventColor = ev.backgroundColor || ev.borderColor || '#1E88E5';
         const colorCircle = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${{eventColor}}; margin-right: 6px; vertical-align: middle;"></span>`;
+        // Colorear (DEL) en rojo en tooltips
+        const playerName = ev.extendedProps.player ? ev.extendedProps.player.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
+        const coachName = ev.extendedProps.coach ? ev.extendedProps.coach.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
+        
         let html = `<span>${{colorCircle}}<strong style="color: ${{eventColor}}">${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
-                    <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{ev.extendedProps.player}}<br>
-                    <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{ev.extendedProps.coach}}`;
+                    <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{playerName}}<br>
+                    <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{coachName}}`;
         if (ev.extendedProps.description) html += `<br>${{ev.extendedProps.description}}`;
+
+        // Colorear (DEL) en rojo en el título del evento
+        const titleElement = el.querySelector('.fc-event-title');
+        if (titleElement && titleElement.textContent.includes('(DEL)')) {{
+            titleElement.innerHTML = titleElement.textContent.replace(/\\(DEL\\)/g, '<span style="color: #F44336; font-weight: bold;">(DEL)</span>');
+        }}
 
         const tip = Object.assign(document.createElement("div"), {{
           className: "fc-tip",
@@ -199,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {{
 #{key} .fc-list-event:hover a          {{ color: #24DE84 !important; }}
 </style>
 """
-    # Legacy Streamlit component call - deprecated
+    # Deprecated Streamlit component call
     # components.html(calendar_html, height=height + 70, scrolling=False)
     pass
 
@@ -312,10 +331,20 @@ document.addEventListener("DOMContentLoaded", () => {{
         const f = new Intl.DateTimeFormat("en-GB",{{ hour:'2-digit', minute:'2-digit', hourCycle:'h23'}});
         const eventColor = ev.backgroundColor || ev.borderColor || '#1E88E5';
         const colorCircle = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${{eventColor}}; margin-right: 6px; vertical-align: middle;"></span>`;
+        // Colorear (DEL) en rojo en tooltips
+        const playerName = ev.extendedProps.player ? ev.extendedProps.player.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
+        const coachName = ev.extendedProps.coach ? ev.extendedProps.coach.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
+        
         let html = `<span>${{colorCircle}}<strong style="color: ${{eventColor}}">${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
-                    <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{ev.extendedProps.player}}<br>
-                    <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{ev.extendedProps.coach}}`;
+                    <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{playerName}}<br>
+                    <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{coachName}}`;
         if (ev.extendedProps.description) html += `<br>${{ev.extendedProps.description}}`;
+
+        // Colorear (DEL) en rojo en el título del evento
+        const titleElement = el.querySelector('.fc-event-title');
+        if (titleElement && titleElement.textContent.includes('(DEL)')) {{
+            titleElement.innerHTML = titleElement.textContent.replace(/\\(DEL\\)/g, '<span style="color: #F44336; font-weight: bold;">(DEL)</span>');
+        }}
 
         const tip = Object.assign(document.createElement("div"), {{
           className: "fc-tip",
@@ -550,10 +579,20 @@ document.addEventListener("DOMContentLoaded", () => {{
         const f = new Intl.DateTimeFormat("en-GB",{{ hour:'2-digit', minute:'2-digit', hourCycle:'h23'}});
         const eventColor = ev.backgroundColor || ev.borderColor || '#1E88E5';
         const colorCircle = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${{eventColor}}; margin-right: 6px; vertical-align: middle;"></span>`;
+        // Colorear (DEL) en rojo en tooltips
+        const playerName = ev.extendedProps.player ? ev.extendedProps.player.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
+        const coachName = ev.extendedProps.coach ? ev.extendedProps.coach.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
+        
         let html = `<span>${{colorCircle}}<strong style="color: ${{eventColor}}">${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
-                    <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{ev.extendedProps.player}}<br>
-                    <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{ev.extendedProps.coach}}`;
+                    <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{playerName}}<br>
+                    <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{coachName}}`;
         if (ev.extendedProps.description) html += `<br>${{ev.extendedProps.description}}`;
+
+        // Colorear (DEL) en rojo en el título del evento
+        const titleElement = el.querySelector('.fc-event-title');
+        if (titleElement && titleElement.textContent.includes('(DEL)')) {{
+            titleElement.innerHTML = titleElement.textContent.replace(/\\(DEL\\)/g, '<span style="color: #F44336; font-weight: bold;">(DEL)</span>');
+        }}
 
         const tip = Object.assign(document.createElement("div"), {{
           className: "fc-tip",

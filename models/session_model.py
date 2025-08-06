@@ -24,11 +24,19 @@ class Session(Base):
     __tablename__ = "sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    coach_id: Mapped[int] = mapped_column(
-        ForeignKey("coaches.coach_id"), nullable=False
+    coach_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("coaches.coach_id"), nullable=True
     )
-    player_id: Mapped[int] = mapped_column(
-        ForeignKey("players.player_id"), nullable=False
+    player_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("players.player_id"), nullable=True
+    )
+    
+    # Snapshots selectivos para usuarios eliminados
+    coach_name_snapshot: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True
+    )
+    player_name_snapshot: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True
     )
 
     start_time: Mapped[datetime] = mapped_column(
@@ -64,6 +72,6 @@ class Session(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     is_dirty: Mapped[bool] = mapped_column(Boolean, default=False)
-    # Relaciones
-    coach: Mapped["Coach"] = relationship(back_populates="sessions")
-    player: Mapped["Player"] = relationship(back_populates="sessions")
+    # Relaciones (opcionales para soportar eliminación de usuarios)
+    coach: Mapped[Optional["Coach"]] = relationship(back_populates="sessions")
+    player: Mapped[Optional["Player"]] = relationship(back_populates="sessions")

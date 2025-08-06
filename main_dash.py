@@ -17,6 +17,7 @@ from callbacks.player_callbacks import register_player_callbacks
 from callbacks.professional_tabs_callbacks import register_professional_tabs_callbacks
 from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
+from callbacks.webhook_callbacks import register_webhook_callbacks
 from common.datepicker_utils import (
     create_datepicker_dummy_divs,
     register_datepicker_callbacks,
@@ -35,8 +36,7 @@ from controllers.webhook_integration import (
     shutdown_webhook_integration,
 )
 
-# Sistema simple para webhook events
-_webhook_pending = False
+# Sistema de webhook events movido a callbacks/webhook_callbacks.py
 
 # Configuración de la aplicación Dash
 app = dash.Dash(
@@ -70,24 +70,19 @@ def get_app_layout():
                 storage_type="memory",
                 data={"last_activity": None, "remember_me": False},
             ),
-            dcc.Store(id="webhook-trigger", storage_type="memory", data=0),
-            dcc.Store(id="webhook-activation", storage_type="memory", data=0),
-            # Smart interval para real-time updates (activo, lento sin webhooks)  # noqa: E501
+            # 🛡️ FALLBACK STORE: Para modo degradado sin SSE
+            dcc.Store(id="fallback-trigger", storage_type="memory", data=0),
+            dcc.Store(id="sse-status", storage_type="memory", data={"connected": False, "last_heartbeat": 0}),
+            # 🛡️ FALLBACK INTELIGENTE: Interval de seguridad si SSE falla (deshabilitado por defecto)
             dcc.Interval(
-                id="smart-interval",
-                interval=5000,  # 5 segundos por defecto (lento)
-                disabled=False,  # Siempre habilitado
-                max_intervals=-1,  # Sin limite
-                n_intervals=0,
-            ),
-            # Interval para verificar timeout de sesión (cada 30 segundos)
-            dcc.Interval(
-                id="session-timeout-check",
-                interval=30000,  # 30 segundos
-                disabled=False,
+                id="fallback-interval",
+                interval=30000,  # 30 segundos - muy conservador
+                disabled=True,  # INACTIVO por defecto - solo se activa si SSE falla
                 max_intervals=-1,
                 n_intervals=0,
             ),
+            # SSE connector para real-time updates (SOLUCIÓN: Zero-polling)
+            html.Div(id="sse-connector", style={"display": "none"}),
             # Layout principal
             html.Div(id="main-content"),
             # Divs dummy para callbacks de datepicker
@@ -119,73 +114,204 @@ def register_all_callbacks():
 
     # Registrar callbacks comunes para datepickers
     register_datepicker_callbacks(app)
-
-    # Webhook Activation Trigger - Activar cuando hay webhook
-    @app.callback(
-        Output("webhook-activation", "data"),
-        [Input("smart-interval", "n_intervals")],
-        prevent_initial_call=True,
+    
+    # 🛡️ Registrar callbacks legacy (ahora vacíos) y fallback
+    register_webhook_callbacks(app)
+    
+    # SSE Client Callback para real-time updates (SOLUCIÓN: Zero-polling)
+    app.clientside_callback(
+        """
+        function(pathname) {
+            // Establecer conexión SSE una sola vez
+            if (!window.webhookSSE) {
+                console.log('🌐 Establishing SSE connection for real-time updates...');
+                
+                // Crear conexión SSE al webhook server
+                window.webhookSSE = new EventSource('http://localhost:8001/webhook/events');
+                
+                // Handler para eventos SSE - Updates directos a UI
+                window.webhookSSE.onmessage = function(event) {
+                    try {
+                        const eventData = JSON.parse(event.data);
+                        console.log('📡 SSE event received:', eventData);
+                        
+                        if (eventData.type === 'calendar_change') {
+                            // 🎯 UPDATE GRANULAR: Actualizar stores sin recargar página
+                            console.log('🔄 Calendar changed - triggering granular UI refresh');
+                            console.log(`📊 Changes detected: ${eventData.changes_count}`);
+                            
+                            // Update granular via Dash stores - mantiene contexto de navegación
+                            if (!document.activeElement || document.activeElement.tagName === 'BODY') {
+                                // Update inmediato: Actualizar fallback-trigger store
+                                const timestamp = Date.now();
+                                console.log('🎯 Triggering store-based refresh - no page reload');
+                                
+                                // Trigger update del store fallback-trigger
+                                if (window.dash_clientside && window.dash_clientside.set_props) {
+                                    window.dash_clientside.set_props('fallback-trigger', {'data': timestamp});
+                                } else {
+                                    // Fallback: Dispatch custom event para callback listener
+                                    window.dispatchEvent(new CustomEvent('calendar-change', {
+                                        detail: {
+                                            timestamp: timestamp,
+                                            changes_count: eventData.changes_count,
+                                            type: 'calendar_change'
+                                        }
+                                    }));
+                                }
+                            } else {
+                                // Usuario escribiendo - diferir update
+                                console.log('⚠️ User is typing - deferring store update');
+                                window.pendingSSEUpdate = {
+                                    timestamp: Date.now(),
+                                    changes_count: eventData.changes_count
+                                };
+                                
+                                // Auto-update cuando usuario termine de escribir
+                                setTimeout(() => {
+                                    if (window.pendingSSEUpdate && (!document.activeElement || document.activeElement.tagName === 'BODY')) {
+                                        console.log('🎯 Executing deferred store update');
+                                        const data = window.pendingSSEUpdate;
+                                        
+                                        if (window.dash_clientside && window.dash_clientside.set_props) {
+                                            window.dash_clientside.set_props('fallback-trigger', {'data': data.timestamp});
+                                        } else {
+                                            window.dispatchEvent(new CustomEvent('calendar-change', {
+                                                detail: data
+                                            }));
+                                        }
+                                        
+                                        window.pendingSSEUpdate = null;
+                                    }
+                                }, 3000);
+                            }
+                        } else if (eventData.type === 'heartbeat') {
+                            // Heartbeat - actualizar estado de conexión
+                            window.lastSSEHeartbeat = Date.now();
+                            window.sseConnected = true;
+                            console.debug('💓 SSE heartbeat - connection healthy');
+                        }
+                    } catch (error) {
+                        console.error('❌ Error processing SSE event:', error);
+                    }
+                };
+                
+                window.webhookSSE.onopen = function() {
+                    console.log('✅ SSE connection established');
+                    
+                    // Actualizar estado SSE - desactivar fallback
+                    window.sseConnected = true;
+                    window.lastSSEHeartbeat = Date.now();
+                    
+                    // Trigger update del store de estado SSE
+                    if (window.dash_clientside) {
+                        window.dispatchEvent(new CustomEvent('sse-status-update', {
+                            detail: { connected: true, last_heartbeat: Date.now() }
+                        }));
+                    }
+                };
+                
+                window.webhookSSE.onerror = function(error) {
+                    console.warn('⚠️ SSE connection error, browser will auto-reconnect:', error);
+                    
+                    // Marcar SSE como desconectado - activará fallback
+                    window.sseConnected = false;
+                    window.dispatchEvent(new CustomEvent('sse-status-update', {
+                        detail: { connected: false, last_heartbeat: window.lastSSEHeartbeat || 0 }
+                    }));
+                };
+                
+                // Handler para cuando usuario deja de escribir - ejecutar update pendiente
+                document.addEventListener('focusout', function() {
+                    setTimeout(() => {
+                        if (window.pendingSSEUpdate && (!document.activeElement || document.activeElement.tagName === 'BODY')) {
+                            console.log('🎯 Executing deferred store update on focus out');
+                            const data = window.pendingSSEUpdate;
+                            
+                            if (window.dash_clientside && window.dash_clientside.set_props) {
+                                window.dash_clientside.set_props('fallback-trigger', {'data': data.timestamp});
+                            } else {
+                                window.dispatchEvent(new CustomEvent('calendar-change', {
+                                    detail: data
+                                }));
+                            }
+                            
+                            window.pendingSSEUpdate = null;
+                        }
+                    }, 1000);
+                });
+            }
+            
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output('sse-connector', 'children'),
+        Input('url', 'pathname'),
+        prevent_initial_call=False
     )
-    def trigger_activation_on_webhook(n_intervals):
-        """Trigger interno - convierte webhook flag en Store update"""
-        global _webhook_pending
-
-        if _webhook_pending:
-            _webhook_pending = False
-            timestamp = int(time.time())
-            return timestamp
-
-        return no_update
-
-    # Smart Interval Manager - Control por velocidad basado en webhook activation
-    @app.callback(
-        Output("smart-interval", "interval"),
-        [Input("webhook-activation", "data"), Input("smart-interval", "n_intervals")],
-        prevent_initial_call=False,
+    
+    # 🛡️ FALLBACK CALLBACK: Monitor de estado SSE y activación de fallback
+    app.clientside_callback(
+        """
+        function(n_intervals) {
+            // Verificar estado de conexión SSE
+            const now = Date.now();
+            const lastHeartbeat = window.lastSSEHeartbeat || 0;
+            const timeSinceHeartbeat = now - lastHeartbeat;
+            const sseConnected = window.sseConnected || false;
+            
+            // Si no hay heartbeat en > 60 segundos, considerar SSE desconectado
+            if (timeSinceHeartbeat > 60000 && lastHeartbeat > 0) {
+                console.warn('⚠️ SSE connection timeout - no heartbeat for 60s');
+                return { connected: false, last_heartbeat: lastHeartbeat };
+            }
+            
+            // Retornar estado actual
+            return { 
+                connected: sseConnected, 
+                last_heartbeat: lastHeartbeat,
+                check_time: now
+            };
+        }
+        """,
+        Output('sse-status', 'data'),
+        Input('fallback-interval', 'n_intervals'),
+        prevent_initial_call=True
     )
-    def manage_smart_interval(activation_data, n_intervals):
-        """Gestiona el smart interval: acelerar cuando hay webhook, desacelerar después de inactividad"""  # noqa: E501
-
-        if activation_data and activation_data > 0:
-            # Acelerar interval cuando hay webhook activation (1 segundo)
-            return 1000  # 1 segundo - rápido
-        elif n_intervals > 10:  # Después de 10 intervals sin webhook
-            # Desacelerar después de inactividad (5 segundos)
-            return 5000  # 5 segundos - lento
-        else:
-            # No cambios necesarios
-            return no_update
-
-    # Smart Interval Update - Actualiza Store cuando interval está activo
-    @app.callback(
-        Output("webhook-trigger", "data"),
-        [Input("smart-interval", "n_intervals")],
-        prevent_initial_call=True,
+    
+    # 🛡️ FALLBACK ACTIVATION: Activar interval de seguridad si SSE falla
+    app.clientside_callback(
+        """
+        function(sse_status) {
+            if (!sse_status) return window.dash_clientside.no_update;
+            
+            const connected = sse_status.connected;
+            const timeSinceHeartbeat = Date.now() - (sse_status.last_heartbeat || 0);
+            
+            // Activar fallback si:
+            // 1. SSE no está conectado Y
+            // 2. Ha pasado más de 60s sin heartbeat Y
+            // 3. Hubo al menos un heartbeat previo (SSE intentó conectar)
+            const shouldActivateFallback = (
+                !connected && 
+                timeSinceHeartbeat > 60000 && 
+                sse_status.last_heartbeat > 0
+            );
+            
+            if (shouldActivateFallback) {
+                console.warn('🛡️ Activating fallback polling - SSE connection lost');
+                return false; // disabled = false (activar interval)
+            }
+            
+            // Mantener fallback desactivado si SSE funciona
+            return true; // disabled = true (mantener desactivado)
+        }
+        """,
+        Output('fallback-interval', 'disabled'),
+        Input('sse-status', 'data'),
+        prevent_initial_call=True
     )
-    def update_store_from_smart_interval(n_intervals):
-        """Actualiza webhook-trigger Store cuando smart interval está activo"""
 
-        if n_intervals > 0:
-            timestamp = int(time.time())
-            return timestamp
-
-        return no_update
-
-
-def trigger_webhook_ui_refresh():
-    """
-    Función llamada por webhook server para activar smart interval.
-    Actualiza directamente los Stores sin depender del smart interval.
-    """
-    global _webhook_pending
-    try:
-        _webhook_pending = True
-
-    except Exception as e:
-        print(f"⚠️ Error activating smart interval: {e}")
-        import traceback
-
-        traceback.print_exc()
 
 
 def initialize_dash_app():

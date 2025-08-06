@@ -2904,3 +2904,346 @@ iframe[id*="dash-calendar"] * {
     color: var(--color-white) !important;
     background-color: var(--bg-input) !important;
 }
+
+/* ===== TEAM INFO UI COMPONENTS ===== */
+/* Estilos para los nuevos componentes de información de equipos */
+
+/* Team Info Cards */
+.team-info-card {
+    transition: all 0.3s ease;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.team-info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Team Status Indicators */
+.team-status-active {
+    border-left: 4px solid var(--color-primary);
+    background: linear-gradient(90deg, var(--color-primary-alpha-10) 0%, transparent 100%);
+}
+
+.team-status-transferred {
+    border-left: 4px solid #FFA726;
+    background: linear-gradient(90deg, rgba(255, 167, 38, 0.1) 0%, transparent 100%);
+}
+
+.team-status-free-agent {
+    border-left: 4px solid #E57373;
+    background: linear-gradient(90deg, rgba(229, 115, 115, 0.1) 0%, transparent 100%);
+}
+
+.team-status-historical {
+    border-left: 4px solid #42A5F5;
+    background: linear-gradient(90deg, rgba(66, 165, 245, 0.1) 0%, transparent 100%);
+}
+
+/* Team Logo Styles */
+.team-logo {
+    transition: all 0.3s ease;
+    border-radius: var(--radius-sm);
+}
+
+.team-logo:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(36, 222, 132, 0.4);
+}
+
+/* Team Logo Fallback */
+.team-logo-fallback {
+    background: linear-gradient(135deg, var(--color-primary-alpha-20), var(--color-primary-alpha-10));
+    border: 1px solid var(--color-primary-alpha-30);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    font-size: 1.2rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.3s ease;
+}
+
+.team-logo-fallback:hover {
+    background: linear-gradient(135deg, var(--color-primary-alpha-30), var(--color-primary-alpha-20));
+    transform: scale(1.05);
+}
+
+/* Team Timeline Styles */
+.team-timeline {
+    position: relative;
+}
+
+.team-timeline-item {
+    position: relative;
+    padding-left: 50px;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.team-timeline-item:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+}
+
+.team-timeline-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.team-timeline-icon.active {
+    background-color: rgba(36, 222, 132, 0.2);
+    border: 2px solid var(--color-primary);
+    color: var(--color-primary);
+}
+
+.team-timeline-icon.transferred {
+    background-color: rgba(255, 167, 38, 0.2);
+    border: 2px solid #FFA726;
+    color: #FFA726;
+}
+
+.team-timeline-icon.free-agent {
+    background-color: rgba(229, 115, 115, 0.2);
+    border: 2px solid #E57373;
+    color: #E57373;
+}
+
+.team-timeline-icon.historical {
+    background-color: rgba(66, 165, 245, 0.2);
+    border: 2px solid #42A5F5;
+    color: #42A5F5;
+}
+
+.team-timeline-line {
+    position: absolute;
+    left: 19px;
+    top: 40px;
+    width: 2px;
+    height: calc(100% - 40px);
+    background: linear-gradient(to bottom, 
+        var(--color-primary-alpha-50) 0%, 
+        var(--color-primary-alpha-20) 50%, 
+        transparent 100%);
+    z-index: 1;
+}
+
+/* Team Badges */
+.team-badge-current {
+    background: linear-gradient(45deg, var(--color-primary), #1DB768);
+    border: none;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    animation: pulse-success 2s infinite;
+}
+
+.team-badge-transfer {
+    background: linear-gradient(45deg, #FFA726, #FF9800);
+    border: none;
+    font-weight: 600;
+    color: var(--color-white);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+@keyframes pulse-success {
+    0% {
+        box-shadow: 0 0 0 0 rgba(36, 222, 132, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(36, 222, 132, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(36, 222, 132, 0);
+    }
+}
+
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Team Stats Integration */
+.team-stats-header {
+    background: linear-gradient(135deg, 
+        var(--color-primary-alpha-10) 0%, 
+        var(--color-primary-alpha-05) 100%);
+    border: 1px solid var(--color-primary-alpha-30);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.team-current-season-indicator {
+    position: relative;
+    overflow: hidden;
+}
+
+.team-current-season-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(36, 222, 132, 0.2), 
+        transparent);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Responsive Design for Team Components */
+@media (max-width: 768px) {
+    .team-timeline-item {
+        padding-left: 35px;
+    }
+    
+    .team-timeline-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+    
+    .team-timeline-line {
+        left: 14px;
+    }
+    
+    .team-info-card {
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* Dark Mode Enhancements for Team Components */
+@media (prefers-color-scheme: dark) {
+    .team-info-card {
+        background-color: var(--bg-card);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .team-timeline-item:hover {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+}
+
+/* ===== FORMATO (DEL) EN ROJO ===== */
+/* Reglas CSS para colorear "(DEL)" en rojo en todos los contextos del calendario */
+
+/* (DEL) en títulos de eventos del calendario */
+.fc-event-title:has-text("(DEL)"),
+.fc-list-event-title:has-text("(DEL)"),
+.fc-daygrid-event-harness:has-text("(DEL)") {
+    color: var(--color-danger-alt) !important;
+}
+
+/* CSS general para detectar y colorear texto (DEL) */
+*:not(script):not(style) {
+    /* Usar JavaScript en eventDidMount para el procesamiento real */
+}
+
+/* Estilos adicionales para asegurar visibilidad de (DEL) en rojo */
+.fc-event *[data-contains-del="true"] {
+    color: var(--color-danger-alt) !important;
+    font-weight: bold !important;
+}
+
+/* Tooltip y contenido de eventos con (DEL) */
+.fc-tip:has-text("(DEL)") {
+    /* Procesado por JavaScript */
+}
+
+/* Reglas para tablas de sesiones (ya implementado en format_utils.py) */
+.session-table .del-text {
+    color: var(--color-danger-alt) !important;
+    font-weight: bold !important;
+}
+
+/* ===== ANIMACIONES DE NOTIFICACIONES ===== */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);  /* Sale hacia la derecha (correcto) */
+        opacity: 0;
+    }
+}
+
+/* Clase para notificaciones que aparecen */
+.notification-alert.show {
+    animation: slideInRight 0.4s ease-out forwards;
+}
+
+/* Clase para notificaciones que desaparecen */
+.notification-alert.hide {
+    animation: slideOutRight 0.4s ease-in forwards;
+}
+
+/* Estilos mejorados para notificaciones */
+.notification-alert {
+    border: none !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Override de colores Bootstrap para mayor contraste */
+.alert-success {
+    background-color: rgba(40, 167, 69, 0.15) !important;
+    border-left: 4px solid #28a745 !important;
+}
+
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+    border-left: 4px solid #dc3545 !important;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    border-left: 4px solid #ffc107 !important;
+}
+
+.alert-info {
+    background-color: rgba(23, 162, 184, 0.15) !important;
+    border-left: 4px solid #17a2b8 !important;
+}

@@ -12,6 +12,9 @@ import dash_bootstrap_components as dbc
 from dash import ALL, Input, Output, State, callback_context, html, no_update
 from dash.exceptions import PreventUpdate
 
+from common.notification_system import NotificationManager, NotificationHelper
+from callbacks.notification_callbacks import NotificationCallbacks
+
 from controllers.user_controller import (
     UserController,
     create_user_simple,
@@ -115,6 +118,9 @@ def save_profile_photo_dash(contents: str, username: str, filename: str = None) 
 
 def register_settings_callbacks(app):
     """Registra callbacks de Settings en la aplicación Dash."""
+    
+    # Registrar sistema de notificaciones centralizado
+    NotificationCallbacks.register_notification_callbacks(app, "settings")
 
     @app.callback(
         Output("settings-main-content", "children"),
@@ -243,10 +249,7 @@ def register_settings_callbacks(app):
 
     @app.callback(
         [
-            Output("settings-alert", "children"),
-            Output("settings-alert", "is_open"),
-            Output("settings-alert", "color"),
-            # Limpiar formulario tras éxito
+            # Solo outputs para limpiar formulario
             Output("new-fullname", "value"),
             Output("new-username", "value"),
             Output("new-email", "value"),
@@ -262,6 +265,8 @@ def register_settings_callbacks(app):
             Output("new-internal-role", "value"),
             Output("new-permit-level", "value"),
             Output("new-is-professional", "value"),
+            # Notification store para mostrar mensajes
+            Output("settings-notification-store", "data"),
         ],
         [Input("create-user-btn", "n_clicks")],
         [
@@ -309,15 +314,13 @@ def register_settings_callbacks(app):
     ):
         """Crea un nuevo usuario usando el controlador existente."""
         if not n_clicks:
-            return "", False, "info", *([no_update] * 15)
+            return *([no_update] * 15), no_update
 
         # Validar campos requeridos
         if not all([name, username, email, password, confirm_password]):
             return (
-                "Please fill in all required fields (*)",
-                True,
-                "danger",
-                *([no_update] * 15),
+                *([no_update] * 15),  # No limpiar formulario
+                NotificationManager.error("Please fill in all required fields (*)"),
             )
 
         # Validar coincidencia de contraseñas usando controlador existente
@@ -325,7 +328,10 @@ def register_settings_callbacks(app):
             password, confirm_password
         )
         if not is_valid:
-            return error, True, "danger", *([no_update] * 15)
+            return (
+                *([no_update] * 15),  # No limpiar formulario
+                NotificationManager.error(error),  # Notificación de error
+            )
 
         # Preparar datos específicos del tipo de usuario
         profile_data = {}
@@ -343,7 +349,7 @@ def register_settings_callbacks(app):
                     "enrolment": enrolled_sessions or 0,
                     "notes": player_notes or "",
                     "is_professional": is_professional,
-                    "wyscout_id": wyscout_id.strip() if wyscout_id else None,
+                    "wyscout_id": str(wyscout_id).strip() if wyscout_id else None,
                 }
             )
         elif user_type == "admin":
@@ -385,15 +391,32 @@ def register_settings_callbacks(app):
 
         # Crear usuario usando controlador existente
         success, message = create_user_simple(user_data)
+        
+        # Si es jugador profesional con WyscoutID, importar estadísticas
+        if success and user_type == "player" and is_professional and wyscout_id:
+            try:
+                from controllers.thai_league_controller import ThaiLeagueController
+                from controllers.user_controller import UserController
+                from models.user_model import User
+                
+                # Buscar el usuario recién creado por username
+                with UserController() as controller:
+                    user = controller.db.query(User).filter_by(username=username).first()
+                    if user:
+                        thai_controller = ThaiLeagueController()
+                        thai_success, thai_message, stats = thai_controller.trigger_stats_import_for_player(
+                            player_id=user.player_profile.player_id, 
+                            wyscout_id=int(wyscout_id)
+                        )
+                        if thai_success and stats.get('records_imported', 0) > 0:
+                            message += f" Estadísticas importadas: {stats['records_imported']} registros."
+            except Exception as e:
+                # No fallar la creación si hay error en las estadísticas
+                pass
 
         if success:
-            success_message = f"✅ {message}"
-
-            # Limpiar formulario tras éxito
+            # Limpiar formulario tras éxito y enviar notificación
             return (
-                success_message,
-                True,
-                "success",
                 "",  # name
                 "",  # username
                 "",  # email
@@ -409,21 +432,25 @@ def register_settings_callbacks(app):
                 "",  # internal_role
                 1,  # permit_level
                 [],  # is_professional (empty list to uncheck)
-                "",  # wyscout_id
+                NotificationHelper.user_created(username),  # Notificación de éxito
             )
         else:
-            return f"❌ {message}", True, "danger", *([no_update] * 15)
+            # Solo limpiar formulario, enviar notificación de error
+            return (
+                *([no_update] * 15),  # No limpiar formulario en error
+                NotificationManager.error(message),  # Notificación de error
+            )
 
     @app.callback(
         Output("users-management-table", "children"),
         [
             Input("users-filter-type", "value"),
             Input("users-search", "value"),
-            Input("settings-alert", "is_open"),  # Refrescar tras crear usuario
+            Input("settings-notification-store", "data"),  # Refrescar tras crear usuario
         ],
         prevent_initial_call=False,
     )
-    def update_users_table(filter_type, search_term, alert_state):
+    def update_users_table(filter_type, search_term, notification_data):
         """Actualiza la tabla de usuarios con filtros."""
         print(
             f"🔍 DEBUG USERS LIST: filter_type={filter_type}, search_term={search_term}"
@@ -684,9 +711,7 @@ def register_settings_callbacks(app):
 
     @app.callback(
         [
-            Output("settings-alert", "children", allow_duplicate=True),
-            Output("settings-alert", "is_open", allow_duplicate=True),
-            Output("settings-alert", "color", allow_duplicate=True),
+            Output("settings-notification-store", "data", allow_duplicate=True),
         ],
         [
             Input(
@@ -699,12 +724,12 @@ def register_settings_callbacks(app):
     def toggle_user_status(n_clicks_list):
         """Activa/desactiva usuarios usando el controlador existente."""
         if not any(n_clicks_list):
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
 
         # Identificar qué botón fue clickeado
         ctx = callback_context
         if not ctx.triggered:
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
 
         button_id = ctx.triggered[0]["prop_id"].split(".")[0]
         user_id = ast.literal_eval(button_id)["index"]
@@ -715,20 +740,18 @@ def register_settings_callbacks(app):
                 success, message = controller.toggle_user_status(user_id)
 
             if success:
-                return f"✅ {message}", True, "success"
+                return [NotificationManager.success(message)]
             else:
-                return f"❌ {message}", True, "danger"
+                return [NotificationManager.error(message)]
 
         except Exception as e:
-            return f"❌ Error: {str(e)}", True, "danger"
+            return [NotificationManager.error(f"Error: {str(e)}")]
 
     # Callback para toggle de User Status tab - con actualización dinámica de tabla
     @app.callback(
         [
-            Output("settings-alert", "children", allow_duplicate=True),
-            Output("settings-alert", "is_open", allow_duplicate=True),
-            Output("settings-alert", "color", allow_duplicate=True),
             Output("user-status-table-container", "children", allow_duplicate=True),
+            Output("settings-notification-store", "data", allow_duplicate=True),
         ],
         [
             Input(
@@ -745,12 +768,12 @@ def register_settings_callbacks(app):
     def toggle_user_status_from_status_tab(n_clicks_list, type_filter, status_filter):
         """Activa/desactiva usuarios desde User Status tab y actualiza tabla."""
         if not any(n_clicks_list):
-            return no_update, no_update, no_update, no_update
+            return no_update, no_update
 
         # Identificar qué botón fue clickeado
         ctx = callback_context
         if not ctx.triggered:
-            return no_update, no_update, no_update, no_update
+            return no_update, no_update
 
         button_id = ctx.triggered[0]["prop_id"].split(".")[0]
         user_id = ast.literal_eval(button_id)["index"]
@@ -763,12 +786,12 @@ def register_settings_callbacks(app):
             if success:
                 # Actualizar tabla dinámicamente
                 updated_table = update_user_status_table(type_filter, status_filter)
-                return f"✅ {message}", True, "success", updated_table
+                return updated_table, NotificationManager.success(message)
             else:
-                return f"❌ {message}", True, "danger", no_update
+                return no_update, NotificationManager.error(message)
 
         except Exception as e:
-            return f"❌ Error: {str(e)}", True, "danger", no_update
+            return no_update, NotificationManager.error(f"Error: {str(e)}")
 
     # ========================================================================
     # CALLBACKS PARA EDIT USER
@@ -1370,11 +1393,8 @@ def register_settings_callbacks(app):
 
     @app.callback(
         [
-            Output("settings-alert", "children", allow_duplicate=True),
-            Output("settings-alert", "is_open", allow_duplicate=True),
-            Output("settings-alert", "color", allow_duplicate=True),
             Output("edit-user-selector", "value", allow_duplicate=True),
-            Output("settings-alert-timer", "disabled", allow_duplicate=True),
+            Output("settings-notification-store", "data", allow_duplicate=True),
         ],
         [Input("save-user-changes-btn", "n_clicks")],
         [
@@ -1426,16 +1446,13 @@ def register_settings_callbacks(app):
     ):
         """Guarda los cambios del usuario editado."""
         if not n_clicks or not selected_user_id:
-            return "", False, "info", no_update, True
+            return no_update, no_update
 
         # Validar campos requeridos
         if not all([name, username, email]):
             return (
-                "Please fill in all required fields (*)",
-                True,
-                "danger",
                 no_update,
-                False,  # Activar timer para auto-hide
+                NotificationManager.error("Please fill in all required fields (*)")
             )
 
         # Validar coincidencia de contraseñas si se proporcionan
@@ -1444,7 +1461,7 @@ def register_settings_callbacks(app):
                 new_password, confirm_password
             )
             if not is_valid:
-                return error, True, "danger", no_update, False
+                return no_update, NotificationManager.error(error)
 
         # Preparar datos específicos del tipo de usuario
         profile_data = {}
@@ -1462,7 +1479,7 @@ def register_settings_callbacks(app):
                     "enrolment": enrolled_sessions or 0,
                     "notes": player_notes or "",
                     "is_professional": is_professional,
-                    "wyscout_id": wyscout_id.strip() if wyscout_id else None,
+                    "wyscout_id": str(wyscout_id).strip() if wyscout_id else None,
                 }
             )
         elif user_type == "admin":
@@ -1500,6 +1517,9 @@ def register_settings_callbacks(app):
             "email": email,
             "phone": phone if phone else None,
             "line": line_id if line_id else None,
+            "date_of_birth": (
+                dt.datetime.fromisoformat(birth_date).date() if birth_date else None
+            ),
             "is_active": bool(user_current_status),
             "new_password": new_password if new_password else None,
             "new_user_type": (user_type if user_type != original_user_type else None),
@@ -1509,33 +1529,34 @@ def register_settings_callbacks(app):
 
         # Actualizar usuario usando controlador existente
         success, message = update_user_simple(selected_user_id, **update_data)
+        
+        # Si se asignó WyscoutID a jugador profesional, importar estadísticas
+        if success and user_type == "player" and is_professional and wyscout_id:
+            try:
+                from controllers.thai_league_controller import ThaiLeagueController
+                from controllers.user_controller import UserController
+                
+                # Obtener el player_id real del usuario
+                with UserController() as controller:
+                    user = controller.get_user_by_id(selected_user_id)
+                    if user and user.player_profile:
+                        thai_controller = ThaiLeagueController()
+                        thai_success, thai_message, stats = thai_controller.trigger_stats_import_for_player(
+                            player_id=user.player_profile.player_id, 
+                            wyscout_id=int(wyscout_id)
+                        )
+                        if thai_success and stats.get('total_records_created', 0) > 0:
+                            message += f" Estadísticas importadas: {stats['total_records_created']} registros."
+            except Exception as e:
+                # No fallar la actualización si hay error en las estadísticas
+                pass
 
         if success:
-            success_message = f"✅ {message}"
-
-            return (
-                success_message,
-                True,
-                "success",
-                None,
-                False,  # Activar timer para auto-hide
-            )  # Clear selection to refresh
+            return no_update, NotificationHelper.user_updated(username)  # Keep selection, don't clear
         else:
-            return f"❌ {message}", True, "danger", no_update, False
+            return no_update, NotificationManager.error(message)
 
-    @app.callback(
-        [
-            Output("settings-alert", "is_open", allow_duplicate=True),
-            Output("settings-alert-timer", "disabled", allow_duplicate=True),
-        ],
-        [Input("settings-alert-timer", "n_intervals")],
-        prevent_initial_call=True,
-    )
-    def auto_hide_alert(n_intervals):
-        """Auto-hide alert después de 5 segundos."""
-        if n_intervals > 0:
-            return False, True  # Ocultar alert y deshabilitar timer
-        return no_update, no_update
+    # El callback auto_hide_alert ha sido reemplazado por el sistema centralizado de notificaciones
 
     # ========================================================================
     # CALLBACKS PARA DELETE USER (INTEGRADO EN EDIT USER)
@@ -1629,12 +1650,10 @@ def register_settings_callbacks(app):
 
     @app.callback(
         [
-            Output("settings-alert", "children", allow_duplicate=True),
-            Output("settings-alert", "is_open", allow_duplicate=True),
-            Output("settings-alert", "color", allow_duplicate=True),
             Output("delete-confirmation-modal", "is_open", allow_duplicate=True),
             Output("delete-confirmation-input", "value"),
             Output("edit-user-selector", "value", allow_duplicate=True),
+            Output("settings-notification-store", "data", allow_duplicate=True),
         ],
         [Input("confirm-delete-btn", "n_clicks")],
         [
@@ -1646,26 +1665,24 @@ def register_settings_callbacks(app):
     def confirm_delete_user(n_clicks, selected_user_id, confirmation_text):
         """Confirma y ejecuta la eliminación del usuario."""
         if not n_clicks or not selected_user_id:
-            return "", False, "info", no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
 
         # Validar confirmación
         is_valid, error = ValidationController.validate_deletion_confirmation(
             confirmation_text, "DELETE"
         )
         if not is_valid:
-            return error, True, "danger", no_update, no_update, no_update
+            return no_update, no_update, no_update, NotificationManager.error(error)
 
         try:
             # Obtener datos del usuario antes de eliminar
             user_data = get_user_with_profile(selected_user_id)
             if not user_data:
                 return (
-                    "Error: Could not load user data",
-                    True,
-                    "danger",
-                    False,
-                    "",
-                    no_update,
+                    no_update,  # modal stays open
+                    no_update,  # input stays
+                    no_update,  # selector stays
+                    NotificationManager.error("Error: Could not load user data"),
                 )
 
             # Eliminar usuario usando controlador existente
@@ -1673,31 +1690,25 @@ def register_settings_callbacks(app):
 
             if success:
                 return (
-                    f"✅ {message}",
-                    True,
-                    "success",
                     False,  # Close modal
                     "",  # Clear confirmation input
                     None,  # Clear user selection
+                    NotificationHelper.user_deleted(user_data.get("username", "User")),
                 )
             else:
                 return (
-                    f"❌ {message}",
-                    True,
-                    "danger",
                     False,  # Close modal
                     "",  # Clear confirmation input
-                    no_update,
+                    no_update,  # Keep user selection
+                    NotificationManager.error(message),
                 )
 
         except Exception as e:
             return (
-                f"❌ Error: {str(e)}",
-                True,
-                "danger",
                 False,  # Close modal
                 "",  # Clear confirmation input
-                no_update,
+                no_update,  # Keep user selection
+                NotificationManager.error(f"Error: {str(e)}"),
             )
 
     # ========================================================================
@@ -3004,7 +3015,7 @@ def assign_wyscout_id_create(n_clicks_list, button_ids):
 
     if wyscout_id and wyscout_id != "N/A":
         return (
-            wyscout_id,
+            str(wyscout_id),
             False,
             f"✅ WyscoutID {wyscout_id} assigned successfully!",
             True,
@@ -3045,7 +3056,7 @@ def assign_wyscout_id_edit(n_clicks_list, button_ids):
 
     if wyscout_id and wyscout_id != "N/A":
         return (
-            wyscout_id,
+            str(wyscout_id),
             False,
             f"✅ WyscoutID {wyscout_id} assigned successfully!",
             True,

@@ -448,7 +448,7 @@ def register_administration_callbacks(app):
             Input({"type": "auto-hide-date", "index": "admin-filter-to-date"}, "value"),
             Input("admin-filter-coach", "value"),
             Input("admin-status-filters", "data"),
-            Input("webhook-trigger", "data"),  # SSE trigger para auto-refresh
+            Input("fallback-trigger", "data"),  # Fallback trigger para auto-refresh
             Input("admin-user-type-store", "data"),  # Para filtrado por rol
         ],
         [
@@ -473,15 +473,7 @@ def register_administration_callbacks(app):
     ):
         """Actualiza calendario y tabla según filtros con control de rol."""
 
-        print("🔍 DEBUG Admin Calendar Callback:")
-        print(f"  - active_tab: {active_tab}")
-        print(f"  - user_type: {user_type}")
-        print(f"  - from_date: {from_date}, to_date: {to_date}")
-        print(f"  - coach_filter: {coach_filter}")
-        print(f"  - status_filter: {status_filter}")
-
         if active_tab != "sessions-tab":
-            print("  ❌ Not sessions-tab, returning empty")
             return html.Div(), html.Div()
 
         try:
@@ -493,9 +485,6 @@ def register_administration_callbacks(app):
 
             # Obtener user_id de la sesión
             user_id = session_data.get("user_id")
-            print(f"  - session_data: {session_data}")
-            print(f"  - extracted user_id: {user_id}")
-            print(f"  - user_type from store: {user_type}")
 
             # Usar filtros directamente del store
             if not status_filter:
@@ -514,23 +503,18 @@ def register_administration_callbacks(app):
 
             # Coach filter - Si es coach, solo ver sus propias sesiones
             if user_type == "coach" and user_id:
-                print(f"  🎯 COACH MODE: user_id={user_id}")
                 # CORREGIDO: Obtener el coach_id correcto desde user_id
                 from controllers.session_controller import get_coach_by_user_id
 
                 coach = get_coach_by_user_id(user_id)
                 if coach:
                     coach_id = coach.coach_id
-                    print(f"  ✅ Found coach: coach_id={coach_id}")
                 else:
                     coach_id = None
-                    print(f"  ❌ No coach found for user_id={user_id}")
             else:
                 coach_id = (
                     coach_filter if coach_filter and coach_filter != "all" else None
                 )
-
-            print(f"  - final coach_id for filtering: {coach_id}")
 
             with SessionController() as controller:
                 # Obtener sesiones con auto-actualización de sesiones pasadas
@@ -542,11 +526,6 @@ def register_administration_callbacks(app):
                     status_filter=status_filter,
                 )
 
-                print(f"  - sessions found: {len(sessions)} sessions")
-                if sessions:
-                    print(
-                        f"  - first session coach_id: {sessions[0].coach_id if sessions else 'N/A'}"
-                    )
 
                 # Crear calendario usando el controller funcional
 
@@ -1585,8 +1564,6 @@ def register_administration_callbacks(app):
                 notes=notes or "",
             )
 
-            update_time = time.time() - start_time_op
-            print(f"⏱️ Update session took: {update_time:.2f}s")
 
             if success:
                 # Actualizar calendario, tabla y selector después de editar exitosamente
@@ -1622,8 +1599,6 @@ def register_administration_callbacks(app):
                             from_date, to_date, effective_coach_filter, status_filter
                         )
                     )
-                    ui_time = time.time() - ui_start_time
-                    print(f"⏱️ UI update took: {ui_time:.2f}s")
                 else:
                     from dash import no_update
 
@@ -1721,7 +1696,7 @@ def register_administration_callbacks(app):
                 setTimeout(function() {
                     // Activar el callback para cerrar
                     window.dash_clientside.set_props('admin-alert', {'is_open': false});
-                }, 4000);
+                }, 5000);
             }
             return window.dash_clientside.no_update;
         }

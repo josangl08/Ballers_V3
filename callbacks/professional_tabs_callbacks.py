@@ -7,6 +7,7 @@ import dash
 from dash import Input, Output, State, html
 
 from controllers.player_controller import get_player_profile_data
+from models.user_model import UserType
 from pages.ballers_dash import (
     create_professional_info_content,
     create_professional_stats_content,
@@ -57,10 +58,12 @@ def register_professional_tabs_callbacks(app):
             is_prof_attr = getattr(player, "is_professional", "ATTR_MISSING")
             print(f"🔥 DEBUG: Player={user.name}, is_professional={is_prof_attr}")
 
-            # Verificar si es jugador profesional
+            # Verificar si es jugador profesional (usuario player Y is_professional=True)
+            is_user_player = user.user_type == UserType.player
             is_professional = getattr(player, "is_professional", False)
+            is_professional_user = is_user_player and is_professional
 
-            if is_professional:
+            if is_professional_user:
                 # Crear tabs profesionales y mantener todo el contenido amateur visible
                 tabs = create_professional_tabs(player, user)
                 print(f"🔥 DEBUG: Created professional tabs for {user.name}")
@@ -107,8 +110,10 @@ def register_professional_tabs_callbacks(app):
             player = profile_data["player"]
             user = profile_data["user"]
 
-            # Verificar que es jugador profesional
-            if not hasattr(player, "is_professional") or not player.is_professional:
+            # Verificar que es jugador profesional (usuario player Y is_professional=True)
+            is_user_player = user.user_type == UserType.player
+            is_professional = getattr(player, "is_professional", False)
+            if not (is_user_player and is_professional):
                 return html.Div()
 
             # Siempre mostrar contenido de Info por defecto cuando se selecciona jugador
@@ -151,9 +156,10 @@ def register_professional_tabs_callbacks(app):
             player = profile_data["player"]
             user = profile_data["user"]
 
-            # Verificar que es jugador profesional
-            is_prof = hasattr(player, "is_professional") and player.is_professional
-            if not is_prof:
+            # Verificar que es jugador profesional (usuario player Y is_professional=True)
+            is_user_player = user.user_type == UserType.player
+            is_professional = getattr(player, "is_professional", False)
+            if not (is_user_player and is_professional):
                 return html.Div()
 
             # Mostrar contenido según la tab activa
@@ -190,8 +196,12 @@ def register_professional_tabs_callbacks(app):
                 return {"display": "block"}, {"display": "block"}
 
             player = profile_data["player"]
-            is_prof = hasattr(player, "is_professional") and player.is_professional
-            if not is_prof:
+            user = profile_data["user"]
+            
+            # Verificar que es jugador profesional (usuario player Y is_professional=True)
+            is_user_player = user.user_type == UserType.player
+            is_professional = getattr(player, "is_professional", False)
+            if not (is_user_player and is_professional):
                 return {"display": "block"}, {"display": "block"}
 
             # Controlar visibilidad según tab activa

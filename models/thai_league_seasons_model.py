@@ -4,7 +4,7 @@ import enum
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, Integer, String, Text
+from sqlalchemy import DateTime, Enum, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -48,7 +48,7 @@ class ThaiLeagueSeason(Base):
     # Información del archivo fuente
     source_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     file_hash: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    file_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    file_size: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # MB
 
     # Estadísticas de importación
     total_records: Mapped[Optional[int]] = mapped_column(
@@ -102,6 +102,8 @@ class ThaiLeagueSeason(Base):
         if self.last_import_attempt is None:
             return True
 
+        # Fix: usar datetime.now(timezone.utc) en lugar de datetime.now() 
+        # para evitar mezcla de naive y timezone-aware datetimes
         days_since_update = (datetime.now(timezone.utc) - self.last_import_attempt).days
         return days_since_update >= self.update_frequency_days
 

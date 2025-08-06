@@ -456,9 +456,20 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
 
                     if not is_valid:
                         # Recahzar update si es inválido
+                        # Obtener nombres (manejar snapshots)
+                        if ses.coach_id and ses.coach and ses.coach.user:
+                            coach_name = ses.coach.user.name
+                        else:
+                            coach_name = ses.coach_name_snapshot or "Coach deleted"
+                            
+                        if ses.player_id and ses.player and ses.player.user:
+                            player_name = ses.player.user.name
+                        else:
+                            player_name = ses.player_name_snapshot or "Player deleted"
+                            
                         rejected_events.append(
                             {
-                                "title": f"{ses.coach.user.name} × {ses.player.user.name}",
+                                "title": f"{coach_name} × {player_name}",
                                 "date": start_dt.strftime("%d/%m/%Y"),
                                 "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
                                 "reason": error_msg,
@@ -475,9 +486,20 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
 
                     # Si hay warnings, agregar a lista
                     if warnings:
+                        # Obtener nombres (manejar snapshots)
+                        if ses.coach_id and ses.coach and ses.coach.user:
+                            coach_name = ses.coach.user.name
+                        else:
+                            coach_name = ses.coach_name_snapshot or "Coach deleted"
+                            
+                        if ses.player_id and ses.player and ses.player.user:
+                            player_name = ses.player.user.name
+                        else:
+                            player_name = ses.player_name_snapshot or "Player deleted"
+                            
                         warning_events.append(
                             {
-                                "title": f"{ses.coach.user.name} × {ses.player.user.name}",
+                                "title": f"{coach_name} × {player_name}",
                                 "date": start_dt.strftime("%d/%m/%Y"),
                                 "time": f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}",
                                 "warnings": warnings,

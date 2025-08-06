@@ -5,7 +5,7 @@ Separa la lógica del menú de la presentación UI.
 """
 from typing import Dict, List, Optional
 
-from .sync_coordinator import get_sync_stats_unified, is_auto_sync_running
+from .sync_coordinator import get_sync_stats_unified
 
 # Eliminado import de streamlit - completamente migrado a Dash
 
@@ -112,10 +112,15 @@ class MenuController:
         Returns:
             Dict con 'status' y 'icon' para mostrar
         """
-        if is_auto_sync_running():
-            return {"status": "🔄 Auto-Sync: ✅", "type": "success"}
-        else:
-            return {"status": "🔄 Auto-Sync: ⏸️", "type": "info"}
+        # Auto-sync replaced with webhook-based real-time sync
+        try:
+            from controllers.webhook_integration import is_webhook_integration_healthy
+            if is_webhook_integration_healthy():
+                return {"status": "📡 Real-time: ✅", "type": "success"}
+            else:
+                return {"status": "📡 Real-time: 🔄", "type": "info"}
+        except ImportError:
+            return {"status": "📡 Manual Sync", "type": "info"}
 
     # Navegación y redirecciones
 

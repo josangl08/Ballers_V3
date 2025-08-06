@@ -11,7 +11,7 @@ from sqlalchemy.orm import joinedload
 
 from common.utils import hash_password
 from controllers.db import get_db_session
-from models import Admin, Coach, Player, User, UserType
+from models import Admin, Coach, Player, ProfessionalStats, User, UserType
 
 
 class UserController:
@@ -291,6 +291,7 @@ class UserController:
         email: Optional[str] = None,
         phone: Optional[str] = None,
         line: Optional[str] = None,
+        date_of_birth: Optional[dt.date] = None,
         new_password: Optional[str] = None,
         is_active: Optional[bool] = None,
         new_user_type: Optional[str] = None,
@@ -340,6 +341,8 @@ class UserController:
                 user.phone = phone
             if line is not None:
                 user.line = line
+            if date_of_birth is not None:
+                user.date_of_birth = dt.datetime.combine(date_of_birth, dt.datetime.min.time())
             if is_active is not None and hasattr(user, "is_active"):
                 user.is_active = is_active
 
@@ -389,7 +392,12 @@ class UserController:
 
     def delete_user(self, user_id: int) -> Tuple[bool, str]:
         """
-        Elimina un usuario y su perfil asociado.
+        Elimina un usuario y su perfil asociado con snapshots selectivos.
+        
+        Maneja las sesiones asociadas:
+        - Coach: Crea snapshots y reasigna sesiones futuras
+        - Player: Crea snapshots y cancela sesiones futuras
+        - Admin: Eliminación directa (no tiene sesiones)
 
         Args:
             user_id: ID del usuario a eliminar
@@ -405,15 +413,34 @@ class UserController:
             return False, "User not found"
 
         try:
-            # Eliminar perfil específico primero (debido a foreign key constraints)
+            # PASO 1: Crear snapshots selectivos ANTES de eliminar
+            snapshots_created = 0
+            sessions_reassigned = 0
+            sessions_canceled = 0
+            
+            if user.user_type == UserType.coach and user.coach_profile:
+                snapshots_created = self._create_coach_snapshots(user)
+                sessions_reassigned = self._handle_coach_future_sessions(user.coach_profile.coach_id)
+                
+            elif user.user_type == UserType.player and user.player_profile:
+                snapshots_created = self._create_player_snapshots(user)
+                sessions_canceled = self._handle_player_future_sessions(user.player_profile.player_id)
+
+            # PASO 2: Eliminar perfil específico (lógica original)
             if user.user_type == UserType.coach and user.coach_profile:
                 self.db.delete(user.coach_profile)
             elif user.user_type == UserType.player and user.player_profile:
+                # IMPORTANTE: Eliminar ProfessionalStats primero para evitar errores
+                professional_stats = self.db.query(ProfessionalStats).filter(
+                    ProfessionalStats.player_id == user.player_profile.player_id
+                ).all()
+                for stat in professional_stats:
+                    self.db.delete(stat)
                 self.db.delete(user.player_profile)
             elif user.user_type == UserType.admin and user.admin_profile:
                 self.db.delete(user.admin_profile)
 
-            # Eliminar foto de perfil si no es la predeterminada
+            # PASO 3: Eliminar foto de perfil si no es la predeterminada
             if (
                 user.profile_photo != "assets/profile_photos/default_profile.png"
                 and os.path.exists(user.profile_photo)
@@ -423,12 +450,22 @@ class UserController:
                 except:
                     pass
 
-            # Eliminar usuario
+            # PASO 4: Eliminar usuario
             user_name = user.name
             self.db.delete(user)
             self.db.commit()
 
-            return True, f"User {user_name} successfully deleted."
+            # PASO 5: Crear mensaje informativo
+            message_parts = [f"User {user_name} successfully deleted"]
+            
+            if snapshots_created > 0:
+                message_parts.append(f"{snapshots_created} session snapshots created")
+            if sessions_reassigned > 0:
+                message_parts.append(f"{sessions_reassigned} future sessions reassigned")
+            if sessions_canceled > 0:
+                message_parts.append(f"{sessions_canceled} future sessions canceled")
+                
+            return True, ". ".join(message_parts) + "."
 
         except Exception as e:
             self.db.rollback()
@@ -491,7 +528,7 @@ class UserController:
                     enrolment=profile_data.get("enrolment", 0),
                     notes=profile_data.get("notes", ""),
                     is_professional=profile_data.get("is_professional", False),
-                    wyscout_id=profile_data.get("wyscout_id", None),
+                    wyscout_id=self._convert_wyscout_id_to_int(profile_data.get("wyscout_id", None)),
                 )
                 self.db.add(player_profile)
 
@@ -534,14 +571,30 @@ class UserController:
                 if "notes" in profile_data:
                     user.player_profile.notes = profile_data["notes"]
 
-                # Campos profesionales
+                # Campos profesionales - usar nueva lógica de producto
                 if "is_professional" in profile_data:
-                    user.player_profile.is_professional = profile_data[
-                        "is_professional"
-                    ]
+                    new_is_professional = profile_data["is_professional"]
+                    current_is_professional = user.player_profile.is_professional
+                    
+                    # Si hay cambio en el estado profesional, usar estrategia especializada
+                    if new_is_professional != current_is_professional:
+                        # Commit cambios previos antes de manejar professional status
+                        self.db.commit()
+                        
+                        # Usar función especializada para el cambio de estado
+                        success, message = handle_professional_status_change(
+                            user.user_id, new_is_professional
+                        )
+                        
+                        if not success:
+                            self.db.rollback()
+                            return False, f"Error updating professional status: {message}"
+                    else:
+                        # No hay cambio, solo actualizar el campo
+                        user.player_profile.is_professional = new_is_professional
 
                 if "wyscout_id" in profile_data:
-                    user.player_profile.wyscout_id = profile_data["wyscout_id"]
+                    user.player_profile.wyscout_id = self._convert_wyscout_id_to_int(profile_data["wyscout_id"])
 
             elif user.user_type == UserType.admin and user.admin_profile:
                 if "role" in profile_data:
@@ -575,6 +628,178 @@ class UserController:
         except Exception as e:
             print(f"Error changing user type: {e}")
             return False
+
+    def _convert_wyscout_id_to_int(self, wyscout_id):
+        """
+        Convierte wyscout_id de string a int para consistencia con modelo de BD.
+        
+        Args:
+            wyscout_id: Valor que puede ser string, int, o None
+            
+        Returns:
+            int o None: wyscout_id como entero o None si no es válido
+        """
+        if wyscout_id is None or wyscout_id == "":
+            return None
+            
+        try:
+            # Si ya es entero, devolverlo tal como está
+            if isinstance(wyscout_id, int):
+                return wyscout_id
+                
+            # Si es string, convertir a entero
+            if isinstance(wyscout_id, str):
+                wyscout_id = wyscout_id.strip()
+                if wyscout_id == "" or wyscout_id.lower() in ["none", "null", "n/a"]:
+                    return None
+                return int(wyscout_id)
+                
+        except (ValueError, TypeError):
+            # Si la conversión falla, retornar None
+            return None
+            
+        return None
+
+    def _create_coach_snapshots(self, coach_user) -> int:
+        """
+        Crea snapshots selectivos para todas las sesiones de un coach.
+        
+        Args:
+            coach_user: Usuario coach a eliminar
+            
+        Returns:
+            Número de snapshots creados
+        """
+        from models.session_model import Session
+        
+        if not coach_user.coach_profile:
+            return 0
+            
+        # Obtener todas las sesiones del coach
+        sessions = self.db.query(Session).filter_by(
+            coach_id=coach_user.coach_profile.coach_id
+        ).all()
+        
+        snapshots_created = 0
+        coach_name_del = f"{coach_user.name} (DEL)"
+        
+        for session in sessions:
+            # Solo crear snapshot si no existe ya
+            if not session.coach_name_snapshot:
+                session.coach_name_snapshot = coach_name_del
+                session.coach_id = None  # Desreferenciar
+                snapshots_created += 1
+        
+        return snapshots_created
+    
+    def _create_player_snapshots(self, player_user) -> int:
+        """
+        Crea snapshots selectivos para todas las sesiones de un player.
+        
+        Args:
+            player_user: Usuario player a eliminar
+            
+        Returns:
+            Número de snapshots creados
+        """
+        from models.session_model import Session
+        
+        if not player_user.player_profile:
+            return 0
+            
+        # Obtener todas las sesiones del player
+        sessions = self.db.query(Session).filter_by(
+            player_id=player_user.player_profile.player_id
+        ).all()
+        
+        snapshots_created = 0
+        player_name_del = f"{player_user.name} (DEL)"
+        
+        for session in sessions:
+            # Solo crear snapshot si no existe ya
+            if not session.player_name_snapshot:
+                session.player_name_snapshot = player_name_del
+                session.player_id = None  # Desreferenciar
+                snapshots_created += 1
+        
+        return snapshots_created
+    
+    def _handle_coach_future_sessions(self, coach_id: int) -> int:
+        """
+        Maneja las sesiones futuras de un coach: las reasigna a otro coach activo.
+        
+        Args:
+            coach_id: ID del coach a eliminar
+            
+        Returns:
+            Número de sesiones reasignadas
+        """
+        from models.session_model import Session, SessionStatus
+        from models.coach_model import Coach
+        from datetime import datetime, timezone
+        
+        # Obtener sesiones futuras del coach
+        future_sessions = self.db.query(Session).filter(
+            Session.coach_id == coach_id,
+            Session.start_time > datetime.now(timezone.utc),
+            Session.status == SessionStatus.SCHEDULED
+        ).all()
+        
+        if not future_sessions:
+            return 0
+        
+        # Encontrar otro coach activo para reasignar
+        available_coaches = self.db.query(Coach).join(User).filter(
+            User.is_active == True,
+            Coach.coach_id != coach_id
+        ).all()
+        
+        if not available_coaches:
+            # Si no hay coaches disponibles, cancelar las sesiones
+            for session in future_sessions:
+                session.status = SessionStatus.CANCELED
+                session.notes = (session.notes or "") + " [AUTO-CANCELED: No available coaches]"
+            return len(future_sessions)
+        
+        # Reasignar a primer coach disponible (lógica simple)
+        target_coach = available_coaches[0]
+        sessions_reassigned = 0
+        
+        for session in future_sessions:
+            session.coach_id = target_coach.coach_id
+            session.notes = (session.notes or "") + f" [REASSIGNED from deleted coach]"
+            sessions_reassigned += 1
+        
+        return sessions_reassigned
+    
+    def _handle_player_future_sessions(self, player_id: int) -> int:
+        """
+        Maneja las sesiones futuras de un player: las cancela.
+        
+        Args:
+            player_id: ID del player a eliminar
+            
+        Returns:
+            Número de sesiones canceladas
+        """
+        from models.session_model import Session, SessionStatus
+        from datetime import datetime, timezone
+        
+        # Obtener sesiones futuras del player
+        future_sessions = self.db.query(Session).filter(
+            Session.player_id == player_id,
+            Session.start_time > datetime.now(timezone.utc),
+            Session.status == SessionStatus.SCHEDULED
+        ).all()
+        
+        sessions_canceled = 0
+        
+        for session in future_sessions:
+            session.status = SessionStatus.CANCELED
+            session.notes = (session.notes or "") + " [AUTO-CANCELED: Player deleted]"
+            sessions_canceled += 1
+        
+        return sessions_canceled
 
 
 def get_users_for_management(
@@ -645,6 +870,7 @@ def get_users_for_management(
         return users_data
 
 
+
 # Función para obtener usuario individual con eager loading
 def get_user_with_profile(user_id: int) -> Optional[Dict[str, Any]]:
     """
@@ -700,6 +926,7 @@ def get_user_with_profile(user_id: int) -> Optional[Dict[str, Any]]:
         return user_data
 
 
+
 def create_user_simple(user_data: Dict[str, Any]) -> Tuple[bool, str]:
     """
     Función de conveniencia para crear usuario.
@@ -726,3 +953,4 @@ def delete_user_simple(user_id: int) -> Tuple[bool, str]:
     """
     with UserController() as controller:
         return controller.delete_user(user_id)
+
