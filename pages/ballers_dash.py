@@ -13,6 +13,11 @@ from controllers.player_controller import get_player_profile_data, get_players_f
 from controllers.thai_league_controller import ThaiLeagueController
 from models.user_model import UserType
 
+# ML Pipeline Imports - Phase 13.3 Dashboard Integration
+from controllers.ml.ml_metrics_controller import MLMetricsController
+from controllers.ml.feature_engineer import FeatureEngineer
+from controllers.ml.position_normalizer import PositionNormalizer
+
 
 # Funciones simples para reemplazar cloud_utils removido
 def is_streamlit_cloud():
@@ -594,6 +599,234 @@ def create_efficiency_metrics_chart(player_stats):
     return dcc.Graph(
         figure=fig, style={"height": "300px"}, config={"displayModeBar": False}
     )
+
+
+# === ML ENHANCED CHART FUNCTIONS - Phase 13.3 ===
+
+def create_pdi_evolution_chart(player_id, seasons=None):
+    """
+    Crea gráfico de evolución del Player Development Index (PDI).
+    
+    Integra datos ML del pipeline ETL con visualización avanzada.
+    """
+    try:
+        # Inicializar controller ML
+        ml_controller = MLMetricsController()
+        
+        if not seasons:
+            # Últimas 3 temporadas por defecto
+            current_year = datetime.datetime.now().year
+            seasons = [
+                f"{current_year-2}-{str(current_year-1)[-2:]}",
+                f"{current_year-1}-{str(current_year)[-2:]}",
+                f"{current_year}-{str(current_year+1)[-2:]}"
+            ]
+        
+        # Obtener métricas ML por temporada
+        pdi_data = []
+        for season in seasons:
+            try:
+                analysis = ml_controller.get_enhanced_player_analysis(player_id, season)
+                if "ml_metrics" in analysis and "raw" in analysis["ml_metrics"]:
+                    ml_metrics = analysis["ml_metrics"]["raw"]
+                    pdi_data.append({
+                        "season": season,
+                        "pdi_overall": ml_metrics.get("pdi_overall", 0),
+                        "pdi_universal": ml_metrics.get("pdi_universal", 0),
+                        "pdi_zone": ml_metrics.get("pdi_zone", 0),
+                        "pdi_position": ml_metrics.get("pdi_position_specific", 0),
+                        "technical": ml_metrics.get("technical_proficiency", 0),
+                        "tactical": ml_metrics.get("tactical_intelligence", 0),
+                        "physical": ml_metrics.get("physical_performance", 0),
+                        "consistency": ml_metrics.get("consistency_index", 0)
+                    })
+            except Exception as e:
+                print(f"Error obteniendo datos ML para temporada {season}: {e}")
+                continue
+        
+        if not pdi_data:
+            return dbc.Alert("No ML metrics available for PDI evolution", color="warning")
+        
+        # Crear gráfico PDI
+        fig = go.Figure()
+        
+        # PDI Overall (línea principal)
+        fig.add_trace(go.Scatter(
+            x=[d["season"] for d in pdi_data],
+            y=[d["pdi_overall"] for d in pdi_data],
+            mode='lines+markers',
+            name='PDI Overall',
+            line=dict(color='#24DE84', width=4),
+            marker=dict(size=10),
+            hovertemplate='<b>PDI Overall</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>'
+        ))
+        
+        # Componentes PDI (líneas secundarias)
+        fig.add_trace(go.Scatter(
+            x=[d["season"] for d in pdi_data],
+            y=[d["pdi_universal"] for d in pdi_data],
+            mode='lines+markers',
+            name='Universal (40%)',
+            line=dict(color='#1E3A8A', width=2, dash='dot'),
+            marker=dict(size=6),
+            hovertemplate='<b>PDI Universal</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>'
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=[d["season"] for d in pdi_data],
+            y=[d["pdi_zone"] for d in pdi_data],
+            mode='lines+markers',
+            name='Zone (35%)',
+            line=dict(color='#F59E0B', width=2, dash='dash'),
+            marker=dict(size=6),
+            hovertemplate='<b>PDI Zone</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>'
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=[d["season"] for d in pdi_data],
+            y=[d["pdi_position"] for d in pdi_data],
+            mode='lines+markers',
+            name='Position (25%)',
+            line=dict(color='#10B981', width=2, dash='dashdot'),
+            marker=dict(size=6),
+            hovertemplate='<b>PDI Position</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>'
+        ))
+        
+        # Configurar layout
+        fig.update_layout(
+            title=dict(
+                text="Player Development Index Evolution",
+                font=dict(color="#24DE84", size=16)
+            ),
+            xaxis_title="Season",
+            yaxis_title="PDI Score (0-100)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#FFFFFF"),
+            legend=dict(
+                bgcolor="rgba(0,0,0,0.7)",
+                bordercolor="rgba(36,222,132,0.3)",
+                borderwidth=1,
+                x=0.02,
+                y=0.98,
+            ),
+            height=350,
+            margin=dict(t=60, b=40, l=50, r=40),
+            hovermode='x unified'
+        )
+        
+        # Añadir líneas de referencia
+        fig.add_hline(y=75, line_dash="solid", line_color="#10B981", 
+                      annotation_text="Excellence (75+)", annotation_position="top right")
+        fig.add_hline(y=60, line_dash="solid", line_color="#F59E0B",
+                      annotation_text="Good (60+)", annotation_position="top right") 
+        fig.add_hline(y=40, line_dash="solid", line_color="#EF4444",
+                      annotation_text="Needs Improvement (40+)", annotation_position="top right")
+        
+        # Configurar ejes
+        fig.update_yaxes(range=[0, 100], dtick=10, showgrid=True, gridcolor='rgba(255,255,255,0.1)')
+        fig.update_xaxes(showgrid=True, gridcolor='rgba(255,255,255,0.1)')
+        
+        return dcc.Graph(
+            figure=fig, 
+            style={"height": "350px"}, 
+            config={"displayModeBar": False}
+        )
+        
+    except Exception as e:
+        print(f"Error creating PDI evolution chart: {e}")
+        return dbc.Alert(f"Error creating PDI chart: {str(e)}", color="danger")
+
+
+def create_ml_enhanced_radar_chart(player_id, season="2024-25"):
+    """
+    Crea radar chart mejorado con métricas ML normalizadas.
+    
+    Combina traditional stats con análisis ML del pipeline.
+    """
+    try:
+        # Inicializar controllers ML
+        ml_controller = MLMetricsController()
+        position_normalizer = PositionNormalizer()
+        
+        # Obtener análisis ML del jugador
+        analysis = ml_controller.get_enhanced_player_analysis(player_id, season)
+        
+        if "error" in analysis:
+            return dbc.Alert("No ML data available for radar chart", color="warning")
+        
+        # Extraer métricas normalizadas
+        ml_metrics = analysis.get("ml_metrics", {}).get("raw", {})
+        
+        # Definir métricas para radar chart
+        metrics_data = {
+            'Technical Skills': ml_metrics.get('technical_proficiency', 50),
+            'Tactical Intelligence': ml_metrics.get('tactical_intelligence', 50),
+            'Physical Performance': ml_metrics.get('physical_performance', 50),
+            'Consistency': ml_metrics.get('consistency_index', 50),
+            'Universal Skills': ml_metrics.get('pdi_universal', 50),
+            'Zone Performance': ml_metrics.get('pdi_zone', 50),
+            'Position Specific': ml_metrics.get('pdi_position_specific', 50)
+        }
+        
+        # Crear radar chart
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatterpolar(
+            r=list(metrics_data.values()),
+            theta=list(metrics_data.keys()),
+            fill='toself',
+            name='ML Analysis',
+            fillcolor='rgba(36, 222, 132, 0.3)',
+            line=dict(color='#24DE84', width=3),
+            hovertemplate='<b>%{theta}</b><br>Score: %{r:.1f}<extra></extra>'
+        ))
+        
+        # Configurar layout
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, 100],
+                    tickmode='linear',
+                    dtick=20,
+                    showticklabels=True,
+                    ticks='outside',
+                    tickcolor='#FFFFFF',
+                    gridcolor='rgba(255,255,255,0.3)',
+                    gridwidth=1
+                ),
+                angularaxis=dict(
+                    tickfont=dict(size=12, color='#FFFFFF'),
+                    rotation=90,
+                    direction='counterclockwise'
+                )
+            ),
+            showlegend=True,
+            legend=dict(
+                bgcolor="rgba(0,0,0,0.7)",
+                bordercolor="rgba(36,222,132,0.3)",
+                borderwidth=1,
+                font=dict(color='#FFFFFF')
+            ),
+            title=dict(
+                text="ML-Enhanced Performance Profile",
+                font=dict(color="#24DE84", size=16)
+            ),
+            height=400,
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#FFFFFF")
+        )
+        
+        return dcc.Graph(
+            figure=fig,
+            style={"height": "400px"},
+            config={"displayModeBar": False}
+        )
+        
+    except Exception as e:
+        print(f"Error creating ML radar chart: {e}")
+        return dbc.Alert(f"Error creating radar chart: {str(e)}", color="danger")
 
 
 def create_player_profile_dash(player_id=None, user_id=None):
@@ -2771,6 +3004,137 @@ def create_professional_stats_content(player, user):
                             ],
                             width=12,
                             className="mb-3",
+                        )
+                    ]
+                ),
+                # === NUEVA SECCIÓN: ML ANALYTICS DASHBOARD (Phase 13.3) ===
+                html.Hr(style={"border-color": "rgba(36, 222, 132, 0.3)", "margin": "30px 0"}),
+                html.H5(
+                    [
+                        html.I(className="bi bi-robot me-2"),
+                        "AI-Powered Performance Analytics",
+                        html.Span(
+                            " (Machine Learning Pipeline)",
+                            className="text-muted",
+                            style={"font-size": "0.8rem"}
+                        )
+                    ],
+                    className="text-primary mb-4",
+                    style={"text-align": "center"}
+                ),
+                # ML Dashboard - Fila 1: PDI Evolution y ML Radar Chart
+                dbc.Row(
+                    [
+                        # Gráfico evolución PDI
+                        dbc.Col(
+                            [
+                                dbc.Card(
+                                    [
+                                        dbc.CardHeader(
+                                            html.H6(
+                                                [
+                                                    html.I(className="bi bi-graph-up me-2"),
+                                                    "Player Development Index (PDI) Evolution",
+                                                ],
+                                                className="card-title mb-0 text-primary",
+                                            )
+                                        ),
+                                        dbc.CardBody(
+                                            [create_pdi_evolution_chart(player.player_id)],
+                                            className="p-2",
+                                        ),
+                                    ],
+                                    style={
+                                        "background-color": "#2B2B2B",
+                                        "border-color": "rgba(36, 222, 132, 0.3)",
+                                    },
+                                ),
+                            ],
+                            width=12,
+                            lg=8,
+                            className="mb-3",
+                        ),
+                        # ML Enhanced Radar Chart
+                        dbc.Col(
+                            [
+                                dbc.Card(
+                                    [
+                                        dbc.CardHeader(
+                                            html.H6(
+                                                [
+                                                    html.I(className="bi bi-radar me-2"),
+                                                    "ML Performance Profile",
+                                                ],
+                                                className="card-title mb-0 text-primary",
+                                            )
+                                        ),
+                                        dbc.CardBody(
+                                            [create_ml_enhanced_radar_chart(player.player_id)],
+                                            className="p-2",
+                                        ),
+                                    ],
+                                    style={
+                                        "background-color": "#2B2B2B",
+                                        "border-color": "rgba(36, 222, 132, 0.3)",
+                                    },
+                                ),
+                            ],
+                            width=12,
+                            lg=4,
+                            className="mb-3",
+                        ),
+                    ]
+                ),
+                # ML Insights y Feature Analysis
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                dbc.Card(
+                                    [
+                                        dbc.CardHeader(
+                                            html.H6(
+                                                [
+                                                    html.I(className="bi bi-lightbulb me-2"),
+                                                    "AI Development Insights",
+                                                ],
+                                                className="card-title mb-0 text-primary",
+                                            )
+                                        ),
+                                        dbc.CardBody(
+                                            [
+                                                html.P(
+                                                    "🔸 Machine Learning Analysis powered by advanced Feature Engineering",
+                                                    className="mb-2",
+                                                    style={"color": "#FFFFFF", "font-size": "0.9rem"}
+                                                ),
+                                                html.P(
+                                                    "🔸 PDI combines Universal (40%), Zone (35%), and Position-Specific (25%) metrics",
+                                                    className="mb-2",
+                                                    style={"color": "#FFFFFF", "font-size": "0.9rem"}
+                                                ),
+                                                html.P(
+                                                    "🔸 Normalized against Thai League benchmarks for fair comparison",
+                                                    className="mb-2",
+                                                    style={"color": "#FFFFFF", "font-size": "0.9rem"}
+                                                ),
+                                                html.P(
+                                                    "🔸 Real-time updates from professional statistics pipeline",
+                                                    className="mb-0",
+                                                    style={"color": "#FFFFFF", "font-size": "0.9rem"}
+                                                ),
+                                            ],
+                                            className="p-3",
+                                        ),
+                                    ],
+                                    style={
+                                        "background-color": "#2B2B2B",
+                                        "border-color": "rgba(36, 222, 132, 0.3)",
+                                    },
+                                ),
+                            ],
+                            width=12,
+                            className="mb-4",
                         )
                     ]
                 ),
