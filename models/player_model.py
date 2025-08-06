@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from models.session_model import Session
     from models.test_model import TestResult
     from models.professional_stats_model import ProfessionalStats
+    from models.ml_metrics_model import MLMetrics
 
 from .base import Base
 
@@ -36,3 +37,4 @@ class Player(Base):
     professional_stats: Mapped[list["ProfessionalStats"]] = relationship(
         back_populates="player"
     )
+    ml_metrics: Mapped[list["MLMetrics"]] = relationship(back_populates="player")

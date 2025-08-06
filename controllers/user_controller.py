@@ -130,6 +130,25 @@ class UserController:
             .all()
         )
 
+    def get_coaches(self) -> List[Coach]:
+        """
+        Obtiene todos los coaches activos con sus datos de usuario.
+
+        Returns:
+            Lista de objetos Coach con relaciones User cargadas
+        """
+        if not self.db:
+            raise RuntimeError("Controller debe usarse como context manager")
+
+        return (
+            self.db.query(Coach)
+            .join(User)
+            .options(joinedload(Coach.user))  # Eager loading para evitar lazy loading
+            .filter(User.is_active.is_(True))
+            .order_by(User.name)
+            .all()
+        )
+
     def get_user_by_id(self, user_id: int) -> Optional[User]:
         """
         Obtiene un usuario por su ID.
@@ -361,7 +380,9 @@ class UserController:
                             os.remove(user.profile_photo)
                         except OSError:
                             # Si no se puede eliminar, continuar
-                            print(f"Warning: Could not remove profile photo {user.profile_photo}")
+                            print(
+                                f"Warning: Could not remove profile photo {user.profile_photo}"
+                            )
 
                     # Guardar nueva foto
                     new_photo_path = self._save_profile_photo(
@@ -459,7 +480,9 @@ class UserController:
                 try:
                     os.remove(user.profile_photo)
                 except OSError:
-                    print(f"Warning: Could not remove old profile photo {user.profile_photo}")
+                    print(
+                        f"Warning: Could not remove old profile photo {user.profile_photo}"
+                    )
 
             # PASO 4: Eliminar usuario
             user_name = user.name
