@@ -6,8 +6,4 @@ from .cleaners import DataCleaners
 from .normalizers import DataNormalizers
 from .validators import DataValidators
 
-__all__ = [
-    "DataCleaners",
-    "DataNormalizers",
-    "DataValidators"
-]
+__all__ = ["DataCleaners", "DataNormalizers", "DataValidators"]

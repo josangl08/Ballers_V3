@@ -115,6 +115,7 @@ class MenuController:
         # Auto-sync replaced with webhook-based real-time sync
         try:
             from controllers.webhook_integration import is_webhook_integration_healthy
+
             if is_webhook_integration_healthy():
                 return {"status": "📡 Real-time: ✅", "type": "success"}
             else:

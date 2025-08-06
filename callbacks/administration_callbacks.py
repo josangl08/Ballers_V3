@@ -526,7 +526,6 @@ def register_administration_callbacks(app):
                     status_filter=status_filter,
                 )
 
-
                 # Crear calendario usando el controller funcional
 
                 calendar_content = show_calendar_dash(
@@ -1563,7 +1562,6 @@ def register_administration_callbacks(app):
                 end_time=end_time_obj,
                 notes=notes or "",
             )
-
 
             if success:
                 # Actualizar calendario, tabla y selector después de editar exitosamente

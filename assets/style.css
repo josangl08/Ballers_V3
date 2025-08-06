@@ -3034,9 +3034,9 @@ iframe[id*="dash-calendar"] * {
     top: 40px;
     width: 2px;
     height: calc(100% - 40px);
-    background: linear-gradient(to bottom, 
-        var(--color-primary-alpha-50) 0%, 
-        var(--color-primary-alpha-20) 50%, 
+    background: linear-gradient(to bottom,
+        var(--color-primary-alpha-50) 0%,
+        var(--color-primary-alpha-20) 50%,
         transparent 100%);
     z-index: 1;
 }
@@ -3084,8 +3084,8 @@ iframe[id*="dash-calendar"] * {
 
 /* Team Stats Integration */
 .team-stats-header {
-    background: linear-gradient(135deg, 
-        var(--color-primary-alpha-10) 0%, 
+    background: linear-gradient(135deg,
+        var(--color-primary-alpha-10) 0%,
         var(--color-primary-alpha-05) 100%);
     border: 1px solid var(--color-primary-alpha-30);
     border-radius: var(--radius-lg);
@@ -3105,9 +3105,9 @@ iframe[id*="dash-calendar"] * {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, 
-        transparent, 
-        rgba(36, 222, 132, 0.2), 
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(36, 222, 132, 0.2),
         transparent);
     animation: shimmer 3s infinite;
 }
@@ -3126,17 +3126,17 @@ iframe[id*="dash-calendar"] * {
     .team-timeline-item {
         padding-left: 35px;
     }
-    
+
     .team-timeline-icon {
         width: 30px;
         height: 30px;
         font-size: 0.9rem;
     }
-    
+
     .team-timeline-line {
         left: 14px;
     }
-    
+
     .team-info-card {
         margin-bottom: 0.75rem;
     }
@@ -3148,7 +3148,7 @@ iframe[id*="dash-calendar"] * {
         background-color: var(--bg-card);
         border-color: rgba(255, 255, 255, 0.1);
     }
-    
+
     .team-timeline-item:hover {
         background-color: rgba(255, 255, 255, 0.03);
     }

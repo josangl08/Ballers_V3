@@ -148,13 +148,13 @@ def build_calendar_event_body(session: Session) -> dict:
     """Devuelve el diccionario body que Calendar API espera."""
 
     COLOR = {k: v["google"] for k, v in CALENDAR_COLORS.items()}
-    
+
     # Obtener nombres (manejar snapshots)
     if session.coach_id and session.coach:
         coach_name = session.coach.user.name
     else:
         coach_name = session.coach_name_snapshot or "Coach deleted"
-    
+
     if session.player_id and session.player:
         player_name = session.player.user.name
     else:

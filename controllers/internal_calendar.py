@@ -30,12 +30,12 @@ def _to_event(s: Session) -> dict:
         coach_name = s.coach.user.name
     else:
         coach_name = s.coach_name_snapshot or "Coach deleted"
-        
+
     if s.player_id and s.player and s.player.user:
         player_name = s.player.user.name
     else:
         player_name = s.player_name_snapshot or "Player deleted"
-    
+
     event = {
         "id": s.id,
         "title": f"{coach_name} × {player_name}",
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {{
         // Colorear (DEL) en rojo en tooltips
         const playerName = ev.extendedProps.player ? ev.extendedProps.player.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
         const coachName = ev.extendedProps.coach ? ev.extendedProps.coach.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
-        
+
         let html = `<span>${{colorCircle}}<strong style="color: ${{eventColor}}">${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
                     <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{playerName}}<br>
                     <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{coachName}}`;
@@ -334,7 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {{
         // Colorear (DEL) en rojo en tooltips
         const playerName = ev.extendedProps.player ? ev.extendedProps.player.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
         const coachName = ev.extendedProps.coach ? ev.extendedProps.coach.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
-        
+
         let html = `<span>${{colorCircle}}<strong style="color: ${{eventColor}}">${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
                     <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{playerName}}<br>
                     <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{coachName}}`;
@@ -582,7 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {{
         // Colorear (DEL) en rojo en tooltips
         const playerName = ev.extendedProps.player ? ev.extendedProps.player.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
         const coachName = ev.extendedProps.coach ? ev.extendedProps.coach.replace(/\\(DEL\\)/g, '<span style="color: #F44336;">(DEL)</span>') : 'N/A';
-        
+
         let html = `<span>${{colorCircle}}<strong style="color: ${{eventColor}}">${{f.format(ev.start)}}–${{f.format(ev.end)}}</strong></span><br>
                     <span style=\"color:rgba(36,222,132,1)\">Player:</span> ${{playerName}}<br>
                     <span style=\"color:rgba(36,222,132,1)\">Coach:</span> ${{coachName}}`;

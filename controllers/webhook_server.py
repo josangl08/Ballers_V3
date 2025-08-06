@@ -4,13 +4,12 @@ Webhook server for Google Calendar push notifications.
 Runs as separate Flask server to receive real-time calendar events.
 """
 import datetime as dt
+import json
 import logging
+import queue
 import threading
 import time
 from typing import Any, Dict
-
-import json
-import queue
 
 from flask import Flask, Response, jsonify, request
 from werkzeug.serving import make_server
@@ -50,7 +49,7 @@ class WebhookServer:
             "server_started_at": None,
             "sync_errors": 0,
         }
-        
+
         # SSE Event queue for real-time updates (SOLUCIÓN: Zero-polling)
         self.sse_event_queue = queue.Queue(maxsize=100)
         self.sse_clients = set()  # Track connected SSE clients
@@ -128,41 +127,42 @@ class WebhookServer:
             Server-Sent Events endpoint para updates en tiempo real.
             SOLUCIÓN: Zero-polling, updates instantáneos a la UI.
             """
+
             def generate_sse_events():
                 """Generador de eventos SSE para el cliente"""
                 try:
                     logger.info("🌐 New SSE client connected")
-                    
+
                     while True:
                         try:
                             # Esperar evento de webhook (con timeout para heartbeat)
                             event_data = self.sse_event_queue.get(timeout=30)
-                            
+
                             # Enviar evento al cliente
                             sse_message = f"data: {json.dumps(event_data)}\n\n"
                             logger.debug(f"📤 Sending SSE event: {event_data}")
                             yield sse_message
-                            
+
                         except queue.Empty:
                             # Heartbeat para mantener conexión viva
                             heartbeat = f"data: {json.dumps({'type': 'heartbeat', 'timestamp': time.time()})}\n\n"
                             yield heartbeat
-                            
+
                 except GeneratorExit:
                     logger.info("🔌 SSE client disconnected")
                 except Exception as e:
                     logger.error(f"❌ SSE stream error: {e}")
-            
+
             # Retornar stream SSE con headers correctos
             return Response(
                 generate_sse_events(),
-                mimetype='text/event-stream',
+                mimetype="text/event-stream",
                 headers={
-                    'Cache-Control': 'no-cache',
-                    'Connection': 'keep-alive',
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Headers': 'Content-Type',
-                }
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                },
             )
 
     def _validate_google_webhook(self, request) -> bool:
@@ -234,12 +234,15 @@ class WebhookServer:
                 self.stats["webhooks_processed"] += 1
 
                 # Notificar cambios a la UI para auto-refresh
-                self._notify_ui_changes(total_changes, {
-                    'imported': imported,
-                    'updated': updated, 
-                    'deleted': deleted,
-                    'problems': total_problems
-                })
+                self._notify_ui_changes(
+                    total_changes,
+                    {
+                        "imported": imported,
+                        "updated": updated,
+                        "deleted": deleted,
+                        "problems": total_problems,
+                    },
+                )
 
                 if total_problems > 0:
                     logger.warning(
@@ -327,34 +330,36 @@ class WebhookServer:
             try:
                 # Crear evento SSE con información detallada del cambio
                 sse_event = {
-                    'type': 'calendar_change',
-                    'changes_count': changes_count,
-                    'timestamp': time.time(),
-                    'message': f'Calendar updated: {changes_count} changes detected'
+                    "type": "calendar_change",
+                    "changes_count": changes_count,
+                    "timestamp": time.time(),
+                    "message": f"Calendar updated: {changes_count} changes detected",
                 }
-                
+
                 # Agregar detalles específicos si están disponibles
                 if details:
-                    sse_event.update({
-                        'details': details,
-                        'imported': details.get('imported', 0),
-                        'updated': details.get('updated', 0),
-                        'deleted': details.get('deleted', 0),
-                        'problems': details.get('problems', 0)
-                    })
-                    
+                    sse_event.update(
+                        {
+                            "details": details,
+                            "imported": details.get("imported", 0),
+                            "updated": details.get("updated", 0),
+                            "deleted": details.get("deleted", 0),
+                            "problems": details.get("problems", 0),
+                        }
+                    )
+
                     # Mensaje más descriptivo
                     parts = []
-                    if details.get('imported', 0) > 0:
+                    if details.get("imported", 0) > 0:
                         parts.append(f"{details['imported']} imported")
-                    if details.get('updated', 0) > 0:
+                    if details.get("updated", 0) > 0:
                         parts.append(f"{details['updated']} updated")
-                    if details.get('deleted', 0) > 0:
+                    if details.get("deleted", 0) > 0:
                         parts.append(f"{details['deleted']} deleted")
-                    
+
                     if parts:
-                        sse_event['message'] = f'Calendar sync: {", ".join(parts)}'
-                
+                        sse_event["message"] = f'Calendar sync: {", ".join(parts)}'
+
                 # Push evento a la cola SSE (sin blocking)
                 try:
                     self.sse_event_queue.put_nowait(sse_event)

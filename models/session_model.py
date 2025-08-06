@@ -30,7 +30,7 @@ class Session(Base):
     player_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("players.player_id"), nullable=True
     )
-    
+
     # Snapshots selectivos para usuarios eliminados
     coach_name_snapshot: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True

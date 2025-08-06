@@ -6,9 +6,10 @@ Anteriormente: sync.py
 
 import datetime as dt
 import logging
+import threading
 import time
 from typing import Any, Dict, Optional
-import threading
+
 import schedule
 
 from controllers.db import get_db_session
@@ -54,7 +55,6 @@ def _toast(msg: str, icon: str = "") -> None:
     # Almacenar mensaje para callbacks de Dash (usando variable global temporal)
     global _last_sync_message
     _last_sync_message = {"message": msg, "icon": icon, "timestamp": dt.datetime.now()}
-
 
 
 # Lógica de sync
@@ -142,8 +142,6 @@ def build_stats_from_manual_sync(result: Dict[str, Any]) -> Dict[str, Any]:
         "warnings": len(result.get("warning_events", [])),
         "sync_time": result.get("duration", 0),
     }
-
-
 
 
 def get_sync_stats_unified(
@@ -344,20 +342,21 @@ def thai_league_weekly_job():
     """
     try:
         logger.info("🕘 Ejecutando job semanal de Thai League")
-        
+
         from controllers.thai_league_controller import ThaiLeagueController
+
         controller = ThaiLeagueController()
         result = controller.smart_weekly_update()
-        
+
         action = result.get("action", "unknown")
         success = result.get("success", False)
         message = result.get("message", "Sin mensaje")
-        
+
         if success:
             logger.info(f"✅ Thai League job exitoso: {action} - {message}")
         else:
             logger.error(f"❌ Thai League job falló: {action} - {message}")
-            
+
     except Exception as e:
         logger.error(f"❌ Error crítico en Thai League job: {str(e)}")
 
@@ -365,14 +364,14 @@ def thai_league_weekly_job():
 def _run_thai_league_scheduler():
     """Ejecuta el scheduler de Thai League en background."""
     global _thai_league_scheduler_running
-    
+
     logger.info("🚀 Iniciando Thai League scheduler...")
-    
+
     # Programar job para lunes a las 9:00 AM
     schedule.every().monday.at("09:00").do(thai_league_weekly_job)
-    
+
     _thai_league_scheduler_running = True
-    
+
     while _thai_league_scheduler_running:
         try:
             schedule.run_pending()
@@ -380,34 +379,32 @@ def _run_thai_league_scheduler():
         except Exception as e:
             logger.error(f"Error en Thai League scheduler: {str(e)}")
             time.sleep(60)
-    
+
     logger.info("🛑 Thai League scheduler detenido")
 
 
 def start_thai_league_scheduler():
     """
     Inicia el scheduler de Thai League en background.
-    
+
     Returns:
         bool: True si se inició correctamente
     """
     global _thai_league_scheduler_thread, _thai_league_scheduler_running
-    
+
     if _thai_league_scheduler_running:
         logger.warning("Thai League scheduler ya está ejecutándose")
         return True
-    
+
     try:
         _thai_league_scheduler_thread = threading.Thread(
-            target=_run_thai_league_scheduler, 
-            daemon=True,
-            name="ThaiLeagueScheduler"
+            target=_run_thai_league_scheduler, daemon=True, name="ThaiLeagueScheduler"
         )
         _thai_league_scheduler_thread.start()
-        
+
         logger.info("✅ Thai League scheduler iniciado exitosamente")
         return True
-        
+
     except Exception as e:
         logger.error(f"❌ Error iniciando Thai League scheduler: {str(e)}")
         return False
@@ -416,23 +413,23 @@ def start_thai_league_scheduler():
 def stop_thai_league_scheduler():
     """
     Detiene el scheduler de Thai League.
-    
+
     Returns:
         bool: True si se detuvo correctamente
     """
     global _thai_league_scheduler_running
-    
+
     if not _thai_league_scheduler_running:
         logger.warning("Thai League scheduler no está ejecutándose")
         return True
-    
+
     try:
         _thai_league_scheduler_running = False
         schedule.clear()  # Limpiar jobs programados
-        
+
         logger.info("✅ Thai League scheduler detenido exitosamente")
         return True
-        
+
     except Exception as e:
         logger.error(f"❌ Error deteniendo Thai League scheduler: {str(e)}")
         return False
@@ -441,7 +438,7 @@ def stop_thai_league_scheduler():
 def get_thai_league_scheduler_status():
     """
     Obtiene el estado actual del Thai League scheduler.
-    
+
     Returns:
         Dict con información del scheduler
     """
@@ -449,33 +446,35 @@ def get_thai_league_scheduler_status():
         "running": _thai_league_scheduler_running,
         "jobs_count": len(schedule.jobs),
         "next_run": str(schedule.next_run()) if schedule.jobs else None,
-        "thread_alive": _thai_league_scheduler_thread.is_alive() if _thai_league_scheduler_thread else False
+        "thread_alive": (
+            _thai_league_scheduler_thread.is_alive()
+            if _thai_league_scheduler_thread
+            else False
+        ),
     }
 
 
 def force_thai_league_update():
     """
     Ejecuta manualmente la actualización de Thai League.
-    
+
     Returns:
         Dict con resultado de la operación
     """
     try:
         logger.info("🔧 Ejecutando actualización manual de Thai League")
-        
+
         from controllers.thai_league_controller import ThaiLeagueController
+
         controller = ThaiLeagueController()
         result = controller.smart_weekly_update()
-        
-        logger.info(f"Resultado actualización manual: {result.get('action')} - {result.get('message')}")
+
+        logger.info(
+            f"Resultado actualización manual: {result.get('action')} - {result.get('message')}"
+        )
         return result
-        
+
     except Exception as e:
         error_msg = f"Error en actualización manual: {str(e)}"
         logger.error(error_msg)
-        return {
-            "action": "error",
-            "success": False,
-            "message": error_msg,
-            "stats": {}
-        }
+        return {"action": "error", "success": False, "message": error_msg, "stats": {}}

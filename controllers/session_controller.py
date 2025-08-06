@@ -552,11 +552,13 @@ class SessionController:
                     .filter(Coach.coach_id == session.coach_id)
                     .first()
                 )
-                coach_name = coach.user.name if coach and coach.user else "Coach not found"
+                coach_name = (
+                    coach.user.name if coach and coach.user else "Coach not found"
+                )
             else:
                 # Usar snapshot si coach fue eliminado
                 coach_name = session.coach_name_snapshot or "Coach deleted"
-            
+
             if session.player_id:
                 player = (
                     self.db.query(Player)
@@ -564,7 +566,9 @@ class SessionController:
                     .filter(Player.player_id == session.player_id)
                     .first()
                 )
-                player_name = player.user.name if player and player.user else "Player not found"
+                player_name = (
+                    player.user.name if player and player.user else "Player not found"
+                )
             else:
                 # Usar snapshot si player fue eliminado
                 player_name = session.player_name_snapshot or "Player deleted"
@@ -711,7 +715,7 @@ class SessionController:
             else:
                 # Usar snapshot si coach fue eliminado
                 coach_name = (session.coach_name_snapshot or "").lower()
-            
+
             if session.player:
                 player_name = session.player.user.name.lower()
             else:
@@ -781,12 +785,12 @@ class SessionController:
                 coach_name = s.coach.user.name
             else:
                 coach_name = s.coach_name_snapshot or "Coach deleted"
-            
+
             if s.player_id and s.player:
                 player_name = s.player.user.name
             else:
                 player_name = s.player_name_snapshot or "Player deleted"
-            
+
             # Descripción completa
             descriptions[s.id] = (
                 f"{prefix}{coach_name} with {player_name} "

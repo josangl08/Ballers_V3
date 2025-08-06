@@ -461,12 +461,12 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                             coach_name = ses.coach.user.name
                         else:
                             coach_name = ses.coach_name_snapshot or "Coach deleted"
-                            
+
                         if ses.player_id and ses.player and ses.player.user:
                             player_name = ses.player.user.name
                         else:
                             player_name = ses.player_name_snapshot or "Player deleted"
-                            
+
                         rejected_events.append(
                             {
                                 "title": f"{coach_name} × {player_name}",
@@ -491,12 +491,12 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                             coach_name = ses.coach.user.name
                         else:
                             coach_name = ses.coach_name_snapshot or "Coach deleted"
-                            
+
                         if ses.player_id and ses.player and ses.player.user:
                             player_name = ses.player.user.name
                         else:
                             player_name = ses.player_name_snapshot or "Player deleted"
-                            
+
                         warning_events.append(
                             {
                                 "title": f"{coach_name} × {player_name}",

@@ -45,7 +45,6 @@ class ThaiLeagueTransformer:
         "Matches played": "matches_played",
         "Minutes played": "minutes_played",
         "Market value": "market_value",
-        
         # === RENDIMIENTO OFENSIVO ===
         "Goals": "goals",
         "Assists": "assists",
@@ -61,7 +60,6 @@ class ThaiLeagueTransformer:
         "Goal conversion, %": "goal_conversion_pct",
         "Touches in box per 90": "touches_in_box_per_90",
         "Shot assists per 90": "shot_assists_per_90",
-        
         # === RENDIMIENTO DEFENSIVO ===
         "Successful defensive actions per 90": "defensive_actions_per_90",
         "Defensive duels per 90": "defensive_duels_per_90",
@@ -78,7 +76,6 @@ class ThaiLeagueTransformer:
         "Yellow cards per 90": "yellow_cards_per_90",
         "Red cards": "red_cards",
         "Red cards per 90": "red_cards_per_90",
-        
         # === DISTRIBUCIÓN Y PASES ===
         "Passes per 90": "passes_per_90",
         "Accurate passes per 90": "accurate_passes_per_90",
@@ -129,7 +126,7 @@ class ThaiLeagueTransformer:
     def __init__(self, session_factory=None):
         """
         Inicializa el transformador.
-        
+
         Args:
             session_factory: Factory para sesiones de BD (opcional)
         """
@@ -158,7 +155,7 @@ class ThaiLeagueTransformer:
         clean_df.columns = clean_df.columns.str.strip()
 
         # ===== LIMPIEZA ESPECÍFICA POR COLUMNAS =====
-        
+
         # Limpiar nombres de jugadores
         if "Full name" in clean_df.columns:
             clean_df["Full name"] = clean_df["Full name"].apply(
@@ -188,7 +185,7 @@ class ThaiLeagueTransformer:
             )
 
         # ===== CONFIGURACIÓN DE LIMPIEZA AUTOMÁTICA =====
-        
+
         # Definir configuración de limpieza por columnas
         columns_config = {
             # Campos numéricos básicos
@@ -201,27 +198,45 @@ class ThaiLeagueTransformer:
             "Red cards": {"type": "integer", "min_value": 0},
             "Height": {"type": "numeric", "min_value": 1.50, "max_value": 2.20},
             "Weight": {"type": "numeric", "min_value": 50.0, "max_value": 120.0},
-            
             # Estadísticas por 90 minutos
             "Goals per 90": {"type": "numeric", "min_value": 0.0},
             "Assists per 90": {"type": "numeric", "min_value": 0.0},
             "Shots per 90": {"type": "numeric", "min_value": 0.0},
             "Passes per 90": {"type": "numeric", "min_value": 0.0},
             "Touches per 90": {"type": "numeric", "min_value": 0.0},
-            
             # Porcentajes
-            "Shots on target, %": {"type": "numeric", "min_value": 0.0, "max_value": 100.0},
-            "Goal conversion, %": {"type": "numeric", "min_value": 0.0, "max_value": 100.0},
-            "Passes accuracy, %": {"type": "numeric", "min_value": 0.0, "max_value": 100.0},
-            "Defensive duels won, %": {"type": "numeric", "min_value": 0.0, "max_value": 100.0},
-            "Aerial duels won, %": {"type": "numeric", "min_value": 0.0, "max_value": 100.0},
+            "Shots on target, %": {
+                "type": "numeric",
+                "min_value": 0.0,
+                "max_value": 100.0,
+            },
+            "Goal conversion, %": {
+                "type": "numeric",
+                "min_value": 0.0,
+                "max_value": 100.0,
+            },
+            "Passes accuracy, %": {
+                "type": "numeric",
+                "min_value": 0.0,
+                "max_value": 100.0,
+            },
+            "Defensive duels won, %": {
+                "type": "numeric",
+                "min_value": 0.0,
+                "max_value": 100.0,
+            },
+            "Aerial duels won, %": {
+                "type": "numeric",
+                "min_value": 0.0,
+                "max_value": 100.0,
+            },
         }
 
         # Aplicar limpieza automática usando configuración
         clean_df = DataCleaners.clean_dataframe_nulls(clean_df, columns_config)
 
         # ===== CONVERSIONES DE TIPOS =====
-        
+
         # Convertir fechas de nacimiento
         if "Birthday" in clean_df.columns:
             clean_df["Birthday"] = pd.to_datetime(clean_df["Birthday"], errors="coerce")
@@ -230,7 +245,7 @@ class ThaiLeagueTransformer:
         clean_df = clean_df.replace([float("inf"), float("-inf")], None)
 
         # ===== NORMALIZACIÓN DE NOMBRES =====
-        
+
         # Normalizar nombres para matching (sin modificar originales)
         if "Full name" in clean_df.columns:
             clean_df["full_name_normalized"] = clean_df["Full name"].apply(
@@ -242,14 +257,22 @@ class ThaiLeagueTransformer:
             )
 
         # ===== ESTADÍSTICAS FINALES =====
-        
+
         original_count = len(df)
         clean_count = len(clean_df)
-        
+
         # Contar registros con datos críticos
-        valid_players = clean_df["Full name"].notna().sum() if "Full name" in clean_df.columns else 0
-        valid_wyscout = clean_df["Wyscout id"].notna().sum() if "Wyscout id" in clean_df.columns else 0
-        
+        valid_players = (
+            clean_df["Full name"].notna().sum()
+            if "Full name" in clean_df.columns
+            else 0
+        )
+        valid_wyscout = (
+            clean_df["Wyscout id"].notna().sum()
+            if "Wyscout id" in clean_df.columns
+            else 0
+        )
+
         logger.info(f"✅ Limpieza completada para {season}:")
         logger.info(f"   📥 Registros originales: {original_count}")
         logger.info(f"   📤 Registros limpios: {clean_count}")
@@ -285,41 +308,41 @@ class ThaiLeagueTransformer:
     def prepare_for_matching(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Prepara el DataFrame para el proceso de matching.
-        
+
         Args:
             df: DataFrame limpio
-            
+
         Returns:
             DataFrame preparado para matching
         """
         logger.info("🎯 Preparando datos para matching...")
-        
+
         # Crear copia
         match_df = df.copy()
-        
+
         # Filtrar registros válidos para matching
         # Un registro es válido si tiene al menos nombre o wyscout_id
-        valid_mask = (
-            match_df["Full name"].notna() | 
-            match_df["Wyscout id"].notna()
-        )
-        
+        valid_mask = match_df["Full name"].notna() | match_df["Wyscout id"].notna()
+
         match_df = match_df[valid_mask].copy()
-        
+
         # Agregar columnas de apoyo para matching
-        if "full_name_normalized" not in match_df.columns and "Full name" in match_df.columns:
+        if (
+            "full_name_normalized" not in match_df.columns
+            and "Full name" in match_df.columns
+        ):
             match_df["full_name_normalized"] = match_df["Full name"].apply(
                 self._normalize_name
             )
-            
+
         logger.info(f"📊 Registros preparados para matching: {len(match_df)}")
-        
+
         return match_df
 
     def get_column_mapping(self) -> Dict[str, str]:
         """
         Obtiene el mapping de columnas CSV a modelo BD.
-        
+
         Returns:
             Diccionario de mapping
         """
@@ -328,69 +351,66 @@ class ThaiLeagueTransformer:
     def validate_required_columns(self, df: pd.DataFrame) -> List[str]:
         """
         Valida que el DataFrame tenga las columnas mínimas requeridas.
-        
+
         Args:
             df: DataFrame a validar
-            
+
         Returns:
             Lista de columnas faltantes (vacía si está completo)
         """
-        required_columns = [
-            "Full name",
-            "Wyscout id",
-            "Team",
-            "Competition"
-        ]
-        
+        required_columns = ["Full name", "Wyscout id", "Team", "Competition"]
+
         missing_columns = [col for col in required_columns if col not in df.columns]
-        
+
         if missing_columns:
             logger.warning(f"⚠️ Columnas faltantes: {missing_columns}")
         else:
             logger.info("✅ Todas las columnas requeridas están presentes")
-            
+
         return missing_columns
 
     def apply_business_rules(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Aplica reglas de negocio específicas del dominio.
-        
+
         Args:
             df: DataFrame a procesar
-            
+
         Returns:
             DataFrame con reglas aplicadas
         """
         logger.info("🔧 Aplicando reglas de negocio...")
-        
+
         business_df = df.copy()
-        
+
         # Regla 1: Si un jugador no tiene equipo, debe tener al menos estadísticas
         no_team_mask = business_df["Team"].isna()
         if no_team_mask.any():
             no_team_count = no_team_mask.sum()
             logger.info(f"👤 Jugadores sin equipo encontrados: {no_team_count}")
-            
+
             # Validar que tengan al menos minutos jugados
             if "Minutes played" in business_df.columns:
-                no_team_no_minutes = (
-                    no_team_mask & 
-                    (business_df["Minutes played"].isna() | (business_df["Minutes played"] == 0))
+                no_team_no_minutes = no_team_mask & (
+                    business_df["Minutes played"].isna()
+                    | (business_df["Minutes played"] == 0)
                 )
                 if no_team_no_minutes.any():
                     invalid_count = no_team_no_minutes.sum()
-                    logger.warning(f"⚠️ Jugadores sin equipo y sin minutos: {invalid_count}")
-        
+                    logger.warning(
+                        f"⚠️ Jugadores sin equipo y sin minutos: {invalid_count}"
+                    )
+
         # Regla 2: Edad debe ser consistente con fecha de nacimiento
         if "Age" in business_df.columns and "Birthday" in business_df.columns:
             # Esta validación se puede implementar posteriormente
             pass
-            
+
         # Regla 3: Estadísticas por 90 deben ser proporcionales
         if "Goals" in business_df.columns and "Goals per 90" in business_df.columns:
             # Esta validación se puede implementar posteriormente
             pass
-            
+
         logger.info("✅ Reglas de negocio aplicadas")
-        
+
         return business_df

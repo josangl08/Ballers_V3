@@ -43,7 +43,7 @@ class ThaiLeagueExtractor:
     def __init__(self, session_factory=None):
         """
         Inicializa el extractor.
-        
+
         Args:
             session_factory: Factory para sesiones de BD (opcional)
         """
@@ -144,10 +144,10 @@ class ThaiLeagueExtractor:
     def _load_from_cache(self, season: str) -> Optional[str]:
         """
         Carga datos desde cache local.
-        
+
         Args:
             season: Temporada a cargar
-            
+
         Returns:
             Contenido del archivo o None si no existe
         """
@@ -162,7 +162,7 @@ class ThaiLeagueExtractor:
     def _save_to_cache(self, season: str, content: str, file_hash: str) -> None:
         """
         Guarda datos en cache local.
-        
+
         Args:
             season: Temporada a guardar
             content: Contenido del archivo
@@ -178,10 +178,10 @@ class ThaiLeagueExtractor:
     def calculate_file_hash(self, content: str) -> str:
         """
         Calcula hash SHA-256 del contenido del archivo.
-        
+
         Args:
             content: Contenido del archivo
-            
+
         Returns:
             Hash hexadecimal
         """
@@ -190,7 +190,7 @@ class ThaiLeagueExtractor:
     def get_available_seasons(self) -> dict:
         """
         Obtiene las temporadas disponibles para descarga.
-        
+
         Returns:
             Dict con temporadas disponibles
         """
@@ -199,10 +199,10 @@ class ThaiLeagueExtractor:
     def validate_season(self, season: str) -> bool:
         """
         Valida que una temporada esté disponible.
-        
+
         Args:
             season: Temporada a validar
-            
+
         Returns:
             True si la temporada está disponible
         """
@@ -211,16 +211,16 @@ class ThaiLeagueExtractor:
     def get_source_url(self, season: str) -> Optional[str]:
         """
         Obtiene la URL fuente para una temporada.
-        
+
         Args:
             season: Temporada solicitada
-            
+
         Returns:
             URL o None si la temporada no está disponible
         """
         if not self.validate_season(season):
             return None
-            
+
         filename = self.AVAILABLE_SEASONS[season]
         return (
             f"{self.GITHUB_BASE_URL}/{self.COMMIT_HASH}/Main App/"
@@ -230,10 +230,10 @@ class ThaiLeagueExtractor:
     def bytes_to_mb(self, size_bytes: int) -> float:
         """
         Convierte bytes a MB para almacenar en base de datos.
-        
+
         Args:
             size_bytes: Tamaño en bytes
-            
+
         Returns:
             Tamaño en MB (Float redondeado a 2 decimales)
         """

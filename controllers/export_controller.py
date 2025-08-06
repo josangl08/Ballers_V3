@@ -149,9 +149,7 @@ class ExportController:
         story = []
 
         # Título
-        title = Paragraph(
-            f"Player Report: {user.name}", self.styles["CustomTitle"]
-        )
+        title = Paragraph(f"Player Report: {user.name}", self.styles["CustomTitle"])
         story.append(title)
         story.append(Spacer(1, 20))
 
@@ -262,7 +260,7 @@ class ExportController:
                     coach_name = session.coach.user.name
                 else:
                     coach_name = session.coach_name_snapshot or "Coach deleted"
-                    
+
                 sessions_data.append(
                     [
                         str(session.id),
@@ -444,12 +442,12 @@ class ExportController:
                     coach_name = session.coach.user.name
                 else:
                     coach_name = session.coach_name_snapshot or "Coach deleted"
-                    
+
                 if session.player_id and session.player and session.player.user:
                     player_name = session.player.user.name
                 else:
                     player_name = session.player_name_snapshot or "Player deleted"
-                    
+
                 sessions_data.append(
                     [
                         str(session.id),
@@ -814,12 +812,12 @@ class ExportController:
                         coach_name = session.coach.user.name
                     else:
                         coach_name = session.coach_name_snapshot or "Coach deleted"
-                        
+
                     if session.player_id and session.player and session.player.user:
                         player_name = session.player.user.name
                     else:
                         player_name = session.player_name_snapshot or "Player deleted"
-                        
+
                     session_text = f"{coach_name} × {player_name}"
                     break
 
@@ -937,13 +935,17 @@ class ExportController:
                         if session.coach_id and session.coach and session.coach.user:
                             coach_name = session.coach.user.name[:8]
                         else:
-                            coach_name = (session.coach_name_snapshot or "Coach deleted")[:8]
-                            
+                            coach_name = (
+                                session.coach_name_snapshot or "Coach deleted"
+                            )[:8]
+
                         if session.player_id and session.player and session.player.user:
                             player_name = session.player.user.name[:8]
                         else:
-                            player_name = (session.player_name_snapshot or "Player deleted")[:8]
-                            
+                            player_name = (
+                                session.player_name_snapshot or "Player deleted"
+                            )[:8]
+
                         session_text = f"{coach_name}×{player_name}"
                         break
                 row.append(session_text)

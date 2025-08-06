@@ -197,7 +197,7 @@ def register_professional_tabs_callbacks(app):
 
             player = profile_data["player"]
             user = profile_data["user"]
-            
+
             # Verificar que es jugador profesional (usuario player Y is_professional=True)
             is_user_player = user.user_type == UserType.player
             is_professional = getattr(player, "is_professional", False)

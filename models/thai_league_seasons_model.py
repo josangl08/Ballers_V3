@@ -102,7 +102,7 @@ class ThaiLeagueSeason(Base):
         if self.last_import_attempt is None:
             return True
 
-        # Fix: usar datetime.now(timezone.utc) en lugar de datetime.now() 
+        # Fix: usar datetime.now(timezone.utc) en lugar de datetime.now()
         # para evitar mezcla de naive y timezone-aware datetimes
         days_since_update = (datetime.now(timezone.utc) - self.last_import_attempt).days
         return days_since_update >= self.update_frequency_days

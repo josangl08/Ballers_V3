@@ -12,9 +12,8 @@ import dash_bootstrap_components as dbc
 from dash import ALL, Input, Output, State, callback_context, html, no_update
 from dash.exceptions import PreventUpdate
 
-from common.notification_system import NotificationManager, NotificationHelper
 from callbacks.notification_callbacks import NotificationCallbacks
-
+from common.notification_system import NotificationHelper, NotificationManager
 from controllers.user_controller import (
     UserController,
     create_user_simple,
@@ -118,7 +117,7 @@ def save_profile_photo_dash(contents: str, username: str, filename: str = None) 
 
 def register_settings_callbacks(app):
     """Registra callbacks de Settings en la aplicación Dash."""
-    
+
     # Registrar sistema de notificaciones centralizado
     NotificationCallbacks.register_notification_callbacks(app, "settings")
 
@@ -391,24 +390,28 @@ def register_settings_callbacks(app):
 
         # Crear usuario usando controlador existente
         success, message = create_user_simple(user_data)
-        
+
         # Si es jugador profesional con WyscoutID, importar estadísticas
         if success and user_type == "player" and is_professional and wyscout_id:
             try:
                 from controllers.thai_league_controller import ThaiLeagueController
                 from controllers.user_controller import UserController
                 from models.user_model import User
-                
+
                 # Buscar el usuario recién creado por username
                 with UserController() as controller:
-                    user = controller.db.query(User).filter_by(username=username).first()
+                    user = (
+                        controller.db.query(User).filter_by(username=username).first()
+                    )
                     if user:
                         thai_controller = ThaiLeagueController()
-                        thai_success, thai_message, stats = thai_controller.trigger_stats_import_for_player(
-                            player_id=user.player_profile.player_id, 
-                            wyscout_id=int(wyscout_id)
+                        thai_success, thai_message, stats = (
+                            thai_controller.trigger_stats_import_for_player(
+                                player_id=user.player_profile.player_id,
+                                wyscout_id=int(wyscout_id),
+                            )
                         )
-                        if thai_success and stats.get('records_imported', 0) > 0:
+                        if thai_success and stats.get("records_imported", 0) > 0:
                             message += f" Estadísticas importadas: {stats['records_imported']} registros."
             except Exception as e:
                 # No fallar la creación si hay error en las estadísticas
@@ -446,7 +449,9 @@ def register_settings_callbacks(app):
         [
             Input("users-filter-type", "value"),
             Input("users-search", "value"),
-            Input("settings-notification-store", "data"),  # Refrescar tras crear usuario
+            Input(
+                "settings-notification-store", "data"
+            ),  # Refrescar tras crear usuario
         ],
         prevent_initial_call=False,
     )
@@ -1452,7 +1457,7 @@ def register_settings_callbacks(app):
         if not all([name, username, email]):
             return (
                 no_update,
-                NotificationManager.error("Please fill in all required fields (*)")
+                NotificationManager.error("Please fill in all required fields (*)"),
             )
 
         # Validar coincidencia de contraseñas si se proporcionan
@@ -1529,30 +1534,34 @@ def register_settings_callbacks(app):
 
         # Actualizar usuario usando controlador existente
         success, message = update_user_simple(selected_user_id, **update_data)
-        
+
         # Si se asignó WyscoutID a jugador profesional, importar estadísticas
         if success and user_type == "player" and is_professional and wyscout_id:
             try:
                 from controllers.thai_league_controller import ThaiLeagueController
                 from controllers.user_controller import UserController
-                
+
                 # Obtener el player_id real del usuario
                 with UserController() as controller:
                     user = controller.get_user_by_id(selected_user_id)
                     if user and user.player_profile:
                         thai_controller = ThaiLeagueController()
-                        thai_success, thai_message, stats = thai_controller.trigger_stats_import_for_player(
-                            player_id=user.player_profile.player_id, 
-                            wyscout_id=int(wyscout_id)
+                        thai_success, thai_message, stats = (
+                            thai_controller.trigger_stats_import_for_player(
+                                player_id=user.player_profile.player_id,
+                                wyscout_id=int(wyscout_id),
+                            )
                         )
-                        if thai_success and stats.get('total_records_created', 0) > 0:
+                        if thai_success and stats.get("total_records_created", 0) > 0:
                             message += f" Estadísticas importadas: {stats['total_records_created']} registros."
             except Exception as e:
                 # No fallar la actualización si hay error en las estadísticas
                 pass
 
         if success:
-            return no_update, NotificationHelper.user_updated(username)  # Keep selection, don't clear
+            return no_update, NotificationHelper.user_updated(
+                username
+            )  # Keep selection, don't clear
         else:
             return no_update, NotificationManager.error(message)
 

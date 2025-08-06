@@ -9,7 +9,7 @@ Se ha mejorado significativamente la UI de información de equipos en las estad�
 ### ✅ 1. Modificación de `pages/ballers_dash.py`
 - **Función actualizada**: `create_professional_stats_content()`
 - **Línea problemática eliminada**: `current_team = latest_season.get("team", "Unknown")`
-- **Nueva integración**: Uso de `controller.get_team_info(latest_season)` 
+- **Nueva integración**: Uso de `controller.get_team_info(latest_season)`
 - **Resultado**: Eliminación completa del error cuando `team` es None/vacío
 
 ### ✅ 2. Nuevas Funciones Helper Implementadas

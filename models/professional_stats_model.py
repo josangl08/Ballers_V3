@@ -66,12 +66,20 @@ class ProfessionalStats(Base):
     shot_assists_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # === RENDIMIENTO DEFENSIVO ===
-    defensive_actions_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    defensive_duels_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    defensive_duels_won_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    defensive_actions_per_90: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
+    defensive_duels_per_90: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
+    defensive_duels_won_pct: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
     aerial_duels_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     aerial_duels_won_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    sliding_tackles_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    sliding_tackles_per_90: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
     interceptions_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     fouls_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
@@ -79,30 +87,48 @@ class ProfessionalStats(Base):
     passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     pass_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     forward_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    forward_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    forward_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
     back_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    back_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    back_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
     long_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    long_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    progressive_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    progressive_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    long_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
+    progressive_passes_per_90: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
+    progressive_passes_accuracy_pct: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
     key_passes_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # === DUELOS Y FÍSICO ===
     duels_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     duels_won_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    offensive_duels_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    offensive_duels_won_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    offensive_duels_per_90: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
+    offensive_duels_won_pct: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
     dribbles_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     dribbles_success_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    progressive_runs_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    progressive_runs_per_90: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )
 
     # === MÉTRICAS AVANZADAS ===
     expected_goals: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # xG
-    expected_assists: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # xA
+    expected_assists: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True
+    )  # xA
     xg_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     xa_per_90: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    
+
     # === DISCIPLINA ===
     yellow_cards: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     red_cards: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
