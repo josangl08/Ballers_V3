@@ -215,7 +215,8 @@ def register_administration_callbacks(app):
             return [], [], [], [], None, False
 
         try:
-            # Determinar qué session_data usar (misma lógica que en navigation_callbacks)
+            # Determinar qué session_data usar
+            # (misma lógica que en navigation_callbacks)
             if activity_data and activity_data.get("remember_me"):
                 session_data = persistent_session_data or {}
             else:
@@ -255,7 +256,8 @@ def register_administration_callbacks(app):
                             coach_value = coach.coach_id
                             coach_disabled = True
                             print(
-                                f"🎯 COACH RESTRICTION: Coach {coach.coach_id} pre-selected and disabled"
+                                f"🎯 COACH RESTRICTION: Coach {coach.coach_id} "
+                                f"pre-selected and disabled"
                             )
 
                 return (
@@ -380,14 +382,16 @@ def register_administration_callbacks(app):
         persistent_session_data,
         activity_data,
     ):
-        """Carga opciones para selector de sesiones con filtros y búsqueda - con restricciones para coaches."""
+        """Carga opciones para selector de sesiones con filtros y búsqueda
+        - con restricciones para coaches."""
         if active_tab != "edit-session":
             from dash import no_update
 
             return no_update
 
         try:
-            # Determinar qué session_data usar (misma lógica que en navigation_callbacks)
+            # Determinar qué session_data usar
+            # (misma lógica que en navigation_callbacks)
             if activity_data and activity_data.get("remember_me"):
                 session_data = persistent_session_data or {}
             else:
@@ -404,7 +408,8 @@ def register_administration_callbacks(app):
                     if coach:
                         coach_id_filter = coach.coach_id
                         print(
-                            f"🎯 COACH EDIT RESTRICTION: Only showing sessions for coach {coach.coach_id}"
+                            f"🎯 COACH EDIT RESTRICTION: Only showing sessions "
+                            f"for coach {coach.coach_id}"
                         )
 
             with SessionController() as controller:
@@ -477,7 +482,8 @@ def register_administration_callbacks(app):
             return html.Div(), html.Div()
 
         try:
-            # Determinar qué session_data usar (misma lógica que en navigation_callbacks)
+            # Determinar qué session_data usar
+            # (misma lógica que en navigation_callbacks)
             if activity_data and activity_data.get("remember_me"):
                 session_data = persistent_session_data or {}
             else:
@@ -504,7 +510,9 @@ def register_administration_callbacks(app):
             # Coach filter - Si es coach, solo ver sus propias sesiones
             if user_type == "coach" and user_id:
                 # CORREGIDO: Obtener el coach_id correcto desde user_id
-                from controllers.session_controller import get_coach_by_user_id
+                from controllers.session_controller import (
+                    get_coach_by_user_id,
+                )
 
                 coach = get_coach_by_user_id(user_id)
                 if coach:
@@ -801,7 +809,8 @@ def register_administration_callbacks(app):
             if success:
                 # Actualizar calendario y tabla si estamos en sessions-tab
                 if active_tab == "sessions-tab":
-                    # COACH RESTRICTIONS: Si el usuario es coach, usar su coach_id en lugar del filtro
+                    # COACH RESTRICTIONS: Si el usuario es coach, usar su
+                    # coach_id en lugar del filtro
                     effective_coach_filter = coach_filter
                     if user_type == "coach":
                         # Determinar qué session_data usar
@@ -820,7 +829,9 @@ def register_administration_callbacks(app):
                             if coach:
                                 effective_coach_filter = coach.coach_id
                                 print(
-                                    f"🎯 COACH CREATE RESTRICTION: Using coach_id {coach.coach_id} instead of filter {coach_filter}"
+                                    f"🎯 COACH CREATE RESTRICTION: Using coach_id "
+                                    f"{coach.coach_id} instead of filter "
+                                    f"{coach_filter}"
                                 )
 
                     calendar_content, table_content = (
@@ -932,7 +943,9 @@ def register_administration_callbacks(app):
                                         # Fondo transparente
                                         "background-color": "transparent",
                                         "color": "var(--color-primary)",
-                                        "border": "1px solid var(--color-primary-alpha-50)",
+                                        "border": (
+                                            "1px solid var(--color-primary-alpha-50)"
+                                        ),
                                         "padding": "8px 10px",  # Más compacto
                                         "text-align": "center",
                                         "font-weight": "600",
@@ -1547,11 +1560,7 @@ def register_administration_callbacks(app):
                     no_update,
                 )
 
-            # Actualizar sesión con logging de tiempo
-            import time
-
-            start_time_op = time.time()
-
+            # Actualizar sesión
             success, message = update_session_with_calendar(
                 session_id=session_id,
                 coach_id=safe_coach_id,
@@ -1568,9 +1577,8 @@ def register_administration_callbacks(app):
 
                 # 1. Actualizar calendario y tabla si estamos en sessions-tab
                 if main_active_tab == "sessions-tab":
-                    ui_start_time = time.time()
-
-                    # COACH RESTRICTIONS: Si el usuario es coach, usar su coach_id en lugar del filtro
+                    # COACH RESTRICTIONS: Si el usuario es coach, usar su
+                    # coach_id en lugar del filtro
                     effective_coach_filter = coach_filter
                     if user_type == "coach":
                         # Determinar qué session_data usar
@@ -1589,7 +1597,9 @@ def register_administration_callbacks(app):
                             if coach:
                                 effective_coach_filter = coach.coach_id
                                 print(
-                                    f"🎯 COACH UPDATE RESTRICTION: Using coach_id {coach.coach_id} instead of filter {coach_filter}"
+                                    f"🎯 COACH UPDATE RESTRICTION: Using coach_id "
+                                    f"{coach.coach_id} instead of filter "
+                                    f"{coach_filter}"
                                 )
 
                     calendar_content, table_content = (
@@ -1624,7 +1634,8 @@ def register_administration_callbacks(app):
                             if coach:
                                 selector_coach_id = coach.coach_id
                                 print(
-                                    f"🎯 COACH SELECTOR RESTRICTION: Filtering sessions for coach {coach.coach_id}"
+                                    f"🎯 COACH SELECTOR RESTRICTION: Filtering "
+                                    f"sessions for coach {coach.coach_id}"
                                 )
 
                     with SessionController() as controller:
@@ -1814,7 +1825,8 @@ def register_administration_callbacks(app):
                 # Actualizar UI usando helpers existentes
                 calendar_content = table_content = no_update
                 if main_active_tab == "sessions-tab":
-                    # COACH RESTRICTIONS: Si el usuario es coach, usar su coach_id en lugar del filtro
+                    # COACH RESTRICTIONS: Si el usuario es coach, usar su
+                    # coach_id en lugar del filtro
                     effective_coach_filter = coach_filter
                     if user_type == "coach":
                         # Determinar qué session_data usar
@@ -1833,7 +1845,9 @@ def register_administration_callbacks(app):
                             if coach:
                                 effective_coach_filter = coach.coach_id
                                 print(
-                                    f"🎯 COACH DELETE RESTRICTION: Using coach_id {coach.coach_id} instead of filter {coach_filter}"
+                                    f"🎯 COACH DELETE RESTRICTION: Using coach_id "
+                                    f"{coach.coach_id} instead of filter "
+                                    f"{coach_filter}"
                                 )
 
                     calendar_content, table_content = (
@@ -1864,7 +1878,9 @@ def register_administration_callbacks(app):
                             if coach:
                                 selector_coach_id = coach.coach_id
                                 print(
-                                    f"🎯 COACH DELETE SELECTOR RESTRICTION: Filtering sessions for coach {coach.coach_id}"
+                                    f"🎯 COACH DELETE SELECTOR RESTRICTION: "
+                                    f"Filtering sessions for coach "
+                                    f"{coach.coach_id}"
                                 )
 
                     with SessionController() as controller:

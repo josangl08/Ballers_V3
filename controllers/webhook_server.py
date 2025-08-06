@@ -184,7 +184,9 @@ class WebhookServer:
                     return False
 
             # Verificar token si está configurado
-            if self.secret_token and self.secret_token != "default-secret-token":
+            # Skip token validation for default development token
+            default_dev_token = "default-secret-token"
+            if self.secret_token and self.secret_token != default_dev_token:
                 webhook_token = request.headers.get("X-Goog-Channel-Token")
                 if webhook_token != self.secret_token:
                     logger.warning("Invalid webhook token")

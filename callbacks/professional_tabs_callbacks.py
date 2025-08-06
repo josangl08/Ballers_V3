@@ -3,7 +3,6 @@
 Callbacks para el sistema de tabs condicionales de jugadores profesionales.
 """
 
-import dash
 from dash import Input, Output, State, html
 
 from controllers.player_controller import get_player_profile_data
@@ -58,7 +57,8 @@ def register_professional_tabs_callbacks(app):
             is_prof_attr = getattr(player, "is_professional", "ATTR_MISSING")
             print(f"🔥 DEBUG: Player={user.name}, is_professional={is_prof_attr}")
 
-            # Verificar si es jugador profesional (usuario player Y is_professional=True)
+            # Verificar si es jugador profesional
+            # (usuario player Y is_professional=True)
             is_user_player = user.user_type == UserType.player
             is_professional = getattr(player, "is_professional", False)
             is_professional_user = is_user_player and is_professional
@@ -110,7 +110,8 @@ def register_professional_tabs_callbacks(app):
             player = profile_data["player"]
             user = profile_data["user"]
 
-            # Verificar que es jugador profesional (usuario player Y is_professional=True)
+            # Verificar que es jugador profesional
+            # (usuario player Y is_professional=True)
             is_user_player = user.user_type == UserType.player
             is_professional = getattr(player, "is_professional", False)
             if not (is_user_player and is_professional):
@@ -156,7 +157,8 @@ def register_professional_tabs_callbacks(app):
             player = profile_data["player"]
             user = profile_data["user"]
 
-            # Verificar que es jugador profesional (usuario player Y is_professional=True)
+            # Verificar que es jugador profesional
+            # (usuario player Y is_professional=True)
             is_user_player = user.user_type == UserType.player
             is_professional = getattr(player, "is_professional", False)
             if not (is_user_player and is_professional):
@@ -198,7 +200,8 @@ def register_professional_tabs_callbacks(app):
             player = profile_data["player"]
             user = profile_data["user"]
 
-            # Verificar que es jugador profesional (usuario player Y is_professional=True)
+            # Verificar que es jugador profesional
+            # (usuario player Y is_professional=True)
             is_user_player = user.user_type == UserType.player
             is_professional = getattr(player, "is_professional", False)
             if not (is_user_player and is_professional):
@@ -222,6 +225,7 @@ def register_professional_tabs_callbacks(app):
     # las tabs Test Results y Notes para ambos tipos de jugadores
 
     # ELIMINADO: Los callbacks para calendario y tabla de sesiones ya no son necesarios
-    # porque ahora reutilizamos los elementos amateur originales (calendar-display, sessions-table)
+    # porque ahora reutilizamos los elementos amateur originales
+    # (calendar-display, sessions-table)
     # Los callbacks existentes en ballers_callbacks.py manejan automáticamente
     # el calendario y tabla de sesiones para ambos tipos de jugadores

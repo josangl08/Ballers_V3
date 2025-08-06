@@ -359,8 +359,9 @@ class UserController:
                     ):
                         try:
                             os.remove(user.profile_photo)
-                        except:
-                            pass  # Si no se puede eliminar, continuar
+                        except OSError:
+                            # Si no se puede eliminar, continuar
+                            print(f"Warning: Could not remove profile photo {user.profile_photo}")
 
                     # Guardar nueva foto
                     new_photo_path = self._save_profile_photo(
@@ -457,8 +458,8 @@ class UserController:
             ):
                 try:
                     os.remove(user.profile_photo)
-                except:
-                    pass
+                except OSError:
+                    print(f"Warning: Could not remove old profile photo {user.profile_photo}")
 
             # PASO 4: Eliminar usuario
             user_name = user.name

@@ -2419,7 +2419,7 @@ class ThaiLeagueController:
                     # Obtener hash del archivo actual
                     with open(cache_file, "rb") as f:
                         current_content = f.read()
-                        local_hash = hashlib.md5(current_content).hexdigest()
+                        local_hash = hashlib.md5(current_content, usedforsecurity=False).hexdigest()
 
                     # Verificar si el archivo remoto ha cambiado (simplificado)
                     # En una implementación completa, compararías ETags o Last-Modified

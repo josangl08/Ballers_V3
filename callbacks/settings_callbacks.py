@@ -413,9 +413,9 @@ def register_settings_callbacks(app):
                         )
                         if thai_success and stats.get("records_imported", 0) > 0:
                             message += f" Estadísticas importadas: {stats['records_imported']} registros."
-            except Exception as e:
+            except Exception:
                 # No fallar la creación si hay error en las estadísticas
-                pass
+                print("Warning: Error importing professional stats, continuing without them")
 
         if success:
             # Limpiar formulario tras éxito y enviar notificación
@@ -1554,9 +1554,9 @@ def register_settings_callbacks(app):
                         )
                         if thai_success and stats.get("total_records_created", 0) > 0:
                             message += f" Estadísticas importadas: {stats['total_records_created']} registros."
-            except Exception as e:
+            except Exception:
                 # No fallar la actualización si hay error en las estadísticas
-                pass
+                print("Warning: Error updating professional stats, continuing without them")
 
         if success:
             return no_update, NotificationHelper.user_updated(

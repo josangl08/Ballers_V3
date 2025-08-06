@@ -5,13 +5,12 @@ Proporciona callbacks reutilizables que pueden registrarse en cualquier página.
 """
 
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
-from dash import Input, Output, callback, no_update
+from dash import Input, Output, no_update
 
 from common.notification_component import (
     NotificationComponent,
-    NotificationConfig,
     NotificationStyles,
 )
 from common.notification_system import NotificationManager
@@ -94,10 +93,11 @@ class NotificationCallbacks:
             message = notification_data.get("message", "")
             notification_type = notification_data.get("type", "info")
             duration = notification_data.get("duration", 5000)
-            dismissable = notification_data.get("dismissable", True)
+            # dismissable = notification_data.get("dismissable", True)  # Not used
 
             print(
-                f"🔔 NOTIFICATION DEBUG: Showing notification - Type: {notification_type}, Message: {message}"
+                f"🔔 NOTIFICATION DEBUG: Showing notification - "
+                f"Type: {notification_type}, Message: {message}"
             )
 
             # Crear contenido HTML estructurado con iconos Bootstrap
