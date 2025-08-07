@@ -1,0 +1,5 @@
+Model,MAE,RMSE,R²,MAPE,CV_Stability,N_Samples,Training_Time
+Linear Baseline,0.917 ± 0.065,1.224,0.929 ± 0.008,1.77%,0.931,1979,17.44s
+Ridge Baseline,0.919 ± 0.067,1.225,0.929 ± 0.008,1.77%,0.929,1979,0.53s
+Ridge Baseline,0.978 ± 0.071,1.282,0.922 ± 0.009,1.88%,0.931,1979,0.47s
+Ensemble Baseline,0.774 ± 0.047,1.029,0.950 ± 0.004,1.49%,0.945,1979,4.75s
