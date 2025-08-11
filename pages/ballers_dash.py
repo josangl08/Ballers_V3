@@ -11,14 +11,16 @@ from dash import Input, Output, State, dcc, html  # noqa: F401
 from common.format_utils import format_name_with_del
 from controllers.player_controller import get_player_profile_data, get_players_for_list
 
-# from controllers.etl_controller import ETLController  # REDUNDANTE - usar ml_system directamente
-from ml_system.data_acquisition.extractors import ThaiLeagueExtractor
-
 # ML Pipeline Imports - Phase 13.3 Dashboard Integration (Migrated to ml_system)
 from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
 
 # from controllers.thai_league_controller import ThaiLeagueController  # REDUNDANTE - usar ml_system directamente
 from models.user_model import UserType
+
+# from controllers.etl_controller import ETLController  # REDUNDANTE - usar ml_system directamente
+# from ml_system.data_acquisition.extractors import ThaiLeagueExtractor  # Temporal - no usado
+
+
 
 # TODO: Import otros componentes ML según se necesiten
 
@@ -913,6 +915,18 @@ def create_ml_enhanced_radar_chart(player_id, seasons=None):
         # Crear radar chart
         fig = go.Figure()
 
+        # Crear hover personalizado con información detallada
+        hover_data = []
+        for metric, value in metrics_data.items():
+            seasons_list = ", ".join([s["season"] for s in all_seasons_metrics])
+            hover_info = (
+                f"<b>{metric}</b><br>"
+                f"Score: {value:.1f}/100<br>"
+                f"<i>Promedio ponderado de {len(all_seasons_metrics)} temporadas</i><br>"
+                f"<span style='font-size:10px'>Temporadas: {seasons_list}</span>"
+            )
+            hover_data.append(hover_info)
+
         fig.add_trace(
             go.Scatterpolar(
                 r=list(metrics_data.values()),
@@ -921,8 +935,8 @@ def create_ml_enhanced_radar_chart(player_id, seasons=None):
                 name=f"ML Analysis ({len(all_seasons_metrics)} seasons)",
                 fillcolor="rgba(36, 222, 132, 0.3)",
                 line=dict(color="#24DE84", width=3),
-                hovertemplate="<b>%{theta}</b><br>Score: %{r:.1f}<br><i>Avg of "
-                + f"{len(all_seasons_metrics)} seasons</i><extra></extra>",
+                hovertemplate="%{customdata}<extra></extra>",
+                customdata=hover_data,
             )
         )
 
@@ -957,10 +971,29 @@ def create_ml_enhanced_radar_chart(player_id, seasons=None):
                 font=dict(color="#FFFFFF", size=10),
             ),
             title={
-                "text": f"ML-Enhanced Performance Profile - {len(all_seasons_metrics)} Seasons",
+                "text": f"ML-Enhanced Performance Profile<br><span style='font-size:11px; color:#CCCCCC'>Análisis de {len(all_seasons_metrics)} temporadas con pesos por recencia</span>",
                 "x": 0.5,
                 "font": {"color": "#24DE84", "size": 14},
             },
+            annotations=[
+                dict(
+                    text=f"📊 Temporadas analizadas: {', '.join([s['season'] for s in all_seasons_metrics])}<br>"
+                    f"🎯 Posición: {position}<br>"
+                    f"⚖️ Mayor peso a temporadas recientes",
+                    showarrow=False,
+                    xref="paper",
+                    yref="paper",
+                    x=0.02,
+                    y=0.98,
+                    xanchor="left",
+                    yanchor="top",
+                    font=dict(size=9, color="#CCCCCC"),
+                    bgcolor="rgba(0,0,0,0.6)",
+                    bordercolor="rgba(36,222,132,0.3)",
+                    borderwidth=1,
+                    borderpad=4,
+                )
+            ],
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
             height=400,
