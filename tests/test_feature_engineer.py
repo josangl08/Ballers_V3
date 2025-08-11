@@ -10,7 +10,9 @@ Incluye tests para:
 
 from unittest.mock import MagicMock
 
-from controllers.ml.feature_engineer import FeatureEngineer
+from ml_system.evaluation.analysis.advanced_features import (
+    AdvancedFeatureEngineer as FeatureEngineer,
+)
 
 
 class TestFeatureEngineer:

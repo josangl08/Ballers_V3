@@ -11,7 +11,7 @@ Incluye tests para:
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from controllers.ml.ml_metrics_controller import MLMetricsController
+from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
 from models.ml_metrics_model import MLMetrics
 
 

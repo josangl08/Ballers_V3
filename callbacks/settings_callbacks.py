@@ -394,8 +394,8 @@ def register_settings_callbacks(app):
         # Si es jugador profesional con WyscoutID, importar estadísticas
         if success and user_type == "player" and is_professional and wyscout_id:
             try:
-                from controllers.thai_league_controller import ThaiLeagueController
                 from controllers.user_controller import UserController
+                from ml_system.data_acquisition.extractors import ThaiLeagueExtractor
                 from models.user_model import User
 
                 # Buscar el usuario recién creado por username
@@ -404,7 +404,7 @@ def register_settings_callbacks(app):
                         controller.db.query(User).filter_by(username=username).first()
                     )
                     if user:
-                        thai_controller = ThaiLeagueController()
+                        thai_controller = ThaiLeagueExtractor()
                         thai_success, thai_message, stats = (
                             thai_controller.trigger_stats_import_for_player(
                                 player_id=user.player_profile.player_id,
@@ -415,7 +415,9 @@ def register_settings_callbacks(app):
                             message += f" Estadísticas importadas: {stats['records_imported']} registros."
             except Exception:
                 # No fallar la creación si hay error en las estadísticas
-                print("Warning: Error importing professional stats, continuing without them")
+                print(
+                    "Warning: Error importing professional stats, continuing without them"
+                )
 
         if success:
             # Limpiar formulario tras éxito y enviar notificación
@@ -1538,14 +1540,14 @@ def register_settings_callbacks(app):
         # Si se asignó WyscoutID a jugador profesional, importar estadísticas
         if success and user_type == "player" and is_professional and wyscout_id:
             try:
-                from controllers.thai_league_controller import ThaiLeagueController
                 from controllers.user_controller import UserController
+                from ml_system.data_acquisition.extractors import ThaiLeagueExtractor
 
                 # Obtener el player_id real del usuario
                 with UserController() as controller:
                     user = controller.get_user_by_id(selected_user_id)
                     if user and user.player_profile:
-                        thai_controller = ThaiLeagueController()
+                        thai_controller = ThaiLeagueExtractor()
                         thai_success, thai_message, stats = (
                             thai_controller.trigger_stats_import_for_player(
                                 player_id=user.player_profile.player_id,
@@ -1556,7 +1558,9 @@ def register_settings_callbacks(app):
                             message += f" Estadísticas importadas: {stats['total_records_created']} registros."
             except Exception:
                 # No fallar la actualización si hay error en las estadísticas
-                print("Warning: Error updating professional stats, continuing without them")
+                print(
+                    "Warning: Error updating professional stats, continuing without them"
+                )
 
         if success:
             return no_update, NotificationHelper.user_updated(
@@ -2632,9 +2636,9 @@ def auto_search_thai_league_new(
         return [], "", False, "info", False
 
     try:
-        from controllers.thai_league_controller import ThaiLeagueController
+        from ml_system.data_acquisition.extractors import ThaiLeagueExtractor
 
-        controller = ThaiLeagueController()
+        controller = ThaiLeagueExtractor()
         matches = controller.search_players_in_csv(search_name)
 
         if matches:
@@ -2826,9 +2830,9 @@ def auto_search_thai_league_edit(
         return "", False, "info", [], "", False, "info", False, ""
 
     try:
-        from controllers.thai_league_controller import ThaiLeagueController
+        from ml_system.data_acquisition.extractors import ThaiLeagueExtractor
 
-        controller = ThaiLeagueController()
+        controller = ThaiLeagueExtractor()
         matches = controller.search_players_in_csv(search_name)
 
         if matches:

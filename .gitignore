@@ -192,3 +192,5 @@ PROYECTO_STATUS.md
 
 # Legacy files (migrated Streamlit components)
 legacy/
+# Large processed files
+data/thai_league_processed/processed_complete.csv

@@ -2,21 +2,28 @@
 from __future__ import annotations
 
 import datetime
+import logging
 
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from dash import Input, Output, State, dcc, html  # noqa: F401
 
 from common.format_utils import format_name_with_del
-from controllers.etl_controller import ETLController
 from controllers.player_controller import get_player_profile_data, get_players_for_list
-from controllers.thai_league_controller import ThaiLeagueController
+
+# from controllers.etl_controller import ETLController  # REDUNDANTE - usar ml_system directamente
+from ml_system.data_acquisition.extractors import ThaiLeagueExtractor
+
+# ML Pipeline Imports - Phase 13.3 Dashboard Integration (Migrated to ml_system)
+from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
+
+# from controllers.thai_league_controller import ThaiLeagueController  # REDUNDANTE - usar ml_system directamente
 from models.user_model import UserType
 
-# ML Pipeline Imports - Phase 13.3 Dashboard Integration
-from controllers.ml.ml_metrics_controller import MLMetricsController
-from controllers.ml.feature_engineer import FeatureEngineer
-from controllers.ml.position_normalizer import PositionNormalizer
+# TODO: Import otros componentes ML según se necesiten
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 
 # Funciones simples para reemplazar cloud_utils removido
@@ -603,100 +610,145 @@ def create_efficiency_metrics_chart(player_stats):
 
 # === ML ENHANCED CHART FUNCTIONS - Phase 13.3 ===
 
+
 def create_pdi_evolution_chart(player_id, seasons=None):
     """
-    Crea gráfico de evolución del Player Development Index (PDI).
-    
-    Integra datos ML del pipeline ETL con visualización avanzada.
+    Crea gráfico de evolución del Player Development Index (PDI) usando PDI Calculator completo.
+
+    MIGRADO: Usa PlayerAnalyzer integrado con PDI Calculator científico.
     """
     try:
-        # Inicializar controller ML
-        ml_controller = MLMetricsController()
-        
+        # Inicializar analyzer ML con PDI Calculator integrado
+        player_analyzer = PlayerAnalyzer()
+
         if not seasons:
-            # Últimas 3 temporadas por defecto
-            current_year = datetime.datetime.now().year
-            seasons = [
-                f"{current_year-2}-{str(current_year-1)[-2:]}",
-                f"{current_year-1}-{str(current_year)[-2:]}",
-                f"{current_year}-{str(current_year+1)[-2:]}"
-            ]
-        
-        # Obtener métricas ML por temporada
+            # CORREGIDO: Obtener temporadas reales del jugador desde la base de datos
+            seasons = player_analyzer.get_available_seasons_for_player(player_id)
+            if not seasons:
+                logger.warning(f"No se encontraron temporadas para jugador {player_id}")
+                return dbc.Alert(
+                    "No hay temporadas con datos profesionales para este jugador",
+                    color="warning",
+                )
+
+        # Obtener métricas PDI solo para temporadas válidas
         pdi_data = []
         for season in seasons:
             try:
-                analysis = ml_controller.get_enhanced_player_analysis(player_id, season)
-                if "ml_metrics" in analysis and "raw" in analysis["ml_metrics"]:
-                    ml_metrics = analysis["ml_metrics"]["raw"]
-                    pdi_data.append({
-                        "season": season,
-                        "pdi_overall": ml_metrics.get("pdi_overall", 0),
-                        "pdi_universal": ml_metrics.get("pdi_universal", 0),
-                        "pdi_zone": ml_metrics.get("pdi_zone", 0),
-                        "pdi_position": ml_metrics.get("pdi_position_specific", 0),
-                        "technical": ml_metrics.get("technical_proficiency", 0),
-                        "tactical": ml_metrics.get("tactical_intelligence", 0),
-                        "physical": ml_metrics.get("physical_performance", 0),
-                        "consistency": ml_metrics.get("consistency_index", 0)
-                    })
+                # NUEVO: Validar que la temporada existe antes de calcular
+                if not player_analyzer.validate_season_exists_for_player(
+                    player_id, season
+                ):
+                    logger.debug(
+                        f"Saltando temporada {season} - no tiene datos para jugador {player_id}"
+                    )
+                    continue
+
+                # Calcular métricas PDI usando el calculador integrado
+                ml_metrics = player_analyzer.calculate_or_update_pdi_metrics(
+                    player_id, season, force_recalculate=False
+                )
+
+                if ml_metrics:
+                    # Usar métricas del PDI Calculator científico (diccionario compatible)
+                    pdi_data.append(
+                        {
+                            "season": season,
+                            "pdi_overall": ml_metrics.get("pdi_overall", 0),
+                            "pdi_universal": ml_metrics.get("pdi_universal", 0),
+                            "pdi_zone": ml_metrics.get("pdi_zone", 0),
+                            "pdi_position_specific": ml_metrics.get(
+                                "pdi_position_specific", 0
+                            ),
+                            "technical_proficiency": ml_metrics.get(
+                                "technical_proficiency", 0
+                            ),
+                            "tactical_intelligence": ml_metrics.get(
+                                "tactical_intelligence", 0
+                            ),
+                            "physical_performance": ml_metrics.get(
+                                "physical_performance", 0
+                            ),
+                            "consistency_index": ml_metrics.get("consistency_index", 0),
+                            "position_analyzed": ml_metrics.get(
+                                "position_analyzed", "CF"
+                            ),
+                        }
+                    )
+                    logger.info(
+                        f"✅ PDI Calculator: Season {season}, PDI={ml_metrics.get('pdi_overall')}"
+                    )
+
             except Exception as e:
-                print(f"Error obteniendo datos ML para temporada {season}: {e}")
+                logger.error(
+                    f"Error obteniendo métricas PDI para temporada {season}: {e}"
+                )
                 continue
-        
+
         if not pdi_data:
-            return dbc.Alert("No ML metrics available for PDI evolution", color="warning")
-        
-        # Crear gráfico PDI
+            return dbc.Alert(
+                "No PDI metrics available - Try calculating metrics first",
+                color="warning",
+            )
+
+        # Crear gráfico PDI con métricas científicas
         fig = go.Figure()
-        
-        # PDI Overall (línea principal)
-        fig.add_trace(go.Scatter(
-            x=[d["season"] for d in pdi_data],
-            y=[d["pdi_overall"] for d in pdi_data],
-            mode='lines+markers',
-            name='PDI Overall',
-            line=dict(color='#24DE84', width=4),
-            marker=dict(size=10),
-            hovertemplate='<b>PDI Overall</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>'
-        ))
-        
-        # Componentes PDI (líneas secundarias)
-        fig.add_trace(go.Scatter(
-            x=[d["season"] for d in pdi_data],
-            y=[d["pdi_universal"] for d in pdi_data],
-            mode='lines+markers',
-            name='Universal (40%)',
-            line=dict(color='#1E3A8A', width=2, dash='dot'),
-            marker=dict(size=6),
-            hovertemplate='<b>PDI Universal</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>'
-        ))
-        
-        fig.add_trace(go.Scatter(
-            x=[d["season"] for d in pdi_data],
-            y=[d["pdi_zone"] for d in pdi_data],
-            mode='lines+markers',
-            name='Zone (35%)',
-            line=dict(color='#F59E0B', width=2, dash='dash'),
-            marker=dict(size=6),
-            hovertemplate='<b>PDI Zone</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>'
-        ))
-        
-        fig.add_trace(go.Scatter(
-            x=[d["season"] for d in pdi_data],
-            y=[d["pdi_position"] for d in pdi_data],
-            mode='lines+markers',
-            name='Position (25%)',
-            line=dict(color='#10B981', width=2, dash='dashdot'),
-            marker=dict(size=6),
-            hovertemplate='<b>PDI Position</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>'
-        ))
-        
-        # Configurar layout
+
+        # PDI Overall (línea principal - compatible con MLMetrics)
+        fig.add_trace(
+            go.Scatter(
+                x=[d["season"] for d in pdi_data],
+                y=[d["pdi_overall"] for d in pdi_data],
+                mode="lines+markers",
+                name="PDI Overall",
+                line=dict(color="#24DE84", width=4),
+                marker=dict(size=10),
+                hovertemplate="<b>PDI Overall</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>",
+            )
+        )
+
+        # Componentes PDI científicos (líneas secundarias)
+        fig.add_trace(
+            go.Scatter(
+                x=[d["season"] for d in pdi_data],
+                y=[d["pdi_universal"] for d in pdi_data],
+                mode="lines+markers",
+                name="Universal (40%)",
+                line=dict(color="#1E3A8A", width=2, dash="dot"),
+                marker=dict(size=6),
+                hovertemplate="<b>Universal Metrics</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=[d["season"] for d in pdi_data],
+                y=[d["pdi_zone"] for d in pdi_data],
+                mode="lines+markers",
+                name="Zone (35%)",
+                line=dict(color="#F59E0B", width=2, dash="dash"),
+                marker=dict(size=6),
+                hovertemplate="<b>Zone Metrics</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=[d["season"] for d in pdi_data],
+                y=[d["pdi_position_specific"] for d in pdi_data],
+                mode="lines+markers",
+                name="Position (25%)",
+                line=dict(color="#10B981", width=2, dash="dashdot"),
+                marker=dict(size=6),
+                hovertemplate="<b>Position Specific</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>",
+            )
+        )
+
+        # Configurar layout con información dinámica
         fig.update_layout(
             title=dict(
-                text="Player Development Index Evolution",
-                font=dict(color="#24DE84", size=16)
+                text=f"PDI Evolution - {len(pdi_data)} Seasons",
+                font=dict(color="#24DE84", size=16),
             ),
             xaxis_title="Season",
             yaxis_title="PDI Score (0-100)",
@@ -712,121 +764,550 @@ def create_pdi_evolution_chart(player_id, seasons=None):
             ),
             height=350,
             margin=dict(t=60, b=40, l=50, r=40),
-            hovermode='x unified'
+            hovermode="x unified",
         )
-        
+
         # Añadir líneas de referencia
-        fig.add_hline(y=75, line_dash="solid", line_color="#10B981", 
-                      annotation_text="Excellence (75+)", annotation_position="top right")
-        fig.add_hline(y=60, line_dash="solid", line_color="#F59E0B",
-                      annotation_text="Good (60+)", annotation_position="top right") 
-        fig.add_hline(y=40, line_dash="solid", line_color="#EF4444",
-                      annotation_text="Needs Improvement (40+)", annotation_position="top right")
-        
-        # Configurar ejes
-        fig.update_yaxes(range=[0, 100], dtick=10, showgrid=True, gridcolor='rgba(255,255,255,0.1)')
-        fig.update_xaxes(showgrid=True, gridcolor='rgba(255,255,255,0.1)')
-        
-        return dcc.Graph(
-            figure=fig, 
-            style={"height": "350px"}, 
-            config={"displayModeBar": False}
+        fig.add_hline(
+            y=75,
+            line_dash="solid",
+            line_color="#10B981",
+            annotation_text="Excellence (75+)",
+            annotation_position="top right",
         )
-        
+        fig.add_hline(
+            y=60,
+            line_dash="solid",
+            line_color="#F59E0B",
+            annotation_text="Good (60+)",
+            annotation_position="top right",
+        )
+        fig.add_hline(
+            y=40,
+            line_dash="solid",
+            line_color="#EF4444",
+            annotation_text="Needs Improvement (40+)",
+            annotation_position="top right",
+        )
+
+        # Configurar ejes
+        fig.update_yaxes(
+            range=[0, 100], dtick=10, showgrid=True, gridcolor="rgba(255,255,255,0.1)"
+        )
+        fig.update_xaxes(showgrid=True, gridcolor="rgba(255,255,255,0.1)")
+
+        return dcc.Graph(
+            figure=fig, style={"height": "350px"}, config={"displayModeBar": False}
+        )
+
     except Exception as e:
-        print(f"Error creating PDI evolution chart: {e}")
+        logger.error(f"Error creating PDI evolution chart: {e}")
         return dbc.Alert(f"Error creating PDI chart: {str(e)}", color="danger")
 
 
-def create_ml_enhanced_radar_chart(player_id, season="2024-25"):
+def create_ml_enhanced_radar_chart(player_id, seasons=None):
     """
-    Crea radar chart mejorado con métricas ML normalizadas.
-    
-    Combina traditional stats con análisis ML del pipeline.
+    Crea radar chart mejorado con métricas PDI Calculator científicas usando todas las temporadas.
+
+    MEJORADO: Usa todas las temporadas disponibles con promedios ponderados por recencia.
+    MIGRADO: Usa PDI Calculator integrado con PlayerAnalyzer.
     """
     try:
-        # Inicializar controllers ML
-        ml_controller = MLMetricsController()
-        position_normalizer = PositionNormalizer()
-        
-        # Obtener análisis ML del jugador
-        analysis = ml_controller.get_enhanced_player_analysis(player_id, season)
-        
-        if "error" in analysis:
-            return dbc.Alert("No ML data available for radar chart", color="warning")
-        
-        # Extraer métricas normalizadas
-        ml_metrics = analysis.get("ml_metrics", {}).get("raw", {})
-        
-        # Definir métricas para radar chart
+        # Inicializar analyzer ML con PDI Calculator integrado
+        player_analyzer = PlayerAnalyzer()
+
+        if not seasons:
+            # Obtener todas las temporadas disponibles del jugador
+            seasons = player_analyzer.get_available_seasons_for_player(player_id)
+            if not seasons:
+                logger.warning(f"No se encontraron temporadas para jugador {player_id}")
+                return dbc.Alert(
+                    "No hay temporadas con datos profesionales para este jugador",
+                    color="warning",
+                )
+
+        # Calcular métricas para todas las temporadas disponibles
+        all_seasons_metrics = []
+        for season in seasons:
+            try:
+                # Validar que la temporada existe antes de calcular
+                if not player_analyzer.validate_season_exists_for_player(
+                    player_id, season
+                ):
+                    logger.debug(
+                        f"Saltando temporada {season} - no tiene datos para jugador {player_id}"
+                    )
+                    continue
+
+                ml_metrics = player_analyzer.calculate_or_update_pdi_metrics(
+                    player_id, season, force_recalculate=False
+                )
+
+                if ml_metrics:
+                    all_seasons_metrics.append(
+                        {"season": season, "metrics": ml_metrics}
+                    )
+                    logger.debug(f"✅ Radar Chart: Temporada {season} incluida")
+
+            except Exception as e:
+                logger.error(f"Error obteniendo métricas para temporada {season}: {e}")
+                continue
+
+        if not all_seasons_metrics:
+            return dbc.Alert(
+                "No PDI metrics available for radar chart", color="warning"
+            )
+
+        # Calcular promedios ponderados (más peso a temporadas recientes)
+        weighted_metrics = {}
+        metric_keys = [
+            "technical_proficiency",
+            "tactical_intelligence",
+            "physical_performance",
+            "consistency_index",
+            "pdi_universal",
+            "pdi_zone",
+            "pdi_position_specific",
+        ]
+
+        total_weight = 0
+        for i, season_data in enumerate(all_seasons_metrics):
+            # Peso mayor para temporadas más recientes (última temporada peso 3, anterior peso 2, etc.)
+            weight = len(all_seasons_metrics) - i
+            total_weight += weight
+
+            for metric_key in metric_keys:
+                value = season_data["metrics"].get(metric_key, 0)
+                if metric_key not in weighted_metrics:
+                    weighted_metrics[metric_key] = 0
+                weighted_metrics[metric_key] += value * weight
+
+        # Calcular promedios finales
+        for metric_key in weighted_metrics:
+            weighted_metrics[metric_key] = (
+                weighted_metrics[metric_key] / total_weight if total_weight > 0 else 0
+            )
+
+        # Definir métricas para radar chart usando promedios ponderados
         metrics_data = {
-            'Technical Skills': ml_metrics.get('technical_proficiency', 50),
-            'Tactical Intelligence': ml_metrics.get('tactical_intelligence', 50),
-            'Physical Performance': ml_metrics.get('physical_performance', 50),
-            'Consistency': ml_metrics.get('consistency_index', 50),
-            'Universal Skills': ml_metrics.get('pdi_universal', 50),
-            'Zone Performance': ml_metrics.get('pdi_zone', 50),
-            'Position Specific': ml_metrics.get('pdi_position_specific', 50)
+            "Technical Skills": weighted_metrics.get("technical_proficiency", 50),
+            "Tactical Intelligence": weighted_metrics.get("tactical_intelligence", 50),
+            "Physical Performance": weighted_metrics.get("physical_performance", 50),
+            "Consistency": weighted_metrics.get("consistency_index", 50),
+            "Universal Metrics": weighted_metrics.get("pdi_universal", 50),
+            "Zone Metrics": weighted_metrics.get("pdi_zone", 50),
+            "Position Specific": weighted_metrics.get("pdi_position_specific", 50),
         }
-        
+
+        # Obtener información de posición de la temporada más reciente
+        latest_season_metrics = all_seasons_metrics[-1]["metrics"]
+        position = latest_season_metrics.get("position_analyzed", "Unknown")
+
+        logger.info(
+            f"🎯 Radar chart para {position}: {len(all_seasons_metrics)} temporadas promediadas"
+        )
+        logger.info(
+            f"📊 Temporadas incluidas: {[s['season'] for s in all_seasons_metrics]}"
+        )
+
         # Crear radar chart
         fig = go.Figure()
-        
-        fig.add_trace(go.Scatterpolar(
-            r=list(metrics_data.values()),
-            theta=list(metrics_data.keys()),
-            fill='toself',
-            name='ML Analysis',
-            fillcolor='rgba(36, 222, 132, 0.3)',
-            line=dict(color='#24DE84', width=3),
-            hovertemplate='<b>%{theta}</b><br>Score: %{r:.1f}<extra></extra>'
-        ))
-        
-        # Configurar layout
+
+        fig.add_trace(
+            go.Scatterpolar(
+                r=list(metrics_data.values()),
+                theta=list(metrics_data.keys()),
+                fill="toself",
+                name=f"ML Analysis ({len(all_seasons_metrics)} seasons)",
+                fillcolor="rgba(36, 222, 132, 0.3)",
+                line=dict(color="#24DE84", width=3),
+                hovertemplate="<b>%{theta}</b><br>Score: %{r:.1f}<br><i>Avg of "
+                + f"{len(all_seasons_metrics)} seasons</i><extra></extra>",
+            )
+        )
+
+        # Configurar layout con información contextual (igualado al radar chart original)
         fig.update_layout(
             polar=dict(
                 radialaxis=dict(
                     visible=True,
                     range=[0, 100],
-                    tickmode='linear',
-                    dtick=20,
-                    showticklabels=True,
-                    ticks='outside',
-                    tickcolor='#FFFFFF',
-                    gridcolor='rgba(255,255,255,0.3)',
-                    gridwidth=1
+                    gridcolor="rgba(255,255,255,0.2)",
+                    linecolor="rgba(255,255,255,0.3)",
+                    tickcolor="rgba(255,255,255,0.5)",
+                    tickfont=dict(color="#FFFFFF", size=9),
+                    tickvals=[0, 25, 50, 75, 100],
+                    ticktext=["0", "25", "50", "75", "100"],
                 ),
                 angularaxis=dict(
-                    tickfont=dict(size=12, color='#FFFFFF'),
-                    rotation=90,
-                    direction='counterclockwise'
-                )
+                    gridcolor="rgba(255,255,255,0.3)",
+                    linecolor="rgba(255,255,255,0.3)",
+                    tickcolor="rgba(255,255,255,0.5)",
+                    tickfont=dict(color="#FFFFFF", size=11, family="Arial Black"),
+                ),
+                bgcolor="rgba(0,0,0,0)",
             ),
             showlegend=True,
             legend=dict(
                 bgcolor="rgba(0,0,0,0.7)",
                 bordercolor="rgba(36,222,132,0.3)",
                 borderwidth=1,
-                font=dict(color='#FFFFFF')
+                x=0.02,
+                y=0.02,
+                font=dict(color="#FFFFFF", size=10),
             ),
-            title=dict(
-                text="ML-Enhanced Performance Profile",
-                font=dict(color="#24DE84", size=16)
-            ),
-            height=400,
+            title={
+                "text": f"ML-Enhanced Performance Profile - {len(all_seasons_metrics)} Seasons",
+                "x": 0.5,
+                "font": {"color": "#24DE84", "size": 14},
+            },
+            plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#FFFFFF")
+            height=400,
+            margin=dict(t=60, b=40, l=40, r=40),
         )
-        
+
         return dcc.Graph(
-            figure=fig,
-            style={"height": "400px"},
-            config={"displayModeBar": False}
+            figure=fig, style={"height": "400px"}, config={"displayModeBar": False}
         )
-        
+
     except Exception as e:
-        print(f"Error creating ML radar chart: {e}")
+        logger.error(f"Error creating ML radar chart: {e}")
         return dbc.Alert(f"Error creating radar chart: {str(e)}", color="danger")
+
+
+def create_etl_management_interface():
+    """
+    Crea interfaz de gestión ETL para testear el ETL Coordinator CRISP-DM.
+
+    NUEVO: Interface completa para pipeline ETL con metodología CRISP-DM.
+    """
+    try:
+        from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
+
+        # Inicializar analyzer para obtener temporadas disponibles
+        player_analyzer = PlayerAnalyzer()
+        available_seasons = player_analyzer.get_available_seasons_for_etl()
+
+        # Crear opciones de dropdown
+        season_options = [
+            {"label": f"{season} - {desc}", "value": season}
+            for season, desc in available_seasons.items()
+        ]
+
+        if not season_options:
+            season_options = [{"label": "No seasons available", "value": ""}]
+
+        # Interface completa
+        etl_interface = dbc.Card(
+            [
+                dbc.CardHeader(
+                    [
+                        html.H5(
+                            [
+                                html.I(
+                                    className="bi bi-gear-fill me-2",
+                                    style={"color": "#24DE84"},
+                                ),
+                                "ETL Coordinator - CRISP-DM Pipeline",
+                            ],
+                            className="mb-0 text-primary",
+                        )
+                    ]
+                ),
+                dbc.CardBody(
+                    [
+                        # Selector de temporada
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Season:",
+                                            className="form-label text-primary",
+                                        ),
+                                        dcc.Dropdown(
+                                            id="etl-season-dropdown",
+                                            options=season_options,
+                                            value=(
+                                                season_options[0]["value"]
+                                                if season_options
+                                                and season_options[0]["value"]
+                                                else None
+                                            ),
+                                            style={"color": "#000000"},
+                                            placeholder="Select season to process",
+                                        ),
+                                    ],
+                                    width=6,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Matching Threshold:",
+                                            className="form-label text-primary",
+                                        ),
+                                        dbc.Input(
+                                            id="etl-threshold-input",
+                                            type="number",
+                                            value=85,
+                                            min=70,
+                                            max=100,
+                                            step=5,
+                                            style={
+                                                "background-color": "#2B2B2B",
+                                                "border-color": "#24DE84",
+                                                "color": "#FFFFFF",
+                                            },
+                                        ),
+                                    ],
+                                    width=6,
+                                ),
+                            ],
+                            className="mb-3",
+                        ),
+                        # Controles ETL
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        dbc.Button(
+                                            [
+                                                html.I(
+                                                    className="bi bi-play-fill me-2"
+                                                ),
+                                                "Execute CRISP-DM Pipeline",
+                                            ],
+                                            id="etl-execute-btn",
+                                            color="success",
+                                            className="me-2",
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(
+                                                    className="bi bi-arrow-clockwise me-2"
+                                                ),
+                                                "Check Status",
+                                            ],
+                                            id="etl-status-btn",
+                                            color="info",
+                                            className="me-2",
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="bi bi-trash me-2"),
+                                                "Cleanup & Reprocess",
+                                            ],
+                                            id="etl-cleanup-btn",
+                                            color="warning",
+                                        ),
+                                    ],
+                                    width=12,
+                                )
+                            ],
+                            className="mb-3",
+                        ),
+                        # Checkbox opciones
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        dbc.Checklist(
+                                            options=[
+                                                {
+                                                    "label": " Calculate PDI Metrics",
+                                                    "value": "pdi",
+                                                },
+                                                {
+                                                    "label": " Force Reload Data",
+                                                    "value": "force",
+                                                },
+                                            ],
+                                            value=["pdi"],
+                                            id="etl-options-checklist",
+                                            inline=True,
+                                            style={"color": "#FFFFFF"},
+                                        )
+                                    ],
+                                    width=12,
+                                )
+                            ],
+                            className="mb-3",
+                        ),
+                        # Área de resultados
+                        html.Div(
+                            id="etl-results-area",
+                            children=[
+                                dbc.Alert(
+                                    [
+                                        html.I(className="bi bi-info-circle me-2"),
+                                        "Select a season and click 'Execute CRISP-DM Pipeline' to start ETL processing.",
+                                    ],
+                                    color="info",
+                                    className="mb-0",
+                                )
+                            ],
+                        ),
+                    ]
+                ),
+            ],
+            style={
+                "background-color": "#2B2B2B",
+                "border-color": "rgba(36, 222, 132, 0.3)",
+            },
+        )
+
+        return etl_interface
+
+    except Exception as e:
+        logger.error(f"Error creating ETL interface: {e}")
+        return dbc.Alert(
+            [
+                html.I(className="bi bi-exclamation-triangle me-2"),
+                f"Error loading ETL interface: {str(e)}",
+            ],
+            color="danger",
+        )
+
+
+def create_etl_status_display(etl_status: dict = None, season: str = ""):
+    """
+    Crea display detallado del estado ETL para una temporada.
+
+    Args:
+        etl_status: Estado del ETL
+        season: Temporada
+
+    Returns:
+        Componente con información de estado
+    """
+    if not etl_status:
+        return dbc.Alert("No ETL status available", color="warning")
+
+    try:
+        status = etl_status.get("status", "unknown")
+
+        # Color según estado
+        status_colors = {
+            "completed": "success",
+            "processing": "info",
+            "error": "danger",
+            "not_processed": "secondary",
+        }
+        color = status_colors.get(status, "secondary")
+
+        # Iconos según estado
+        status_icons = {
+            "completed": "bi-check-circle-fill",
+            "processing": "bi-arrow-repeat",
+            "error": "bi-exclamation-triangle-fill",
+            "not_processed": "bi-clock",
+        }
+        icon = status_icons.get(status, "bi-question-circle")
+
+        status_display = dbc.Card(
+            [
+                dbc.CardHeader(
+                    [
+                        html.H6(
+                            [html.I(className=f"{icon} me-2"), f"ETL Status: {season}"],
+                            className="mb-0",
+                        )
+                    ]
+                ),
+                dbc.CardBody(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        dbc.Badge(
+                                            status.replace("_", " ").title(),
+                                            color=color,
+                                            className="mb-2",
+                                        ),
+                                        html.P(
+                                            etl_status.get("message", "No message"),
+                                            className="mb-2",
+                                        ),
+                                    ],
+                                    width=12,
+                                )
+                            ]
+                        ),
+                        # Estadísticas detalladas
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Small(
+                                            "Total Records:", className="text-muted"
+                                        ),
+                                        html.P(
+                                            str(etl_status.get("total_records", 0)),
+                                            className="mb-1 fw-bold text-primary",
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Small("Imported:", className="text-muted"),
+                                        html.P(
+                                            str(etl_status.get("imported_records", 0)),
+                                            className="mb-1 fw-bold text-success",
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Small(
+                                            "Matched Players:", className="text-muted"
+                                        ),
+                                        html.P(
+                                            str(etl_status.get("matched_players", 0)),
+                                            className="mb-1 fw-bold text-info",
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Small("Errors:", className="text-muted"),
+                                        html.P(
+                                            str(etl_status.get("errors_count", 0)),
+                                            className="mb-1 fw-bold text-danger",
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                            ]
+                        ),
+                        # Información adicional si disponible
+                        html.Hr(),
+                        html.Small(
+                            [
+                                f"Last Updated: {etl_status.get('last_updated', 'Never')}",
+                                html.Br(),
+                                f"CRISP-DM Phase: {etl_status.get('crisp_dm_phase', 'Unknown')}",
+                            ],
+                            className="text-muted",
+                        ),
+                    ]
+                ),
+            ],
+            style={
+                "background-color": "#2B2B2B",
+                "border-color": "rgba(36, 222, 132, 0.3)",
+            },
+        )
+
+        return status_display
+
+    except Exception as e:
+        logger.error(f"Error creating ETL status display: {e}")
+        return dbc.Alert(f"Error displaying status: {str(e)}", color="danger")
 
 
 def create_player_profile_dash(player_id=None, user_id=None):
@@ -2089,14 +2570,14 @@ def create_etl_status_indicator(data_quality_info, team_info):
     )
 
 
-def create_team_history_timeline(player_stats, controller):
+def create_team_history_timeline(player_stats, player_analyzer):
     """
     Crea un timeline visual de la evolución de equipos del jugador.
     ACTUALIZADA: Integra lógica ETL mejorada para casos como David Cuerva.
 
     Args:
         player_stats: Lista de estadísticas por temporada
-        controller: Instancia de ThaiLeagueController
+        player_analyzer: Instancia de PlayerAnalyzer
 
     Returns:
         Componente HTML con timeline de equipos
@@ -2107,8 +2588,8 @@ def create_team_history_timeline(player_stats, controller):
     timeline_items = []
 
     for i, season_stats in enumerate(player_stats):
-        # INTEGRAR NUEVA LÓGICA ETL: Obtener información del equipo con contexto mejorado
-        team_info = controller.get_team_info(season_stats)
+        # USAR PlayerAnalyzer para obtener información del equipo con contexto mejorado
+        team_info = player_analyzer.get_team_info(season_stats)
 
         season = season_stats.get("season", "Unknown")
         team_display = team_info.get("team_display", "Unknown")
@@ -2662,9 +3143,9 @@ def create_professional_stats_content(player, user):
                 className="p-0",
             )
 
-        # Obtener estadísticas usando ThaiLeagueController
-        controller = ThaiLeagueController()
-        player_stats = controller.get_player_stats(player.player_id)
+        # Obtener estadísticas profesionales usando PlayerAnalyzer (migrado desde ThaiLeagueController)
+        player_analyzer = PlayerAnalyzer()
+        player_stats = player_analyzer.get_player_stats(player.player_id)
 
         # Si no hay estadísticas, mostrar mensaje informativo
         if not player_stats:
@@ -2693,10 +3174,12 @@ def create_professional_stats_content(player, user):
         total_matches = sum(stat.get("matches_played", 0) or 0 for stat in player_stats)
         latest_season = player_stats[-1] if player_stats else {}
 
-        # INTEGRAR NUEVA LÓGICA DEL BACKEND
-        # Usar get_team_info() en lugar de acceso directo a 'team'
-        team_info = controller.get_team_info(latest_season)
-        current_team_display = team_info.get("team_display", "Unknown")
+        # USAR PlayerAnalyzer para obtener información completa del equipo
+        if latest_season:
+            team_info = player_analyzer.get_team_info(latest_season)
+            current_team_display = team_info.get("team_display", "Unknown")
+        else:
+            current_team_display = "Unknown"
 
         # OBTENER INFORMACIÓN DE CALIDAD DE DATOS DEL ETL
         # Obtener la temporada más reciente para información de calidad
@@ -2705,8 +3188,15 @@ def create_professional_stats_content(player, user):
         )
 
         try:
-            etl_controller = ETLController()
-            processing_status = etl_controller.get_processing_status(latest_season_str)
+            # TODO: Reemplazar por lógica directa de ml_system después de consolidación
+            # etl_controller = ETLController()
+            # processing_status = etl_controller.get_processing_status(latest_season_str)
+
+            # Fallback temporal hasta completar consolidación
+            processing_status = {
+                "status": "pending",
+                "message": "ETL consolidation in progress",
+            }
 
             # Mapear estado del ETL a estructura esperada por data_quality_info
             status_mapping = {
@@ -2990,7 +3480,7 @@ def create_professional_stats_content(player, user):
                                         dbc.CardBody(
                                             [
                                                 create_team_history_timeline(
-                                                    player_stats, controller
+                                                    player_stats, player_analyzer
                                                 )
                                             ],
                                             className="p-3",
@@ -3008,7 +3498,12 @@ def create_professional_stats_content(player, user):
                     ]
                 ),
                 # === NUEVA SECCIÓN: ML ANALYTICS DASHBOARD (Phase 13.3) ===
-                html.Hr(style={"border-color": "rgba(36, 222, 132, 0.3)", "margin": "30px 0"}),
+                html.Hr(
+                    style={
+                        "border-color": "rgba(36, 222, 132, 0.3)",
+                        "margin": "30px 0",
+                    }
+                ),
                 html.H5(
                     [
                         html.I(className="bi bi-robot me-2"),
@@ -3016,11 +3511,11 @@ def create_professional_stats_content(player, user):
                         html.Span(
                             " (Machine Learning Pipeline)",
                             className="text-muted",
-                            style={"font-size": "0.8rem"}
-                        )
+                            style={"font-size": "0.8rem"},
+                        ),
                     ],
                     className="text-primary mb-4",
-                    style={"text-align": "center"}
+                    style={"text-align": "center"},
                 ),
                 # ML Dashboard - Fila 1: PDI Evolution y ML Radar Chart
                 dbc.Row(
@@ -3033,14 +3528,20 @@ def create_professional_stats_content(player, user):
                                         dbc.CardHeader(
                                             html.H6(
                                                 [
-                                                    html.I(className="bi bi-graph-up me-2"),
+                                                    html.I(
+                                                        className="bi bi-graph-up me-2"
+                                                    ),
                                                     "Player Development Index (PDI) Evolution",
                                                 ],
                                                 className="card-title mb-0 text-primary",
                                             )
                                         ),
                                         dbc.CardBody(
-                                            [create_pdi_evolution_chart(player.player_id)],
+                                            [
+                                                create_pdi_evolution_chart(
+                                                    player.player_id
+                                                )
+                                            ],
                                             className="p-2",
                                         ),
                                     ],
@@ -3062,14 +3563,20 @@ def create_professional_stats_content(player, user):
                                         dbc.CardHeader(
                                             html.H6(
                                                 [
-                                                    html.I(className="bi bi-radar me-2"),
+                                                    html.I(
+                                                        className="bi bi-radar me-2"
+                                                    ),
                                                     "ML Performance Profile",
                                                 ],
                                                 className="card-title mb-0 text-primary",
                                             )
                                         ),
                                         dbc.CardBody(
-                                            [create_ml_enhanced_radar_chart(player.player_id)],
+                                            [
+                                                create_ml_enhanced_radar_chart(
+                                                    player.player_id
+                                                )
+                                            ],
                                             className="p-2",
                                         ),
                                     ],
@@ -3095,7 +3602,9 @@ def create_professional_stats_content(player, user):
                                         dbc.CardHeader(
                                             html.H6(
                                                 [
-                                                    html.I(className="bi bi-lightbulb me-2"),
+                                                    html.I(
+                                                        className="bi bi-lightbulb me-2"
+                                                    ),
                                                     "AI Development Insights",
                                                 ],
                                                 className="card-title mb-0 text-primary",
@@ -3106,22 +3615,34 @@ def create_professional_stats_content(player, user):
                                                 html.P(
                                                     "🔸 Machine Learning Analysis powered by advanced Feature Engineering",
                                                     className="mb-2",
-                                                    style={"color": "#FFFFFF", "font-size": "0.9rem"}
+                                                    style={
+                                                        "color": "#FFFFFF",
+                                                        "font-size": "0.9rem",
+                                                    },
                                                 ),
                                                 html.P(
                                                     "🔸 PDI combines Universal (40%), Zone (35%), and Position-Specific (25%) metrics",
                                                     className="mb-2",
-                                                    style={"color": "#FFFFFF", "font-size": "0.9rem"}
+                                                    style={
+                                                        "color": "#FFFFFF",
+                                                        "font-size": "0.9rem",
+                                                    },
                                                 ),
                                                 html.P(
                                                     "🔸 Normalized against Thai League benchmarks for fair comparison",
                                                     className="mb-2",
-                                                    style={"color": "#FFFFFF", "font-size": "0.9rem"}
+                                                    style={
+                                                        "color": "#FFFFFF",
+                                                        "font-size": "0.9rem",
+                                                    },
                                                 ),
                                                 html.P(
                                                     "🔸 Real-time updates from professional statistics pipeline",
                                                     className="mb-0",
-                                                    style={"color": "#FFFFFF", "font-size": "0.9rem"}
+                                                    style={
+                                                        "color": "#FFFFFF",
+                                                        "font-size": "0.9rem",
+                                                    },
                                                 ),
                                             ],
                                             className="p-3",

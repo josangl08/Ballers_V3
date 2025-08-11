@@ -769,7 +769,7 @@ class ValidationController:
 
     @staticmethod
     def validate_coach_selection_safe(
-        coach_id: Union[int, None, Any]
+        coach_id: Union[int, None, Any],
     ) -> Tuple[bool, str, Optional[int]]:
         """
         Validación SEGURA de coach que maneja tipos Unknown/Any de Pylance.
@@ -818,7 +818,7 @@ class ValidationController:
 
     @staticmethod
     def validate_player_selection_safe(
-        player_id: Union[int, None, Any]
+        player_id: Union[int, None, Any],
     ) -> Tuple[bool, str, Optional[int]]:
         """
         Validación SEGURA de player que maneja tipos Unknown/Any de Pylance.
@@ -936,14 +936,14 @@ def check_session_time_recommendation(
 
 
 def validate_coach_selection_safe(
-    coach_id: Union[int, None, Any]
+    coach_id: Union[int, None, Any],
 ) -> Tuple[bool, str, Optional[int]]:
     """Función de conveniencia para validación segura de coach."""
     return ValidationController.validate_coach_selection_safe(coach_id)
 
 
 def validate_player_selection_safe(
-    player_id: Union[int, None, Any]
+    player_id: Union[int, None, Any],
 ) -> Tuple[bool, str, Optional[int]]:
     """Función de conveniencia para validación segura de player."""
     return ValidationController.validate_player_selection_safe(player_id)

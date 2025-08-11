@@ -343,10 +343,12 @@ def thai_league_weekly_job():
     try:
         logger.info("🕘 Ejecutando job semanal de Thai League")
 
-        from controllers.thai_league_controller import ThaiLeagueController
+        from ml_system.deployment.automation.smart_update_manager import (
+            SmartUpdateManager,
+        )
 
-        controller = ThaiLeagueController()
-        result = controller.smart_weekly_update()
+        manager = SmartUpdateManager()
+        result = manager.execute_smart_weekly_update()
 
         action = result.get("action", "unknown")
         success = result.get("success", False)
@@ -464,10 +466,12 @@ def force_thai_league_update():
     try:
         logger.info("🔧 Ejecutando actualización manual de Thai League")
 
-        from controllers.thai_league_controller import ThaiLeagueController
+        from ml_system.deployment.automation.smart_update_manager import (
+            SmartUpdateManager,
+        )
 
-        controller = ThaiLeagueController()
-        result = controller.smart_weekly_update()
+        manager = SmartUpdateManager()
+        result = manager.execute_smart_weekly_update()
 
         logger.info(
             f"Resultado actualización manual: {result.get('action')} - {result.get('message')}"
