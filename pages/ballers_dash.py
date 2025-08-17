@@ -21,7 +21,6 @@ from models.user_model import UserType
 # from ml_system.data_acquisition.extractors import ThaiLeagueExtractor  # Temporal - no usado
 
 
-
 # TODO: Import otros componentes ML según se necesiten
 
 # Configurar logger
@@ -167,36 +166,40 @@ def create_evolution_chart(player_stats):
 def create_radar_chart(player_stats):
     """
     Crea radar chart híbrido avanzado con análisis temporal y comparativa real.
-    
+
     Args:
         player_stats: Lista de diccionarios con estadísticas por temporada
-        
+
     Returns:
         Componente con selector y radar chart interactivo
     """
     if not player_stats:
         return dbc.Alert("No statistical data available", color="warning")
-    
+
     # Calcular métricas tanto para temporada actual como histórico
     latest_stats = player_stats[-1] if player_stats else {}
     current_season = latest_stats.get("season", "Current")
-    
+
     # Calcular promedios históricos del jugador (todas las temporadas)
     def calculate_historical_avg(metric_key):
         """Calcula promedio histórico de una métrica."""
-        values = [stat.get(metric_key, 0) or 0 for stat in player_stats if stat.get(metric_key) is not None]
+        values = [
+            stat.get(metric_key, 0) or 0
+            for stat in player_stats
+            if stat.get(metric_key) is not None
+        ]
         return sum(values) / len(values) if values else 0
-    
+
     # Métricas simples universales para comparar jugadores de cualquier posición
     categories = [
-        "Pass Acc %",       # pass_accuracy_pct
-        "Duels Won %",      # duels_won_pct
-        "Goals/90",         # goals_per_90
-        "Assists/90",       # assists_per_90
-        "Def Actions/90",   # defensive_actions_per_90
-        "Availability %"    # matches_played / 30 * 100
+        "Pass Acc %",  # pass_accuracy_pct
+        "Duels Won %",  # duels_won_pct
+        "Goals/90",  # goals_per_90
+        "Assists/90",  # assists_per_90
+        "Def Actions/90",  # defensive_actions_per_90
+        "Availability %",  # matches_played / 30 * 100
     ]
-    
+
     # Calcular métricas simples para temporada actual
     def calculate_current_metrics():
         pass_acc = latest_stats.get("pass_accuracy_pct", 0) or 0
@@ -205,16 +208,18 @@ def create_radar_chart(player_stats):
         assists_90 = latest_stats.get("assists_per_90", 0) or 0
         def_actions_90 = latest_stats.get("defensive_actions_per_90", 0) or 0
         matches = latest_stats.get("matches_played", 0) or 0
-        
+
         return {
-            "pass_accuracy": min(100, pass_acc),                    # 0-100 directo
-            "duels_won": min(100, duels_won),                       # 0-100 directo
-            "goals_per_90": min(100, goals_90 * 80),                # 0-1.25 -> 0-100 (optimizado)
-            "assists_per_90": min(100, assists_90 * 100),           # 0-1.0 -> 0-100 (optimizado)
-            "defensive_actions": min(100, def_actions_90 * 10),     # 0-10 -> 0-100 (optimizado)
-            "availability": min(100, (matches / 30) * 100)         # 0-30 partidos -> 0-100
+            "pass_accuracy": min(100, pass_acc),  # 0-100 directo
+            "duels_won": min(100, duels_won),  # 0-100 directo
+            "goals_per_90": min(100, goals_90 * 80),  # 0-1.25 -> 0-100 (optimizado)
+            "assists_per_90": min(100, assists_90 * 100),  # 0-1.0 -> 0-100 (optimizado)
+            "defensive_actions": min(
+                100, def_actions_90 * 10
+            ),  # 0-10 -> 0-100 (optimizado)
+            "availability": min(100, (matches / 30) * 100),  # 0-30 partidos -> 0-100
         }
-    
+
     # Calcular métricas históricas simples (promedio de todas las temporadas)
     def calculate_historical_metrics():
         pass_acc_avg = calculate_historical_avg("pass_accuracy_pct")
@@ -223,41 +228,47 @@ def create_radar_chart(player_stats):
         assists_90_avg = calculate_historical_avg("assists_per_90")
         def_actions_90_avg = calculate_historical_avg("defensive_actions_per_90")
         matches_avg = calculate_historical_avg("matches_played")
-        
+
         return {
-            "pass_accuracy": min(100, pass_acc_avg),                      # 0-100 directo
-            "duels_won": min(100, duels_won_avg),                         # 0-100 directo
-            "goals_per_90": min(100, goals_90_avg * 80),                  # 0-1.25 -> 0-100 (optimizado)
-            "assists_per_90": min(100, assists_90_avg * 100),             # 0-1.0 -> 0-100 (optimizado)
-            "defensive_actions": min(100, def_actions_90_avg * 10),       # 0-10 -> 0-100 (optimizado)
-            "availability": min(100, (matches_avg / 30) * 100)           # 0-30 partidos -> 0-100
+            "pass_accuracy": min(100, pass_acc_avg),  # 0-100 directo
+            "duels_won": min(100, duels_won_avg),  # 0-100 directo
+            "goals_per_90": min(100, goals_90_avg * 80),  # 0-1.25 -> 0-100 (optimizado)
+            "assists_per_90": min(
+                100, assists_90_avg * 100
+            ),  # 0-1.0 -> 0-100 (optimizado)
+            "defensive_actions": min(
+                100, def_actions_90_avg * 10
+            ),  # 0-10 -> 0-100 (optimizado)
+            "availability": min(
+                100, (matches_avg / 30) * 100
+            ),  # 0-30 partidos -> 0-100
         }
-    
+
     current_metrics = calculate_current_metrics()
     historical_metrics = calculate_historical_metrics()
-    
+
     # Valores de referencia de liga Thai League (promedio real)
     league_reference = {
-        "pass_accuracy": 75,        # 75% promedio pass accuracy
-        "duels_won": 50,           # 50% promedio duels won
-        "goals_per_90": 32,        # ~0.4 goals/90 promedio -> 32/100 (con escala *80)
-        "assists_per_90": 30,      # ~0.3 assists/90 promedio -> 30/100 (con escala *100)
-        "defensive_actions": 50,   # ~5 acc def/90 promedio -> 50/100 (con escala *10)
-        "availability": 70         # ~21 partidos promedio -> 70/100
+        "pass_accuracy": 75,  # 75% promedio pass accuracy
+        "duels_won": 50,  # 50% promedio duels won
+        "goals_per_90": 32,  # ~0.4 goals/90 promedio -> 32/100 (con escala *80)
+        "assists_per_90": 30,  # ~0.3 assists/90 promedio -> 30/100 (con escala *100)
+        "defensive_actions": 50,  # ~5 acc def/90 promedio -> 50/100 (con escala *10)
+        "availability": 70,  # ~21 partidos promedio -> 70/100
     }
-    
+
     # Función auxiliar para preparar valores reales para tooltips
     def prepare_real_values(stats_dict, is_league_ref=False):
         """Prepara valores reales para mostrar en tooltips."""
         if is_league_ref:
             # Valores de referencia de liga (ya son reales)
             return [
-                75.0,    # pass_accuracy_pct
-                50.0,    # duels_won_pct  
-                0.4,     # goals_per_90
-                0.3,     # assists_per_90
-                5.0,     # defensive_actions_per_90
-                21       # matches_played (de 30)
+                75.0,  # pass_accuracy_pct
+                50.0,  # duels_won_pct
+                0.4,  # goals_per_90
+                0.3,  # assists_per_90
+                5.0,  # defensive_actions_per_90
+                21,  # matches_played (de 30)
             ]
         else:
             # Valores reales del jugador
@@ -267,128 +278,161 @@ def create_radar_chart(player_stats):
             assists_90 = stats_dict.get("assists_per_90", 0) or 0
             def_actions_90 = stats_dict.get("defensive_actions_per_90", 0) or 0
             matches = stats_dict.get("matches_played", 0) or 0
-            
+
             return [pass_acc, duels_won, goals_90, assists_90, def_actions_90, matches]
 
     # Preparar datos para el gráfico
-    metric_keys = ["pass_accuracy", "duels_won", "goals_per_90", "assists_per_90", "defensive_actions", "availability"]
+    metric_keys = [
+        "pass_accuracy",
+        "duels_won",
+        "goals_per_90",
+        "assists_per_90",
+        "defensive_actions",
+        "availability",
+    ]
     current_values = [current_metrics[key] for key in metric_keys]
     historical_values = [historical_metrics[key] for key in metric_keys]
     league_values = [league_reference[key] for key in metric_keys]
-    
+
     # Preparar valores reales para tooltips
     current_real_values = prepare_real_values(latest_stats)
-    historical_real_values = prepare_real_values({
-        "pass_accuracy_pct": calculate_historical_avg("pass_accuracy_pct"),
-        "duels_won_pct": calculate_historical_avg("duels_won_pct"),
-        "goals_per_90": calculate_historical_avg("goals_per_90"),
-        "assists_per_90": calculate_historical_avg("assists_per_90"),
-        "defensive_actions_per_90": calculate_historical_avg("defensive_actions_per_90"),
-        "matches_played": calculate_historical_avg("matches_played")
-    })
+    historical_real_values = prepare_real_values(
+        {
+            "pass_accuracy_pct": calculate_historical_avg("pass_accuracy_pct"),
+            "duels_won_pct": calculate_historical_avg("duels_won_pct"),
+            "goals_per_90": calculate_historical_avg("goals_per_90"),
+            "assists_per_90": calculate_historical_avg("assists_per_90"),
+            "defensive_actions_per_90": calculate_historical_avg(
+                "defensive_actions_per_90"
+            ),
+            "matches_played": calculate_historical_avg("matches_played"),
+        }
+    )
     league_real_values = prepare_real_values({}, is_league_ref=True)
-    
+
     # Función para crear tooltip customizado
     def create_custom_tooltip(metric_index, value, prefix=""):
         """Crea tooltip personalizado según la métrica."""
-        metric_names = ["Pass Acc %", "Duels Won %", "Goals/90", "Assists/90", "Def Actions/90", "Availability %"]
+        metric_names = [
+            "Pass Acc %",
+            "Duels Won %",
+            "Goals/90",
+            "Assists/90",
+            "Def Actions/90",
+            "Availability %",
+        ]
         metric_name = metric_names[metric_index]
-        
+
         if metric_index in [0, 1]:  # Pass Acc %, Duels Won %
-            return f'<b>{metric_name}</b><br>{prefix}: {value:.1f}%<extra></extra>'
+            return f"<b>{metric_name}</b><br>{prefix}: {value:.1f}%<extra></extra>"
         elif metric_index in [2, 3, 4]:  # Goals/90, Assists/90, Def Actions/90
             units = ["/90", "/90", "/90"]
-            return f'<b>{metric_name}</b><br>{prefix}: {value:.1f}{units[metric_index-2]}<extra></extra>'
+            return f"<b>{metric_name}</b><br>{prefix}: {value:.1f}{units[metric_index-2]}<extra></extra>"
         else:  # Availability (matches)
-            return f'<b>{metric_name}</b><br>{prefix}: {int(value)} of 30 matches<extra></extra>'
-    
+            return f"<b>{metric_name}</b><br>{prefix}: {int(value)} of 30 matches<extra></extra>"
+
     # Crear tooltips personalizados para cada trace
     def create_trace_tooltips(real_values, prefix):
         """Crea array de tooltips para un trace completo."""
-        return [create_custom_tooltip(i, val, prefix) for i, val in enumerate(real_values)]
-    
+        return [
+            create_custom_tooltip(i, val, prefix) for i, val in enumerate(real_values)
+        ]
+
     # Crear radar chart híbrido
     fig = go.Figure()
-    
+
     # Liga promedio (referencia) - Más visible
-    fig.add_trace(go.Scatterpolar(
-        r=league_values,
-        theta=categories,
-        fill='toself',
-        fillcolor='rgba(255, 255, 255, 0.15)',
-        line=dict(color='rgba(255, 255, 255, 0.8)', width=2, dash='solid'),
-        name='Thai League Avg',
-        customdata=league_real_values,
-        hovertemplate=[create_custom_tooltip(i, val, "League Avg") for i, val in enumerate(league_real_values)]
-    ))
-    
-    # Promedio histórico del jugador  
-    if len(player_stats) > 1:
-        fig.add_trace(go.Scatterpolar(
-            r=historical_values,
+    fig.add_trace(
+        go.Scatterpolar(
+            r=league_values,
             theta=categories,
-            fill='toself',
-            fillcolor='rgba(255, 165, 0, 0.15)',
-            line=dict(color='#FFA500', width=2, dash='dash'),
-            name=f'Career Average ({len(player_stats)} seasons)',
-            customdata=historical_real_values,
-            hovertemplate=[create_custom_tooltip(i, val, "Career Avg") for i, val in enumerate(historical_real_values)]
-        ))
-    
+            fill="toself",
+            fillcolor="rgba(255, 255, 255, 0.15)",
+            line=dict(color="rgba(255, 255, 255, 0.8)", width=2, dash="solid"),
+            name="Thai League Avg",
+            customdata=league_real_values,
+            hovertemplate=[
+                create_custom_tooltip(i, val, "League Avg")
+                for i, val in enumerate(league_real_values)
+            ],
+        )
+    )
+
+    # Promedio histórico del jugador
+    if len(player_stats) > 1:
+        fig.add_trace(
+            go.Scatterpolar(
+                r=historical_values,
+                theta=categories,
+                fill="toself",
+                fillcolor="rgba(255, 165, 0, 0.15)",
+                line=dict(color="#FFA500", width=2, dash="dash"),
+                name=f"Career Average ({len(player_stats)} seasons)",
+                customdata=historical_real_values,
+                hovertemplate=[
+                    create_custom_tooltip(i, val, "Career Avg")
+                    for i, val in enumerate(historical_real_values)
+                ],
+            )
+        )
+
     # Temporada actual (principal)
-    fig.add_trace(go.Scatterpolar(
-        r=current_values,
-        theta=categories,
-        fill='toself',
-        fillcolor='rgba(36, 222, 132, 0.3)',
-        line=dict(color='#24DE84', width=3),
-        marker=dict(size=8, color='#24DE84'),
-        name=f'Current Season ({current_season})',
-        customdata=current_real_values,
-        hovertemplate=[create_custom_tooltip(i, val, "Current") for i, val in enumerate(current_real_values)]
-    ))
-    
+    fig.add_trace(
+        go.Scatterpolar(
+            r=current_values,
+            theta=categories,
+            fill="toself",
+            fillcolor="rgba(36, 222, 132, 0.3)",
+            line=dict(color="#24DE84", width=3),
+            marker=dict(size=8, color="#24DE84"),
+            name=f"Current Season ({current_season})",
+            customdata=current_real_values,
+            hovertemplate=[
+                create_custom_tooltip(i, val, "Current")
+                for i, val in enumerate(current_real_values)
+            ],
+        )
+    )
+
     # Layout mejorado
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
                 range=[0, 100],
-                gridcolor='rgba(255,255,255,0.2)',
-                linecolor='rgba(255,255,255,0.3)',
-                tickfont=dict(color='white', size=9),
+                gridcolor="rgba(255,255,255,0.2)",
+                linecolor="rgba(255,255,255,0.3)",
+                tickfont=dict(color="white", size=9),
                 tickvals=[20, 40, 60, 80, 100],  # Menos ticks para claridad
-                ticktext=['20', '40', '60', '80', '100']
+                ticktext=["20", "40", "60", "80", "100"],
             ),
             angularaxis=dict(
-                gridcolor='rgba(255,255,255,0.3)',
-                tickfont=dict(color='white', size=10, family='Inter'),
-                rotation=0
+                gridcolor="rgba(255,255,255,0.3)",
+                tickfont=dict(color="white", size=10, family="Inter"),
+                rotation=0,
             ),
-            bgcolor='rgba(0,0,0,0)'
+            bgcolor="rgba(0,0,0,0)",
         ),
         showlegend=True,
         legend=dict(
-            orientation="h",          # Leyenda horizontal
-            x=0.5,                   # Centrado horizontalmente
-            xanchor='center',        # Anclaje central
-            y=1.08,                  # Posición donde estaba el título
-            yanchor='bottom',        # Anclaje inferior
-            bgcolor='rgba(0,0,0,0.8)',
-            bordercolor='rgba(36,222,132,0.3)',
+            orientation="h",  # Leyenda horizontal
+            x=0.5,  # Centrado horizontalmente
+            xanchor="center",  # Anclaje central
+            y=1.08,  # Posición donde estaba el título
+            yanchor="bottom",  # Anclaje inferior
+            bgcolor="rgba(0,0,0,0.8)",
+            bordercolor="rgba(36,222,132,0.3)",
             borderwidth=1,
-            font=dict(color='white', size=10)
+            font=dict(color="white", size=10),
         ),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
         height=450,
-        margin=dict(t=40, b=40, l=60, r=60)  # Márgenes reducidos para maximizar radar
+        margin=dict(t=40, b=40, l=60, r=60),  # Márgenes reducidos para maximizar radar
     )
-    
+
     return dcc.Graph(
-        figure=fig, 
-        style={"height": "450px"}, 
-        config={"displayModeBar": False}
+        figure=fig, style={"height": "450px"}, config={"displayModeBar": False}
     )
 
 
@@ -466,9 +510,9 @@ def create_performance_heatmap(player_stats):
                 [1, "#24DE84"],  # Verde brillante para valores altos
             ],
             hoverongaps=False,
-            hovertemplate="<b>%{y}</b><br>" + 
-                         "Season: %{x}<br>" + 
-                         "Performance: %{z:.1f}/100<extra></extra>",
+            hovertemplate="<b>%{y}</b><br>"
+            + "Season: %{x}<br>"
+            + "Performance: %{z:.1f}/100<extra></extra>",
             zmin=0,
             zmax=100,
         )
@@ -492,75 +536,85 @@ def create_performance_heatmap(player_stats):
 def create_statistics_summary(player_stats):
     """
     Crea tabla resumida de estadísticas clave con comparación temporal.
-    
+
     Args:
         player_stats: Lista de diccionarios con estadísticas por temporada
-        
+
     Returns:
         Componente dbc.Table con estadísticas resumidas
     """
     if not player_stats:
         return dbc.Alert("No statistical data available", color="warning")
-    
+
     # Usar la temporada más reciente y anterior para comparación
     current_stats = player_stats[-1] if player_stats else {}
     previous_stats = player_stats[-2] if len(player_stats) > 1 else {}
-    
+
     current_season = current_stats.get("season", "N/A")
     previous_season = previous_stats.get("season", "N/A") if previous_stats else None
-    
+
     def get_trend_indicator(current_val, previous_val, metric_format="number"):
         """Genera indicador de tendencia visual con variación porcentual para no-porcentajes."""
         if not previous_val or previous_val == 0:
             return html.Span("—", style={"color": "var(--color-white-faded)"})
-        
+
         # Calcular diferencia absoluta y porcentual
         diff_absolute = current_val - previous_val
         diff_percentage = ((current_val - previous_val) / previous_val) * 100
-        
+
         # Para métricas que no son porcentajes, mostrar variación porcentual entre paréntesis
         if metric_format != "percentage":
             if current_val > previous_val:
-                return html.Span([
-                    html.I(className="bi bi-trend-up me-1"),
-                    f"+{diff_absolute:.1f} ({diff_percentage:+.1f}%)"
-                ], style={"color": "var(--color-primary)", "font-weight": "bold"})
+                return html.Span(
+                    [
+                        html.I(className="bi bi-trend-up me-1"),
+                        f"+{diff_absolute:.1f} ({diff_percentage:+.1f}%)",
+                    ],
+                    style={"color": "var(--color-primary)", "font-weight": "bold"},
+                )
             elif current_val < previous_val:
-                return html.Span([
-                    html.I(className="bi bi-trend-down me-1"),
-                    f"{diff_absolute:.1f} ({diff_percentage:.1f}%)"
-                ], style={"color": "#FF6B6B", "font-weight": "bold"})
+                return html.Span(
+                    [
+                        html.I(className="bi bi-trend-down me-1"),
+                        f"{diff_absolute:.1f} ({diff_percentage:.1f}%)",
+                    ],
+                    style={"color": "#FF6B6B", "font-weight": "bold"},
+                )
             else:
-                return html.Span([
-                    html.I(className="bi bi-dash me-1"),
-                    "0.0 (0.0%)"
-                ], style={"color": "var(--color-white-faded)"})
+                return html.Span(
+                    [html.I(className="bi bi-dash me-1"), "0.0 (0.0%)"],
+                    style={"color": "var(--color-white-faded)"},
+                )
         else:
             # Para porcentajes, mantener el formato original (solo diferencia absoluta)
             if current_val > previous_val:
-                return html.Span([
-                    html.I(className="bi bi-trend-up me-1"),
-                    f"+{diff_absolute:.1f}"
-                ], style={"color": "var(--color-primary)", "font-weight": "bold"})
+                return html.Span(
+                    [html.I(className="bi bi-trend-up me-1"), f"+{diff_absolute:.1f}"],
+                    style={"color": "var(--color-primary)", "font-weight": "bold"},
+                )
             elif current_val < previous_val:
-                return html.Span([
-                    html.I(className="bi bi-trend-down me-1"),
-                    f"{diff_absolute:.1f}"
-                ], style={"color": "#FF6B6B", "font-weight": "bold"})
+                return html.Span(
+                    [html.I(className="bi bi-trend-down me-1"), f"{diff_absolute:.1f}"],
+                    style={"color": "#FF6B6B", "font-weight": "bold"},
+                )
             else:
-                return html.Span([
-                    html.I(className="bi bi-dash me-1"),
-                    "0.0"
-                ], style={"color": "var(--color-white-faded)"})
-    
+                return html.Span(
+                    [html.I(className="bi bi-dash me-1"), "0.0"],
+                    style={"color": "var(--color-white-faded)"},
+                )
+
     def format_percentage(value):
         """Formatea porcentajes con color según rango."""
         if not value:
             return html.Span("—", style={"color": "var(--color-white-faded)"})
-        
-        color = "var(--color-primary)" if value >= 70 else "#FFA726" if value >= 50 else "#FF6B6B"
+
+        color = (
+            "var(--color-primary)"
+            if value >= 70
+            else "#FFA726" if value >= 50 else "#FF6B6B"
+        )
         return html.Span(f"{value:.1f}%", style={"color": color, "font-weight": "bold"})
-    
+
     # Métricas clave optimizadas para primera impresión del jugador
     key_metrics = [
         # === RENDIMIENTO OFENSIVO ===
@@ -568,182 +622,275 @@ def create_statistics_summary(player_stats):
             "icon": "bi bi-trophy",
             "metric": "Goals per 90",
             "current": current_stats.get("goals_per_90", 0.0) or 0.0,
-            "previous": previous_stats.get("goals_per_90", 0.0) or 0.0 if previous_stats else 0.0,
+            "previous": (
+                previous_stats.get("goals_per_90", 0.0) or 0.0
+                if previous_stats
+                else 0.0
+            ),
             "format": "decimal",
-            "category": "offensive"
+            "category": "offensive",
         },
         {
             "icon": "bi bi-hand-thumbs-up",
-            "metric": "Assists per 90", 
+            "metric": "Assists per 90",
             "current": current_stats.get("assists_per_90", 0.0) or 0.0,
-            "previous": previous_stats.get("assists_per_90", 0.0) or 0.0 if previous_stats else 0.0,
+            "previous": (
+                previous_stats.get("assists_per_90", 0.0) or 0.0
+                if previous_stats
+                else 0.0
+            ),
             "format": "decimal",
-            "category": "offensive"
+            "category": "offensive",
         },
         {
             "icon": "bi bi-bullseye",
             "metric": "Shots on Target %",
             "current": current_stats.get("shots_on_target_pct", 0.0) or 0.0,
-            "previous": previous_stats.get("shots_on_target_pct", 0.0) or 0.0 if previous_stats else 0.0,
+            "previous": (
+                previous_stats.get("shots_on_target_pct", 0.0) or 0.0
+                if previous_stats
+                else 0.0
+            ),
             "format": "percentage",
-            "category": "offensive"
+            "category": "offensive",
         },
-        
         # === TÉCNICA Y DISTRIBUCIÓN ===
         {
             "icon": "bi bi-check-circle",
             "metric": "Pass Accuracy %",
             "current": current_stats.get("pass_accuracy_pct", 0.0) or 0.0,
-            "previous": previous_stats.get("pass_accuracy_pct", 0.0) or 0.0 if previous_stats else 0.0,
+            "previous": (
+                previous_stats.get("pass_accuracy_pct", 0.0) or 0.0
+                if previous_stats
+                else 0.0
+            ),
             "format": "percentage",
-            "category": "technical"
+            "category": "technical",
         },
         {
             "icon": "bi bi-lightning",
             "metric": "xG + xA per 90",
-            "current": (current_stats.get("xg_per_90", 0.0) or 0.0) + (current_stats.get("xa_per_90", 0.0) or 0.0),
-            "previous": ((previous_stats.get("xg_per_90", 0.0) or 0.0) + (previous_stats.get("xa_per_90", 0.0) or 0.0)) if previous_stats else 0.0,
+            "current": (current_stats.get("xg_per_90", 0.0) or 0.0)
+            + (current_stats.get("xa_per_90", 0.0) or 0.0),
+            "previous": (
+                (
+                    (previous_stats.get("xg_per_90", 0.0) or 0.0)
+                    + (previous_stats.get("xa_per_90", 0.0) or 0.0)
+                )
+                if previous_stats
+                else 0.0
+            ),
             "format": "decimal",
-            "category": "technical"
+            "category": "technical",
         },
-        
         # === RENDIMIENTO DEFENSIVO ===
         {
             "icon": "bi bi-shield",
             "metric": "Defensive Actions per 90",
             "current": current_stats.get("defensive_actions_per_90", 0.0) or 0.0,
-            "previous": previous_stats.get("defensive_actions_per_90", 0.0) or 0.0 if previous_stats else 0.0,
+            "previous": (
+                previous_stats.get("defensive_actions_per_90", 0.0) or 0.0
+                if previous_stats
+                else 0.0
+            ),
             "format": "decimal",
-            "category": "defensive"
+            "category": "defensive",
         },
         {
             "icon": "bi bi-arrow-up-circle",
             "metric": "Aerial Duels Won %",
             "current": current_stats.get("aerial_duels_won_pct", 0.0) or 0.0,
-            "previous": previous_stats.get("aerial_duels_won_pct", 0.0) or 0.0 if previous_stats else 0.0,
+            "previous": (
+                previous_stats.get("aerial_duels_won_pct", 0.0) or 0.0
+                if previous_stats
+                else 0.0
+            ),
             "format": "percentage",
-            "category": "defensive"
+            "category": "defensive",
         },
-        
         # === DISPONIBILIDAD Y EFICIENCIA ===
         {
             "icon": "bi bi-calendar-check",
             "metric": "Matches Played",
             "current": current_stats.get("matches_played", 0) or 0,
-            "previous": previous_stats.get("matches_played", 0) or 0 if previous_stats else 0,
+            "previous": (
+                previous_stats.get("matches_played", 0) or 0 if previous_stats else 0
+            ),
             "format": "number",
-            "category": "availability"
+            "category": "availability",
         },
         {
             "icon": "bi bi-clock",
             "metric": "Minutes per Match",
-            "current": (current_stats.get("minutes_played", 0) or 0) / max(1, current_stats.get("matches_played", 1) or 1),
-            "previous": (previous_stats.get("minutes_played", 0) or 0) / max(1, previous_stats.get("matches_played", 1) or 1) if previous_stats else 0,
+            "current": (current_stats.get("minutes_played", 0) or 0)
+            / max(1, current_stats.get("matches_played", 1) or 1),
+            "previous": (
+                (previous_stats.get("minutes_played", 0) or 0)
+                / max(1, previous_stats.get("matches_played", 1) or 1)
+                if previous_stats
+                else 0
+            ),
             "format": "decimal",
-            "category": "availability"
-        }
+            "category": "availability",
+        },
     ]
-    
+
     # Crear filas de la tabla con agrupación por categorías
     table_rows = []
     current_category = None
-    
+
     for metric in key_metrics:
         # Añadir separador de categoría si es necesario
         if metric["category"] != current_category:
             current_category = metric["category"]
-            
+
             # Añadir header de categoría más visible
             category_names = {
                 "offensive": "OFFENSIVE",
-                "technical": "TECHNICAL", 
+                "technical": "TECHNICAL",
                 "defensive": "DEFENSIVE",
-                "availability": "AVAILABILITY"
+                "availability": "AVAILABILITY",
             }
             category_colors = {
                 "offensive": "#FF6B6B",
                 "technical": "#24DE84",
-                "defensive": "#4DABF7", 
-                "availability": "#FFA726"
+                "defensive": "#4DABF7",
+                "availability": "#FFA726",
             }
             category_icons = {
                 "offensive": "bi-crosshair",
                 "technical": "bi-gear",
                 "defensive": "bi-shield",
-                "availability": "bi-calendar-week"
+                "availability": "bi-calendar-week",
             }
-            
+
             table_rows.append(
-                html.Tr([
-                    html.Td([
-                        html.Div([
-                            html.I(
-                                className=f"{category_icons.get(metric['category'], 'bi-circle')} me-2",
-                                style={"color": category_colors.get(metric["category"], "var(--color-white-faded)")}
-                            ),
-                            html.Span(
-                                category_names.get(metric["category"], metric["category"].upper()),
-                                style={
-                                    "color": category_colors.get(metric["category"], "var(--color-white-faded)"),
-                                    "font-weight": "700",
-                                    "font-size": "0.75rem",
-                                    "letter-spacing": "1px",
-                                    "text-transform": "uppercase"
-                                }
-                            )
-                        ], style={
-                            "padding": "4px 8px",
-                            "background-color": "rgba(255,255,255,0.05)",
-                            "border-radius": "4px",
-                            "border-left": f"3px solid {category_colors.get(metric['category'], '#FFFFFF')}",
-                            "display": "flex",
-                            "align-items": "center"
-                        })
-                    ], colSpan=3, style={"padding": "0.5rem 1rem", "border": "none"})
-                ])
+                html.Tr(
+                    [
+                        html.Td(
+                            [
+                                html.Div(
+                                    [
+                                        html.I(
+                                            className=f"{category_icons.get(metric['category'], 'bi-circle')} me-2",
+                                            style={
+                                                "color": category_colors.get(
+                                                    metric["category"],
+                                                    "var(--color-white-faded)",
+                                                )
+                                            },
+                                        ),
+                                        html.Span(
+                                            category_names.get(
+                                                metric["category"],
+                                                metric["category"].upper(),
+                                            ),
+                                            style={
+                                                "color": category_colors.get(
+                                                    metric["category"],
+                                                    "var(--color-white-faded)",
+                                                ),
+                                                "font-weight": "700",
+                                                "font-size": "0.75rem",
+                                                "letter-spacing": "1px",
+                                                "text-transform": "uppercase",
+                                            },
+                                        ),
+                                    ],
+                                    style={
+                                        "padding": "4px 8px",
+                                        "background-color": "rgba(255,255,255,0.05)",
+                                        "border-radius": "4px",
+                                        "border-left": f"3px solid {category_colors.get(metric['category'], '#FFFFFF')}",
+                                        "display": "flex",
+                                        "align-items": "center",
+                                    },
+                                )
+                            ],
+                            colSpan=3,
+                            style={"padding": "0.5rem 1rem", "border": "none"},
+                        )
+                    ]
+                )
             )
-        
+
         # Formatear valor actual según tipo
         if metric["format"] == "percentage":
             current_display = format_percentage(metric["current"])
         elif metric["format"] == "decimal":
             current_display = html.Span(
-                f"{metric['current']:.2f}", 
-                style={"color": "var(--color-white-faded)", "font-weight": "bold"}
+                f"{metric['current']:.2f}",
+                style={"color": "var(--color-white-faded)", "font-weight": "bold"},
             )
         else:  # number
             current_display = html.Span(
-                str(int(metric["current"])), 
-                style={"color": "var(--color-white-faded)", "font-weight": "bold"}
+                str(int(metric["current"])),
+                style={"color": "var(--color-white-faded)", "font-weight": "bold"},
             )
-        
+
         # Generar indicador de tendencia
-        trend = get_trend_indicator(metric["current"], metric["previous"], metric["format"]) if previous_stats else html.Span("—", style={"color": "var(--color-white-faded)"})
-        
-        table_rows.append(
-            html.Tr([
-                html.Td([
-                    html.I(className=f"{metric['icon']} me-2", style={"color": "var(--color-primary)"}),
-                    metric["metric"]
-                ], style={"color": "var(--color-white-faded)"}),
-                html.Td(current_display, className="text-center"),
-                html.Td(trend, className="text-center")
-            ])
+        trend = (
+            get_trend_indicator(metric["current"], metric["previous"], metric["format"])
+            if previous_stats
+            else html.Span("—", style={"color": "var(--color-white-faded)"})
         )
-    
-    # Crear tabla con headers
-    table_header = html.Thead([
-        html.Tr([
-            html.Th("Metric", style={"color": "var(--color-primary)", "border-bottom": "2px solid var(--color-primary)"}),
-            html.Th(current_season, className="text-center", style={"color": "var(--color-primary)", "border-bottom": "2px solid var(--color-primary)"}),
-            html.Th(
-                f"vs {previous_season}" if previous_season and previous_season != "N/A" else "Trend", 
-                className="text-center", 
-                style={"color": "var(--color-primary)", "border-bottom": "2px solid var(--color-primary)"}
+
+        table_rows.append(
+            html.Tr(
+                [
+                    html.Td(
+                        [
+                            html.I(
+                                className=f"{metric['icon']} me-2",
+                                style={"color": "var(--color-primary)"},
+                            ),
+                            metric["metric"],
+                        ],
+                        style={"color": "var(--color-white-faded)"},
+                    ),
+                    html.Td(current_display, className="text-center"),
+                    html.Td(trend, className="text-center"),
+                ]
             )
-        ])
-    ])
-    
+        )
+
+    # Crear tabla con headers
+    table_header = html.Thead(
+        [
+            html.Tr(
+                [
+                    html.Th(
+                        "Metric",
+                        style={
+                            "color": "var(--color-primary)",
+                            "border-bottom": "2px solid var(--color-primary)",
+                        },
+                    ),
+                    html.Th(
+                        current_season,
+                        className="text-center",
+                        style={
+                            "color": "var(--color-primary)",
+                            "border-bottom": "2px solid var(--color-primary)",
+                        },
+                    ),
+                    html.Th(
+                        (
+                            f"vs {previous_season}"
+                            if previous_season and previous_season != "N/A"
+                            else "Trend"
+                        ),
+                        className="text-center",
+                        style={
+                            "color": "var(--color-primary)",
+                            "border-bottom": "2px solid var(--color-primary)",
+                        },
+                    ),
+                ]
+            )
+        ]
+    )
+
     table = dbc.Table(
         [table_header, html.Tbody(table_rows)],
         bordered=False,
@@ -752,14 +899,12 @@ def create_statistics_summary(player_stats):
         style={
             "background-color": "transparent",
             "color": "var(--color-white-faded)",
-            "margin-bottom": "0"
+            "margin-bottom": "0",
         },
-        className="stats-summary-table"
+        className="stats-summary-table",
     )
-    
-    return html.Div([
-        table
-    ])
+
+    return html.Div([table])
 
 
 def create_comparison_bar_chart(player_stats):
@@ -1516,7 +1661,7 @@ def create_etl_management_interface():
                                             ],
                                             value=["pdi"],
                                             id="etl-options-checklist",
-                                            inline=True
+                                            inline=True,
                                         )
                                     ],
                                     width=12,
@@ -1631,7 +1776,8 @@ def create_etl_status_display(etl_status: dict = None, season: str = ""):
                                 dbc.Col(
                                     [
                                         html.Small(
-                                            "Total Records:", style={"color": "var(--color-white-faded)"}
+                                            "Total Records:",
+                                            style={"color": "var(--color-white-faded)"},
                                         ),
                                         html.P(
                                             str(etl_status.get("total_records", 0)),
@@ -1642,7 +1788,10 @@ def create_etl_status_display(etl_status: dict = None, season: str = ""):
                                 ),
                                 dbc.Col(
                                     [
-                                        html.Small("Imported:", style={"color": "var(--color-white-faded)"}),
+                                        html.Small(
+                                            "Imported:",
+                                            style={"color": "var(--color-white-faded)"},
+                                        ),
                                         html.P(
                                             str(etl_status.get("imported_records", 0)),
                                             className="mb-1 fw-bold text-success",
@@ -1653,7 +1802,8 @@ def create_etl_status_display(etl_status: dict = None, season: str = ""):
                                 dbc.Col(
                                     [
                                         html.Small(
-                                            "Matched Players:", style={"color": "var(--color-white-faded)"}
+                                            "Matched Players:",
+                                            style={"color": "var(--color-white-faded)"},
                                         ),
                                         html.P(
                                             str(etl_status.get("matched_players", 0)),
@@ -1664,7 +1814,10 @@ def create_etl_status_display(etl_status: dict = None, season: str = ""):
                                 ),
                                 dbc.Col(
                                     [
-                                        html.Small("Errors:", style={"color": "var(--color-white-faded)"}),
+                                        html.Small(
+                                            "Errors:",
+                                            style={"color": "var(--color-white-faded)"},
+                                        ),
                                         html.P(
                                             str(etl_status.get("errors_count", 0)),
                                             className="mb-1 fw-bold text-danger",
@@ -1757,7 +1910,8 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             ),
                                             user.username,
                                         ],
-                                        style={"color": "var(--color-white-faded)"}, className="mb-2"
+                                        style={"color": "var(--color-white-faded)"},
+                                        className="mb-2",
                                     ),
                                     html.P(
                                         [
@@ -1766,7 +1920,8 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             ),
                                             user.email,
                                         ],
-                                        style={"color": "var(--color-white-faded)"}, className="mb-2"
+                                        style={"color": "var(--color-white-faded)"},
+                                        className="mb-2",
                                     ),
                                     html.P(
                                         [
@@ -1775,7 +1930,8 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             ),
                                             user.phone or "No phone",
                                         ],
-                                        style={"color": "var(--color-white-faded)"}, className="mb-2",
+                                        style={"color": "var(--color-white-faded)"},
+                                        className="mb-2",
                                     ),
                                     html.P(
                                         [
@@ -1784,7 +1940,8 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             ),
                                             f"Age: {stats.get('age', 'N/A')}",
                                         ],
-                                        style={"color": "var(--color-white-faded)"}, className="mb-2",
+                                        style={"color": "var(--color-white-faded)"},
+                                        className="mb-2",
                                     ),
                                     html.P(
                                         [
@@ -1796,7 +1953,8 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                                 f"{player.service or 'No service'}"
                                             ),
                                         ],
-                                        style={"color": "var(--color-white-faded)"}, className="mb-2",
+                                        style={"color": "var(--color-white-faded)"},
+                                        className="mb-2",
                                     ),
                                     html.P(
                                         [
@@ -1805,7 +1963,8 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             ),
                                             f"Enrolled Sessions: {player.enrolment}",
                                         ],
-                                        style={"color": "var(--color-white-faded)"}, className="mb-2",
+                                        style={"color": "var(--color-white-faded)"},
+                                        className="mb-2",
                                     ),
                                 ],
                                 style={
@@ -1834,12 +1993,17 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             html.H2(
                                                 str(stats.get("completed", 0)),
                                                 className="text-center",
-                                                style={"color": "var(--color-white-faded)"},
-                                                    ),
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
                                             html.P(
                                                 "Completed",
                                                 className="text-center",
-                                                style={"color": "var(--color-white-faded)"},                                                    ),
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
                                         ]
                                     )
                                 ],
@@ -1867,13 +2031,17 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             html.H2(
                                                 str(stats.get("scheduled", 0)),
                                                 className="text-center",
-                                                style={"color": "var(--color-white-faded)"},
-                                                    ),
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
                                             html.P(
                                                 "Scheduled",
                                                 className="text-center",
-                                                style={"color": "var(--color-white-faded)"},
-                                                    ),
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
                                         ]
                                     )
                                 ],
@@ -1899,13 +2067,17 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             html.H2(
                                                 str(stats.get("remaining", 0)),
                                                 className="text-center",
-                                                style={"color": "var(--color-white-faded)"},
-                                                    ),
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
                                             html.P(
                                                 "Remaining",
                                                 className="text-center",
-                                                style={"color": "var(--color-white-faded)"},
-                                                    ),
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
                                         ]
                                     )
                                 ],
@@ -1931,15 +2103,19 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             html.H2(
                                                 "Next",
                                                 className="text-center",
-                                                style={"color": "var(--color-white-faded)"},
-                                                    ),
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
                                             html.P(
                                                 stats.get(
                                                     "next_session", "No sessions"
                                                 ),
                                                 className="text-center",
-                                                style={"color": "var(--color-white-faded)"},
-                                                    ),
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
                                         ]
                                     )
                                 ],
@@ -2248,7 +2424,8 @@ def create_player_card(player_data):
                                     f"Next Session: "
                                     f"{player_data.get('next_session', 'To be confirmed')}"
                                 ),
-                                style={"color": "var(--color-white-faded)"}, className="text-center mb-3 text-sm fst-italic",
+                                style={"color": "var(--color-white-faded)"},
+                                className="text-center mb-3 text-sm fst-italic",
                             ),
                             # Botón Ver Perfil usando las clases CSS
                             dbc.Button(
@@ -2342,7 +2519,10 @@ def create_overview_content_dash():
                                             ),
                                             html.P(
                                                 "Total Players",
-                                                style={"color": "var(--color-white-faded)"}, className="text-center",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                                className="text-center",
                                             ),
                                         ]
                                     )
@@ -2376,7 +2556,10 @@ def create_overview_content_dash():
                                             ),
                                             html.P(
                                                 "Total Sessions",
-                                                style={"color": "var(--color-white-faded)"}, className="text-center",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                                className="text-center",
                                             ),
                                         ]
                                     )
@@ -2408,7 +2591,10 @@ def create_overview_content_dash():
                                             ),
                                             html.P(
                                                 "Completed Sessions",
-                                                style={"color": "var(--color-white-faded)"}, className="text-center",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                                className="text-center",
                                             ),
                                         ]
                                     )
@@ -2440,7 +2626,10 @@ def create_overview_content_dash():
                                             ),
                                             html.P(
                                                 "Active Sessions",
-                                                style={"color": "var(--color-white-faded)"}, className="text-center",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                                className="text-center",
                                             ),
                                         ]
                                     )
@@ -2730,7 +2919,7 @@ def create_calendar_display_dash(player_id=None):
                         html.P(
                             f"Found {len(sessions) if sessions else 0} sessions",
                             className="text-center",
-                            style={"color": "var(--color-white-faded)"}
+                            style={"color": "var(--color-white-faded)"},
                         ),
                         html.P(
                             "FullCalendar integration - Coming soon",
@@ -2956,7 +3145,9 @@ def create_team_history_timeline(player_stats, player_analyzer):
         Componente HTML con timeline de equipos
     """
     if not player_stats:
-        return html.P("No team history available", style={"color": "var(--color-white-faded)"})
+        return html.P(
+            "No team history available", style={"color": "var(--color-white-faded)"}
+        )
 
     timeline_items = []
 
@@ -3085,7 +3276,7 @@ def create_team_history_timeline(player_stats, player_analyzer):
                                                 current_badge,
                                                 transfer_badge,
                                             ],
-                                                className="mb-1",
+                                            className="mb-1",
                                         ),
                                         html.P(
                                             [
@@ -3422,7 +3613,7 @@ def create_team_info_card(team_info):
                                                     ),
                                                 ],
                                                 className="mb-2",
-                                                    ),
+                                            ),
                                             html.P(
                                                 status_message,
                                                 className="mb-0 text-muted text-base",
@@ -3472,75 +3663,114 @@ def create_professional_stats_content(player, user):
     """
     Crea contenido de la tab Stats para jugadores profesionales con sistema de tabs jerárquico.
     Implementa: Hero Section, Performance/Evolution/Position/AI Analytics tabs.
-    
+
     Args:
         player: Objeto Player
         user: Objeto User
-        
+
     Returns:
         dbc.Container: Sistema de tabs jerárquico con visualizaciones híbridas PDI+IEP
     """
     try:
-        from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
         from controllers.db import get_db_session
+        from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
         from models.professional_stats_model import ProfessionalStats
-        
+
         # Inicializar analyzer
         player_analyzer = PlayerAnalyzer()
-        
+
         # Obtener estadísticas del jugador para la temporada actual
         player_id = player.player_id
         season = "2024-25"
-        
+
         # Obtener todas las estadísticas del jugador usando PlayerAnalyzer
         all_stats = player_analyzer.get_player_stats(player_id)
-        
+
         # Usar todas las temporadas disponibles para análisis temporal completo
         player_stats = all_stats if all_stats else []
-        
+
         # Obtener la temporada más reciente para referencia
-        seasons_available = list(set([stat.get('season') for stat in all_stats if stat.get('season')]))
+        seasons_available = list(
+            set([stat.get("season") for stat in all_stats if stat.get("season")])
+        )
         seasons_available.sort(reverse=True)  # Más reciente primero
         actual_season = seasons_available[0] if seasons_available else "2024-25"
         season = actual_season
-                
+
         if not player_stats:
-            return dbc.Container([
-                dbc.Alert([
-                    html.I(className="bi bi-exclamation-triangle me-2"),
-                    "No se encontraron estadísticas profesionales para este jugador en las temporadas disponibles.",
-                ], color="warning")
-            ], fluid=True)
-            
-        return dbc.Container([
-            # Main Tabs System
-            dbc.Tabs([
-                dbc.Tab(label="Performance Overview", tab_id="performance-tab", tab_style={"color": "var(--color-white-faded)"}),
-                dbc.Tab(label="Evolution Analysis", tab_id="evolution-tab", tab_style={"color": "var(--color-white-faded)"}),
-                dbc.Tab(label="Position Analysis", tab_id="position-tab", tab_style={"color": "var(--color-white-faded)"}),
-                dbc.Tab(label="AI Analytics", tab_id="ai-analytics-tab", tab_style={"color": "var(--color-white-faded)"}),
-            ], id="main-stats-tabs", active_tab="performance-tab", className="custom-tabs mb-4"),
-            
-            # Dynamic Tab Content
-            html.Div(id="main-tab-content", className="tab-content-area"),
-            
-            # Data Store for tab switching
-            dcc.Store(id="stats-player-data", data={
-                "player_id": player_id,
-                "season": season,
-                "user_id": user.user_id,
-                "player_stats": player_stats if player_stats else []
-            })
-        ], fluid=True, className="p-0")
-        
+            return dbc.Container(
+                [
+                    dbc.Alert(
+                        [
+                            html.I(className="bi bi-exclamation-triangle me-2"),
+                            "No se encontraron estadísticas profesionales para este jugador en las temporadas disponibles.",
+                        ],
+                        color="warning",
+                    )
+                ],
+                fluid=True,
+            )
+
+        return dbc.Container(
+            [
+                # Main Tabs System
+                dbc.Tabs(
+                    [
+                        dbc.Tab(
+                            label="Performance Overview",
+                            tab_id="performance-tab",
+                            tab_style={"color": "var(--color-white-faded)"},
+                        ),
+                        dbc.Tab(
+                            label="Evolution Analysis",
+                            tab_id="evolution-tab",
+                            tab_style={"color": "var(--color-white-faded)"},
+                        ),
+                        dbc.Tab(
+                            label="Position Analysis",
+                            tab_id="position-tab",
+                            tab_style={"color": "var(--color-white-faded)"},
+                        ),
+                        dbc.Tab(
+                            label="AI Analytics",
+                            tab_id="ai-analytics-tab",
+                            tab_style={"color": "var(--color-white-faded)"},
+                        ),
+                    ],
+                    id="main-stats-tabs",
+                    active_tab="performance-tab",
+                    className="custom-tabs mb-4",
+                ),
+                # Dynamic Tab Content
+                html.Div(id="main-tab-content", className="tab-content-area"),
+                # Data Store for tab switching
+                dcc.Store(
+                    id="stats-player-data",
+                    data={
+                        "player_id": player_id,
+                        "season": season,
+                        "user_id": user.user_id,
+                        "player_stats": player_stats if player_stats else [],
+                    },
+                ),
+            ],
+            fluid=True,
+            className="p-0",
+        )
+
     except Exception as e:
         import traceback
+
         print(f"Error in create_professional_stats_content: {e}")
         print(traceback.format_exc())
-        return dbc.Alert([
-            html.I(className="bi bi-exclamation-triangle me-2"),
-            f"Error cargando estadísticas profesionales: {str(e)}",
-        ], color="danger")
+        return dbc.Alert(
+            [
+                html.I(className="bi bi-exclamation-triangle me-2"),
+                f"Error cargando estadísticas profesionales: {str(e)}",
+            ],
+            color="danger",
+        )
+
 
 def create_sessions_table_dash(
     player_id=None, coach_id=None, from_date=None, to_date=None, status_filter=None
@@ -3706,127 +3936,133 @@ def create_sessions_calendar_dash(
 # ADVANCED PDI + IEP VISUALIZATIONS - Sistema Híbrido
 # ============================================================================
 
+
 def create_pdi_temporal_heatmap(player_id, seasons=None):
     """
     Crea heat map temporal de rendimiento PDI por temporada.
     Visualización avanzada que complementa el gráfico de evolución existente.
-    
+
     Args:
         player_id: ID del jugador
         seasons: Temporadas a analizar (opcional)
-        
+
     Returns:
         Componente dcc.Graph con heat map temporal
     """
     try:
         logger.info(f"Creando heat map temporal PDI para jugador {player_id}")
-        
+
         # Usar PlayerAnalyzer existente
         player_analyzer = PlayerAnalyzer()
-        
+
         if not seasons:
             seasons = player_analyzer.get_available_seasons_for_player(player_id)
-        
+
         if not seasons:
-            return dbc.Alert("No hay temporadas con datos para heat map temporal", color="warning")
-        
+            return dbc.Alert(
+                "No hay temporadas con datos para heat map temporal", color="warning"
+            )
+
         # Recopilar métricas PDI por temporada
         heatmap_data = []
-        
+
         for season in seasons:
             try:
                 ml_metrics = player_analyzer.calculate_or_update_pdi_metrics(
                     player_id, season, force_recalculate=False
                 )
-                
+
                 if ml_metrics:
                     season_metrics = {
-                        'Season': season,
-                        'PDI Overall': ml_metrics.get('pdi_overall', 0),
-                        'Universal': ml_metrics.get('pdi_universal', 0),
-                        'Zone': ml_metrics.get('pdi_zone', 0),
-                        'Position': ml_metrics.get('pdi_position_specific', 0),
-                        'Technical': ml_metrics.get('technical_proficiency', 0),
-                        'Tactical': ml_metrics.get('tactical_intelligence', 0),
-                        'Physical': ml_metrics.get('physical_performance', 0),
-                        'Consistency': ml_metrics.get('consistency_index', 0)
+                        "Season": season,
+                        "PDI Overall": ml_metrics.get("pdi_overall", 0),
+                        "Universal": ml_metrics.get("pdi_universal", 0),
+                        "Zone": ml_metrics.get("pdi_zone", 0),
+                        "Position": ml_metrics.get("pdi_position_specific", 0),
+                        "Technical": ml_metrics.get("technical_proficiency", 0),
+                        "Tactical": ml_metrics.get("tactical_intelligence", 0),
+                        "Physical": ml_metrics.get("physical_performance", 0),
+                        "Consistency": ml_metrics.get("consistency_index", 0),
                     }
                     heatmap_data.append(season_metrics)
-                    
+
             except Exception as e:
                 logger.error(f"Error procesando temporada {season}: {e}")
                 continue
-        
+
         if not heatmap_data:
-            return dbc.Alert("No hay métricas PDI calculadas para heat map", color="warning")
-        
+            return dbc.Alert(
+                "No hay métricas PDI calculadas para heat map", color="warning"
+            )
+
         # Preparar datos para heat map
         import pandas as pd
+
         df = pd.DataFrame(heatmap_data)
-        df.set_index('Season', inplace=True)
-        
+        df.set_index("Season", inplace=True)
+
         # Normalizar valores para mejor visualización (0-100)
         df_normalized = df.copy()
         for col in df.columns:
             max_val = df[col].max()
             if max_val > 0:
                 df_normalized[col] = (df[col] / max_val) * 100
-        
+
         # Crear heat map
-        fig = go.Figure(data=go.Heatmap(
-            z=df_normalized.values.T,
-            x=df_normalized.index,
-            y=df_normalized.columns,
-            colorscale=[
-                [0, "#E57373"],      # Rojo para valores bajos
-                [0.3, "#FFCA28"],    # Amarillo para valores medios
-                [0.6, "#FFA726"],    # Naranja
-                [1, "#24DE84"]       # Verde Ballers para valores altos
-            ],
-            hoverongaps=False,
-            hovertemplate='<b>%{y}</b><br>' +
-                         'Season: %{x}<br>' +
-                         'Score: %{z:.1f}/100<br>' +
-                         '<extra></extra>',
-            colorbar=dict(
-                title=dict(
-                    text="Performance Score",
-                    font=dict(color="#24DE84", size=12)
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=df_normalized.values.T,
+                x=df_normalized.index,
+                y=df_normalized.columns,
+                colorscale=[
+                    [0, "#E57373"],  # Rojo para valores bajos
+                    [0.3, "#FFCA28"],  # Amarillo para valores medios
+                    [0.6, "#FFA726"],  # Naranja
+                    [1, "#24DE84"],  # Verde Ballers para valores altos
+                ],
+                hoverongaps=False,
+                hovertemplate="<b>%{y}</b><br>"
+                + "Season: %{x}<br>"
+                + "Score: %{z:.1f}/100<br>"
+                + "<extra></extra>",
+                colorbar=dict(
+                    title=dict(
+                        text="Performance Score", font=dict(color="#24DE84", size=12)
+                    ),
+                    tickfont=dict(color="white"),
                 ),
-                tickfont=dict(color="white")
             )
-        ))
-        
+        )
+
         # Layout del heat map
         fig.update_layout(
             title={
-                'text': 'Performance Heat Map - Temporal Evolution',
-                'x': 0.5,
-                'font': {'color': '#24DE84', 'size': 18}
+                "text": "Performance Heat Map - Temporal Evolution",
+                "x": 0.5,
+                "font": {"color": "#24DE84", "size": 18},
             },
             xaxis_title="Season",
             yaxis_title="Performance Metrics",
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', family='Inter, sans-serif'),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white", family="Inter, sans-serif"),
             height=500,
-            margin=dict(l=120, r=80, t=80, b=80)
+            margin=dict(l=120, r=80, t=80, b=80),
         )
-        
+
         # Personalizar ejes
         fig.update_xaxes(
             tickangle=45,
-            gridcolor='rgba(255,255,255,0.1)',
-            tickfont=dict(color='white', size=10)
+            gridcolor="rgba(255,255,255,0.1)",
+            tickfont=dict(color="white", size=10),
         )
         fig.update_yaxes(
-            gridcolor='rgba(255,255,255,0.1)',
-            tickfont=dict(color='white', size=10)
+            gridcolor="rgba(255,255,255,0.1)", tickfont=dict(color="white", size=10)
         )
-        
+
         logger.info(f"✅ Heat map temporal creado: {len(heatmap_data)} temporadas")
         return dcc.Graph(figure=fig, className="chart-container")
-        
+
     except Exception as e:
         logger.error(f"❌ Error creando heat map temporal: {e}")
         return dbc.Alert(f"Error generando heat map: {str(e)}", color="danger")
@@ -3836,134 +4072,142 @@ def create_league_comparative_radar(player_id, season="2024-25", position_filter
     """
     Crea radar chart comparativo vs promedio de liga tailandesa.
     Utiliza datos reales de ProfessionalStats para comparación académica rigurosa.
-    
+
     Args:
         player_id: ID del jugador
         season: Temporada a analizar
         position_filter: Si filtrar comparación por posición del jugador
-        
+
     Returns:
         Componente dcc.Graph con radar comparativo
     """
     try:
         logger.info(f"Creando radar comparativo vs liga para jugador {player_id}")
-        
+
         # Usar PlayerAnalyzer existente
         player_analyzer = PlayerAnalyzer()
-        
+
         # Obtener métricas del jugador
         player_metrics = player_analyzer.calculate_or_update_pdi_metrics(
             player_id, season, force_recalculate=False
         )
-        
+
         if not player_metrics:
-            return dbc.Alert("No hay métricas del jugador para radar comparativo", color="warning")
-        
+            return dbc.Alert(
+                "No hay métricas del jugador para radar comparativo", color="warning"
+            )
+
         # Obtener posición del jugador
-        player_position = player_metrics.get('position_analyzed', 'CF')
-        
+        player_position = player_metrics.get("position_analyzed", "CF")
+
         # Calcular promedios de liga
-        league_averages = _calculate_league_averages(player_analyzer, season, player_position if position_filter else None)
-        
+        league_averages = _calculate_league_averages(
+            player_analyzer, season, player_position if position_filter else None
+        )
+
         if not league_averages:
             return dbc.Alert("No hay datos de liga para comparación", color="warning")
-        
+
         # Métricas para el radar
         metrics_for_radar = [
-            ('Technical', 'technical_proficiency'),
-            ('Tactical', 'tactical_intelligence'), 
-            ('Physical', 'physical_performance'),
-            ('Universal', 'pdi_universal'),
-            ('Zone', 'pdi_zone'),
-            ('Position', 'pdi_position_specific'),
-            ('Consistency', 'consistency_index'),
-            ('Overall PDI', 'pdi_overall')
+            ("Technical", "technical_proficiency"),
+            ("Tactical", "tactical_intelligence"),
+            ("Physical", "physical_performance"),
+            ("Universal", "pdi_universal"),
+            ("Zone", "pdi_zone"),
+            ("Position", "pdi_position_specific"),
+            ("Consistency", "consistency_index"),
+            ("Overall PDI", "pdi_overall"),
         ]
-        
+
         # Preparar datos para radar
         categories = []
         player_values = []
         league_values = []
-        
+
         for label, metric_key in metrics_for_radar:
             player_val = player_metrics.get(metric_key, 0)
             league_val = league_averages.get(metric_key, 0)
-            
+
             categories.append(label)
             player_values.append(min(100, max(0, player_val)))  # Clamp 0-100
             league_values.append(min(100, max(0, league_val)))  # Clamp 0-100
-        
+
         # Cerrar el polígono
         categories_closed = categories + [categories[0]]
         player_values_closed = player_values + [player_values[0]]
         league_values_closed = league_values + [league_values[0]]
-        
+
         # Crear radar chart
         fig = go.Figure()
-        
+
         # Promedio de liga (área de referencia)
-        fig.add_trace(go.Scatterpolar(
-            r=league_values_closed,
-            theta=categories_closed,
-            fill='toself',
-            fillcolor='rgba(255, 255, 255, 0.1)',
-            line=dict(color='rgba(255, 255, 255, 0.5)', width=2, dash='dot'),
-            name=f'Liga Thai {season} ({player_position if position_filter else "All"} Avg)',
-            hovertemplate='<b>%{theta}</b><br>' +
-                         'Liga Avg: %{r:.1f}<br>' +
-                         '<extra></extra>'
-        ))
-        
+        fig.add_trace(
+            go.Scatterpolar(
+                r=league_values_closed,
+                theta=categories_closed,
+                fill="toself",
+                fillcolor="rgba(255, 255, 255, 0.1)",
+                line=dict(color="rgba(255, 255, 255, 0.5)", width=2, dash="dot"),
+                name=f'Liga Thai {season} ({player_position if position_filter else "All"} Avg)',
+                hovertemplate="<b>%{theta}</b><br>"
+                + "Liga Avg: %{r:.1f}<br>"
+                + "<extra></extra>",
+            )
+        )
+
         # Jugador (línea principal)
-        fig.add_trace(go.Scatterpolar(
-            r=player_values_closed,
-            theta=categories_closed,
-            fill='toself',
-            fillcolor='rgba(36, 222, 132, 0.3)',  # Verde Ballers con transparencia
-            line=dict(color='#24DE84', width=3),
-            name='Player Performance',
-            hovertemplate='<b>%{theta}</b><br>' +
-                         'Player: %{r:.1f}<br>' +
-                         '<extra></extra>'
-        ))
-        
+        fig.add_trace(
+            go.Scatterpolar(
+                r=player_values_closed,
+                theta=categories_closed,
+                fill="toself",
+                fillcolor="rgba(36, 222, 132, 0.3)",  # Verde Ballers con transparencia
+                line=dict(color="#24DE84", width=3),
+                name="Player Performance",
+                hovertemplate="<b>%{theta}</b><br>"
+                + "Player: %{r:.1f}<br>"
+                + "<extra></extra>",
+            )
+        )
+
         # Layout del radar
         fig.update_layout(
             polar=dict(
                 radialaxis=dict(
                     visible=True,
                     range=[0, 100],
-                    tickfont=dict(size=10, color='white'),
-                    gridcolor='rgba(255, 255, 255, 0.2)'
+                    tickfont=dict(size=10, color="white"),
+                    gridcolor="rgba(255, 255, 255, 0.2)",
                 ),
                 angularaxis=dict(
-                    tickfont=dict(size=11, color='white'),
-                    gridcolor='rgba(255, 255, 255, 0.2)'
+                    tickfont=dict(size=11, color="white"),
+                    gridcolor="rgba(255, 255, 255, 0.2)",
                 ),
-                bgcolor='rgba(0, 0, 0, 0)'
+                bgcolor="rgba(0, 0, 0, 0)",
             ),
             title={
-                'text': f'Player vs Thai League Comparison - {season}',
-                'x': 0.5,
-                'font': {'color': '#24DE84', 'size': 16}
+                "text": f"Player vs Thai League Comparison - {season}",
+                "x": 0.5,
+                "font": {"color": "#24DE84", "size": 16},
             },
             showlegend=True,
             legend=dict(
-                bgcolor='rgba(0, 0, 0, 0.8)',
-                bordercolor='#24DE84',
+                bgcolor="rgba(0, 0, 0, 0.8)",
+                bordercolor="#24DE84",
                 borderwidth=1,
-                font=dict(color='white', size=10)
+                font=dict(color="white", size=10),
             ),
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', family='Inter, sans-serif'),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white", family="Inter, sans-serif"),
             height=600,
-            margin=dict(l=80, r=80, t=100, b=80)
+            margin=dict(l=80, r=80, t=100, b=80),
         )
-        
+
         logger.info(f"✅ Radar comparativo creado exitosamente")
         return dcc.Graph(figure=fig, className="chart-container")
-        
+
     except Exception as e:
         logger.error(f"❌ Error creando radar comparativo: {e}")
         return dbc.Alert(f"Error generando radar: {str(e)}", color="danger")
@@ -3973,144 +4217,178 @@ def create_iep_clustering_chart(position="CF", season="2024-25"):
     """
     Crea gráfico IEP (Índice Eficiencia Posicional) con clustering K-means.
     Sistema complementario no supervisado al PDI supervisado.
-    
+
     Args:
         position: Posición a analizar
         season: Temporada para clustering
-        
+
     Returns:
         Componente dcc.Graph con clustering IEP
     """
     try:
         logger.info(f"🧮 Creando análisis IEP clustering para {position} en {season}")
-        
+
         # Importar IEPAnalyzer
         from ml_system.evaluation.analysis.iep_analyzer import IEPAnalyzer
-        
+
         # Inicializar analizador IEP
         iep_analyzer = IEPAnalyzer()
-        
+
         # Obtener análisis de clustering para la posición
         cluster_results = iep_analyzer.get_position_cluster_analysis(position, season)
-        
-        if 'error' in cluster_results:
-            error_msg = cluster_results.get('error', 'Unknown error')
-            if error_msg == 'insufficient_data':
-                player_count = cluster_results.get('player_count', 0)
+
+        if "error" in cluster_results:
+            error_msg = cluster_results.get("error", "Unknown error")
+            if error_msg == "insufficient_data":
+                player_count = cluster_results.get("player_count", 0)
                 return dbc.Alert(
                     f"Datos insuficientes para clustering {position}: {player_count} jugadores (mínimo 10)",
-                    color="warning"
+                    color="warning",
                 )
             else:
-                return dbc.Alert(f"Error en clustering IEP: {error_msg}", color="danger")
-        
+                return dbc.Alert(
+                    f"Error en clustering IEP: {error_msg}", color="danger"
+                )
+
         # Extraer datos para visualización
-        players_data = cluster_results['players_data']
-        pca_analysis = cluster_results['pca_analysis']
-        
+        players_data = cluster_results["players_data"]
+        pca_analysis = cluster_results["pca_analysis"]
+
         if not players_data:
-            return dbc.Alert("No hay datos de jugadores para clustering", color="warning")
-        
+            return dbc.Alert(
+                "No hay datos de jugadores para clustering", color="warning"
+            )
+
         # Preparar datos por cluster
-        colors = {'Elite Tier': '#24DE84', 'Strong Tier': '#42A5F5', 'Average Tier': '#FFCA28', 'Development Tier': '#FFA726'}
-        
+        colors = {
+            "Elite Tier": "#24DE84",
+            "Strong Tier": "#42A5F5",
+            "Average Tier": "#FFCA28",
+            "Development Tier": "#FFA726",
+        }
+
         fig = go.Figure()
-        
+
         # Agregar puntos por cluster
         clusters = {}
         for player in players_data:
-            cluster_label = player['cluster_label']
+            cluster_label = player["cluster_label"]
             if cluster_label not in clusters:
-                clusters[cluster_label] = {'x': [], 'y': [], 'names': [], 'iep_scores': []}
-            
-            clusters[cluster_label]['x'].append(player['pca_components'][0])
-            clusters[cluster_label]['y'].append(player['pca_components'][1])
-            clusters[cluster_label]['names'].append(player['player_name'])
-            clusters[cluster_label]['iep_scores'].append(player['iep_score'])
-        
+                clusters[cluster_label] = {
+                    "x": [],
+                    "y": [],
+                    "names": [],
+                    "iep_scores": [],
+                }
+
+            clusters[cluster_label]["x"].append(player["pca_components"][0])
+            clusters[cluster_label]["y"].append(player["pca_components"][1])
+            clusters[cluster_label]["names"].append(player["player_name"])
+            clusters[cluster_label]["iep_scores"].append(player["iep_score"])
+
         # Añadir trazas por cluster
         for cluster_label, data in clusters.items():
-            color = colors.get(cluster_label, '#FFA726')
-            
-            fig.add_trace(go.Scatter(
-                x=data['x'],
-                y=data['y'],
-                mode='markers',
-                name=cluster_label,
-                marker=dict(
-                    size=[max(8, min(20, score/5)) for score in data['iep_scores']],  # Tamaño por IEP
-                    color=color,
-                    opacity=0.7,
-                    line=dict(width=1, color='white')
-                ),
-                text=[f"{name}<br>IEP: {iep:.1f}" for name, iep in zip(data['names'], data['iep_scores'])],
-                hovertemplate='<b>%{text}</b><br>' +
-                              'PC1: %{x:.2f}<br>' +
-                              'PC2: %{y:.2f}<br>' +
-                              '<extra></extra>'
-            ))
-        
+            color = colors.get(cluster_label, "#FFA726")
+
+            fig.add_trace(
+                go.Scatter(
+                    x=data["x"],
+                    y=data["y"],
+                    mode="markers",
+                    name=cluster_label,
+                    marker=dict(
+                        size=[
+                            max(8, min(20, score / 5)) for score in data["iep_scores"]
+                        ],  # Tamaño por IEP
+                        color=color,
+                        opacity=0.7,
+                        line=dict(width=1, color="white"),
+                    ),
+                    text=[
+                        f"{name}<br>IEP: {iep:.1f}"
+                        for name, iep in zip(data["names"], data["iep_scores"])
+                    ],
+                    hovertemplate="<b>%{text}</b><br>"
+                    + "PC1: %{x:.2f}<br>"
+                    + "PC2: %{y:.2f}<br>"
+                    + "<extra></extra>",
+                )
+            )
+
         # Layout del gráfico
-        pc1_var = pca_analysis['explained_variance_ratio'][0] if len(pca_analysis['explained_variance_ratio']) > 0 else 0
-        pc2_var = pca_analysis['explained_variance_ratio'][1] if len(pca_analysis['explained_variance_ratio']) > 1 else 0
-        
+        pc1_var = (
+            pca_analysis["explained_variance_ratio"][0]
+            if len(pca_analysis["explained_variance_ratio"]) > 0
+            else 0
+        )
+        pc2_var = (
+            pca_analysis["explained_variance_ratio"][1]
+            if len(pca_analysis["explained_variance_ratio"]) > 1
+            else 0
+        )
+
         fig.update_layout(
             title={
-                'text': f'🧮 IEP Analysis - {position} K-means Clustering ({season})',
-                'x': 0.5,
-                'font': {'color': '#24DE84', 'size': 16}
+                "text": f"🧮 IEP Analysis - {position} K-means Clustering ({season})",
+                "x": 0.5,
+                "font": {"color": "#24DE84", "size": 16},
             },
             xaxis_title=f"PC1 - Performance Component ({pc1_var:.1%} variance)",
             yaxis_title=f"PC2 - Style Component ({pc2_var:.1%} variance)",
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', family='Inter, sans-serif'),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white", family="Inter, sans-serif"),
             height=600,
             showlegend=True,
             legend=dict(
-                bgcolor='rgba(0, 0, 0, 0.8)',
-                bordercolor='#24DE84',
+                bgcolor="rgba(0, 0, 0, 0.8)",
+                bordercolor="#24DE84",
                 borderwidth=1,
-                font=dict(color='white', size=10)
+                font=dict(color="white", size=10),
             ),
-            margin=dict(l=80, r=80, t=100, b=80)
+            margin=dict(l=80, r=80, t=100, b=80),
         )
-        
+
         # Personalizar ejes
         fig.update_xaxes(
-            gridcolor='rgba(255, 255, 255, 0.1)',
+            gridcolor="rgba(255, 255, 255, 0.1)",
             zeroline=True,
-            zerolinecolor='rgba(255, 255, 255, 0.3)',
-            tickfont=dict(color='white')
+            zerolinecolor="rgba(255, 255, 255, 0.3)",
+            tickfont=dict(color="white"),
         )
         fig.update_yaxes(
-            gridcolor='rgba(255, 255, 255, 0.1)', 
+            gridcolor="rgba(255, 255, 255, 0.1)",
             zeroline=True,
-            zerolinecolor='rgba(255, 255, 255, 0.3)',
-            tickfont=dict(color='white')
+            zerolinecolor="rgba(255, 255, 255, 0.3)",
+            tickfont=dict(color="white"),
         )
-        
+
         # Añadir información de clustering
         total_players = len(players_data)
         n_clusters = len(clusters)
-        total_variance = sum(pca_analysis['explained_variance_ratio'])
-        
+        total_variance = sum(pca_analysis["explained_variance_ratio"])
+
         fig.add_annotation(
             text=f"{total_players} players • {n_clusters} clusters<br>"
-                 f"Total Variance Explained: {total_variance:.1%}",
-            xref="paper", yref="paper",
-            x=0.02, y=0.98,
-            xanchor='left', yanchor='top',
-            bgcolor='rgba(0, 0, 0, 0.8)',
-            bordercolor='#24DE84',
+            f"Total Variance Explained: {total_variance:.1%}",
+            xref="paper",
+            yref="paper",
+            x=0.02,
+            y=0.98,
+            xanchor="left",
+            yanchor="top",
+            bgcolor="rgba(0, 0, 0, 0.8)",
+            bordercolor="#24DE84",
             borderwidth=1,
-            font=dict(size=10, color='white'),
-            showarrow=False
+            font=dict(size=10, color="white"),
+            showarrow=False,
         )
-        
-        logger.info(f"✅ IEP clustering creado: {total_players} jugadores, {n_clusters} clusters")
+
+        logger.info(
+            f"✅ IEP clustering creado: {total_players} jugadores, {n_clusters} clusters"
+        )
         return dcc.Graph(figure=fig, className="chart-container")
-        
+
     except Exception as e:
         logger.error(f"❌ Error creando IEP clustering: {e}")
         return dbc.Alert(f"Error generando IEP analysis: {str(e)}", color="danger")
@@ -4123,137 +4401,278 @@ def create_iep_clustering_chart(position="CF", season="2024-25"):
 
 def create_performance_tab_content(player_stats):
     """Crea contenido del tab Performance Overview."""
-    return dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-radar me-2"),
-                            "Skills Profile"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([create_radar_chart(player_stats)], className="p-2", style={"height": "420px"})
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=6),
-            
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-grid-3x3-gap me-2"),
-                            "Performance Heatmap"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([create_performance_heatmap(player_stats)], className="p-2", style={"height": "420px"})
-                ], style={
-                    "background-color": "#2B2B2B", 
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=6)
-        ]),
-        
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-table me-2"),
-                            "Statistics Summary"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([create_statistics_summary(player_stats)], className="p-3")
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12)
-        ], className="mt-3")
-    ], fluid=True)
+    return dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-radar me-2"
+                                                    ),
+                                                    "Skills Profile",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [create_radar_chart(player_stats)],
+                                        className="p-2",
+                                        style={"height": "420px"},
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=6,
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-grid-3x3-gap me-2"
+                                                    ),
+                                                    "Performance Heatmap",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [create_performance_heatmap(player_stats)],
+                                        className="p-2",
+                                        style={"height": "420px"},
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=6,
+                    ),
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-table me-2"
+                                                    ),
+                                                    "Statistics Summary",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [create_statistics_summary(player_stats)],
+                                        className="p-3",
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                    )
+                ],
+                className="mt-3",
+            ),
+        ],
+        fluid=True,
+    )
 
 
 def create_evolution_tab_content(player, player_stats, player_analyzer):
     """Crea contenido del tab Evolution Analysis."""
-    return dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-graph-up me-2"),
-                            "Performance Evolution"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([create_evolution_chart(player_stats)], className="p-2")
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12)
-        ]),
-        
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-clock-history me-2"),
-                            "Team History Timeline"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        create_team_history_timeline(player_stats, player_analyzer)
-                    ], className="p-3")
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12)
-        ], className="mt-3")
-    ], fluid=True)
+    return dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-graph-up me-2"
+                                                    ),
+                                                    "Performance Evolution",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [create_evolution_chart(player_stats)],
+                                        className="p-2",
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                    )
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-clock-history me-2"
+                                                    ),
+                                                    "Team History Timeline",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            create_team_history_timeline(
+                                                player_stats, player_analyzer
+                                            )
+                                        ],
+                                        className="p-3",
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                    )
+                ],
+                className="mt-3",
+            ),
+        ],
+        fluid=True,
+    )
 
 
 def create_position_tab_content(player_stats):
     """Crea contenido del tab Position Analysis."""
-    return dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-bar-chart me-2"),
-                            "Goals & Assists Comparison"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([create_comparison_bar_chart(player_stats)], className="p-2")
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=8),
-            
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-list-columns me-2"),
-                            "Position Metrics"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        # TODO: Implementar métricas específicas por posición
-                        html.P("Position-specific metrics will be implemented here", style={"color": "var(--color-white-faded)"})
-                    ])
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=4)
-        ])
-    ], fluid=True)
+    return dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-bar-chart me-2"
+                                                    ),
+                                                    "Goals & Assists Comparison",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [create_comparison_bar_chart(player_stats)],
+                                        className="p-2",
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=8,
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-list-columns me-2"
+                                                    ),
+                                                    "Position Metrics",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            # TODO: Implementar métricas específicas por posición
+                                            html.P(
+                                                "Position-specific metrics will be implemented here",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            )
+                                        ]
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=4,
+                    ),
+                ]
+            )
+        ],
+        fluid=True,
+    )
 
 
 def create_ai_analytics_content(player, player_stats):
@@ -4264,104 +4683,182 @@ def create_ai_analytics_content(player, player_stats):
     latest_stats = player_stats[-1] if player_stats else {}
     position = latest_stats.get("primary_position", "CF")
     season = latest_stats.get("season", "2024-25")
-    
-    return dbc.Container([
-        # Sub-tabs para AI Analytics
-        dbc.Tabs([
-            dbc.Tab([
-                html.I(className="bi bi-arrow-up-right me-2"),
-                "PDI Development"
-            ], tab_id="pdi-development-tab", tab_style={"color": "var(--color-white-faded)"}),
-            dbc.Tab([
-                html.I(className="bi bi-diagram-3 me-2"),
-                "IEP Clustering"
-            ], tab_id="iep-clustering-tab", tab_style={"color": "var(--color-white-faded)"}),
-            dbc.Tab([
-                html.I(className="bi bi-trophy me-2"),
-                "League Comparison"
-            ], tab_id="league-comparison-tab", tab_style={"color": "var(--color-white-faded)"})
-        ], id="ai-analytics-sub-tabs", active_tab="pdi-development-tab", className="mb-4"),
-        
-        # Contenido dinámico de sub-tabs
-        html.Div(id="ai-sub-tab-content")
-    ], fluid=True)
+
+    return dbc.Container(
+        [
+            # Sub-tabs para AI Analytics
+            dbc.Tabs(
+                [
+                    dbc.Tab(
+                        [
+                            html.I(className="bi bi-arrow-up-right me-2"),
+                            "PDI Development",
+                        ],
+                        tab_id="pdi-development-tab",
+                        tab_style={"color": "var(--color-white-faded)"},
+                    ),
+                    dbc.Tab(
+                        [html.I(className="bi bi-diagram-3 me-2"), "IEP Clustering"],
+                        tab_id="iep-clustering-tab",
+                        tab_style={"color": "var(--color-white-faded)"},
+                    ),
+                    dbc.Tab(
+                        [html.I(className="bi bi-trophy me-2"), "League Comparison"],
+                        tab_id="league-comparison-tab",
+                        tab_style={"color": "var(--color-white-faded)"},
+                    ),
+                ],
+                id="ai-analytics-sub-tabs",
+                active_tab="pdi-development-tab",
+                className="mb-4",
+            ),
+            # Contenido dinámico de sub-tabs
+            html.Div(id="ai-sub-tab-content"),
+        ],
+        fluid=True,
+    )
 
 
 def create_pdi_development_content(player):
     """Crea contenido del sub-tab PDI Development."""
-    return dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-graph-up me-2"),
-                            "PDI Evolution Analysis"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        create_pdi_evolution_chart(player.player_id)
-                    ], className="p-2")
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12)
-        ]),
-        
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-grid me-2"),
-                            "PDI Temporal Heatmap"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        create_pdi_temporal_heatmap(player.player_id)
-                    ], className="p-2")
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=8),
-            
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-lightbulb me-2"),
-                            "Development Insights"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        html.P([
-                            html.I(className="bi bi-robot me-2 text-primary"),
-                            "PDI Development Analysis"
-                        ], className="fw-bold mb-2"),
-                        html.P([
-                            "• Supervised learning system",
-                            html.Br(),
-                            "• Academic rigor with predefined weights",
-                            html.Br(), 
-                            "• Temporal evolution tracking",
-                            html.Br(),
-                            "• Performance trend identification"
-                        ], className="mb-3 text-base", style={"color": "var(--color-white-faded)"}),
-                        
-                        dbc.Alert([
-                            html.I(className="bi bi-info-circle me-2"),
-                            "PDI provides structured development assessment based on established football analytics methodologies."
-                        ], color="info", className="mb-0")
-                    ])
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=4)
-        ], className="mt-3")
-    ], fluid=True)
+    return dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-graph-up me-2"
+                                                    ),
+                                                    "PDI Evolution Analysis",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [create_pdi_evolution_chart(player.player_id)],
+                                        className="p-2",
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                    )
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(className="bi bi-grid me-2"),
+                                                    "PDI Temporal Heatmap",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [create_pdi_temporal_heatmap(player.player_id)],
+                                        className="p-2",
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=8,
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-lightbulb me-2"
+                                                    ),
+                                                    "Development Insights",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-robot me-2 text-primary"
+                                                    ),
+                                                    "PDI Development Analysis",
+                                                ],
+                                                className="fw-bold mb-2",
+                                            ),
+                                            html.P(
+                                                [
+                                                    "• Supervised learning system",
+                                                    html.Br(),
+                                                    "• Academic rigor with predefined weights",
+                                                    html.Br(),
+                                                    "• Temporal evolution tracking",
+                                                    html.Br(),
+                                                    "• Performance trend identification",
+                                                ],
+                                                className="mb-3 text-base",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
+                                            dbc.Alert(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-info-circle me-2"
+                                                    ),
+                                                    "PDI provides structured development assessment based on established football analytics methodologies.",
+                                                ],
+                                                color="info",
+                                                className="mb-0",
+                                            ),
+                                        ]
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=4,
+                    ),
+                ],
+                className="mt-3",
+            ),
+        ],
+        fluid=True,
+    )
 
 
 def create_iep_clustering_content(player, player_stats):
@@ -4370,237 +4867,409 @@ def create_iep_clustering_content(player, player_stats):
     latest_stats = player_stats[-1] if player_stats else {}
     position = latest_stats.get("primary_position", "CF")
     season = latest_stats.get("season", "2024-25")
-    
+
     # Nota: player_stats contiene todas las temporadas para análisis IEP completo
-    
-    return dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-diagram-3 me-2"),
-                            "IEP Clustering Analysis"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        create_iep_clustering_chart(position, season)
-                    ], className="p-2")
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=8),
-            
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-pie-chart me-2"),
-                            "Cluster Profile"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        html.P([
-                            html.I(className="bi bi-diagram-3 me-2 text-primary"),
-                            f"Position: {position}"
-                        ], className="fw-bold mb-2"),
-                        html.P([
-                            html.I(className="bi bi-calendar-date me-2 text-primary"),
-                            f"Season: {season}"
-                        ], className="fw-bold mb-3"),
-                        
-                        html.P([
-                            "• Unsupervised K-means clustering",
-                            html.Br(),
-                            "• Natural efficiency patterns",
-                            html.Br(),
-                            "• PCA dimensionality reduction", 
-                            html.Br(),
-                            "• Position-specific tiers"
-                        ], className="mb-3 text-base", style={"color": "var(--color-white-faded)"}),
-                        
-                        dbc.Alert([
-                            html.I(className="bi bi-info-circle me-2"),
-                            "IEP discovers natural performance groups without predefined labels."
-                        ], color="info", className="mb-0")
-                    ])
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=4)
-        ]),
-        
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-gear me-2"),
-                            "Efficiency Recommendations"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        html.P([
-                            html.I(className="bi bi-cpu me-2 text-warning"),
-                            "Machine Learning Insights"
-                        ], className="fw-bold mb-2"),
-                        html.P([
-                            "Based on unsupervised analysis of positional efficiency patterns, "
-                            "this system identifies natural performance clusters and provides "
-                            "data-driven recommendations for player development."
-                        ], className="text-base", style={"color": "var(--color-white-faded)"})
-                    ])
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12)
-        ], className="mt-3")
-    ], fluid=True)
+
+    return dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-diagram-3 me-2"
+                                                    ),
+                                                    "IEP Clustering Analysis",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [create_iep_clustering_chart(position, season)],
+                                        className="p-2",
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=8,
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-pie-chart me-2"
+                                                    ),
+                                                    "Cluster Profile",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-diagram-3 me-2 text-primary"
+                                                    ),
+                                                    f"Position: {position}",
+                                                ],
+                                                className="fw-bold mb-2",
+                                            ),
+                                            html.P(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-calendar-date me-2 text-primary"
+                                                    ),
+                                                    f"Season: {season}",
+                                                ],
+                                                className="fw-bold mb-3",
+                                            ),
+                                            html.P(
+                                                [
+                                                    "• Unsupervised K-means clustering",
+                                                    html.Br(),
+                                                    "• Natural efficiency patterns",
+                                                    html.Br(),
+                                                    "• PCA dimensionality reduction",
+                                                    html.Br(),
+                                                    "• Position-specific tiers",
+                                                ],
+                                                className="mb-3 text-base",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
+                                            dbc.Alert(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-info-circle me-2"
+                                                    ),
+                                                    "IEP discovers natural performance groups without predefined labels.",
+                                                ],
+                                                color="info",
+                                                className="mb-0",
+                                            ),
+                                        ]
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=4,
+                    ),
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(className="bi bi-gear me-2"),
+                                                    "Efficiency Recommendations",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-cpu me-2 text-warning"
+                                                    ),
+                                                    "Machine Learning Insights",
+                                                ],
+                                                className="fw-bold mb-2",
+                                            ),
+                                            html.P(
+                                                [
+                                                    "Based on unsupervised analysis of positional efficiency patterns, "
+                                                    "this system identifies natural performance clusters and provides "
+                                                    "data-driven recommendations for player development."
+                                                ],
+                                                className="text-base",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
+                                        ]
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                    )
+                ],
+                className="mt-3",
+            ),
+        ],
+        fluid=True,
+    )
 
 
 def create_league_comparison_content(player, player_stats):
     """Crea contenido del sub-tab League Comparison."""
     latest_stats = player_stats[-1] if player_stats else {}
     season = latest_stats.get("season", "2024-25")
-    
-    return dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-radar me-2"),
-                            "League Comparative Radar"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        create_league_comparative_radar(player.player_id, season)
-                    ], className="p-2")
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=6),
-            
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-trophy me-2"),
-                            "League Position"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        html.P([
-                            html.I(className="bi bi-globe me-2 text-primary"),
-                            "Thai League Analysis"
-                        ], className="fw-bold mb-2"),
-                        html.P([
-                            "• Real data comparison vs league averages",
-                            html.Br(),
-                            "• Position-specific benchmarking",
-                            html.Br(),
-                            "• Academic rigor in methodology",
-                            html.Br(),
-                            "• Statistical significance testing"
-                        ], className="mb-3 text-base", style={"color": "var(--color-white-faded)"}),
-                        
-                        dbc.Alert([
-                            html.I(className="bi bi-info-circle me-2"),
-                            "Based on real Thai League professional statistics from multiple seasons."
-                        ], color="info", className="mb-0")
-                    ])
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12, lg=6)
-        ]),
-        
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H6([
-                            html.I(className="bi bi-bar-chart me-2"),
-                            "Percentile Rankings"
-                        ], className="text-primary mb-0")
-                    ]),
-                    dbc.CardBody([
-                        # TODO: Implementar tabla de percentiles
-                        html.P("Percentile rankings table will be implemented here", style={"color": "var(--color-white-faded)"})
-                    ])
-                ], style={
-                    "background-color": "#2B2B2B",
-                    "border-color": "rgba(36, 222, 132, 0.3)"
-                })
-            ], width=12)
-        ], className="mt-3")
-    ], fluid=True)
+
+    return dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-radar me-2"
+                                                    ),
+                                                    "League Comparative Radar",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            create_league_comparative_radar(
+                                                player.player_id, season
+                                            )
+                                        ],
+                                        className="p-2",
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=6,
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-trophy me-2"
+                                                    ),
+                                                    "League Position",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-globe me-2 text-primary"
+                                                    ),
+                                                    "Thai League Analysis",
+                                                ],
+                                                className="fw-bold mb-2",
+                                            ),
+                                            html.P(
+                                                [
+                                                    "• Real data comparison vs league averages",
+                                                    html.Br(),
+                                                    "• Position-specific benchmarking",
+                                                    html.Br(),
+                                                    "• Academic rigor in methodology",
+                                                    html.Br(),
+                                                    "• Statistical significance testing",
+                                                ],
+                                                className="mb-3 text-base",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            ),
+                                            dbc.Alert(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-info-circle me-2"
+                                                    ),
+                                                    "Based on real Thai League professional statistics from multiple seasons.",
+                                                ],
+                                                color="info",
+                                                className="mb-0",
+                                            ),
+                                        ]
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                        lg=6,
+                    ),
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-bar-chart me-2"
+                                                    ),
+                                                    "Percentile Rankings",
+                                                ],
+                                                className="text-primary mb-0",
+                                            )
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            # TODO: Implementar tabla de percentiles
+                                            html.P(
+                                                "Percentile rankings table will be implemented here",
+                                                style={
+                                                    "color": "var(--color-white-faded)"
+                                                },
+                                            )
+                                        ]
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                    )
+                ],
+                className="mt-3",
+            ),
+        ],
+        fluid=True,
+    )
 
 
-# ============================================================================ 
+# ============================================================================
 # FUNCIONES AUXILIARES PARA VISUALIZACIONES
 # ============================================================================
+
 
 def _calculate_league_averages(player_analyzer, season, position=None):
     """Calcula promedios de liga para comparación radar."""
     try:
         from controllers.db import get_db_session
         from models.professional_stats_model import ProfessionalStats
-        
+
         with get_db_session() as session:
             query = session.query(ProfessionalStats).filter(
                 ProfessionalStats.season == season
             )
-            
+
             if position:
                 query = query.filter(ProfessionalStats.primary_position == position)
-            
+
             stats_data = query.all()
-            
+
             if not stats_data:
                 return {}
-            
+
             # Calcular métricas PDI promedio
             from ml_system.evaluation.metrics.pdi_calculator import PDICalculator
+
             pdi_calculator = PDICalculator()
-            
+
             total_metrics = {
-                'pdi_overall': 0, 'pdi_universal': 0, 'pdi_zone': 0, 
-                'pdi_position_specific': 0, 'technical_proficiency': 0,
-                'tactical_intelligence': 0, 'physical_performance': 0,
-                'consistency_index': 0
+                "pdi_overall": 0,
+                "pdi_universal": 0,
+                "pdi_zone": 0,
+                "pdi_position_specific": 0,
+                "technical_proficiency": 0,
+                "tactical_intelligence": 0,
+                "physical_performance": 0,
+                "consistency_index": 0,
             }
-            
+
             valid_calculations = 0
-            
+
             for stat in stats_data:
                 try:
-                    stat_dict = {column.name: getattr(stat, column.name) for column in stat.__table__.columns}
+                    stat_dict = {
+                        column.name: getattr(stat, column.name)
+                        for column in stat.__table__.columns
+                    }
                     pdi_result = pdi_calculator.calculate_comprehensive_pdi(stat_dict)
-                    
+
                     if pdi_result:
                         for key in total_metrics:
                             if key in pdi_result:
                                 total_metrics[key] += pdi_result[key]
                         valid_calculations += 1
-                        
+
                 except Exception as e:
                     logger.debug(f"Error calculando PDI para promedio: {e}")
                     continue
-            
+
             # Calcular promedios
             if valid_calculations > 0:
-                averages = {key: total / valid_calculations for key, total in total_metrics.items()}
-                logger.info(f"✅ Promedios calculados: {valid_calculations} jugadores válidos")
+                averages = {
+                    key: total / valid_calculations
+                    for key, total in total_metrics.items()
+                }
+                logger.info(
+                    f"✅ Promedios calculados: {valid_calculations} jugadores válidos"
+                )
                 return averages
-            
+
             return {}
-                
+
     except Exception as e:
         logger.error(f"Error calculando promedios de liga: {e}")
         return {}

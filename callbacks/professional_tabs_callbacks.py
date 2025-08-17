@@ -5,21 +5,21 @@ Callbacks para el sistema de tabs condicionales de jugadores profesionales.
 
 from dash import Input, Output, State, html
 
-from controllers.player_controller import get_player_profile_data
 from controllers.db import get_db_session
-from models.user_model import UserType
+from controllers.player_controller import get_player_profile_data
 from models.professional_stats_model import ProfessionalStats
+from models.user_model import UserType
 from pages.ballers_dash import (
+    create_ai_analytics_content,
+    create_evolution_tab_content,
+    create_iep_clustering_content,
+    create_league_comparison_content,
+    create_pdi_development_content,
+    create_performance_tab_content,
+    create_position_tab_content,
     create_professional_info_content,
     create_professional_stats_content,
     create_professional_tabs,
-    create_performance_tab_content,
-    create_evolution_tab_content,
-    create_position_tab_content,
-    create_ai_analytics_content,
-    create_pdi_development_content,
-    create_iep_clustering_content,
-    create_league_comparison_content,
 )
 
 
@@ -240,7 +240,7 @@ def register_professional_tabs_callbacks(app):
     # el calendario y tabla de sesiones para ambos tipos de jugadores
 
     # === NUEVOS CALLBACKS PARA SISTEMA JERÁRQUICO DE TABS ===
-    
+
     @app.callback(
         Output("main-tab-content", "children"),
         [Input("main-stats-tabs", "active_tab")],
@@ -254,47 +254,50 @@ def register_professional_tabs_callbacks(app):
         """
         if not active_tab or not player_data:
             return html.Div()
-            
+
         try:
             from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
-            
+
             # Obtener datos del jugador desde el store
             player_id = player_data.get("player_id")
-            season = player_data.get("season") 
+            season = player_data.get("season")
             user_id = player_data.get("user_id")
             player_stats_dict = player_data.get("player_stats", {})
-            
+
             # Obtener objetos player y user desde la base de datos
             profile_data = get_player_profile_data(player_id=player_id)
             if not profile_data:
                 return html.Div("Error: Player data not found")
-                
+
             player = profile_data["player"]
-            user = profile_data["user"] 
+            user = profile_data["user"]
             player_analyzer = PlayerAnalyzer()
-            
+
             # Obtener player_stats usando PlayerAnalyzer (formato correcto: lista de diccionarios)
             all_stats = player_analyzer.get_player_stats(player_id)
             # Usar todas las temporadas disponibles para análisis temporal completo
             player_stats = all_stats if all_stats else []
-            
+
             if active_tab == "performance-tab":
                 return create_performance_tab_content(player_stats)
             elif active_tab == "evolution-tab":
-                return create_evolution_tab_content(player, player_stats, player_analyzer)
+                return create_evolution_tab_content(
+                    player, player_stats, player_analyzer
+                )
             elif active_tab == "position-tab":
                 return create_position_tab_content(player_stats)
             elif active_tab == "ai-analytics-tab":
                 return create_ai_analytics_content(player, player_stats)
             else:
                 return html.Div("Tab not implemented yet")
-                
+
         except Exception as e:
             import traceback
+
             print(f"Error in update_main_tab_content: {e}")
             traceback.print_exc()
             return html.Div(f"Error loading tab content: {str(e)}")
-    
+
     @app.callback(
         Output("ai-sub-tab-content", "children"),
         [Input("ai-analytics-sub-tabs", "active_tab")],
@@ -308,27 +311,27 @@ def register_professional_tabs_callbacks(app):
         """
         if not active_sub_tab or not player_data:
             return html.Div()
-            
+
         try:
             from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
-            
+
             # Obtener datos del jugador desde el store
             player_id = player_data.get("player_id")
             season = player_data.get("season")
-            
+
             # Obtener objetos player desde la base de datos
             profile_data = get_player_profile_data(player_id=player_id)
             if not profile_data:
                 return html.Div("Error: Player data not found")
-                
+
             player = profile_data["player"]
             player_analyzer = PlayerAnalyzer()
-            
+
             # Obtener player_stats usando PlayerAnalyzer (formato correcto: lista de diccionarios)
             all_stats = player_analyzer.get_player_stats(player_id)
             # Usar todas las temporadas disponibles para análisis temporal completo
             player_stats = all_stats if all_stats else []
-            
+
             if active_sub_tab == "pdi-development-tab":
                 return create_pdi_development_content(player)
             elif active_sub_tab == "iep-clustering-tab":
@@ -337,9 +340,10 @@ def register_professional_tabs_callbacks(app):
                 return create_league_comparison_content(player, player_stats)
             else:
                 return html.Div("Sub-tab not implemented yet")
-                
+
         except Exception as e:
             import traceback
+
             print(f"Error in update_ai_sub_tab_content: {e}")
             traceback.print_exc()
             return html.Div(f"Error loading sub-tab content: {str(e)}")
