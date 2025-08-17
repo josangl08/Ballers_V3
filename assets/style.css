@@ -3247,3 +3247,67 @@ iframe[id*="dash-calendar"] * {
     background-color: rgba(23, 162, 184, 0.15) !important;
     border-left: 4px solid #17a2b8 !important;
 }
+
+/* Statistics Summary Table Styling */
+.stats-summary-table {
+    font-family: 'Inter', sans-serif;
+    background-color: transparent !important;
+}
+
+.stats-summary-table tbody tr {
+    background-color: transparent !important;
+}
+
+.stats-summary-table thead tr {
+    background-color: transparent !important;
+}
+
+.stats-summary-table th {
+    background-color: rgba(36, 222, 132, 0.1) !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    padding: 0.8rem 1rem !important;
+    border: none !important;
+}
+
+.stats-summary-table td {
+    padding: 0.7rem 1rem !important;
+    border: none !important;
+    font-size: 0.85rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background-color: transparent !important;
+}
+
+.stats-summary-table tbody tr:hover {
+    background-color: rgba(36, 222, 132, 0.05) !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.stats-summary-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+/* Override Bootstrap table defaults */
+.stats-summary-table.table {
+    background-color: transparent !important;
+    color: var(--color-white-faded) !important;
+}
+
+.stats-summary-table.table td,
+.stats-summary-table.table th {
+    background-color: transparent !important;
+    color: inherit !important;
+}
+
+.stats-summary-table.table-hover tbody tr:hover td {
+    background-color: rgba(36, 222, 132, 0.05) !important;
+    color: inherit !important;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+    .stats-summary-table td, .stats-summary-table th {
+        padding: 0.5rem 0.7rem !important;
+        font-size: 0.8rem !important;
+    }
+}

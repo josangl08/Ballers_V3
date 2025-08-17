@@ -1,0 +1,57 @@
+{
+  "testing_summary": {
+    "timestamp": "2025-08-15T00:24:06.869065",
+    "duration_seconds": 0.38,
+    "total_tests": 13,
+    "passed": 11,
+    "failed": 2,
+    "success_rate": 84.6
+  },
+  "component_results": {
+    "pdi_calculator": {
+      "passed": 1,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    },
+    "iep_calculator": {
+      "passed": 3,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    },
+    "player_analyzer": {
+      "passed": 0,
+      "failed": 1,
+      "success_rate": 0.0,
+      "errors": [
+        "No hay posiciones disponibles para 2024-25"
+      ]
+    },
+    "iep_analyzer": {
+      "passed": 0,
+      "failed": 1,
+      "success_rate": 0.0,
+      "errors": [
+        "Benchmarks con datos insuficientes"
+      ]
+    },
+    "visualizations": {
+      "passed": 3,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    },
+    "outputs": {
+      "passed": 4,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    }
+  },
+  "system_status": "healthy",
+  "recommendations": [
+    "Revisar errores específicos en cada componente",
+    "Sistema estable con mejoras menores requeridas"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "testing_summary": {
+    "timestamp": "2025-08-15T00:34:21.761249",
+    "duration_seconds": 0.5,
+    "total_tests": 16,
+    "passed": 16,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "component_results": {
+    "pdi_calculator": {
+      "passed": 2,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    },
+    "iep_calculator": {
+      "passed": 3,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    },
+    "player_analyzer": {
+      "passed": 2,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    },
+    "iep_analyzer": {
+      "passed": 2,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    },
+    "visualizations": {
+      "passed": 3,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    },
+    "outputs": {
+      "passed": 4,
+      "failed": 0,
+      "success_rate": 100.0,
+      "errors": []
+    }
+  },
+  "system_status": "healthy",
+  "recommendations": [
+    "Sistema funcionando correctamente"
+  ]
+}
