@@ -7,8 +7,8 @@ también se eliminen automáticamente sus registros relacionados en ml_metrics
 y professional_stats.
 """
 
-import sqlite3
 import os
+import sqlite3
 from pathlib import Path
 
 # Configuración
@@ -17,31 +17,33 @@ DB_PATH = Path(__file__).parent / "ballers_app.db"
 
 def migrate_cascade_delete():
     """Migra la base de datos para añadir CASCADE DELETE."""
-    
+
     if not DB_PATH.exists():
         print(f"❌ Base de datos no encontrada en {DB_PATH}")
         return False
-    
+
     print(f"🔄 Iniciando migración CASCADE DELETE en {DB_PATH}")
-    
+
     try:
         # Crear backup
         backup_path = DB_PATH.with_suffix(".db.backup_cascade")
         import shutil
+
         shutil.copy2(DB_PATH, backup_path)
         print(f"✅ Backup creado en {backup_path}")
-        
+
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        
+
         # Habilitar claves foráneas
         cursor.execute("PRAGMA foreign_keys = ON")
-        
+
         print("🔄 Actualizando tabla ml_metrics...")
-        
+
         # Para SQLite, necesitamos recrear las tablas con CASCADE
         # 1. Crear nueva tabla ml_metrics con CASCADE (estructura exacta de la tabla real)
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE ml_metrics_new (
                 metric_id INTEGER PRIMARY KEY,
                 player_id INTEGER NOT NULL,
@@ -66,22 +68,26 @@ def migrate_cascade_delete():
                 updated_at DATETIME,
                 FOREIGN KEY (player_id) REFERENCES players (player_id) ON DELETE CASCADE
             )
-        """)
-        
+        """
+        )
+
         # 2. Copiar datos existentes
-        cursor.execute("""
-            INSERT INTO ml_metrics_new 
+        cursor.execute(
+            """
+            INSERT INTO ml_metrics_new
             SELECT * FROM ml_metrics
-        """)
-        
+        """
+        )
+
         # 3. Eliminar tabla antigua y renombrar
         cursor.execute("DROP TABLE ml_metrics")
         cursor.execute("ALTER TABLE ml_metrics_new RENAME TO ml_metrics")
-        
+
         print("🔄 Actualizando tabla professional_stats...")
-        
+
         # Hacer lo mismo para professional_stats
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE professional_stats_new (
                 stat_id INTEGER PRIMARY KEY,
                 player_id INTEGER NOT NULL,
@@ -153,10 +159,12 @@ def migrate_cascade_delete():
                 fouls_suffered_per_90 FLOAT,
                 FOREIGN KEY (player_id) REFERENCES players (player_id) ON DELETE CASCADE
             )
-        """)
-        
+        """
+        )
+
         # Copiar datos de professional_stats con mapeo explícito
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO professional_stats_new (
                 stat_id, player_id, wyscout_id, season, player_name, full_name,
                 team, team_within_timeframe, team_logo_url, competition,
@@ -178,7 +186,7 @@ def migrate_cascade_delete():
                 yellow_cards, red_cards, yellow_cards_per_90, red_cards_per_90,
                 fouls_suffered_per_90
             )
-            SELECT 
+            SELECT
                 stat_id, player_id, wyscout_id, season, player_name, full_name,
                 team, team_within_timeframe, team_logo_url, competition,
                 age, birthday, birth_country, passport_country,
@@ -199,15 +207,18 @@ def migrate_cascade_delete():
                 yellow_cards, red_cards, yellow_cards_per_90, red_cards_per_90,
                 fouls_suffered_per_90
             FROM professional_stats
-        """)
-        
+        """
+        )
+
         # Eliminar tabla antigua y renombrar
         cursor.execute("DROP TABLE professional_stats")
-        cursor.execute("ALTER TABLE professional_stats_new RENAME TO professional_stats")
-        
+        cursor.execute(
+            "ALTER TABLE professional_stats_new RENAME TO professional_stats"
+        )
+
         conn.commit()
         print("✅ Migración CASCADE DELETE completada exitosamente")
-        
+
         # Verificar integridad
         cursor.execute("PRAGMA integrity_check")
         result = cursor.fetchone()
@@ -215,10 +226,10 @@ def migrate_cascade_delete():
             print("✅ Verificación de integridad: OK")
         else:
             print(f"⚠️ Verificación de integridad: {result[0]}")
-        
+
         conn.close()
         return True
-        
+
     except Exception as e:
         print(f"❌ Error durante la migración: {e}")
         # Restaurar backup si algo sale mal
@@ -231,10 +242,12 @@ def migrate_cascade_delete():
 if __name__ == "__main__":
     print("🚀 Migración CASCADE DELETE para evitar errores de integridad referencial")
     print("=" * 60)
-    
+
     success = migrate_cascade_delete()
-    
+
     if success:
-        print("\n✅ Migración completada. Ahora los usuarios se pueden eliminar sin errores.")
+        print(
+            "\n✅ Migración completada. Ahora los usuarios se pueden eliminar sin errores."
+        )
     else:
         print("\n❌ Migración falló. Verificar logs de error.")

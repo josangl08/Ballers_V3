@@ -6,11 +6,11 @@ import datetime
 import logging
 import os
 import re
-import requests
 
 import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.graph_objects as go
+import requests
 from dash import Input, Output, State, dcc, html  # noqa: F401
 
 from common.format_utils import format_name_with_del
@@ -23,41 +23,41 @@ from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
 def get_local_team_logo(team_name, team_logo_url):
     """
     Obtiene la ruta del logo local del equipo o lo descarga si no existe.
-    
+
     Args:
         team_name: Nombre del equipo
         team_logo_url: URL del logo del equipo
-        
+
     Returns:
         Ruta local del logo del equipo
     """
     if not team_name or not team_logo_url:
         return "assets/team_logos/default_team.png"
-    
+
     # Crear nombre de archivo seguro
-    safe_name = re.sub(r'[^\w\s-]', '', team_name)
-    safe_name = re.sub(r'[-\s]+', '_', safe_name)
+    safe_name = re.sub(r"[^\w\s-]", "", team_name)
+    safe_name = re.sub(r"[-\s]+", "_", safe_name)
     local_path = f"assets/team_logos/{safe_name}.png"
-    
+
     # Si el archivo ya existe, devolverlo
     if os.path.exists(local_path):
         return local_path
-    
+
     # Intentar descargar el logo
     try:
         response = requests.get(team_logo_url, timeout=10)
         response.raise_for_status()
-        
+
         # Crear directorio si no existe
         os.makedirs("assets/team_logos", exist_ok=True)
-        
+
         # Guardar imagen
-        with open(local_path, 'wb') as f:
+        with open(local_path, "wb") as f:
             f.write(response.content)
-            
+
         print(f"✅ Logo descargado para {team_name}: {local_path}")
         return local_path
-        
+
     except Exception as e:
         print(f"❌ Error descargando logo para {team_name}: {e}")
         return "assets/team_logos/default_team.png"
@@ -66,10 +66,10 @@ def get_local_team_logo(team_name, team_logo_url):
 def load_logo_as_base64(logo_path):
     """
     Convierte imagen local a base64 para mejor compatibilidad con Plotly.
-    
+
     Args:
         logo_path: Ruta local del logo
-        
+
     Returns:
         String base64 o None si hay error
     """
@@ -80,6 +80,7 @@ def load_logo_as_base64(logo_path):
     except Exception as e:
         print(f"❌ Error converting logo to base64: {e}")
         return None
+
 
 # from controllers.thai_league_controller import ThaiLeagueController  # REDUNDANTE - usar ml_system directamente
 from models.user_model import UserType
@@ -125,21 +126,21 @@ def create_evolution_chart(player_stats):
     goals = [stat["goals"] or 0 for stat in player_stats]
     assists = [stat["assists"] or 0 for stat in player_stats]
     matches = [stat["matches_played"] or 0 for stat in player_stats]
-    
+
     # Nuevas estadísticas para el gráfico integral
     minutes = [stat.get("minutes_played") or 0 for stat in player_stats]
     duels_won_pct = [stat.get("duels_won_pct") or 0 for stat in player_stats]
     pass_accuracy_pct = [stat.get("pass_accuracy_pct") or 0 for stat in player_stats]
-    
+
     # Normalizar minutes para escala 0-100 (dividir por 30 minutos típicos por partido)
     minutes_normalized = [min(100, (m / 30)) if m > 0 else 0 for m in minutes]
     # Escalar matches para mejor visualización en escala 0-100 (multiplicar por 2.5)
     matches_scaled = [min(100, m * 2.5) for m in matches]
-    
+
     # Extraer datos de equipos para tooltips y logos
     teams = [stat.get("team", "Unknown Team") for stat in player_stats]
     team_logos = [stat.get("team_logo_url", "") for stat in player_stats]
-    
+
     # Formatear temporadas para tooltips (20-21 formato)
     formatted_seasons = []
     for season in seasons:
@@ -148,12 +149,14 @@ def create_evolution_chart(player_stats):
             formatted_seasons.append(season.replace("20", "", 1))
         else:
             formatted_seasons.append(season)
-    
+
     # Crear posiciones numéricas para coordenadas X (solución al desplazamiento)
     x_positions = list(range(len(formatted_seasons)))
-    
+
     # Crear cabeceras de tooltip con formato "20-21 - Equipo"
-    tooltip_headers = [f"{season} - {team}" for season, team in zip(formatted_seasons, teams)]
+    tooltip_headers = [
+        f"{season} - {team}" for season, team in zip(formatted_seasons, teams)
+    ]
 
     # Calcular métricas normalizadas por 90 minutos
     goals_per_90 = [stat.get("goals_per_90") or 0 for stat in player_stats]
@@ -164,14 +167,18 @@ def create_evolution_chart(player_stats):
 
     # Preparar customdata para tooltips enriquecidos
     tooltip_data = []
-    for i, (season, team, goal, assist, match) in enumerate(zip(formatted_seasons, teams, goals, assists, matches)):
+    for i, (season, team, goal, assist, match) in enumerate(
+        zip(formatted_seasons, teams, goals, assists, matches)
+    ):
         tooltip_data.append([season, team, goal, assist, match])
-    
+
     customdata = np.array(tooltip_data)
-    
+
     # Crear customdata específico para header del tooltip (temporada - equipo)
-    header_customdata = [[season, team] for season, team in zip(formatted_seasons, teams)]
-    
+    header_customdata = [
+        [season, team] for season, team in zip(formatted_seasons, teams)
+    ]
+
     # Crear gráfico con múltiples líneas mejoradas
     fig = go.Figure()
 
@@ -242,7 +249,12 @@ def create_evolution_chart(player_stats):
             line=dict(color="#42A5F5", width=2, dash="dash"),
             marker=dict(size=6),
             yaxis="y2",
-            customdata=[[s, t, m, a, ma] for s, t, m, a, ma in zip(formatted_seasons, teams, goals, assists, matches)],
+            customdata=[
+                [s, t, m, a, ma]
+                for s, t, m, a, ma in zip(
+                    formatted_seasons, teams, goals, assists, matches
+                )
+            ],
             hovertemplate="Matches Played: %{customdata[4]}<extra></extra>",  # Mostrar valor real
         )
     )
@@ -287,24 +299,30 @@ def create_evolution_chart(player_stats):
             line=dict(color="#26C6DA", width=2),
             marker=dict(size=6),
             yaxis="y2",  # Cambiado a yaxis2
-            customdata=[[s, t, m, a, mi] for s, t, m, a, mi in zip(formatted_seasons, teams, goals, assists, minutes)],
+            customdata=[
+                [s, t, m, a, mi]
+                for s, t, m, a, mi in zip(
+                    formatted_seasons, teams, goals, assists, minutes
+                )
+            ],
             hovertemplate="Minutes Played: %{customdata[4]}<extra></extra>",  # Mostrar valor real
         )
     )
 
-
     # Añadir logos de equipos como imágenes de layout (si están disponibles)
     print(f"🔍 Processing {len(team_logos)} team logos for evolution chart")
-    
-    for i, (season, team, logo_url) in enumerate(zip(formatted_seasons, teams, team_logos)):
+
+    for i, (season, team, logo_url) in enumerate(
+        zip(formatted_seasons, teams, team_logos)
+    ):
         print(f"🏆 Season {season}: Team '{team}', Logo URL: '{logo_url}'")
         try:
             # Obtener logo local (descarga automáticamente si es necesario)
             local_logo_path = get_local_team_logo(team, logo_url)
-            
+
             # Convertir a base64 para mejor compatibilidad
             base64_logo = load_logo_as_base64(local_logo_path)
-            
+
             if base64_logo:
                 print(f"🔄 Using base64 logo for {team}")
                 # Posicionar logo cerca de líneas verticales de temporadas
@@ -319,7 +337,7 @@ def create_evolution_chart(player_stats):
                     xref="x",  # Coordenadas de datos X para alineación con temporadas
                     yref="paper",  # Coordenadas paper Y para posición fija
                     xanchor="center",
-                    yanchor="middle"
+                    yanchor="middle",
                 )
                 print(f"✅ Base64 logo added for {team}")
             else:
@@ -327,14 +345,15 @@ def create_evolution_chart(player_stats):
                 print(f"⚠️ No logo for {team}, using fallback icon")
                 try:
                     # Bootstrap shield outline sin relleno
-                    bootstrap_icon_svg = '''
+                    bootstrap_icon_svg = """
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="#24DE84" stroke-width="1.5" viewBox="0 0 16 16">
                         <path d="M8 0c-.69 0-1.843.265-2.928.56-1.11.3-2.229.655-2.887.87a1.54 1.54 0 0 0-1.044 1.262c-.596 4.477.787 7.795 2.465 9.99a11.777 11.777 0 0 0 2.517 2.453c.386.273.744.482 1.048.625.28.132.581.24.829.24s.548-.108.829-.24c.304-.143.662-.352 1.048-.625a11.777 11.777 0 0 0 2.517-2.453C13.22 10.343 14.603 7.025 14.007 2.548A1.54 1.54 0 0 0 12.963 1.286c-.658-.215-1.777-.57-2.887-.87C9.006.265 7.69 0 8 0z"/>
                     </svg>
-                    '''
+                    """
                     import base64
+
                     fallback_base64 = f"data:image/svg+xml;base64,{base64.b64encode(bootstrap_icon_svg.encode()).decode()}"
-                    
+
                     fig.add_layout_image(
                         source=fallback_base64,
                         x=i,  # Usar índice numérico
@@ -346,12 +365,12 @@ def create_evolution_chart(player_stats):
                         xref="x",  # Coordenadas de datos X para alineación con temporadas
                         yref="paper",
                         xanchor="center",
-                        yanchor="middle"
+                        yanchor="middle",
                     )
                     print(f"✅ Bootstrap fallback icon added for {team}")
                 except Exception as fallback_error:
                     print(f"❌ Fallback icon failed for {team}: {fallback_error}")
-                
+
         except Exception as e:
             print(f"❌ Error adding logo for {team}: {e}")
             # El fallback ya se maneja en el flujo principal (else del if base64_logo)
@@ -368,7 +387,9 @@ def create_evolution_chart(player_stats):
             domain=[0, 0.9],  # Reservar 10% del espacio para ejes derechos
         ),
         yaxis2=dict(
-            title=dict(text="Normalized Metrics (0-100)", font=dict(color="#42A5F5", size=11)),
+            title=dict(
+                text="Normalized Metrics (0-100)", font=dict(color="#42A5F5", size=11)
+            ),
             tickfont=dict(color="#42A5F5", size=9),
             overlaying="y",
             side="right",
@@ -403,19 +424,20 @@ def create_evolution_chart(player_stats):
             # Configuración básica y funcional
             ticktext=formatted_seasons,  # Eje X muestra: "20-21", "21-22"
             tickvals=x_positions,  # Coordenadas numéricas: [0, 1, 2, ...]
-            range=[-0.3, len(formatted_seasons) - 0.7],  # Padding para evitar cortes de elementos
+            range=[
+                -0.3,
+                len(formatted_seasons) - 0.7,
+            ],  # Padding para evitar cortes de elementos
             dtick=1,  # Ticks en posiciones enteras
             showticklabels=True,
-            hoverformat=""  # Sin formato adicional
+            hoverformat="",  # Sin formato adicional
         ),
     )
 
     # Las etiquetas del eje X y tooltips ya están configurados en el layout principal
-    
+
     return dcc.Graph(
-        figure=fig, 
-        style={"height": "400px"}, 
-        config={"displayModeBar": False}
+        figure=fig, style={"height": "400px"}, config={"displayModeBar": False}
     )
 
 
@@ -3362,7 +3384,6 @@ def create_etl_status_indicator(data_quality_info, team_info):
             "margin-bottom": "15px",
         },
     )
-
 
 
 def create_contextual_insights_card(contextual_analysis, team_info):
