@@ -29,7 +29,7 @@ class MLMetrics(Base):
     # Identificación principal
     metric_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     player_id: Mapped[int] = mapped_column(
-        ForeignKey("players.player_id"), nullable=False
+        ForeignKey("players.player_id", ondelete="CASCADE"), nullable=False
     )
     season: Mapped[str] = mapped_column(String, nullable=False)  # "2024-25"
 

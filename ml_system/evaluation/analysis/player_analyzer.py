@@ -304,6 +304,7 @@ class PlayerAnalyzer:
                         # Información básica
                         "season": stat.season,
                         "team": stat.team,
+                        "team_logo_url": stat.team_logo_url,
                         "age": stat.age,
                         "matches_played": stat.matches_played,
                         "minutes_played": stat.minutes_played,

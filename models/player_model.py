@@ -35,6 +35,8 @@ class Player(Base):
     sessions: Mapped[list["Session"]] = relationship(back_populates="player")
     test_results: Mapped[list["TestResult"]] = relationship(back_populates="player")
     professional_stats: Mapped[list["ProfessionalStats"]] = relationship(
-        back_populates="player"
+        back_populates="player", cascade="all, delete-orphan"
     )
-    ml_metrics: Mapped[list["MLMetrics"]] = relationship(back_populates="player")
+    ml_metrics: Mapped[list["MLMetrics"]] = relationship(
+        back_populates="player", cascade="all, delete-orphan"
+    )
