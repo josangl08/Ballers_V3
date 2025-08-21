@@ -684,6 +684,16 @@ class ThaiLeagueExtractor:
                                 if pd.notna(record["Assists per 90"])
                                 else None
                             ),
+                            touches_in_box_per_90=(
+                                float(record["Touches in box per 90"])
+                                if pd.notna(record["Touches in box per 90"])
+                                else None
+                            ),
+                            shot_assists_per_90=(
+                                float(record["Shot assists per 90"])
+                                if pd.notna(record["Shot assists per 90"])
+                                else None
+                            ),
                             defensive_actions_per_90=(
                                 float(record["Successful defensive actions per 90"])
                                 if pd.notna(

@@ -1,0 +1,2939 @@
+/* styles/styles.css - Archivo CSS completo */
+
+/* === VARIABLES CSS CORPORATIVAS === */
+:root {
+  /* ===== COLORES CORPORATIVOS ===== */
+  /* Color corporativo principal */
+  --color-primary: #24DE84;
+  --color-primary-rgb: 36, 222, 132;
+  
+  /* Variaciones del color primario para transparencias */
+  --color-primary-alpha-10: rgba(36, 222, 132, 0.1);
+  --color-primary-alpha-15: rgba(36, 222, 132, 0.15);
+  --color-primary-alpha-20: rgba(36, 222, 132, 0.2);
+  --color-primary-alpha-25: rgba(36, 222, 132, 0.25);
+  --color-primary-alpha-30: rgba(36, 222, 132, 0.3);
+  --color-primary-alpha-40: rgba(36, 222, 132, 0.4);
+  --color-primary-alpha-50: rgba(36, 222, 132, 0.5);
+  --color-primary-alpha-80: rgba(36, 222, 132, 0.8);
+  
+  /* Colores del sistema */
+  --color-white: #FFFFFF;
+  --color-white-faded: #fafafa;
+  --color-light-gray: #CCCCCC;
+  --color-border: #555;
+  --color-danger: #dc3545;
+  --color-danger-alt: #F44336;
+  --color-muted: #6c757d;
+  
+  /* Colores de estado de sesiones */
+  --status-scheduled-bg: rgba(30, 136, 229, 0.4);
+  --status-completed-bg: rgba(76, 175, 80, 0.4);
+  --status-canceled-bg: rgba(244, 67, 54, 0.4);
+  
+  /* ===== BACKGROUNDS ===== */
+  --bg-main: #1D1B1A;
+  --bg-card: #333333;
+  --bg-input: #3b3b3a;
+  --bg-sidebar: #2b2b2b;
+  --bg-hover: #1a1a1a;
+  
+  /* ===== SPACING ===== */
+  --spacing-xs: 0.25rem;  /* 4px */
+  --spacing-sm: 0.5rem;   /* 8px */
+  --spacing-md: 0.75rem;  /* 12px */
+  --spacing-lg: 1rem;     /* 16px */
+  --spacing-xl: 1.2rem;   /* 19.2px */
+  --spacing-xxl: 1.5rem;  /* 24px */
+  --spacing-xxxl: 2rem;   /* 32px */
+  
+  /* ===== BORDER RADIUS ===== */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 10px;
+  --radius-xl: 20px;
+  
+  /* ===== TRANSITIONS ===== */
+  --transition-fast: all 0.15s ease;
+  --transition-normal: all 0.3s ease;
+  --transition-slow: all 0.5s ease;
+  
+  /* ===== SHADOWS ===== */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 6px 12px rgba(36, 222, 132, 0.3);
+  --shadow-focus: 0 0 0 0.2rem rgba(36, 222, 132, 0.25);
+  
+  /* ===== FONT SIZES ===== */
+  --font-xs: 0.7rem;
+  --font-sm: 0.8rem;
+  --font-md: 0.85rem;
+  --font-base: 0.9rem;
+  --font-lg: 1rem;
+  --font-xl: 1.2rem;
+  
+  /* ===== HEIGHTS ===== */
+  --input-height: 38px;
+  --button-height: 38px;
+  --card-height: 320px;
+}
+
+/* === UTILITY CLASSES BÁSICAS === */
+/* Solo aplicar color primario a elementos que no sean tabs */
+.text-primary:not(.nav-link):not(.nav-item):not([data-bs-toggle="tab"]) {
+  color: var(--color-primary) !important;
+}
+
+/* === CORRECCIÓN PARA TABS === */
+/* Eliminar recuadro verde de focus en tabs, solo mantener línea inferior */
+.nav-tabs .nav-link:focus {
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+}
+
+#login{
+    color: rgb(36, 222, 132) !important;
+}
+
+/* Estilos para el formulario de login */
+form {
+    background-color: var(--bg-card);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 500px;
+}
+/* Estilos para textarea de notas */
+#notes-editor::placeholder {
+    color: var(--color-light-gray) !important;
+    opacity: 1 !important;
+}
+
+/* Estilos para textarea del formulario de administración */
+.form-textarea::placeholder {
+    color: var(--color-light-gray) !important;
+    opacity: 1 !important;
+}
+
+.form-textarea:hover {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
+}
+
+.form-textarea:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+    outline: none !important;
+}
+
+/* Estilo para botón de Save Notes - igual que View Profile */
+#save-notes-profile-btn {
+    background-color: var(--bg-main) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
+    color: white !important;
+    padding: 0.4rem 1.2rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+#save-notes-profile-btn:hover {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+
+#save-notes-profile-btn:active {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+    transform: translateY(1px) !important;
+}
+
+/* Estilos para botones Save Session y Save Changes - igual que View Profile de player cards */
+#admin-save-session-btn:hover,
+#admin-update-session-btn:hover {
+    background-color: var(--bg-main) !important;  /* Mantener mismo fondo */
+    color: var(--color-primary) !important;  /* Letras verdes al hover */
+    border-color: var(--color-primary) !important;  /* Borde verde al hover */
+    transform: translateY(-1px) !important;
+}
+
+#admin-save-session-btn:active,
+#admin-update-session-btn:active {
+    background-color: var(--color-primary) !important;  /* Fondo verde al clickear */
+    color: var(--bg-main) !important;  /* Letras oscuras al clickear */
+    transform: translateY(1px) !important;
+}
+
+/* Estilos para área de upload de archivos */
+.upload-area {
+    width: 100% !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    border-width: 1px !important;
+    border-style: dashed !important;
+    border-radius: var(--radius-lg) !important;
+    text-align: center !important;
+    margin: 0px !important;
+    border: 1px solid var(--color-border) !important;
+    background-color: var(--bg-input) !important;
+    color: var(--color-white) !important;
+    font-size: 0.9rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+}
+
+.upload-area:hover {
+    border-color: var(--color-primary) !important;
+    transform: translateY(-1px) !important;
+}
+
+.upload-area:active {
+    border-color: var(--color-primary) !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-main) !important;
+    transform: translateY(1px) !important;
+}
+
+/* Estilos para botones con clase btn-admin-style (como Create User) */
+.btn-admin-style {
+    background-color: var(--bg-main) !important;
+    color: var(--color-white) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
+    font-weight: 500 !important;
+    padding: 0.4rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    display: inline-block !important;
+    width: auto !important;
+    font-size: 0.9rem !important;
+}
+
+.btn-admin-style:hover {
+    background-color: var(--bg-main) !important;  /* Mantener mismo fondo */
+    color: var(--color-primary) !important;  /* Letras verdes al hover */
+    border-color: var(--color-primary) !important;  /* Borde verde al hover */
+    transform: translateY(-1px) !important;
+}
+
+.btn-admin-style:active {
+    background-color: var(--color-primary) !important;  /* Fondo verde al clickear */
+    color: var(--bg-main) !important;  /* Letras oscuras al clickear */
+    transform: translateY(1px) !important;
+}
+
+/* === BASE STYLES === */
+body {
+    color: var(--bg-card);
+    font-family: 'Roboto', sans-serif;
+    font-size: var(--font-base);
+}
+
+/* Gráficos - Adaptado para Dash */
+#performance-evolution-chart {
+    background-color: var(--bg-card) !important;
+    border-radius: var(--radius-md);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    height: 450px;
+}
+
+/* Forzar fondo gris en contenedores de plotly */
+.plotly-graph-div {
+    background-color: var(--bg-card) !important;
+}
+
+/* Mensajes de alerta - Adaptado para Dash */
+.alert {
+    border-radius: var(--radius-md);
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Estilos para los calendarios */
+div.calendar-container {
+    background-color: transparent;
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.session-scheduled {
+    background-color: #E3F2FD;
+    border-left: 4px solid #1E88E5;
+}
+
+.session-completed {
+    background-color: #E8F5E9;
+    border-left: 4px solid #4CAF50;
+}
+
+.session-canceled {
+    background-color: #FFEBEE;
+    border-left: 4px solid #F44336;
+}
+
+/* Estilos para los estados de sesión - sistema unificado */
+/* Badge system unificado para todos los componentes */
+.status-scheduled,
+.status-completed,
+.status-canceled,
+.status-inactive {
+    color: white !important;
+    padding: 8px 12px !important;
+    border-radius: 3px !important;
+    font-size: var(--font-sm) !important;
+    min-width: 85px !important;
+    text-align: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: normal !important;
+    cursor: pointer !important;
+    height: var(--input-height) !important; /* Altura unificada para filtros */
+    min-height: var(--input-height) !important;
+    max-height: var(--input-height) !important;
+    transition: all 0.3s ease !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+}
+
+.status-scheduled {
+    background-color: var(--status-scheduled-bg) !important;
+}
+
+.status-completed {
+    background-color: var(--status-completed-bg) !important;
+}
+
+.status-canceled {
+    background-color: var(--status-canceled-bg) !important;
+}
+
+.status-inactive {
+    background-color: var(--color-muted) !important;
+    opacity: 0.6 !important;
+}
+
+/* Personalización de tooltips */
+div.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+div.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+div.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Desactivar zoom en imágenes */
+img {
+    pointer-events: none !important;
+}
+
+button[kind="icon"][aria-label="Fullscreen"] {
+    display: none !important;
+}
+/* Estilos para los enlaces */
+a {
+    color: #1E88E5;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+a:hover {
+    color: #0D47A1;
+    text-decoration: underline;
+}
+
+/* Estilos para el panel de recuperación de contraseña */
+#forgotPasswordInfo {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: var(--radius-lg);
+    margin-top: -10px;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#forgotPasswordInfo h4 {
+    color: #1E88E5;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+#forgotPasswordInfo p {
+    margin-bottom: 10px;
+}
+
+/* Estilos para Dash - Botones personalizados */
+.custom-button {
+    border-radius: var(--radius-xl);
+    font-weight: 500;
+    background-color: var(--bg-card);
+    color: var(--color-primary);
+    border: none;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.custom-button:hover {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para inputs de Dash */
+.dash-input {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background-color: var(--bg-input);
+    color: var(--color-white-faded);
+    font-size: var(--font-xs);
+    height: var(--input-height);
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+}
+
+.dash-input::placeholder {
+    color: var(--color-white) !important;
+    opacity: 0.8 !important;
+}
+
+.dash-input:hover {
+    border-color: var(--color-primary);
+    transition: all 0.3s ease;
+}
+
+.dash-input:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+    background-color: var(--bg-input) !important;
+    color: var(--color-white-faded) !important;
+    outline: none !important;
+}
+
+/* Fix para selectores y otros elementos de formulario */
+.form-select:focus,
+select:focus,
+select.form-select:focus {
+    color: var(--color-white-faded) !important;
+    background-color: var(--bg-input) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+}
+
+/* Player cards styling for Dash */
+.player-card {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: none;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    transition: transform 0.2s ease;
+    height: 320px;  /* Altura aumentada para acomodar mejor el contenido */
+    display: flex;
+    flex-direction: column;
+}
+
+.player-card .card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+    justify-content: space-between;  /* Distribuir espacio entre elementos */
+}
+
+.player-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(36, 222, 132, 0.3);  /* Sombra verde */
+    border: 1px solid var(--color-primary);  /* Borde verde al hacer hover */
+}
+
+/* Fix para evitar overflow horizontal */
+.row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.col, .col-4 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+/* Container principal sin overflow */
+#main-content-area {
+    overflow-x: hidden;
+    background-color: var(--bg-main) !important;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Responsive grid para cards de jugadores */
+@media (max-width: 576px) {
+    .player-card {
+        margin-bottom: 1rem;
+    }
+
+    #main-content-area {
+        padding: 15px;
+    }
+}
+
+/* Placeholder color for search input in edit session */
+.custom-date-input::placeholder {
+    color: var(--color-white) !important;
+    opacity: 0.8 !important;
+}
+
+/* Max width específico para el buscador de edit session */
+#admin-session-search.custom-date-input {
+    max-width: 240px !important;
+}
+
+/* Status chips styling for administration page */
+.status-chip {
+    transition: all 0.3s ease;
+    border: none;
+    font-weight: 500;
+}
+
+.status-chip-active {
+    background-color: var(--color-primary) !important;
+    color: var(--color-white) !important;
+    opacity: 1;
+}
+
+.status-chip-inactive {
+    background-color: rgba(100, 100, 100, 0.5) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    opacity: 0.7;
+}
+
+.status-chip:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+/* ===== SISTEMA LIMPIO PARA COACH FILTER DROPDOWN ===== */
+/* Prioridad máxima: selectores específicos para evitar conflictos */
+
+/* Control principal del dropdown coach */
+/* Estilos específicos para admin-filter-coach eliminados - ahora usa .standard-dropdown */
+
+/* ===== CLASE ESTÁNDAR PARA TODOS LOS DROPDOWNS ===== */
+.standard-dropdown .Select-control {
+    background-color: var(--bg-input) !important;
+    border-color: var(--color-border) !important;
+    border-radius: var(--radius-lg) !important;
+    color: var(--color-white) !important;
+    height: var(--input-height) !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    line-height: var(--input-height) !important;
+    transition: all 0.3s ease !important;
+}
+
+.standard-dropdown .Select-control:hover,
+.standard-dropdown .Select-control:hover:not([class*="admin-filter"]) {
+    border-color: var(--color-primary) !important;
+}
+
+/* Estilos obsoletos removidos - ahora se usan selectores CSS modernos */
+
+.standard-dropdown .Select-multi-value-wrapper {
+    background-color: var(--bg-card) !important;
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: var(--input-height) !important;
+}
+
+.standard-dropdown .Select-value,
+.standard-dropdown .Select-value-label {
+    color: var(--color-white) !important;
+    font-size: var(--font-md) !important;
+    text-align: left !important;
+    flex: 1 !important;
+    padding: 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    line-height: var(--input-height) !important;
+}
+
+.standard-dropdown .Select-placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: var(--font-md) !important;
+    text-align: left !important;
+    flex: 1 !important;
+    padding: 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    line-height: var(--input-height) !important;
+}
+
+.standard-dropdown .Select-clear-zone {
+    width: 20px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: var(--input-height) !important;
+    margin: 0 !important;
+}
+
+.standard-dropdown .Select-arrow-zone {
+    width: 30px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: var(--input-height) !important;
+    margin: 0 !important;
+}
+
+.standard-dropdown .Select-menu-outer {
+    background-color: var(--bg-card) !important;
+    border: 1px solid rgba(36, 222, 132, 0.3) !important;
+    border-radius: var(--radius-lg) !important;
+    margin-top: 2px !important;
+    z-index: 1000 !important;
+}
+
+.standard-dropdown .Select-option {
+    background-color: var(--bg-card) !important;
+    color: var(--color-white) !important;
+    font-size: var(--font-md) !important;
+    padding: 8px 12px !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+.standard-dropdown .Select-option:hover {
+    background-color: var(--color-primary-alpha-20) !important;
+}
+
+.standard-dropdown .Select-input input {
+    color: var(--color-white-faded) !important;
+}
+
+/* Sistema unificado de date inputs para toda la aplicación */
+input[type="date"].custom-date-input,
+input[type="date"].date-filter-input,
+input[type="date"]#filter-from-date,
+input[type="date"]#filter-to-date,
+.custom-date-input,
+.date-filter-input {
+    background-color: var(--bg-input) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: var(--radius-lg) !important;
+    color: var(--color-white) !important;
+    padding: 8px 12px !important;
+    height: var(--input-height) !important;
+    font-size: var(--font-xs) !important; /* Texto aún más pequeño */
+    transition: all 0.3s ease !important;
+    color-scheme: dark !important;
+    text-align: center !important; /* Centrado horizontal */
+    display: flex !important;
+    align-items: center !important; /* Centrado vertical */
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+input[type="date"].custom-date-input:hover,
+input[type="date"].date-filter-input:hover,
+input[type="date"]#filter-from-date:hover,
+input[type="date"]#filter-to-date:hover,
+.custom-date-input:hover,
+.date-filter-input:hover {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.15) !important;
+}
+
+input[type="date"].custom-date-input:focus,
+input[type="date"].date-filter-input:focus,
+input[type="date"]#filter-from-date:focus,
+input[type="date"]#filter-to-date:focus,
+.custom-date-input:focus,
+.date-filter-input:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+    outline: none !important;
+}
+
+/* Estilo minimalista para tabla de sesiones */
+.table-dark {
+    background-color: transparent !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: 8px !important;
+    font-size: var(--font-md) !important;
+    border-bottom: 1.5px solid var(--color-primary) !important;
+}
+
+.table-dark th {
+    background-color: #333 !important;
+    border: none !important;
+    color: var(--color-primary) !important;
+    font-weight: 600 !important;
+    font-size: var(--font-sm) !important;
+    padding: 8px 12px !important;
+}
+
+/* Estilo base para celdas sin background específico */
+.table-dark td {
+    border: none !important;
+    color: var(--color-white) !important;
+    font-size: var(--font-sm) !important;
+    padding: 8px 12px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Filas alternadas entre transparente y sidebar */
+.table-dark tbody tr:nth-child(odd) td {
+    background-color: transparent !important;
+}
+.table-dark tbody tr:nth-child(even) td {
+    background-color: var(--bg-card) !important;
+}
+
+.table-dark tr:hover td {
+    background-color: var(--color-primary-alpha-10) !important;
+}
+
+/* Login specific input styling */
+#username-input, #password-input {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-white-faded) !important;
+    border-radius: 6px !important;
+}
+
+#username-input::placeholder, #password-input::placeholder {
+    color: var(--color-white-faded) !important;
+    opacity: 0.8 !important;
+}
+
+#username-input:focus, #password-input:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+}
+
+/* View Profile button styling - para cards de jugadores */
+.player-card .btn {
+    background-color: var(--bg-main) !important;  /* Mismo fondo que Save Notes */
+    color: var(--color-white) !important;  /* Letras blancas */
+    border: 2px solid var(--bg-main) !important;  /* Borde igual que Save Notes */
+    border-radius: var(--radius-xl) !important;
+    font-weight: 500 !important;
+    padding: 0.4rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+}
+
+.player-card .btn:hover {
+    background-color: var(--bg-main) !important;  /* Mantener mismo fondo */
+    color: var(--color-primary) !important;  /* Letras verdes al hover */
+    border-color: var(--color-primary) !important;  /* Borde verde al hover */
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px var(--color-primary-alpha-20) !important;
+}
+
+/* ===== FILTROS DE ADMINISTRACIÓN - SISTEMA UNIFICADO ===== */
+
+/* Clases base para filtros - altura unificada */
+.filter-label {
+    color: var(--color-white) !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+    height: 20px !important; /* Altura fija para label */
+    line-height: 20px !important;
+}
+
+/* Layout horizontal para secciones WyscoutID - Solo cuando están visibles */
+#new-wyscout-section.row:not([style*="display: none"]),
+#edit-wyscout-section.row:not([style*="display: none"]) {
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+
+#new-wyscout-section:not([style*="display: none"]) .col,
+#new-wyscout-section:not([style*="display: none"]) .col-6,
+#new-wyscout-section:not([style*="display: none"]) .col-3,
+#edit-wyscout-section:not([style*="display: none"]) .col,
+#edit-wyscout-section:not([style*="display: none"]) .col-6,
+#edit-wyscout-section:not([style*="display: none"]) .col-3 {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Labels en layout horizontal */
+#new-wyscout-section .filter-label,
+#edit-wyscout-section .filter-label {
+    display: block !important;
+    margin-bottom: 8px !important;
+}
+
+.filter-container,
+.date-filter-container,
+.status-filter-container,
+.coach-filter-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 66px !important; /* Altura fija: 20px label + 8px margin + 38px input */
+    min-height: 66px !important;
+    max-height: 66px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Contenedor específico para status badges */
+.status-filter-container {
+    text-align: center !important;
+}
+
+.status-badges-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    height: var(--input-height) !important; /* Altura exacta igual que inputs */
+    min-height: var(--input-height) !important;
+    max-height: var(--input-height) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.status-badge {
+    /* Hereda estilos del sistema unificado de status badges */
+    height: var(--input-height) !important; /* Altura exacta igual que inputs */
+    min-height: var(--input-height) !important;
+    max-height: var(--input-height) !important;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    box-sizing: border-box !important;
+}
+
+/* Asegurar que el texto dentro de las cards sea blanco */
+.player-card h5 {
+    color: var(--color-white) !important;  /* Nombres en blanco */
+}
+
+.player-card .text-muted {
+    color: var(--color-light-gray) !important;  /* Texto secundario en gris claro */
+}
+
+/* Estilo antiguo eliminado - ya no se usa */
+
+/* Checkbox styling */
+#remember-me .form-check-input {
+    background-color: var(--color-border);
+    border-color: var(--color-primary);
+}
+
+#remember-me .form-check-input:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+#remember-me .form-check-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus);
+}
+
+/* Remove padding from main container */
+#dash-app-content .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Remove default Bootstrap container padding */
+.container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Menu button styling - curved like other buttons */
+.custom-menu-button {
+    background: transparent !important;
+    border: none !important;
+    color: var(--color-white-faded) !important;
+    transition: all 0.3s ease !important;
+    border-radius: var(--radius-xl) !important;  /* Curved like other buttons */
+}
+
+.custom-menu-button:hover {
+    background-color: var(--color-primary) !important;  /* Same corporate green as other buttons */
+    color: var(--bg-card) !important;  /* Dark text on green background */
+    border: none !important;
+}
+
+.custom-menu-button:hover .bi {
+    color: var(--bg-card) !important;  /* Dark icon on green background */
+}
+
+.custom-menu-button:hover .menu-text {
+    color: var(--bg-card) !important;  /* Dark text on green background */
+}
+
+.custom-menu-button:focus {
+    box-shadow: none !important;
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+/* Quick sync and logout buttons inherit menu button styling via custom-menu-button class */
+
+/* Sync alerts styling */
+.alert {
+    border-radius: var(--radius-lg) !important;
+    border: none !important;
+    font-size: var(--font-md);
+    padding: 0.6rem 0.8rem;
+}
+
+/* Sidebar collapsed state - hide user info text but keep photo */
+.sidebar-collapsed .sidebar-user-info {
+    display: none !important;
+}
+
+.sidebar-collapsed .sidebar-user-name {
+    display: none !important;
+}
+
+.sidebar-collapsed .sidebar-user-type {
+    display: none !important;
+}
+
+.sidebar-collapsed #sidebar-user-photo {
+    margin-right: 0 !important;
+    margin: 0 auto !important;
+}
+
+/* Collapsed state: hide all menu text and center icons */
+.sidebar-collapsed .menu-text {
+    display: none !important;
+}
+
+.sidebar-collapsed .custom-menu-button {
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+.sidebar-collapsed .custom-menu-button .bi {
+    margin: 0 !important;
+}
+
+/* Collapsed sidebar styling */
+.sidebar-collapsed .alert {
+    display: none !important;
+}
+
+/* Force text alignment for logout when expanded */
+#logout-button .menu-text {
+    text-align: left !important;
+    margin-left: 10px !important;
+}
+
+/* Hover effect for collapsed quick sync button */
+#quick-sync-icon-collapsed:hover {
+    background-color: var(--color-primary) !important;
+}
+
+#quick-sync-icon-collapsed:hover .bi {
+    color: var(--bg-card) !important;
+}
+
+.alert-success {
+    background-color: var(--color-primary-alpha-20) !important;
+    color: var(--color-primary) !important;
+}
+
+.alert-info {
+    background-color: rgba(33, 150, 243, 0.2) !important;
+    color: #2196F3 !important;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.2) !important;
+    color: #FFC107 !important;
+}
+
+.alert-danger {
+    background-color: rgba(244, 67, 54, 0.2) !important;
+    color: #F44336 !important;
+}
+
+/* Estilos adicionales para métricas con iconos Bootstrap */
+.metric-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    height: 160px !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.metric-card .card-body {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    height: 100% !important;
+    padding: 1rem !important;
+}
+
+.metric-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 16px var(--color-primary-alpha-20) !important;
+}
+
+/* Iconos en títulos - espaciado consistente */
+.bi.me-2 {
+    margin-right: 0.5rem !important;
+}
+
+/* Estilo para iconos de estado en cards de estadísticas */
+.metric-icon {
+    transition: transform 0.2s ease !important;
+}
+
+.metric-card:hover .metric-icon {
+    transform: scale(1.1) !important;
+}
+
+/* Títulos con iconos - alineación mejorada */
+h4 .bi, h5 .bi {
+    vertical-align: middle;
+}
+
+/* Cards de test history mejoradas */
+.test-history-card {
+    background-color: #2A2A2A !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 8px !important;
+    margin-bottom: 1rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.test-history-card:hover {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 4px 8px var(--color-primary-alpha-10) !important;
+}
+
+/* Headers de test history con iconos */
+.test-history-header {
+    background-color: var(--bg-card) !important;
+    border-bottom: 1px solid var(--color-border) !important;
+    padding: 1rem !important;
+}
+
+.test-history-header h5 {
+    margin: 0 !important;
+    color: var(--color-primary) !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.test-history-header .bi {
+    margin-right: 0.5rem !important;
+    font-size: 1.2rem !important;
+}
+
+/* Estilos para dropdown de filtros de estado - fondo como las cards */
+.VirtualizedSelectOption {
+    background-color: var(--bg-input) !important;  /* Mismo color que las cards */
+    color: var(--color-white-faded) !important;
+}
+
+.VirtualizedSelectFocusedOption {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+/* ===== SELECTORES GENÉRICOS - SOLO PARA CASOS NO ESPECÍFICOS ===== */
+/* Estos solo se aplicarán si no hay un selector más específico */
+.Select-control:not([class*="admin-filter"]):not([class*="custom-dropdown"]) {
+    background-color: var(--bg-input) !important;
+    border-color: var(--color-border) !important;
+}
+
+.Select-multi-value-wrapper:not([class*="admin-filter"]):not([class*="custom-dropdown"]) {
+    background-color: var(--bg-input) !important;
+}
+
+.Select-value:not([class*="admin-filter"]):not([class*="custom-dropdown"]) {
+    border-radius: var(--radius-xl) !important;
+    padding: 0.25rem 0.75rem !important;
+    margin: 0.125rem !important;
+    font-weight: 500 !important;
+}
+
+/* Colores específicos para cada estado - iguales que session list */
+.Select-value.completed {
+    background-color: var(--status-completed-bg) !important;
+    color: white !important;
+}
+
+.Select-value.scheduled {
+    background-color: var(--status-scheduled-bg) !important;
+    color: white !important;
+}
+
+.Select-value.canceled {
+    background-color: var(--status-canceled-bg) !important;
+    color: white !important;
+}
+
+.Select-value-label {
+    color: var(--color-white-faded) !important;
+}
+
+.Select-clear {
+    color: var(--color-primary) !important;
+}
+
+/* Tags de filtros - solo borde verde corporativo y letras blancas */
+.dash-dropdown .Select-multi-value,
+.Select--multi .Select-value {
+    background-color: transparent !important;
+    color: var(--color-white-faded) !important;  /* Letras blancas */
+    border-radius: var(--radius-xl) !important;
+    padding: 0.25rem 0.75rem !important;
+    font-weight: 500 !important;
+    border: 1px solid var(--color-primary) !important;  /* Borde más sutil */
+    transition: all 0.3s ease !important;
+}
+
+/* Asegurar que el texto interno también sea blanco */
+.dash-dropdown .Select-multi-value .Select-value-label,
+.Select--multi .Select-value .Select-value-label {
+    color: var(--color-white-faded) !important;
+    font-weight: 500 !important;
+}
+
+.dash-dropdown .Select-multi-value:hover {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+.dash-dropdown .Select-multi-value .Select-value-label {
+    color: inherit !important;
+    font-weight: 500 !important;
+}
+
+.dash-dropdown .Select-multi-value .Select-value-icon {
+    border-right-color: rgba(36, 222, 132, 0.3) !important;
+}
+
+.dash-dropdown .Select-multi-value .Select-value-icon:hover {
+    background-color: var(--color-primary-alpha-20) !important;
+    color: var(--bg-card) !important;
+}
+
+/* Calendario - texto blanco para fechas y números */
+.fc-event-title {
+    color: var(--color-white-faded) !important;
+    font-size: var(--font-xs) !important;
+}
+
+.fc-daygrid-event {
+    color: var(--color-white-faded) !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 2px 4px !important;
+}
+
+.fc-event {
+    color: var(--color-white-faded) !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.fc-daygrid-day-number {
+    color: var(--color-white-faded) !important;
+}
+
+.fc-col-header-cell {
+    color: var(--color-white-faded) !important;
+}
+
+.fc-day-today {
+    background: linear-gradient(to bottom, rgba(36, 222, 132, 0.3) 0%, rgba(36, 222, 132, 0.3) 25%, transparent 25%) !important;
+}
+
+.fc-day-today .fc-daygrid-day-top {
+    background-color: var(--color-primary-alpha-20) !important;
+    border-radius: 4px 4px 0 0 !important;
+}
+
+/* Botones del calendario - color específico solicitado */
+.fc-button {
+    background-color: rgb(59, 59, 58) !important;
+    border-color: rgb(59, 59, 58) !important;
+    color: var(--color-primary) !important;
+    transition: all 0.3s ease !important;
+}
+
+.fc-button:hover {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(36, 222, 132, 0.3) !important;
+}
+
+.fc-button:disabled {
+    background-color: #444 !important;
+    border-color: #444 !important;
+    color: #999 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Título del calendario - mes y año en blanco */
+.fc-toolbar-title {
+    color: var(--color-white-faded) !important;
+}
+
+/* Override para asegurar texto blanco en calendario */
+#admin-calendar .fc-event-title,
+#admin-calendar .fc-daygrid-event,
+#admin-calendar .fc-event,
+#player-calendar .fc-event-title,
+#player-calendar .fc-daygrid-event,
+#player-calendar .fc-event {
+    color: var(--color-white-faded) !important;
+    font-weight: 500 !important;
+}
+
+/* Estilos para inputs de fecha con fondo gris del sidebar */
+#calendar-start-date-input,
+#calendar-end-date-input {
+    background-color: var(--bg-main) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-white-faded) !important;
+    height: 32px !important;
+    padding: 4px 8px !important;
+    font-size: var(--font-md) !important;
+}
+
+#calendar-start-date-input:focus,
+#calendar-end-date-input:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+    background-color: var(--bg-main) !important;
+}
+
+/* Dropdown de filtros de estado */
+#calendar-status-filter-dropdown .Select-control {
+    background-color: var(--bg-main) !important;
+    border-color: var(--color-border) !important;
+    color: var(--color-white-faded) !important;
+}
+
+#calendar-status-filter-dropdown .Select-placeholder {
+    color: #ccc !important;
+}
+
+#calendar-status-filter-dropdown .Select-input > input {
+    color: var(--color-white-faded) !important;
+}
+
+/* Estilos adicionales para tags de estado por colores - iguales que session list */
+.status-tag-completed {
+    background-color: var(--status-completed-bg) !important;
+    color: white !important;
+}
+
+.status-tag-scheduled {
+    background-color: var(--status-scheduled-bg) !important;
+    color: white !important;
+}
+
+.status-tag-canceled {
+    background-color: var(--status-canceled-bg) !important;
+    color: white !important;
+}
+
+/* Header del perfil reorganizado */
+.profile-header-row {
+    align-items: flex-start !important;
+    margin-bottom: 2rem !important;
+}
+
+.profile-header-row .col-md-3:first-child {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+}
+
+.profile-header-row .col-md-5 {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+}
+
+.profile-header-row .col-md-3:last-child {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: flex-end !important;
+    min-height: 200px !important;
+}
+
+/* Colores específicos para tags de estado en Dash dropdowns */
+/* Selección de Completed */
+div[id*="status-filter"] span[title="Completed"],
+div[id*="status-filter"] span[title="completed"] {
+    background-color: #4CAF50 !important;
+    color: var(--color-white-faded) !important;
+    border-radius: var(--radius-xl) !important;
+    padding: 0.25rem 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+/* Selección de Scheduled */
+div[id*="status-filter"] span[title="Scheduled"],
+div[id*="status-filter"] span[title="scheduled"] {
+    background-color: #9C27B0 !important;
+    color: var(--color-white-faded) !important;
+    border-radius: var(--radius-xl) !important;
+    padding: 0.25rem 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+/* Selección de Canceled */
+div[id*="status-filter"] span[title="Canceled"],
+div[id*="status-filter"] span[title="canceled"] {
+    background-color: #F44336 !important;
+    color: var(--color-white-faded) !important;
+    border-radius: var(--radius-xl) !important;
+    padding: 0.25rem 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+/* Estilos para tags en el dropdown de Dash */
+.dash-dropdown .dropdown-content .VirtualizedSelectOption {
+    background-color: var(--bg-input) !important;
+    color: var(--color-white-faded) !important;
+    padding: 0.5rem !important;
+    border-bottom: 1px solid var(--color-border) !important;
+}
+
+.dash-dropdown .dropdown-content .VirtualizedSelectOption:hover {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+/* Tags seleccionados con colores de estado */
+.dash-dropdown .multi-value {
+    border-radius: var(--radius-xl) !important;
+    font-weight: 500 !important;
+    margin: 0.125rem !important;
+    padding: 0.25rem 0.75rem !important;
+    color: var(--color-white-faded) !important;
+}
+
+/* Intentar capturar por contenido de texto */
+.multi-value:contains("Completed"),
+.multi-value:contains("completed") {
+    background-color: #4CAF50 !important;
+}
+
+.multi-value:contains("Scheduled"),
+.multi-value:contains("scheduled") {
+    background-color: #9C27B0 !important;
+}
+
+.multi-value:contains("Canceled"),
+.multi-value:contains("canceled") {
+    background-color: #F44336 !important;
+}
+
+/* Corregir inputs de fecha y dropdown para fondo correcto */
+/* Inputs de fecha - fondo gris claro correcto (excluding filter dates) */
+div[id*="calendar-start-date"] input,
+div[id*="calendar-end-date"] input,
+#calendar-start-date-input,
+#calendar-end-date-input {
+    background-color: var(--bg-input) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-white-faded) !important;
+    border-radius: 8px !important;
+    padding: 0.4rem 0.6rem !important;
+    height: 32px !important;
+    font-size: var(--font-md) !important;
+}
+
+div[id*="calendar-start-date"] input:focus,
+div[id*="calendar-end-date"] input:focus,
+#calendar-start-date-input:focus,
+#calendar-end-date-input:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+    background-color: var(--bg-input) !important;
+}
+
+/* Dropdown completo - fondo gris claro correcto para todo el contenedor */
+div[id*="status-filter"],
+div[id*="status-filter"] > div,
+div[id*="status-filter"] .Select,
+div[id*="status-filter"] .Select-control,
+#calendar-status-filter-dropdown,
+#calendar-status-filter-dropdown > div,
+#calendar-status-filter-dropdown .Select,
+#calendar-status-filter-dropdown .Select-control {
+    background-color: var(--bg-input) !important;
+    border-radius: 8px !important;
+}
+
+/* Placeholder y texto */
+div[id*="status-filter"] .Select-placeholder,
+div[id*="status-filter"] .Select-value {
+    color: var(--color-white-faded) !important;
+}
+
+/* Input interno */
+div[id*="status-filter"] .Select-input input {
+    color: var(--color-white-faded) !important;
+}
+
+/* Menu desplegable */
+div[id*="status-filter"] .Select-menu-outer {
+    background-color: var(--bg-input) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 8px !important;
+}
+
+/* Opciones del menu */
+div[id*="status-filter"] .Select-option {
+    background-color: var(--bg-input) !important;
+    color: var(--color-white-faded) !important;
+}
+
+div[id*="status-filter"] .Select-option:hover {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+/* Hover effect para filas de tabla */
+.table-row-hover:hover {
+    background-color: var(--color-primary-alpha-10) !important;
+}
+
+.table-row-hover:hover td {
+    background-color: var(--color-primary-alpha-10) !important;
+}
+
+/* Estilos para tabs de Test Results y Notes */
+.nav-tabs .nav-link {
+    color: var(--color-white-faded) !important;  /* Letras blancas por defecto */
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    padding: 0.75rem 1.5rem !important;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--color-primary) !important;  /* Texto verde cuando activo */
+    border-bottom: 3px solid var(--color-primary) !important;  /* Línea inferior verde */
+    background-color: transparent !important;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--color-primary) !important;
+    border-bottom: 3px solid rgba(36, 222, 132, 0.5) !important;
+    background-color: transparent !important;
+}
+
+/* Eliminar borde superior de las tabs */
+.nav-tabs {
+    border-bottom: 1px solid var(--color-border) !important;
+}
+
+/* Estilos para acordeones de test history */
+.accordion-item {
+    background-color: #2A2A2A !important;
+    border: 1px solid var(--color-border) !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Contenedor de acordeones con fondo transparente */
+.accordion {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Espaciado transparente entre acordeones */
+.accordion-item + .accordion-item {
+    margin-top: 0.5rem !important;
+}
+
+.accordion-button {
+    background-color: var(--bg-card) !important;
+    color: var(--color-white-faded) !important;  /* Texto blanco por defecto */
+    border: none !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;  /* Tamaño más apropiado */
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--color-primary) !important;  /* Fondo verde cuando abierto */
+    color: #333 !important;  /* Mismo gris que hover de botones */
+    box-shadow: none !important;
+}
+
+.accordion-button:focus {
+    box-shadow: var(--shadow-focus) !important;
+}
+
+.accordion-body {
+    background-color: #2A2A2A !important;
+    color: var(--color-white-faded) !important;
+    padding: 1.5rem !important;
+    font-size: 0.9rem !important;  /* Tamaño de fuente consistente */
+}
+
+/* Asegurar que los iconos mantengan su color */
+.accordion-button .bi {
+    color: var(--color-primary) !important;
+}
+
+.accordion-button:not(.collapsed) .bi {
+    color: #666666 !important;  /* Icono gris cuando abierto */
+}
+
+/* Sistema de tipografía consistente para toda la app */
+.title-xl { font-size: 1.75rem !important; font-weight: 700 !important; }     /* Títulos principales */
+.title-lg { font-size: 1.3rem !important; font-weight: 600 !important; }   /* Títulos de sección */
+.title-md { font-size: 1.1rem !important; font-weight: 600 !important; }  /* Subtítulos */
+.title-sm { font-size: 0.9rem !important; font-weight: 600 !important; }     /* Títulos de card */
+
+.text-lg { font-size: 1rem !important; }      /* Texto grande */
+.text-base { font-size: 0.9rem !important; }      /* Texto por defecto */
+.text-sm { font-size: var(--font-sm) !important; }    /* Texto pequeño */
+.text-xs { font-size: 0.7rem !important; }     /* Texto extra pequeño */
+
+/* Correcciones específicas para elementos que estaban demasiado grandes */
+h1, .h1 { font-size: 1.8rem !important; font-weight: 700 !important; }
+h2, .h2 { font-size: 1.6rem !important; font-weight: 600 !important; }
+h3, .h3 { font-size: 1.4rem !important; font-weight: 600 !important; }
+h4, .h4 { font-size: 1.2rem !important; font-weight: 600 !important; }
+h5, .h5 { font-size: 0.95rem !important; font-weight: 600 !important; }
+
+/* Iconos estandarizados */
+.icon-lg { font-size: 1.5rem !important; }      /* Iconos grandes */
+.icon-md { font-size: 1.25rem !important; }     /* Iconos medianos */
+.icon-sm { font-size: 1rem !important; }        /* Iconos pequeños */
+.icon-xs { font-size: 0.875rem !important; }    /* Iconos extra pequeños */
+
+/* Mejoras adicionales para el calendario más vistoso */
+.fc-event-title {
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    font-size: 0.875rem !important;  /* Tamaño consistente */
+}
+
+/* Animaciones suaves para elementos del calendario */
+@keyframes slideInCalendar {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Aplicar animación al cargar */
+.fc-scrollgrid {
+    animation: slideInCalendar 0.6s ease-out !important;
+}
+
+/* Efectos de brillo para los botones del calendario */
+.fc-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(36, 222, 132, 0.3), transparent);
+    transition: left 0.6s;
+}
+
+.fc-button:hover::before {
+    left: 100%;
+}
+
+/* Estilos para la vista de lista del calendario */
+.fc-list {
+    background-color: transparent !important;
+}
+
+.fc-list-event {
+    background-color: var(--bg-card) !important;
+    border-left: 4px solid var(--color-primary) !important;
+    margin-bottom: 0.5rem !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+}
+
+.fc-list-event:hover {
+    background-color: var(--bg-input) !important;
+    transform: translateX(4px) !important;
+    box-shadow: 0 2px 8px var(--color-primary-alpha-20) !important;
+}
+
+.fc-list-day-cushion {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+.fc-list-event-title {
+    color: var(--color-white-faded) !important;
+    font-weight: 500 !important;
+}
+
+.fc-list-event-time {
+    color: var(--color-primary) !important;
+    font-weight: 600 !important;
+}
+
+.fc-list-table {
+    border: none !important;
+}
+
+.fc-list-day {
+    background-color: transparent !important;
+}
+
+/* Estilos para inputs de fecha HTML nativos - Simple y elegante */
+/* IMPORTANTE: Estos estilos deben tener prioridad sobre otros estilos */
+.simple-date-input,
+input[type="date"].simple-date-input,
+.form-control[type="date"] {
+    background-color: transparent !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-white-faded) !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1rem !important;
+    font-family: 'Roboto', sans-serif !important;
+    font-size: 1rem !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    width: 100% !important;
+}
+
+.simple-date-input:focus,
+input[type="date"].simple-date-input:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 0.1rem rgba(36, 222, 132, 0.3) !important;
+    background-color: transparent !important;
+    outline: none !important;
+}
+
+.simple-date-input:hover,
+input[type="date"].simple-date-input:hover {
+    background-color: rgba(36, 222, 132, 0.05) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Calendario nativo del navegador - Tema oscuro */
+.simple-date-input::-webkit-calendar-picker-indicator {
+    background-color: var(--color-primary) !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    filter: invert(1) !important;
+}
+
+.simple-date-input::-webkit-datetime-edit {
+    color: var(--color-white-faded) !important;
+}
+
+.simple-date-input::-webkit-datetime-edit-text {
+    color: var(--color-white-faded) !important;
+}
+
+.simple-date-input::-webkit-datetime-edit-month-field {
+    color: var(--color-white-faded) !important;
+}
+
+.simple-date-input::-webkit-datetime-edit-day-field {
+    color: var(--color-white-faded) !important;
+}
+
+.simple-date-input::-webkit-datetime-edit-year-field {
+    color: var(--color-white-faded) !important;
+}
+
+/* Firefox */
+.simple-date-input::-moz-calendar-picker-indicator {
+    background-color: var(--color-primary) !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+}
+
+/* Calendario desplegable - Estilo corporativo */
+.DayPicker,
+.DayPickerNavigation,
+.DayPickerKeyboardShortcuts_panel,
+.DateRangePickerInput__dropdown {
+    background-color: #2b2b2b !important;  /* Fondo exacto de la imagen */
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+    font-family: 'Roboto', sans-serif !important;
+    padding: 1rem !important;
+}
+
+/* Header de días de la semana - Exacto como en la imagen */
+.DayPicker_weekHeader,
+.DayPicker_weekHeader_ul {
+    background-color: #2b2b2b !important;
+    color: #8a8a8a !important;  /* Gris tenue como en la imagen */
+    font-weight: 400 !important;
+    border-bottom: none !important;
+    text-transform: uppercase !important;
+    font-size: var(--font-xs) !important;
+    letter-spacing: 0.5px !important;
+}
+
+.DayPicker_weekHeader_li,
+.DayPicker_weekHeader_ul li {
+    color: #8a8a8a !important;  /* Gris tenue Mo Tu We Th Fr Sa Su */
+    font-weight: 400 !important;
+    text-transform: uppercase !important;
+    font-size: var(--font-xs) !important;
+}
+
+/* Contenedor del mes */
+.CalendarMonth,
+.CalendarMonth_table {
+    background-color: #2b2b2b !important;
+}
+
+/* Días del calendario - Exacto como en la imagen */
+.CalendarDay,
+.CalendarDay__default {
+    background-color: transparent !important;
+    color: #ffffff !important;  /* Números blancos como en la imagen */
+    border: none !important;
+    font-size: 1rem !important;
+    font-weight: 400 !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;  /* Círculos como en la imagen */
+    transition: all 0.2s ease !important;
+}
+
+.CalendarDay:hover,
+.CalendarDay__hovered_span {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* Día seleccionado - Verde circular como en la imagen */
+.CalendarDay__selected,
+.CalendarDay__selected_span,
+.CalendarDay__selected:hover {
+    background-color: var(--color-primary) !important;  /* Verde corporativo circular */
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 600 !important;
+    border-radius: 50% !important;
+}
+
+/* Día actual - Sin resaltado especial a menos que esté seleccionado */
+.CalendarDay__today {
+    color: #ffffff !important;
+    font-weight: 400 !important;
+    background-color: transparent !important;
+}
+
+/* Días fuera de rango - Grises tenues */
+.CalendarDay__blocked_out_of_range,
+.CalendarDay__outside {
+    background-color: transparent !important;
+    color: var(--color-border) !important;
+}
+
+/* Header del calendario con mes/año - Como en la imagen */
+.DayPicker_caption,
+.DayPicker_caption__caption {
+    color: #ffffff !important;
+    background-color: #2b2b2b !important;
+    font-weight: 400 !important;
+    font-size: 1.1rem !important;
+    text-align: center !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Botones de navegación - Flechas simples como en la imagen */
+.DayPickerNavigation_button,
+.DayPickerNavigation_button__default {
+    background-color: transparent !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-size: 1.2rem !important;
+    padding: 0.5rem !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.DayPickerNavigation_button:hover,
+.DayPickerNavigation_button__default:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* Selectores de mes y año - Dropdown estilo oscuro */
+.DayPicker_monthPicker,
+.DayPicker_yearPicker {
+    background-color: #2b2b2b !important;
+    color: #ffffff !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 6px !important;
+}
+
+.DayPicker_monthPicker select,
+.DayPicker_yearPicker select {
+    background-color: #2b2b2b !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+/* Input inferior del calendario - Como en la imagen */
+.SingleDatePickerInput__display-text {
+    background-color: #2b2b2b !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: 8px !important;
+    color: #ffffff !important;
+    padding: 0.75rem 1rem !important;
+    text-align: center !important;
+}
+
+/* Overlay del calendario */
+.DateRangePickerInput__dropdown,
+.SingleDatePickerInput__dropdown {
+    z-index: 10000 !important;
+}
+
+/* Flecha del calendario desplegable */
+.DateRangePickerInput_arrow,
+.SingleDatePickerInput_arrow {
+    border-bottom-color: #2b2b2b !important;
+    border-top-color: #2b2b2b !important;
+}
+
+/* Mejorar la vista de agenda lateral (si se implementa) */
+.calendar-agenda {
+    background: linear-gradient(135deg, rgba(51, 51, 51, 0.9), rgba(42, 42, 42, 0.9));
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+/* Estilos específicos para login Dash - diseño original */
+.login-container {
+    min-height: 100vh !important;
+    background-color: var(--bg-main) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 2rem !important;
+    margin: 0 !important;
+}
+
+.login-logo {
+    color: white !important;
+    font-size: 4.5rem !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    margin: 0 auto 3rem auto !important;
+    letter-spacing: 0.1rem !important;
+}
+
+.login-form-container {
+    background-color: rgba(51, 51, 51, 0.6) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+    max-width: 500px !important;
+    margin: 0 auto !important;
+}
+
+.login-title {
+    color: var(--color-primary) !important;
+    font-size: 2rem !important;
+    font-weight: 500 !important;
+    margin-bottom: 2rem !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.login-label {
+    color: white !important;
+    font-weight: 400 !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+}
+
+.login-button {
+    background-color: var(--bg-main) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
+    color: white !important;
+    padding: 0.75rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    margin-bottom: 1.5rem !important;
+    width: 100% !important;
+    transition: all 0.3s ease !important;
+}
+
+.login-button:hover {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+
+.login-button:active {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+    transform: translateY(1px) !important;
+}
+
+.forgot-password-container {
+    max-width: 500px !important;
+    margin: 0 auto !important;
+}
+
+.forgot-password-button {
+    background-color: var(--bg-card) !important;
+    border: 2px solid #333333 !important;
+    border-radius: var(--radius-xl) !important;
+    color: white !important;
+    padding: 0.75rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    margin-top: 1rem !important;
+    width: 100% !important;
+    transition: all 0.3s ease !important;
+}
+
+.forgot-password-button:hover {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+
+.forgot-password-button:active {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+    transform: translateY(1px) !important;
+}
+
+.login-checkbox {
+    color: white !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.login-checkbox .form-check-input {
+    background-color: var(--color-border) !important;
+    border-color: var(--color-primary) !important;
+}
+
+.login-checkbox .form-check-input:checked {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+}
+
+.login-checkbox .form-check-input:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+}
+
+/* ===== SIDEBAR STYLES ===== */
+
+/* Botones del menú de navegación */
+.sidebar-menu-button {
+    font-size: 16px !important;
+    text-align: left !important;
+    border: none !important;
+    background: transparent !important;
+    text-decoration: none !important;
+    color: var(--color-white) !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.sidebar-menu-button:hover {
+    background-color: var(--color-primary-alpha-10) !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+/* Botones Quick Sync y Logout */
+.sidebar-action-button {
+    font-size: 16px !important;
+    text-align: left !important;
+    border: none !important;
+    background: transparent !important;
+    text-decoration: none !important;
+    color: var(--color-white) !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 0.25rem !important;
+    width: 100% !important;
+}
+
+.sidebar-action-button:hover {
+    background-color: var(--color-primary-alpha-10) !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+
+.sidebar-action-button:hover .bi {
+    color: var(--color-primary) !important;
+}
+
+/* Estilos para el contenedor de usuario */
+.sidebar-user-container {
+    background-color: transparent !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 0 !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Estilos para el área de Webhook Status (future) */
+.sidebar-webhook-container {
+    background-color: var(--bg-main) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 10px !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Estilos para botones del menú de navegación */
+.sidebar-menu-button {
+    border-radius: var(--radius-xl) !important;
+    font-weight: 500 !important;
+    background-color: var(--bg-card) !important;
+    color: var(--color-white) !important;
+    border: 1px solid transparent !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+    text-align: left !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.sidebar-menu-button:hover {
+    background-color: var(--bg-main) !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+
+.sidebar-menu-button:hover .bi {
+    color: var(--color-primary) !important;
+}
+
+.sidebar-menu-button:active {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+.sidebar-menu-button:active .bi {
+    color: var(--bg-card) !important;
+}
+
+/* Estilos para botones de acción (quicksync, logout) */
+.sidebar-action-button {
+    border-radius: var(--radius-xl) !important;
+    font-weight: 500 !important;
+    background-color: var(--bg-card) !important;
+    color: var(--color-white) !important;
+    border: 1px solid transparent !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.sidebar-action-button .bi {
+    color: var(--color-primary) !important;
+    margin-right: 8px !important;
+}
+
+.sidebar-action-button:hover {
+    background-color: var(--bg-main) !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+
+.sidebar-action-button:hover .bi {
+    color: var(--color-primary) !important;
+}
+
+.sidebar-action-button:active {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+.sidebar-action-button:active .bi {
+    color: var(--bg-card) !important;
+}
+
+/* Espaciado para sidebar expandido */
+.sidebar-user-container {
+    margin-bottom: 1.5rem !important;
+}
+
+.sidebar-sync-area {
+    margin-bottom: 8px !important;
+}
+
+.sidebar-sync-area > div {
+    margin-bottom: 8px !important;
+}
+
+/* Sidebar collapsed sync area styling */
+.sidebar-collapsed .sidebar-sync-area > div {
+    margin-bottom: 0 !important;
+}
+
+.sidebar-action-buttons {
+    margin-top: 0 !important;
+}
+
+/* Badges específicos por ID - compatibilidad con sistema existente */
+#status-scheduled,
+#status-completed,
+#status-canceled {
+    font-weight: normal !important;
+}
+
+/* Compatibility con bootstrap buttons - usar clases unificadas */
+#status-scheduled.btn-primary,
+#status-completed.btn-success,
+#status-canceled.btn-danger {
+    background-color: inherit !important;
+    border-color: inherit !important;
+    color: inherit !important;
+}
+
+#status-scheduled.btn-secondary,
+#status-completed.btn-secondary,
+#status-canceled.btn-secondary {
+    background-color: var(--color-muted) !important;
+    border-color: var(--color-muted) !important;
+    color: white !important;
+}
+
+/* Estilos específicos para las etiquetas del dropdown de métricas */
+#metrics-selector .Select-multi-value {
+    background-color: transparent !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: var(--radius-xl) !important;
+    color: var(--color-white-faded) !important;
+}
+
+#metrics-selector .Select-multi-value-wrapper {
+    background-color: transparent !important;
+}
+
+#metrics-selector .Select-multi-value .Select-value-label {
+    color: var(--color-white-faded) !important;
+    font-weight: normal !important;
+}
+
+#metrics-selector .Select-multi-value .Select-value-icon {
+    border-left: 1px solid var(--color-primary) !important;
+    background-color: transparent !important;
+    color: var(--color-white-faded) !important;
+    border-radius: 0 20px 20px 0 !important;
+}
+
+#metrics-selector .Select-multi-value .Select-value-icon:hover {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+/* Targeting React-Select specific classes for metrics selector */
+#metrics-selector .css-12jo7m5 {
+    border-left: 1px solid var(--color-primary) !important;
+}
+
+#metrics-selector .css-12jo7m5:hover {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+/* Estilos específicos para service types badges - copiando estilo de metrics-selector */
+/* Estilos base del dropdown */
+#new-service-types .Select-control {
+    background-color: var(--bg-input) !important;
+    border-color: var(--color-border) !important;
+    border-radius: var(--radius-lg) !important;
+    color: var(--color-white) !important;
+    height: var(--input-height) !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    line-height: var(--input-height) !important;
+    transition: all 0.3s ease !important;
+}
+
+#new-service-types .Select-control:hover {
+    border-color: var(--color-primary) !important;
+}
+
+/* Estilo obsoleto removido - se usa selector CSS moderno */
+
+#new-service-types .Select-placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: var(--font-md) !important;
+    text-align: left !important;
+    flex: 1 !important;
+    padding: 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    line-height: var(--input-height) !important;
+}
+
+#new-service-types .Select-menu-outer {
+    background-color: var(--bg-card) !important;
+    border: 1px solid rgba(36, 222, 132, 0.3) !important;
+    border-radius: var(--radius-lg) !important;
+    margin-top: 2px !important;
+    z-index: 1000 !important;
+}
+
+#new-service-types .Select-option {
+    background-color: var(--bg-card) !important;
+    color: var(--color-white) !important;
+    font-size: var(--font-md) !important;
+    padding: 8px 12px !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+#new-service-types .Select-option:hover {
+    background-color: var(--color-primary-alpha-20) !important;
+}
+
+/* Estilos específicos para los badges multi-value */
+#new-service-types .Select-multi-value {
+    background-color: transparent !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: var(--radius-xl) !important;
+    color: var(--color-white-faded) !important;
+}
+
+#new-service-types .Select-multi-value-wrapper {
+    background-color: transparent !important;
+}
+
+#new-service-types .Select-multi-value .Select-value-label {
+    color: var(--color-white-faded) !important;
+    font-weight: normal !important;
+}
+
+#new-service-types .Select-multi-value .Select-value-icon {
+    border-left: 1px solid var(--color-primary) !important;
+    background-color: transparent !important;
+    color: var(--color-white-faded) !important;
+    border-radius: 0 20px 20px 0 !important;
+}
+
+#new-service-types .Select-multi-value .Select-value-icon:hover {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+/* Targeting React-Select specific classes for service types selector */
+#new-service-types .css-12jo7m5 {
+    border-left: 1px solid var(--color-primary) !important;
+}
+
+#new-service-types .css-12jo7m5:hover {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+/* Estilos para sidebar colapsado */
+.sidebar-collapsed .menu-text {
+    display: none !important;
+}
+
+/* ============================================================================
+   CUSTOM DATE PICKER STYLES - Estilo corporativo
+   ============================================================================ */
+
+/* Contenedor principal del DatePicker */
+.custom-datepicker .DateInput {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: var(--radius-md) !important;
+    width: 100% !important;
+}
+
+/* Input del DatePicker */
+.custom-datepicker .DateInput_input {
+    background-color: var(--bg-card) !important;
+    border: none !important;
+    color: #FAFAFA !important;
+    font-size: 0.9rem !important;
+    padding: 8px 12px !important;
+    border-radius: var(--radius-md) !important;
+}
+
+.custom-datepicker .DateInput_input::placeholder {
+    color: var(--color-light-gray) !important;
+}
+
+.custom-datepicker .DateInput_input:focus {
+    border: none !important;
+    outline: none !important;
+}
+
+/* Dropdown del calendario */
+.custom-datepicker .DateRangePickerInput,
+.custom-datepicker .SingleDatePickerInput {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: var(--radius-md) !important;
+}
+
+/* ====== MINICALENDARIO DROPDOWN ====== */
+
+/* Contenedor principal del calendario desplegable */
+.DateRangePicker_picker,
+.SingleDatePicker_picker {
+    background-color: #1a1a1a !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+    z-index: 1000 !important;
+}
+
+/* Cabecera del calendario (navegación de mes/año) */
+.DayPicker__header {
+    background-color: var(--color-border)555 !important;
+    border-bottom: 1px solid #333 !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+/* Botones de navegación (prev/next) */
+.DayPicker_nav {
+    background-color: transparent !important;
+    border: none !important;
+    color: #FAFAFA !important;
+    font-size: 1.2rem !important;
+}
+
+.DayPicker_nav:hover {
+    background-color: var(--color-primary) !important;
+    color: #1a1a1a !important;
+}
+
+/* Título del mes/año */
+.DayPicker_monthLabel,
+.DayPicker_caption {
+    color: #FAFAFA !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+}
+
+/* Nombres de días de la semana */
+.DayPicker_weekHeader {
+    background-color: var(--color-border)555 !important;
+    color: var(--color-light-gray) !important;
+    font-size: var(--font-sm) !important;
+    font-weight: normal !important;
+    text-transform: uppercase !important;
+}
+
+.DayPicker_weekHeader_ul {
+    background-color: var(--color-border)555 !important;
+}
+
+.DayPicker_weekHeader_li {
+    color: var(--color-light-gray) !important;
+}
+
+/* ====== CUERPO DEL CALENDARIO ====== */
+
+/* Fondo del cuerpo del calendario */
+.DayPicker_month {
+    background-color: #1a1a1a !important;
+    border-radius: 0 0 8px 8px !important;
+}
+
+/* Tabla del calendario */
+.DayPicker_monthTable {
+    background-color: #1a1a1a !important;
+}
+
+/* Días individuales */
+.CalendarDay {
+    background-color: #1a1a1a !important;
+    border: 1px solid transparent !important;
+    color: #FAFAFA !important;
+    font-size: 0.9rem !important;
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    text-align: center !important;
+}
+
+/* Hover sobre días */
+.CalendarDay:hover {
+    background-color: #1a1a1a !important;
+    border: 2px solid var(--color-primary) !important;
+    border-radius: 50% !important;
+    color: #FAFAFA !important;
+}
+
+/* Día seleccionado */
+.CalendarDay__selected,
+.CalendarDay__selected:active,
+.CalendarDay__selected:hover {
+    background-color: var(--color-primary) !important;
+    border: 2px solid var(--color-primary) !important;
+    border-radius: 50% !important;
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+}
+
+/* Días fuera del mes actual */
+.CalendarDay__outside {
+    color: #666666 !important;
+    background-color: #1a1a1a !important;
+}
+
+.CalendarDay__outside:hover {
+    background-color: #1a1a1a !important;
+    border: 1px solid #444444 !important;
+    color: #888888 !important;
+}
+
+/* Día de hoy (sin seleccionar) */
+.CalendarDay__default:hover {
+    background-color: #1a1a1a !important;
+    border: 2px solid var(--color-primary) !important;
+    border-radius: 50% !important;
+}
+
+/* Días bloqueados/deshabilitados */
+.CalendarDay__blocked_minimum_nights,
+.CalendarDay__blocked_calendar,
+.CalendarDay__blocked_out_of_range {
+    background-color: #1a1a1a !important;
+    color: #444444 !important;
+    text-decoration: line-through !important;
+}
+
+/* Navegación de meses */
+.DayPickerNavigation {
+    background-color: var(--color-border)555 !important;
+}
+
+.DayPickerNavigation_button {
+    background-color: transparent !important;
+    border: none !important;
+    color: #FAFAFA !important;
+    font-size: 1.1rem !important;
+    padding: 8px 12px !important;
+}
+
+.DayPickerNavigation_button:hover {
+    background-color: var(--color-primary) !important;
+    color: #1a1a1a !important;
+    border-radius: 4px !important;
+}
+
+.sidebar-collapsed .sidebar-user-info {
+    display: none !important;
+}
+
+.sidebar-collapsed .sidebar-action-buttons {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+}
+
+/* Foto de perfil sin recuadro negro al minimizar */
+.sidebar-collapsed .sidebar-user-container {
+    background-color: transparent !important;
+    padding: 0 !important;
+    margin-top: 20px !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+}
+
+.sidebar-collapsed .sidebar-user-container > div {
+    background-color: transparent !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+.sidebar-collapsed #sidebar-user-photo {
+    margin: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+.sidebar-collapsed #sidebar-user-photo img {
+    margin: 0 !important;
+    display: block !important;
+}
+
+/* Botones de navegación centrados */
+.sidebar-collapsed .sidebar-menu-button {
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+}
+
+.sidebar-collapsed .sidebar-menu-button .bi {
+    margin-right: 0 !important;
+    font-size: 20px !important;
+}
+
+/* Webhook status styling (future implementation) */
+.sidebar-collapsed #webhook-status-area {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-bottom: 8px !important;
+}
+
+/* Quick Sync como icono */
+.sidebar-collapsed #quick-sync-button {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0.5rem !important;
+    margin-bottom: 8px !important;
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+}
+
+.sidebar-collapsed #quick-sync-button .bi {
+    margin-right: 0 !important;
+    font-size: 20px !important;
+}
+
+.sidebar-collapsed #quick-sync-button span {
+    display: none !important;
+}
+
+/* Logout como icono */
+.sidebar-collapsed #logout-button {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0.5rem !important;
+    margin-bottom: 8px !important;
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+}
+
+.sidebar-collapsed #logout-button .bi {
+    margin-right: 0 !important;
+    font-size: 20px !important;
+}
+
+.sidebar-collapsed #logout-button span {
+    display: none !important;
+}
+
+/* Estilos específicos para inputs de fecha - optimizados */
+input[type="date"].custom-date-input,
+input[type="date"].date-filter-input,
+input[type="date"]#filter-from-date,
+input[type="date"]#filter-to-date,
+.custom-date-input,
+.date-filter-input {
+    /* Calendario nativo del navegador */
+    color-scheme: dark !important;
+    max-width: 180px !important;
+    box-sizing: border-box !important;
+}
+
+/* Estilos específicos para filtros de fecha */
+#filter-from-date.date-filter-input,
+#filter-to-date.date-filter-input {
+    max-width: 150px !important;
+}
+
+/* Estilos para el calendario nativo del navegador */
+input[type="date"].custom-date-input::-webkit-calendar-picker-indicator,
+input[type="date"].date-filter-input::-webkit-calendar-picker-indicator,
+input[type="date"]#filter-from-date::-webkit-calendar-picker-indicator,
+input[type="date"]#filter-to-date::-webkit-calendar-picker-indicator,
+.custom-date-input::-webkit-calendar-picker-indicator,
+.date-filter-input::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(0) saturate(100%) invert(78%) sepia(55%) saturate(1650%) hue-rotate(100deg) brightness(99%) contrast(87%);
+    cursor: pointer !important;
+    opacity: 0.8;
+    width: 16px !important;
+    height: 16px !important;
+    background-size: 14px !important;
+}
+
+/* Estilos para el texto del calendario */
+input[type="date"].custom-date-input::-webkit-datetime-edit,
+input[type="date"].date-filter-input::-webkit-datetime-edit,
+input[type="date"]#filter-from-date::-webkit-datetime-edit,
+input[type="date"]#filter-to-date::-webkit-datetime-edit,
+.custom-date-input::-webkit-datetime-edit,
+.date-filter-input::-webkit-datetime-edit {
+    color: #FAFAFA !important;
+    padding: 2px !important;
+    font-size: 0.9rem !important;
+}
+
+input[type="date"].custom-date-input::-webkit-datetime-edit-text,
+input[type="date"].custom-date-input::-webkit-datetime-edit-month-field,
+input[type="date"].custom-date-input::-webkit-datetime-edit-day-field,
+input[type="date"].custom-date-input::-webkit-datetime-edit-year-field,
+input[type="date"].date-filter-input::-webkit-datetime-edit-text,
+input[type="date"].date-filter-input::-webkit-datetime-edit-month-field,
+input[type="date"].date-filter-input::-webkit-datetime-edit-day-field,
+input[type="date"].date-filter-input::-webkit-datetime-edit-year-field,
+input[type="date"]#filter-from-date::-webkit-datetime-edit-text,
+input[type="date"]#filter-from-date::-webkit-datetime-edit-month-field,
+input[type="date"]#filter-from-date::-webkit-datetime-edit-day-field,
+input[type="date"]#filter-from-date::-webkit-datetime-edit-year-field,
+input[type="date"]#filter-to-date::-webkit-datetime-edit-text,
+input[type="date"]#filter-to-date::-webkit-datetime-edit-month-field,
+input[type="date"]#filter-to-date::-webkit-datetime-edit-day-field,
+input[type="date"]#filter-to-date::-webkit-datetime-edit-year-field {
+    color: #FAFAFA !important;
+    background-color: transparent !important;
+    font-size: var(--font-xs) !important;
+}
+
+/* Native calendar has no size control - this is a browser/OS limitation */
+
+/* ===== OCULTAR SCROLLBARS DEL CALENDARIO - SOLUCION AGRESIVA ===== */
+div[id*="admin-cal"] *::-webkit-scrollbar,
+div[id*="dash-calendar"] *::-webkit-scrollbar,
+div[id*="admin-sessions-table"] *::-webkit-scrollbar,
+div[id*="user-status-table"] *::-webkit-scrollbar,
+iframe[id*="admin-cal"] *::-webkit-scrollbar,
+iframe[id*="dash-calendar"] *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+div[id*="admin-cal"] *,
+div[id*="dash-calendar"] *,
+div[id*="admin-sessions-table"] *,
+div[id*="user-status-table"] *,
+iframe[id*="admin-cal"] *,
+iframe[id*="dash-calendar"] * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* Forzar overflow hidden en elementos específicos de FullCalendar */
+[class*="fc-scroller"],
+[class*="fc-scrollgrid"] {
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+}
+
+[class*="fc-scroller"]::-webkit-scrollbar,
+[class*="fc-scrollgrid"]::-webkit-scrollbar {
+    display: none !important;
+}
+
+/* ===== CLASE SIMPLE PARA OCULTAR SCROLLBARS ===== */
+.hide-scrollbar {
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* Internet Explorer 10+ */
+}
+.hide-scrollbar::-webkit-scrollbar {
+    display: none !important; /* Safari and Chrome */
+}
+
+/* ===== ESTILOS PARA FILTROS RÁPIDOS EN EDIT SESSION ===== */
+.btn-filter-quick:hover,
+.btn-filter-clear:hover {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-filter-quick:active,
+.btn-filter-clear:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Estilo para filtro activo */
+.filter-active {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--bg-main) !important;
+    font-weight: 500 !important;
+    min-width: fit-content !important;
+    width: auto !important;
+}
+
+/* Hover para filtro activo - mantener el estilo verde */
+.filter-active:hover {
+    background-color: rgba(36, 222, 132, 0.9) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--bg-main) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Estilos específicos para botón Delete - consistente con modales */
+.btn-delete {
+    background-color: var(--bg-main) !important;
+    color: var(--color-danger) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
+    font-weight: 500 !important;
+    padding: 0.4rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    font-size: 0.9rem !important;
+}
+
+.btn-delete:hover {
+    background-color: var(--bg-main) !important; /* Mantener mismo fondo */
+    border-color: var(--color-danger) !important; /* Solo cambiar borde a rojo */
+    color: var(--color-danger) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) !important;
+}
+
+/* Delete button pressed state */
+.btn-delete:active,
+.btn-delete.active,
+.btn-delete:focus {
+    background-color: var(--color-danger) !important; /* Fondo rojo cuando presionado */
+    color: var(--color-muted) !important; /* Texto gris cuando presionado */
+    border-color: var(--color-danger) !important;
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) inset !important;
+}
+
+/* Modal cancel button - matches save changes button styling */
+#admin-delete-cancel-btn:hover {
+    background-color: var(--bg-main) !important;  /* Mantener mismo fondo */
+    color: var(--color-primary) !important;  /* Letras verdes al hover */
+    border-color: var(--color-primary) !important;  /* Borde verde al hover */
+    transform: translateY(-1px) !important;
+}
+
+#admin-delete-cancel-btn:active {
+    background-color: var(--color-primary) !important;  /* Fondo verde al clickear */
+    color: var(--bg-main) !important;  /* Letras oscuras al clickear */
+    transform: translateY(1px) !important;
+}
+
+/* Modal delete button uses .btn-delete class styling defined above */
+
+/* Toast notification animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Toast notification styles */
+#admin-alert.alert {
+    padding-right: 50px !important;
+    color: white !important;
+    font-weight: 500 !important;
+    background-color: rgba(33, 37, 41, 0.95) !important; /* Más opaco */
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Toast colors específicos con más opacidad */
+#admin-alert.alert-success {
+    background-color: rgba(25, 135, 84, 0.95) !important;
+    border-color: rgba(25, 135, 84, 0.8) !important;
+}
+
+#admin-alert.alert-danger {
+    background-color: rgba(220, 53, 69, 0.95) !important;
+    border-color: rgba(220, 53, 69, 0.8) !important;
+}
+
+#admin-alert.alert-warning {
+    background-color: rgba(255, 193, 7, 0.95) !important;
+    border-color: rgba(255, 193, 7, 0.8) !important;
+    color: #212529 !important; /* Texto oscuro para warning */
+}
+
+#admin-alert .btn-close {
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    transform: translateY(-50%) !important;
+    opacity: 0.8 !important;
+    filter: invert(1) !important; /* Hace la X blanca */
+}
+
+#admin-alert .btn-close:hover {
+    opacity: 1 !important;
+    transform: translateY(-50%) scale(1.1) !important;
+}
+
+/* JavaScript para forzar cierre del minicalendario */
+/* Se ejecuta cuando se selecciona una fecha en los inputs date */
+
+/* ===== CLASES COMUNES PARA BOTONES DE MODALES ===== */
+
+/* Botón Cancel común para todos los modales */
+.btn-modal-cancel {
+    background-color: var(--bg-main) !important;
+    color: var(--color-white) !important;
+    border: 2px solid var(--bg-main) !important;
+    border-radius: var(--radius-xl) !important;
+    font-weight: 500 !important;
+    padding: 0.4rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    font-size: 0.9rem !important;
+}
+
+.btn-modal-cancel:hover {
+    background-color: var(--bg-main) !important;
+    color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px var(--color-primary-alpha-20) !important;
+}
+
+.btn-modal-cancel:active {
+    background-color: var(--color-primary) !important;
+    color: var(--bg-main) !important;
+    transform: translateY(1px) !important;
+}
+
+/* Los botones de confirmación de delete usan la clase .btn-delete ya definida */
+
+/* Ocultar scroll en contenedores de búsqueda del modal */
+#matching-results-container::-webkit-scrollbar,
+#edit-matching-results-container::-webkit-scrollbar {
+    display: none !important;
+}
+#matching-results-container,
+#edit-matching-results-container {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+    overflow-y: auto !important;
+}
+
+/* Checkbox verde cuando está marcado (Professional Player) */
+.form-check-input:checked {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+}
+.form-check-input:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-focus) !important;
+}
+
+/* ===== CLASES COMUNES PARA MODALES ===== */
+.modal-body-standard {
+    background-color: rgba(51,51,51,1) !important;
+    padding: 2rem 1.5rem !important;
+    border: none !important;
+}
+
+.modal-footer-standard {
+    background-color: rgba(51,51,51,1) !important;
+    border-top: 2px solid var(--color-primary) !important;
+    padding: 1rem 1.5rem !important;
+    justify-content: flex-start !important;
+    display: flex !important;
+}
+
+/* ===== SOLUCIÓN SIMPLE Y CORRECTA ===== */
+/* Override directo de la regla específica que causa el problema */
+.is-focused:not(.is-open) > .Select-control {
+    border-color: var(--color-primary) !important;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 0 3px var(--color-primary-alpha-10) !important;
+}
+
+/* ===== INPUT DELETE CONFIRMATION ===== */
+/* Asegurar que el texto sea blanco cuando se escribe DELETE */
+#delete-confirmation-input {
+    color: var(--color-white) !important;
+    background-color: var(--bg-input) !important;
+}
+
+#delete-confirmation-input:focus {
+    color: var(--color-white) !important;
+    background-color: var(--bg-input) !important;
+}

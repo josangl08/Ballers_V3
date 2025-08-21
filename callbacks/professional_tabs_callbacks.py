@@ -239,7 +239,73 @@ def register_professional_tabs_callbacks(app):
     # Los callbacks existentes en ballers_callbacks.py manejan automáticamente
     # el calendario y tabla de sesiones para ambos tipos de jugadores
 
-    # === NUEVOS CALLBACKS PARA SISTEMA JERÁRQUICO DE TABS ===
+    # === CALLBACK PARA RADAR CHART DINAMICO ===
+    # Solo actualiza el radar chart cuando cambian los filtros, no toda la interfaz
+
+    @app.callback(
+        Output("position-radar-chart", "children"),
+        [
+            Input("season-selectbox", "value"),
+            Input("reference-selectbox", "value"),
+        ],
+        [
+            State("stats-player-data", "data"),
+        ],
+        prevent_initial_call=False,
+    )
+    def update_position_radar_chart(season, references, player_data):
+        """
+        Actualiza sólo el radar chart cuando cambian los filtros.
+        No recrea toda la interfaz, evitando duplicación.
+        """
+        if not player_data:
+            return html.Div()
+
+        # Valores por defecto
+        season = season or "2024-25"
+        references = references or ["league"]
+        primary_reference = references[0] if references else "league"
+
+        try:
+            from common.components.charts.radar_charts import (
+                create_position_radar_chart,
+            )
+
+            # Extraer player_id del estado (más robusto)
+            player_id = None
+            if "player_id" in player_data and isinstance(
+                player_data["player_id"], (int, str)
+            ):
+                player_id = int(player_data["player_id"])
+            elif "player" in player_data and isinstance(player_data["player"], dict):
+                if "player_id" in player_data["player"]:
+                    player_id = int(player_data["player"]["player_id"])
+            elif "player_id" in player_data and isinstance(
+                player_data["player_id"], dict
+            ):
+                nested_dict = player_data["player_id"]
+                if "player_id" in nested_dict:
+                    player_id = int(nested_dict["player_id"])
+
+            if not player_id:
+                return html.Div("Error: Could not extract player ID")
+
+            # Asegurar que references es una lista
+            if isinstance(references, str):
+                references = [references]
+            elif not isinstance(references, list):
+                references = ["league"]
+
+            print(
+                f"⚙️ Updating radar chart: Player {player_id}, Season {season}, References {references}"
+            )
+
+            # Crear radar chart con múltiples referencias
+            return create_position_radar_chart(player_id, season, references)
+
+        except Exception as e:
+            print(f"❌ Error updating radar chart: {e}")
+            return html.Div(f"Error updating radar: {str(e)}")
 
     @app.callback(
         Output("main-tab-content", "children"),
@@ -285,7 +351,7 @@ def register_professional_tabs_callbacks(app):
                     player, player_stats, player_analyzer
                 )
             elif active_tab == "position-tab":
-                return create_position_tab_content(player_stats)
+                return create_position_tab_content(player, player_stats)
             elif active_tab == "ai-analytics-tab":
                 return create_ai_analytics_content(player, player_stats)
             else:

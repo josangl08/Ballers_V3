@@ -24,6 +24,8 @@
   --color-border: #555;
   --color-danger: #dc3545;
   --color-danger-alt: #F44336;
+  --color-success: #28a745;
+  --color-warning: #ffc107;
   --color-muted: #6c757d;
 
   /* Colores de estado de sesiones */
@@ -288,7 +290,7 @@ div.calendar-container {
 .status-inactive {
     color: white !important;
     padding: 8px 12px !important;
-    border-radius: 3px !important;
+    border-radius: 10px !important;
     font-size: var(--font-sm) !important;
     min-width: 85px !important;
     text-align: center !important;
@@ -3302,6 +3304,37 @@ iframe[id*="dash-calendar"] * {
 .stats-summary-table.table-hover tbody tr:hover td {
     background-color: rgba(36, 222, 132, 0.05) !important;
     color: inherit !important;
+}
+
+/* Position Analysis Components */
+.position-config-card {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--color-primary-alpha-40) !important;
+    border-radius: var(--radius-md) !important;
+}
+
+.position-metrics-container {
+    margin-bottom: var(--spacing-xl) !important;
+}
+
+.position-radar-container {
+    background-color: var(--bg-card) !important;
+    border-radius: var(--radius-md) !important;
+    padding: var(--spacing-lg) !important;
+    margin-bottom: var(--spacing-xl) !important;
+}
+
+.position-alert-primary {
+    background-color: var(--color-primary-alpha-20) !important;
+    border: 1px solid var(--color-primary-alpha-40) !important;
+    color: var(--color-white-faded) !important;
+    border-radius: var(--radius-md) !important;
+}
+
+.position-table-container {
+    background-color: var(--bg-card) !important;
+    border-radius: var(--radius-md) !important;
+    overflow: hidden !important;
 }
 
 /* Responsive adjustments for mobile */

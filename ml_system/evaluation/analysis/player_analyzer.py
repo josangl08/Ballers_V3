@@ -326,6 +326,8 @@ class PlayerAnalyzer:
                         # Métricas avanzadas
                         "expected_goals": stat.expected_goals,
                         "expected_assists": stat.expected_assists,
+                        "xg_per_90": stat.xg_per_90,
+                        "xa_per_90": stat.xa_per_90,
                     }
                     result.append(stat_dict)
                     logger.info(
@@ -797,12 +799,12 @@ class PlayerAnalyzer:
         """
         try:
             with get_db_session() as session:
-                # Consultar todas las temporadas con datos del jugador
+                # Consultar todas las temporadas con datos del jugador (descendente: 2024-25 → 2023-24)
                 seasons = (
                     session.query(ProfessionalStats.season)
                     .filter_by(player_id=player_id)
                     .distinct()
-                    .order_by(ProfessionalStats.season)
+                    .order_by(ProfessionalStats.season.desc())
                     .all()
                 )
 
