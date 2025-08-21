@@ -242,7 +242,7 @@ class ETLController:
         """
         # Usar el nuevo FuzzyMatcher migrado del ThaiLeagueController
         from ml_system.data_processing.processors.fuzzy_matcher import FuzzyMatcher
-        
+
         fuzzy_matcher = FuzzyMatcher(self.session_factory)
         return fuzzy_matcher.find_matching_players(df, threshold)
 

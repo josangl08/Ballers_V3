@@ -3,10 +3,10 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 ## Summary of the project
 **Ballers App** is a comprehensive sports session management application for soccer training centers. This project serves a dual purpose:
-1. **Academic**: Final master's project for advanced Python studies  
+1. **Academic**: Final master's project for advanced Python studies
 2. **Commercial**: Production management tool for a soccer training center in Bangkok
 
-**Environment Strategy**: 
+**Environment Strategy**:
 - **Development**: Spain timezone, local SQLite database
 - **Production Master**: Spain timezone, Supabase PostgreSQL (for academic delivery)
 - **Production Commercial**: Thailand timezone, Supabase PostgreSQL (for Bangkok client)
@@ -179,7 +179,7 @@ The project successfully migrated from **Streamlit to Dash** for enhanced functi
 ### Current Status: Phase 11 - Final Integration & Production Prep 🚀 **IN PROGRESS** (July 2025)
 **Latest Achievement**: Complete migration finalized with role-based access control fixes
 - ✅ Webhook integration system fully implemented and active
-- ✅ Complete backend migration from Streamlit to Dash  
+- ✅ Complete backend migration from Streamlit to Dash
 - ✅ Role-based access control completely functional
 - ✅ JavaScript errors resolved and user restrictions working
 - ✅ All UI phases completed (9/9 phases)
@@ -262,7 +262,7 @@ Google Calendar ──webhook──▶ Flask Server ──▶ calendar_sync_core
 
 #### **Key Technical Achievements**:
 - **Webhook Server**: Flask-based server running on localhost:8001
-- **Real-time Processing**: Events processed immediately upon Google Calendar changes  
+- **Real-time Processing**: Events processed immediately upon Google Calendar changes
 - **Development Setup**: HTTP webhook endpoint for local development with manual testing
 - **Fallback System**: Manual sync remains available as backup
 - **UI Integration**: Real-time updates reflected in Dash interface
@@ -442,7 +442,7 @@ The **Streamlit to Dash migration** is **100% completed** with all 11 phases suc
 
 #### 🎯 **Next Steps (Phase 12.5 - Remaining 20%):**
 - **Plotly Visualizations**: Evolution charts, radar plots, comparative analysis
-- **Data Normalization**: Position and age-based statistical adjustments  
+- **Data Normalization**: Position and age-based statistical adjustments
 - **ML Preparation**: Feature engineering and CRISP-DM methodology foundation
 
 ## CSS Architecture Optimization & Cleanup - **COMPLETED** (Agosto 2025)
@@ -474,7 +474,7 @@ Successfully migrated all hardcoded colors and styles to a centralized CSS varia
 ### **Files Enhanced:**
 - `/assets/style.css` - Central CSS variables system and legacy cleanup
 - `/callbacks/settings_callbacks.py` - 22 instances migrated
-- `/pages/ballers_dash.py` - 25 instances migrated  
+- `/pages/ballers_dash.py` - 25 instances migrated
 - `/pages/settings_dash.py` - 30 instances migrated
 - `/pages/administration_dash.py` - 11 instances migrated
 - `/callbacks/administration_callbacks.py` - 5 instances migrated

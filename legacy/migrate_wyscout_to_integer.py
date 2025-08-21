@@ -19,16 +19,16 @@ logger = logging.getLogger(__name__)
 
 def migrate_wyscout_ids():
     """Convierte wyscout_ids de string a integer en la base de datos."""
-    
+
     with get_db_session() as session:
         # 1. Migrar tabla players
         logger.info("Migrando wyscout_ids en tabla players...")
-        
+
         players = session.query(Player).filter(
             Player.wyscout_id.isnot(None),
             Player.wyscout_id != ""
         ).all()
-        
+
         for player in players:
             try:
                 if isinstance(player.wyscout_id, str):
@@ -43,12 +43,12 @@ def migrate_wyscout_ids():
             except ValueError as e:
                 logger.error(f"Error convirtiendo wyscout_id '{player.wyscout_id}': {e}")
                 player.wyscout_id = None
-        
+
         # 2. Migrar tabla professional_stats
         logger.info("Migrando wyscout_ids en tabla professional_stats...")
-        
+
         stats = session.query(ProfessionalStats).all()
-        
+
         for stat in stats:
             try:
                 if isinstance(stat.wyscout_id, str):
@@ -60,7 +60,7 @@ def migrate_wyscout_ids():
                 # En professional_stats es obligatorio, eliminar registro
                 logger.warning(f"Eliminando stat {stat.stat_id} por wyscout_id inválido")
                 session.delete(stat)
-        
+
         session.commit()
         logger.info("✅ Migración completada")
 

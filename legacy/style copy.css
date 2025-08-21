@@ -6,7 +6,7 @@
   /* Color corporativo principal */
   --color-primary: #24DE84;
   --color-primary-rgb: 36, 222, 132;
-  
+
   /* Variaciones del color primario para transparencias */
   --color-primary-alpha-10: rgba(36, 222, 132, 0.1);
   --color-primary-alpha-15: rgba(36, 222, 132, 0.15);
@@ -16,7 +16,7 @@
   --color-primary-alpha-40: rgba(36, 222, 132, 0.4);
   --color-primary-alpha-50: rgba(36, 222, 132, 0.5);
   --color-primary-alpha-80: rgba(36, 222, 132, 0.8);
-  
+
   /* Colores del sistema */
   --color-white: #FFFFFF;
   --color-white-faded: #fafafa;
@@ -25,19 +25,19 @@
   --color-danger: #dc3545;
   --color-danger-alt: #F44336;
   --color-muted: #6c757d;
-  
+
   /* Colores de estado de sesiones */
   --status-scheduled-bg: rgba(30, 136, 229, 0.4);
   --status-completed-bg: rgba(76, 175, 80, 0.4);
   --status-canceled-bg: rgba(244, 67, 54, 0.4);
-  
+
   /* ===== BACKGROUNDS ===== */
   --bg-main: #1D1B1A;
   --bg-card: #333333;
   --bg-input: #3b3b3a;
   --bg-sidebar: #2b2b2b;
   --bg-hover: #1a1a1a;
-  
+
   /* ===== SPACING ===== */
   --spacing-xs: 0.25rem;  /* 4px */
   --spacing-sm: 0.5rem;   /* 8px */
@@ -46,24 +46,24 @@
   --spacing-xl: 1.2rem;   /* 19.2px */
   --spacing-xxl: 1.5rem;  /* 24px */
   --spacing-xxxl: 2rem;   /* 32px */
-  
+
   /* ===== BORDER RADIUS ===== */
   --radius-sm: 3px;
   --radius-md: 5px;
   --radius-lg: 10px;
   --radius-xl: 20px;
-  
+
   /* ===== TRANSITIONS ===== */
   --transition-fast: all 0.15s ease;
   --transition-normal: all 0.3s ease;
   --transition-slow: all 0.5s ease;
-  
+
   /* ===== SHADOWS ===== */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 6px 12px rgba(36, 222, 132, 0.3);
   --shadow-focus: 0 0 0 0.2rem rgba(36, 222, 132, 0.25);
-  
+
   /* ===== FONT SIZES ===== */
   --font-xs: 0.7rem;
   --font-sm: 0.8rem;
@@ -71,7 +71,7 @@
   --font-base: 0.9rem;
   --font-lg: 1rem;
   --font-xl: 1.2rem;
-  
+
   /* ===== HEIGHTS ===== */
   --input-height: 38px;
   --button-height: 38px;

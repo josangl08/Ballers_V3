@@ -11,7 +11,7 @@ Este directorio contiene los controllers que han sido completamente migrados a l
 - **Estado**: Obsoleto - usar PDI Calculator
 
 ### 📁 **thai_league_controller.py** → `ml_system/data_acquisition/extractors/thai_league_extractor.py`
-- **Migración**: 100% Completada  
+- **Migración**: 100% Completada
 - **Funcionalidad**: Extracción datos Thai League, matching fuzzy, importación stats
 - **Nuevas características**: Cache inteligente, deduplicación, validación mejorada
 - **Estado**: Obsoleto - usar ThaiLeagueExtractor
@@ -37,9 +37,9 @@ Este directorio contiene los controllers que han sido completamente migrados a l
 ## 📂 **Directorios ETL**
 
 ### **etl/** → `ml_system/data_acquisition/extractors/`
-- **Archivos migrados**: 
+- **Archivos migrados**:
   - `loader.py` → `ThaiLeagueLoader`
-  - `extractor.py` → `ThaiLeagueExtractor` 
+  - `extractor.py` → `ThaiLeagueExtractor`
   - `transformer.py` → `ThaiLeagueTransformer`
   - `validator.py` → `DataQualityValidator`
   - `analyzer.py` → `StatsAnalyzer`
@@ -48,7 +48,7 @@ Este directorio contiene los controllers que han sido completamente migrados a l
 ### **data_quality/** → `ml_system/data_processing/processors/`
 - **Archivos migrados**:
   - `cleaners.py` → `cleaners.py`
-  - `normalizers.py` → `normalizers.py` 
+  - `normalizers.py` → `normalizers.py`
   - `validators.py` → `validators.py`
 - **Estado**: Totalmente duplicado - usar versiones en ml_system
 
@@ -59,7 +59,7 @@ La nueva arquitectura sigue la metodología **CRISP-DM** y está organizada cien
 ```
 ml_system/
 ├── data_acquisition/extractors/     # Extracción datos (ETL Extract)
-├── data_processing/processors/      # Procesamiento (ETL Transform)  
+├── data_processing/processors/      # Procesamiento (ETL Transform)
 ├── evaluation/
 │   ├── analysis/                   # PlayerAnalyzer, Feature Engineering
 │   └── metrics/                    # PDI Calculator, ML Metrics

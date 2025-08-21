@@ -54,7 +54,7 @@
 - ✅ **Favicon configurado** - Copiado a `/assets/favicon.ico`
 
 ## ✅ FASE 3: PLAYER CARDS OPTIMIZATION - COMPLETADA
-**Fecha**: Julio 2025 
+**Fecha**: Julio 2025
 **Estado**: ✅ TERMINADA
 
 ### Logros alcanzados:
@@ -436,7 +436,7 @@ Google Calendar ──webhook──▶ Flask Server ──▶ calendar_sync_core
 
 ### ✅ Funcionalidades por rol verificadas:
 - ✅ **Admin**: Acceso completo a todas las sesiones y funcionalidades
-- ✅ **Coach**: 
+- ✅ **Coach**:
   - Solo ve sus propias sesiones en calendario y tabla
   - Formulario create session con coach pre-seleccionado y no editable
   - Solo puede editar sus propias sesiones
@@ -499,7 +499,7 @@ git log --oneline -5  # Ver últimos commits
 
 ### **MIGRACIÓN STREAMLIT → DASH (COMPLETADA 100%)**
 - **Fase 1**: ✅ Infrastructure Cleanup (100%)
-- **Fase 2**: ✅ Sidebar Menu Migration (100%) 
+- **Fase 2**: ✅ Sidebar Menu Migration (100%)
 - **Fase 3**: ✅ Player Cards Optimization (100%)
 - **Fase 4**: ✅ Calendar Visual Improvements & Data Management (100%)
 - **Fase 5**: ✅ Player Profile Details (100%)
@@ -524,7 +524,7 @@ git log --oneline -5  # Ver últimos commits
 ### **NUEVA FUNCIONALIDAD: MACHINE LEARNING ANALYTICS**
 - **Fase 13.1**: ✅ Análisis Exploratorio de Datos (EDA) Liga Tailandesa (COMPLETADA)
 - **Fase 13.2**: ✅ Modelos Baseline con Metodología CRISP-DM (COMPLETADA)
-- **Fase 13.3**: ✅ Pipeline de Evaluación Académica (COMPLETADA) 
+- **Fase 13.3**: ✅ Pipeline de Evaluación Académica (COMPLETADA)
 - **Fase 13.4**: 🔄 Arquitectura Híbrida con Shared Encoder (EN DESARROLLO)
 - **Progreso funcionalidad**: **85% - BASELINE ACADÉMICO ESTABLECIDO** ✅
 - **Progreso proyecto general**: **99.5% COMPLETADO** ✅
@@ -713,9 +713,9 @@ Sistema eficiente basado en **matching inequívoco por Wyscout ID** que elimina 
 def process_historical_seasons():
     seasons = ["2020-21", "2021-22", "2022-23", "2023-24", "2024-25"]
     registered_wyscout_ids = get_professional_players_wyscout_ids()
-    
+
     with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = [executor.submit(process_season, season, registered_wyscout_ids) 
+        futures = [executor.submit(process_season, season, registered_wyscout_ids)
                   for season in seasons]
         results = [future.result() for future in futures]
 ```
@@ -733,7 +733,7 @@ def check_season_updates():
     current_season = "2024-25"
     remote_hash = get_github_file_hash(current_season)
     local_hash = get_cached_file_hash(current_season)
-    
+
     if remote_hash != local_hash:
         updated_data = download_and_process_delta(current_season)
         update_professional_stats(updated_data)
@@ -789,7 +789,7 @@ GitHub Repository ──API──▶ Change Detector ──▶ Selective Process
 
 ### ⏱️ **CRONOGRAMA DE IMPLEMENTACIÓN**
 - **Día 1-2**: Sistema de carga inicial histórica
-- **Día 3-4**: Pipeline de actualizaciones incrementales  
+- **Día 3-4**: Pipeline de actualizaciones incrementales
 - **Día 5**: Optimizaciones de performance y scheduler
 - **Día 6**: Testing integral y validación
 - **Total**: 6 días vs 15+ días del enfoque manual
@@ -802,7 +802,7 @@ GitHub Repository ──API──▶ Change Detector ──▶ Selective Process
 5. **Integración con UI** de estadísticas profesionales existente
 
 ---
-**Estado**: Plan aprobado y listo para implementación  
+**Estado**: Plan aprobado y listo para implementación
 **Próxima acción**: Comenzar con carga inicial de temporadas históricas
 
 ## ✅ SISTEMA SSE (SERVER-SENT EVENTS) - COMPLETADO
@@ -900,11 +900,11 @@ Google Calendar Webhook → Flask Server (port 8001) → SSE Stream → JavaScri
 # Estadísticas implementadas en Evolution Chart:
 stats_config = [
     {"key": "goals", "name": "Goles", "axis": "y", "color": "#FF6B6B"},
-    {"key": "assists", "name": "Asistencias", "axis": "y", "color": "#4ECDC4"}, 
+    {"key": "assists", "name": "Asistencias", "axis": "y", "color": "#4ECDC4"},
     {"key": "matches_played", "name": "Partidos Jugados", "axis": "y2", "color": "#45B7D1"},
     {"key": "minutes_played", "name": "Minutos Jugados", "axis": "y3", "color": "#96CEB4"},
     {"key": "expected_goals", "name": "xG", "axis": "y", "color": "#FECA57"},
-    {"key": "duels_won_pct", "name": "% Duelos Ganados", "axis": "y2", "color": "#FF9FF3"}, 
+    {"key": "duels_won_pct", "name": "% Duelos Ganados", "axis": "y2", "color": "#FF9FF3"},
     {"key": "pass_accuracy_pct", "name": "% Pases Acertados", "axis": "y2", "color": "#54A0FF"}
 ]
 ```
@@ -1055,7 +1055,7 @@ python -c "from controllers.ml.ml_metrics_controller import MLMetricsController;
 python controllers/ml/feature_engineer.py --validate
 # Output esperado: "✅ 155 columnas → 45 features válidos por posición"
 
-python controllers/ml/position_normalizer.py --test  
+python controllers/ml/position_normalizer.py --test
 # Output esperado: "✅ Normalización por 8 posiciones operativa"
 ```
 
@@ -1134,7 +1134,7 @@ tests/
 
 data/thai_league_cache/            # ✅ NUEVO - Datos CSV
 ├── thai_league_2020-21.csv       # ✅ 465 registros
-├── thai_league_2021-22.csv       # ✅ 458 registros  
+├── thai_league_2021-22.csv       # ✅ 458 registros
 ├── thai_league_2022-23.csv       # ✅ 473 registros
 ├── thai_league_2023-24.csv       # ✅ 470 registros
 └── thai_league_2024-25.csv       # ✅ 493 registros
@@ -1202,7 +1202,7 @@ Sistema de Machine Learning desarrollado con rigor académico para el proyecto f
 #### **ARQUITECTURA ML IMPLEMENTADA:**
 
 ##### **Dataset Académico:**
-- **Fuente**: Liga Tailandesa CSV (2020-25, 5 temporadas)  
+- **Fuente**: Liga Tailandesa CSV (2020-25, 5 temporadas)
 - **Tamaño**: 2,359 registros × 127 columnas
 - **Calidad**: 68.4% alta calidad, 22.7% media, 8.9% baja
 - **Distribución**: Equilibrada por temporadas (~470 registros/temporada)
@@ -1210,7 +1210,7 @@ Sistema de Machine Learning desarrollado con rigor académico para el proyecto f
 ##### **Metodología CRISP-DM Implementada:**
 1. **Business Understanding**: ✅ PDI como métrica unificada de desarrollo
 2. **Data Understanding**: ✅ EDA completo con análisis estadístico
-3. **Data Preparation**: ✅ Sistema de calidad inteligente y feature engineering  
+3. **Data Preparation**: ✅ Sistema de calidad inteligente y feature engineering
 4. **Modeling**: ✅ 4 modelos baseline evaluados
 5. **Evaluation**: ✅ Pipeline académico con tests de significancia
 6. **Deployment**: 🔄 Integración con dashboard (próximo)
@@ -1219,20 +1219,20 @@ Sistema de Machine Learning desarrollado con rigor académico para el proyecto f
 
 ### ✅ **FASE 13.1: ANÁLISIS EXPLORATORIO DE DATOS (EDA)** - COMPLETADA
 **Estado**: ✅ **TERMINADA**
-**Archivos creados**: 
+**Archivos creados**:
 - `run_eda_baseline_analysis.py` - Script principal académico
 - `notebooks/01_EDA_Liga_Tailandesa.ipynb` - Análisis exploratorio Jupyter
 - Sistema de validación de calidad inteligente implementado
 
 **Logros técnicos**:
 - ✅ **Carga automática** de 5 CSV Thai League (2020-2025)
-- ✅ **Sistema de calidad** con filtros duros + score de confianza  
+- ✅ **Sistema de calidad** con filtros duros + score de confianza
 - ✅ **EDA académico** con distribuciones, completitud, estadísticas
 - ✅ **Visualizaciones** por posiciones usando Plotly
 - ✅ **1,979 registros** válidos para modelado (83.9% del total)
 
 ### ✅ **FASE 13.2: MODELOS BASELINE CON METODOLOGÍA CRISP-DM** - COMPLETADA
-**Estado**: ✅ **TERMINADA** 
+**Estado**: ✅ **TERMINADA**
 **Archivos creados**:
 - `controllers/ml/baseline_model.py` - 4 modelos baseline implementados
 - `controllers/ml/feature_engineer.py` - Sistema de features por tiers
@@ -1240,7 +1240,7 @@ Sistema de Machine Learning desarrollado con rigor académico para el proyecto f
 
 **Arquitectura de modelos**:
 - ✅ **LinearBaselineModel**: Regresión lineal con regularización
-- ✅ **RidgeBaselineModel**: Ridge con α configurable (1.0, 10.0) 
+- ✅ **RidgeBaselineModel**: Ridge con α configurable (1.0, 10.0)
 - ✅ **EnsembleBaselineModel**: Ensemble (Linear + Ridge + RandomForest)
 - ✅ **Feature Engineering**: 41 features NO circulares validados
 
@@ -1249,7 +1249,7 @@ Sistema de Machine Learning desarrollado con rigor académico para el proyecto f
 - ✅ **Proxies válidos**: shot_efficiency, pass_quality_score
 - ✅ **Features independientes**: Técnicos, físicos, tácticos únicamente
 
-### ✅ **FASE 13.3: PIPELINE DE EVALUACIÓN ACADÉMICA** - COMPLETADA  
+### ✅ **FASE 13.3: PIPELINE DE EVALUACIÓN ACADÉMICA** - COMPLETADA
 **Estado**: ✅ **TERMINADA**
 **Archivos creados**:
 - `controllers/ml/evaluation_pipeline.py` - Framework de evaluación completo
@@ -1260,7 +1260,7 @@ Sistema de Machine Learning desarrollado con rigor académico para el proyecto f
 ```
 🏆 RESULTADOS BASELINE (SIN VARIABLES CIRCULARES):
 🥇 Ensemble Baseline: MAE = 0.774 ± 0.047, R² = 0.950 ± 0.004
-🥈 Linear Baseline:   MAE = 0.917 ± 0.065, R² = 0.929 ± 0.008  
+🥈 Linear Baseline:   MAE = 0.917 ± 0.065, R² = 0.929 ± 0.008
 🥉 Ridge Baseline:    MAE = 0.919 ± 0.067, R² = 0.929 ± 0.008
 4.  Ridge Strong:     MAE = 0.978 ± 0.071, R² = 0.922 ± 0.009
 
@@ -1287,7 +1287,7 @@ Sistema de Machine Learning desarrollado con rigor académico para el proyecto f
 
 #### **CONTRIBUCIÓN ACADÉMICA LOGRADA:**
 - **Metodología CRISP-DM**: Implementación completa y rigurosa
-- **Framework reproducible**: Código academico validado sin circularidad  
+- **Framework reproducible**: Código academico validado sin circularidad
 - **Baseline sólido**: MAE 0.774 con R² 0.950 usando features independientes
 - **Análisis estadístico**: Tests de significancia e intervalos de confianza
 - **Documentación completa**: Listo para memoria de máster
@@ -1295,7 +1295,7 @@ Sistema de Machine Learning desarrollado con rigor académico para el proyecto f
 #### **VALOR DIFERENCIAL:**
 Este sistema ML convierte la app Ballers en una plataforma híbrida única que combina:
 - **Centro de entrenamiento**: Gestión de sesiones locales
-- **Analytics profesional**: Estadísticas de liga tailandesa  
+- **Analytics profesional**: Estadísticas de liga tailandesa
 - **Machine Learning**: Predicción de desarrollo de jugadores con rigor científico
 
 ---
