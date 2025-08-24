@@ -1840,6 +1840,34 @@ def create_position_analysis_components_simplified(
         # 3. Crear tabla detallada y insights (próximos componentes)
         # Estos se agregarán al contenido dinámico del callback
 
+        # Obtener datos del jugador para IEP reutilización
+        from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
+
+        with get_db_session() as session:
+            from models.player_model import Player
+
+            player_obj = (
+                session.query(Player).filter(Player.player_id == player_id).first()
+            )
+            if player_obj:
+                # Obtener player stats usando PlayerAnalyzer
+                player_analyzer = PlayerAnalyzer()
+                all_stats = player_analyzer.get_player_stats(player_id)
+                player_stats_list = all_stats if all_stats else []
+
+                # Reutilizar función IEP de AI Analytics
+                try:
+                    from pages.ballers_dash import create_iep_clustering_content
+
+                    iep_section = create_iep_clustering_content(
+                        player_obj, player_stats_list
+                    )
+                except Exception as e:
+                    logger.warning(f"No se pudo cargar IEP clustering: {e}")
+                    iep_section = None
+            else:
+                iep_section = None
+
         return html.Div(
             [
                 # Cards de métricas (última temporada)
@@ -1871,6 +1899,8 @@ def create_position_analysis_components_simplified(
                         "border-color": "rgba(36, 222, 132, 0.3)",
                     },
                 ),
+                # IEP Clustering Analysis (REUTILIZADO de AI Analytics)
+                iep_section if iep_section else html.Div(),
                 # Panel de insights y recomendaciones (moved before detailed table)
                 create_position_insights_panel(player_id, season),
                 # Tabla de comparación detallada (moved after insights)

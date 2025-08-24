@@ -78,6 +78,7 @@ class IEPCalculator:
 
         # Configuración clustering por posición
         self.position_cluster_config = {
+            # Posiciones específicas
             "GK": {"n_clusters": 3, "features_weight": "defensive"},
             "CB": {"n_clusters": 3, "features_weight": "defensive"},
             "LB": {"n_clusters": 3, "features_weight": "balanced"},
@@ -88,12 +89,21 @@ class IEPCalculator:
             "LW": {"n_clusters": 3, "features_weight": "offensive"},
             "RW": {"n_clusters": 3, "features_weight": "offensive"},
             "CF": {"n_clusters": 4, "features_weight": "offensive"},
+            # Grupos de posiciones (para análisis por grupos)
+            "GK": {"n_clusters": 3, "features_weight": "defensive"},
+            "DEF": {"n_clusters": 4, "features_weight": "defensive"},
+            "MID": {"n_clusters": 4, "features_weight": "balanced"},
+            "FWD": {"n_clusters": 4, "features_weight": "offensive"},
         }
 
         logger.info("🧮 IEPCalculator inicializado - Sistema no supervisado")
 
     def calculate_position_clusters(
-        self, position: str, season: str = "2024-25", min_matches: int = 5
+        self,
+        position: str,
+        season: str = "2024-25",
+        min_matches: int = 5,
+        current_player_id: int = None,
     ) -> Dict:
         """
         Realiza clustering K-means para una posición específica.
@@ -102,15 +112,22 @@ class IEPCalculator:
             position: Posición a analizar (ej: 'CF', 'CMF')
             season: Temporada para análisis
             min_matches: Mínimo de partidos para incluir jugador
+            current_player_id: ID del jugador actual (siempre incluido independiente del min_matches)
 
         Returns:
             Dict con resultados de clustering y análisis
         """
         try:
             logger.info(f"🎯 Iniciando clustering IEP para {position} en {season}")
+            if current_player_id:
+                logger.info(
+                    f"🎯 Jugador actual incluido forzosamente: {current_player_id}"
+                )
 
             # Obtener datos de liga para la posición
-            position_data = self._get_position_data(position, season, min_matches)
+            position_data = self._get_position_data(
+                position, season, min_matches, current_player_id
+            )
 
             if not position_data or len(position_data) < 10:
                 logger.warning(
@@ -138,13 +155,12 @@ class IEPCalculator:
             # Normalizar features
             normalized_features = self.scaler.fit_transform(feature_matrix)
 
-            # Configurar clustering por posición
+            # Configurar clustering por posición (default a 4 clusters para mejor granularidad)
             config = self.position_cluster_config.get(
-                position, {"n_clusters": 3, "features_weight": "balanced"}
+                position, {"n_clusters": 4, "features_weight": "balanced"}
             )
-            n_clusters = min(
-                config["n_clusters"], len(position_data) // 3
-            )  # Ajustar por datos disponibles
+            # Ajustar clusters por datos disponibles (mínimo 2 jugadores por cluster)
+            n_clusters = min(config["n_clusters"], max(2, len(position_data) // 2))
 
             # Aplicar K-means clustering
             self.kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
@@ -207,7 +223,7 @@ class IEPCalculator:
                     "team": info["team"],
                     "cluster_id": int(cluster_labels[i]),
                     "cluster_label": self._get_cluster_label(
-                        cluster_labels[i], n_clusters
+                        cluster_labels[i], n_clusters, iep_scores, cluster_labels
                     ),
                     "iep_score": round(iep_scores[i], 1),
                     "pca_components": [
@@ -364,9 +380,206 @@ class IEPCalculator:
     # ============================================================================
 
     def _get_position_data(
-        self, position: str, season: str, min_matches: int
+        self,
+        position: str,
+        season: str,
+        min_matches: int,
+        current_player_id: int = None,
     ) -> List[Dict]:
-        """Obtiene datos de liga para una posición específica."""
+        """
+        Obtiene datos de liga para una posición específica.
+
+        MODIFICADO: Usa CSV (493 jugadores) en lugar de BD (5 jugadores)
+        para clustering con datos reales de liga.
+        """
+        try:
+            # CAMBIO: Usar CSV en lugar de BD para datos completos
+            from controllers.csv_stats_controller import CSVStatsController
+
+            # 🎯 DEBUG: Logging detallado de filtros
+            logger.info(f"🔍 IEP _get_position_data INICIADO:")
+            logger.info(f"   - position: '{position}'")
+            logger.info(f"   - season: '{season}'")
+            logger.info(f"   - min_matches: {min_matches}")
+
+            csv_controller = CSVStatsController()
+            df = csv_controller._load_season_data(season)
+
+            if df is None:
+                logger.warning(f"No se pudo cargar datos CSV para temporada {season}")
+                return []
+
+            # 🔍 DEBUG: Total jugadores en CSV
+            logger.info(f"🔍 Total jugadores en CSV {season}: {len(df)}")
+
+            # Filtrar por posición o grupo (mapear columnas CSV → BD)
+            position_df = self._filter_by_position_or_group(df, position)
+
+            # 🔍 DEBUG: Después de filtro posición
+            logger.info(
+                f"🔍 Jugadores después de filtro posición '{position}': {len(position_df)}"
+            )
+
+            # Filtrar por mínimo de partidos (usar "Matches played" del CSV)
+            if "Matches played" in position_df.columns:
+                position_df_filtered = position_df[
+                    position_df["Matches played"] >= min_matches
+                ]
+
+                # 🔍 DEBUG: Después de filtro mínimo partidos
+                logger.info(
+                    f"🔍 Jugadores después de filtro ≥{min_matches} partidos: {len(position_df_filtered)}"
+                )
+
+                # Si hay current_player_id, verificar si necesita ser agregado manualmente
+                if current_player_id:
+                    # Buscar el jugador actual en la BD para obtener su wyscout_id
+                    from controllers.db import get_db_session
+                    from models.player_model import Player
+
+                    with get_db_session() as session:
+                        current_player = (
+                            session.query(Player)
+                            .filter(Player.player_id == current_player_id)
+                            .first()
+                        )
+                        if current_player and current_player.wyscout_id:
+                            current_wyscout_id = str(current_player.wyscout_id)
+                            logger.info(
+                                f"🔍 Buscando jugador actual en CSV - Wyscout ID: {current_wyscout_id}"
+                            )
+
+                            # Verificar si el jugador actual ya está en los datos filtrados
+                            current_in_filtered = (
+                                position_df_filtered["Wyscout id"]
+                                .astype(str)
+                                .str.contains(current_wyscout_id, na=False)
+                                .any()
+                            )
+
+                            if not current_in_filtered:
+                                # Verificar si está en los datos de la posición (antes del filtro de partidos)
+                                current_in_position = (
+                                    position_df["Wyscout id"]
+                                    .astype(str)
+                                    .str.contains(current_wyscout_id, na=False)
+                                    .any()
+                                )
+
+                                if current_in_position:
+                                    # Obtener los datos del jugador actual
+                                    current_player_row = position_df[
+                                        position_df["Wyscout id"]
+                                        .astype(str)
+                                        .str.contains(current_wyscout_id, na=False)
+                                    ]
+                                    if not current_player_row.empty:
+                                        matches_played = current_player_row.iloc[0].get(
+                                            "Matches played", 0
+                                        )
+                                        logger.info(
+                                            f"🎯 AGREGANDO jugador actual forzosamente: {current_player.user.name} (Partidos: {matches_played}, Min requerido: {min_matches})"
+                                        )
+
+                                        # Agregar al jugador actual a los datos filtrados
+                                        position_df = pd.concat(
+                                            [position_df_filtered, current_player_row],
+                                            ignore_index=True,
+                                        )
+                                    else:
+                                        logger.warning(
+                                            f"❌ No se pudo obtener datos del jugador actual del CSV"
+                                        )
+                                        position_df = position_df_filtered
+                                else:
+                                    logger.warning(
+                                        f"❌ Jugador actual no encontrado en posición {position}"
+                                    )
+                                    position_df = position_df_filtered
+                            else:
+                                logger.info(
+                                    f"✅ Jugador actual ya incluido en filtro de partidos"
+                                )
+                                position_df = position_df_filtered
+                        else:
+                            logger.warning(
+                                f"❌ No se pudo obtener wyscout_id del jugador actual"
+                            )
+                            position_df = position_df_filtered
+                else:
+                    position_df = position_df_filtered
+
+            else:
+                position_df = position_df
+
+            if len(position_df) == 0:
+                logger.warning(
+                    f"❌ No hay jugadores {position} después de todos los filtros en {season}"
+                )
+                return []
+
+            # 🔍 DEBUG: Mostrar algunos jugadores que quedaron
+            logger.info(f"🔍 JUGADORES QUE PASARON TODOS LOS FILTROS (primeros 5):")
+            for i, (idx, row) in enumerate(position_df.head().iterrows()):
+                player_name = row.get("Player", "NO_NAME")
+                matches = row.get("Matches played", 0)
+                wyscout_id = row.get("Wyscout id", "NO_ID")
+                logger.info(
+                    f"   [{i}] {player_name} (Matches: {matches}, Wyscout: {wyscout_id})"
+                )
+
+            # Convertir a formato para análisis (mapear columnas CSV → formato esperado)
+            position_data = []
+
+            for idx, row in position_df.iterrows():
+                # Calcular clearances usando columnas disponibles en CSV
+                clearances_estimate = row.get("Aerial duels per 90", 0) * row.get(
+                    "Aerial duels won, %", 0
+                ) / 100 + row.get("Interceptions per 90", 0)
+
+                player_dict = {
+                    "player_name": f"{row.get('Player', 'Unknown')} ({row.get('Team', 'N/A')})",
+                    "team": row.get("Team", "Unknown"),
+                    "goals_per_90": row.get("Goals per 90", 0) or 0,
+                    "assists_per_90": row.get("Assists per 90", 0) or 0,
+                    "pass_accuracy_pct": row.get("Pass accuracy, %", 0) or 0,
+                    "duels_won_pct": row.get("Duels won, %", 0) or 0,
+                    "shots_per_90": row.get("Shots per 90", 0) or 0,
+                    "interceptions_per_90": row.get("Interceptions per 90", 0) or 0,
+                    "tackles_per_90": row.get("Sliding tackles per 90", 0) or 0,
+                    "clearances_per_90": clearances_estimate,
+                    "minutes_played": row.get("Minutes played", 0) or 0,
+                    "matches_played": row.get("Matches played", 0) or 0,
+                }
+                position_data.append(player_dict)
+
+            logger.info(
+                f"✅ CSV: Datos obtenidos para {position} en {season}: {len(position_data)} jugadores (vs BD: ~0-5)"
+            )
+
+            return position_data
+
+        except Exception as e:
+            logger.error(f"❌ Error obteniendo datos CSV de posición: {e}")
+            # Fallback a método original BD si CSV falla
+            logger.info("🔄 Fallback: Intentando datos BD como respaldo...")
+            return self._get_position_data_bd_fallback(
+                position, season, min_matches, current_player_id
+            )
+
+    def _get_position_data_bd_fallback(
+        self,
+        position: str,
+        season: str,
+        min_matches: int,
+        current_player_id: int = None,
+    ) -> List[Dict]:
+        """
+        Fallback al método original BD si CSV falla.
+
+        Nota: current_player_id está disponible pero no implementado aquí
+        porque el fallback BD se usa raramente y tiene datos limitados.
+        """
         try:
             with self.session_factory() as session:
                 # Query jugadores de la posición con filtros de calidad
@@ -406,12 +619,12 @@ class IEPCalculator:
                     position_data.append(player_dict)
 
                 logger.info(
-                    f"📊 Datos obtenidos para {position}: {len(position_data)} jugadores"
+                    f"📊 BD Fallback: Datos obtenidos para {position}: {len(position_data)} jugadores"
                 )
                 return position_data
 
         except Exception as e:
-            logger.error(f"Error obteniendo datos posición {position}: {e}")
+            logger.error(f"Error en BD fallback: {e}")
             return []
 
     def _prepare_features_matrix(
@@ -563,16 +776,80 @@ class IEPCalculator:
             logger.error(f"Error analizando clusters: {e}")
             return {}
 
-    def _get_cluster_label(self, cluster_id: int, n_clusters: int) -> str:
-        """Obtiene etiqueta descriptiva para cluster."""
-        if n_clusters == 3:
-            labels = ["Elite Tier", "Average Tier", "Development Tier"]
-        elif n_clusters == 4:
-            labels = ["Elite Tier", "Strong Tier", "Average Tier", "Development Tier"]
-        else:
-            return f"Cluster {cluster_id + 1}"
+    def _get_cluster_label(
+        self,
+        cluster_id: int,
+        n_clusters: int,
+        iep_scores: List[float] = None,
+        cluster_labels: List[int] = None,
+    ) -> str:
+        """
+        Obtiene etiqueta descriptiva para cluster basada en rendimiento real.
 
-        return labels[min(cluster_id, len(labels) - 1)]
+        Args:
+            cluster_id: ID del cluster
+            n_clusters: Número total de clusters
+            iep_scores: Puntuaciones IEP de todos los jugadores (opcional)
+            cluster_labels: Labels de cluster de todos los jugadores (opcional)
+
+        Returns:
+            Etiqueta descriptiva del cluster
+        """
+        # Si no tenemos datos de IEP, usar asignación simple (fallback)
+        if iep_scores is None or cluster_labels is None:
+            if n_clusters == 3:
+                labels = ["Elite Tier", "Average Tier", "Development Tier"]
+            elif n_clusters == 4:
+                labels = [
+                    "Elite Tier",
+                    "Strong Tier",
+                    "Average Tier",
+                    "Development Tier",
+                ]
+            else:
+                return f"Cluster {cluster_id + 1}"
+            return labels[min(cluster_id, len(labels) - 1)]
+
+        # Calcular IEP promedio por cluster para asignación coherente
+        import numpy as np
+
+        cluster_averages = {}
+        for i in range(n_clusters):
+            cluster_mask = [label == i for label in cluster_labels]
+            cluster_iep_scores = [
+                iep_scores[j]
+                for j, is_in_cluster in enumerate(cluster_mask)
+                if is_in_cluster
+            ]
+            if cluster_iep_scores:
+                cluster_averages[i] = np.mean(cluster_iep_scores)
+            else:
+                cluster_averages[i] = 0
+
+        # Ordenar clusters por rendimiento (mejor → peor)
+        sorted_clusters = sorted(
+            cluster_averages.items(), key=lambda x: x[1], reverse=True
+        )
+
+        # Determinar nombres de tiers según número de clusters
+        if n_clusters == 3:
+            tier_names = ["Elite Tier", "Average Tier", "Development Tier"]
+        elif n_clusters == 4:
+            tier_names = [
+                "Elite Tier",
+                "Strong Tier",
+                "Average Tier",
+                "Development Tier",
+            ]
+        else:
+            tier_names = [f"Tier {i+1}" for i in range(n_clusters)]
+
+        # Encontrar ranking del cluster actual
+        cluster_rank = next(
+            i for i, (cid, _) in enumerate(sorted_clusters) if cid == cluster_id
+        )
+
+        return tier_names[min(cluster_rank, len(tier_names) - 1)]
 
     def _get_cluster_characteristics(
         self, cluster_stats: Dict, position: str
@@ -630,6 +907,53 @@ class IEPCalculator:
             return round(percentile, 1)
         except:
             return 50.0  # Fallback a mediana
+
+    def _filter_by_position_or_group(self, df, position_or_group):
+        """
+        Filtra DataFrame por posición específica o grupo de 8 posiciones específicas.
+
+        Args:
+            df: DataFrame con datos de jugadores
+            position_or_group: Posición específica (ej: "CF") o grupo de 8 (ej: "CB", "AMF")
+
+        Returns:
+            DataFrame filtrado
+        """
+        try:
+            # Importar mapper de 8 grupos desde position_analyzer
+            from ml_system.evaluation.analysis.position_analyzer import PositionAnalyzer
+
+            analyzer = PositionAnalyzer()
+
+            # Verificar si es uno de los 8 grupos específicos
+            if position_or_group in ["GK", "CB", "FB", "DMF", "CMF", "AMF", "W", "CF"]:
+                # Obtener todas las posiciones específicas que mapean a este grupo
+                specific_positions = [
+                    pos
+                    for pos, group in analyzer.position_mapping.items()
+                    if group == position_or_group
+                ]
+
+                # Filtrar por cualquier posición específica del grupo
+                position_df = df[df["Primary position"].isin(specific_positions)].copy()
+                logger.info(
+                    f"Filtrando por grupo {position_or_group}: {specific_positions} → {len(position_df)} jugadores"
+                )
+            else:
+                # Es una posición específica - usar filtro original
+                position_df = df[df["Primary position"] == position_or_group].copy()
+                logger.info(
+                    f"Filtrando por posición específica {position_or_group} → {len(position_df)} jugadores"
+                )
+
+            return position_df
+
+        except Exception as e:
+            logger.error(
+                f"Error filtrando por grupo 8-posiciones {position_or_group}: {e}"
+            )
+            # Fallback a filtro original
+            return df[df["Primary position"] == position_or_group].copy()
 
 
 # ============================================================================

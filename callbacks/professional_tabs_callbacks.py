@@ -11,10 +11,11 @@ from models.professional_stats_model import ProfessionalStats
 from models.user_model import UserType
 from pages.ballers_dash import (
     create_ai_analytics_content,
+    create_development_roadmap_content,
     create_evolution_tab_content,
     create_iep_clustering_content,
     create_league_comparison_content,
-    create_pdi_development_content,
+    create_pdi_deep_analysis_content,
     create_performance_tab_content,
     create_position_tab_content,
     create_professional_info_content,
@@ -398,12 +399,14 @@ def register_professional_tabs_callbacks(app):
             # Usar todas las temporadas disponibles para análisis temporal completo
             player_stats = all_stats if all_stats else []
 
-            if active_sub_tab == "pdi-development-tab":
-                return create_pdi_development_content(player)
+            if active_sub_tab == "pdi-deep-analysis-tab":
+                return create_pdi_deep_analysis_content(player, player_stats)
             elif active_sub_tab == "iep-clustering-tab":
                 return create_iep_clustering_content(player, player_stats)
             elif active_sub_tab == "league-comparison-tab":
                 return create_league_comparison_content(player, player_stats)
+            elif active_sub_tab == "development-roadmap-tab":
+                return create_development_roadmap_content(player, player_stats)
             else:
                 return html.Div("Sub-tab not implemented yet")
 
@@ -413,3 +416,26 @@ def register_professional_tabs_callbacks(app):
             print(f"Error in update_ai_sub_tab_content: {e}")
             traceback.print_exc()
             return html.Div(f"Error loading sub-tab content: {str(e)}")
+
+    @app.callback(
+        [
+            Output("pdi-explanation-collapse", "is_open"),
+            Output("pdi-explanation-toggle", "children"),
+        ],
+        [Input("pdi-explanation-toggle", "n_clicks")],
+        [State("pdi-explanation-collapse", "is_open")],
+        prevent_initial_call=True,
+    )
+    def toggle_pdi_explanation(n_clicks, is_open):
+        """
+        Callback para toggle de la explicación del gráfico PDI.
+        """
+        if n_clicks:
+            new_state = not is_open
+            icon = (
+                html.I(className="bi bi-chevron-up")
+                if new_state
+                else html.I(className="bi bi-chevron-down")
+            )
+            return new_state, icon
+        return is_open, html.I(className="bi bi-chevron-down")

@@ -75,7 +75,7 @@ class IEPAnalyzer:
         logger.info(f"🎯 IEPAnalyzer inicializado - Outputs: {self.base_path}")
 
     def analyze_player_efficiency_tier(
-        self, player_id: int, season: str = "2024-25", save_results: bool = True
+        self, player_id: int, season: str = "2024-25", save_results: bool = False
     ) -> Dict:
         """
         Analiza tier de eficiencia para un jugador específico.
@@ -121,7 +121,8 @@ class IEPAnalyzer:
         position: str,
         season: str = "2024-25",
         use_cache: bool = True,
-        save_results: bool = True,
+        save_results: bool = False,
+        current_player_id: int = None,
     ) -> Dict:
         """
         Obtiene análisis completo de clustering por posición.
@@ -131,16 +132,21 @@ class IEPAnalyzer:
             season: Temporada
             use_cache: Si usar cache para optimizar
             save_results: Si guardar resultados
+            current_player_id: ID del jugador actual (siempre incluido independiente del min_matches)
 
         Returns:
             Dict con análisis completo de clustering posicional
         """
         try:
             logger.info(f"📊 Obteniendo análisis clustering {position} ({season})")
+            if current_player_id:
+                logger.info(
+                    f"🎯 Jugador actual incluido forzosamente: {current_player_id}"
+                )
 
-            # Verificar cache
+            # Verificar cache (deshabilitado si hay current_player_id para evitar inconsistencias)
             cache_key = f"{position}_{season}"
-            if use_cache and cache_key in self._cluster_cache:
+            if use_cache and not current_player_id and cache_key in self._cluster_cache:
                 cache_age = datetime.now() - self._last_cache_update.get(
                     cache_key, datetime.min
                 )
@@ -150,7 +156,7 @@ class IEPAnalyzer:
 
             # Calcular clustering usando calculadora
             cluster_results = self.iep_calculator.calculate_position_clusters(
-                position, season
+                position, season, current_player_id=current_player_id
             )
 
             if "error" in cluster_results:
@@ -185,7 +191,7 @@ class IEPAnalyzer:
         self,
         season: str = "2024-25",
         positions: Optional[List[str]] = None,
-        save_results: bool = True,
+        save_results: bool = False,
     ) -> Dict:
         """
         Genera benchmarks de eficiencia por liga y posición.

@@ -511,58 +511,91 @@ def create_pdi_evolution_chart(player_id, seasons=None):
                 }
             )
 
+        # Obtener información de posición del jugador (última temporada)
+        latest_season_data = pdi_data[-1] if pdi_data else {}
+        player_position = latest_season_data.get("position_analyzed", "CF")
+
+        # Mapear posición a zona principal
+        position_zone_mapping = {
+            "GK": "Defensive",
+            "CB": "Defensive",
+            "LCB": "Defensive",
+            "RCB": "Defensive",
+            "FB": "Defensive",
+            "LB": "Defensive",
+            "RB": "Defensive",
+            "LWB": "Defensive",
+            "RWB": "Defensive",
+            "DMF": "Midfield",
+            "LDMF": "Midfield",
+            "RDMF": "Midfield",
+            "CMF": "Midfield",
+            "LCMF": "Midfield",
+            "RCMF": "Midfield",
+            "AMF": "Midfield",
+            "LAMF": "Midfield",
+            "RAMF": "Midfield",
+            "W": "Offensive",
+            "LW": "Offensive",
+            "RW": "Offensive",
+            "LWF": "Offensive",
+            "RWF": "Offensive",
+            "CF": "Offensive",
+        }
+        player_zone = position_zone_mapping.get(player_position, "Midfield")
+
         # Crear gráfico
         fig = go.Figure()
 
-        # Línea PDI Overall (principal)
+        # Línea PDI Overall (principal) - Color destacado
         fig.add_trace(
             go.Scatter(
                 x=x_positions,
                 y=[d["pdi_overall"] for d in pdi_data],
                 mode="lines+markers",
                 name="PDI Overall",
-                line=dict(color="#24DE84", width=4),
-                marker=dict(size=10, line=dict(width=2, color="#FFFFFF")),
-                hovertemplate="<b>PDI Overall</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>",
+                line=dict(color="#24DE84", width=4),  # Verde corporativo para destacar
+                marker=dict(size=10, line=dict(width=2, color="#24DE84")),
+                hovertemplate="<b>PDI Overall</b><br>%{y:.1f}<extra></extra>",
             )
         )
 
-        # Línea Universal (40%)
+        # Línea Universal (40%) - Cyan distintivo
         fig.add_trace(
             go.Scatter(
                 x=x_positions,
                 y=[d["pdi_universal"] for d in pdi_data],
                 mode="lines+markers",
                 name="Universal (40%)",
-                line=dict(color="#42A5F5", width=3),
+                line=dict(color="#26C6DA", width=3),  # Cambiar a cyan
                 marker=dict(size=8),
-                hovertemplate="<b>Universal</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>",
+                hovertemplate="<b>Universal</b><br>%{y:.1f}<extra></extra>",
             )
         )
 
-        # Línea Zone (35%)
+        # Línea Zone (35%) - Púrpura para contrastar
         fig.add_trace(
             go.Scatter(
                 x=x_positions,
                 y=[d["pdi_zone"] for d in pdi_data],
                 mode="lines+markers",
-                name="Zone (35%)",
-                line=dict(color="#FFA726", width=3),
+                name="<span style='color:#24DE84'><i class='bi bi-bullseye'></i></span> Zone (35%)",
+                line=dict(color="#AB47BC", width=3),  # Púrpura distintivo
                 marker=dict(size=8),
-                hovertemplate="<b>Zone Specific</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>",
+                hovertemplate="<b>Zone Specific</b><br>%{y:.1f}<extra></extra>",
             )
         )
 
-        # Línea Position (25%)
+        # Línea Position (25%) - Naranja para contrastar
         fig.add_trace(
             go.Scatter(
                 x=x_positions,
                 y=[d["pdi_position_specific"] for d in pdi_data],
                 mode="lines+markers",
-                name="Position (25%)",
-                line=dict(color="#E57373", width=3),
+                name="<span style='color:#24DE84'><i class='bi bi-person-fill'></i></span> Position (25%)",
+                line=dict(color="#FF9800", width=3),  # Naranja distintivo
                 marker=dict(size=8),
-                hovertemplate="<b>Position Specific</b><br>%{y:.1f}<br>Season: %{x}<extra></extra>",
+                hovertemplate="<b>Position Specific</b><br>%{y:.1f}<extra></extra>",
             )
         )
 
@@ -592,7 +625,7 @@ def create_pdi_evolution_chart(player_id, seasons=None):
         # Layout del gráfico
         fig.update_layout(
             title=dict(
-                text=f"PDI Development Evolution ({len(pdi_data)} seasons)",
+                text="",  # Título vacío - se usa título externo en card header
                 x=0.5,
                 font=dict(color="#FFFFFF", size=16),
             ),
@@ -616,18 +649,36 @@ def create_pdi_evolution_chart(player_id, seasons=None):
             paper_bgcolor="rgba(0,0,0,0)",
             font=dict(color="#FFFFFF"),
             legend=dict(
-                orientation="v",
-                x=1.02,
-                xanchor="left",
-                y=1,
-                yanchor="top",
+                orientation="h",  # Horizontal
+                x=0.5,  # Centrado
+                xanchor="center",  # Anclaje central
+                y=1.15,  # Más alto para evitar overlap
+                yanchor="bottom",  # Anclaje inferior
                 bgcolor="rgba(0,0,0,0.8)",
                 bordercolor="rgba(36,222,132,0.3)",
                 borderwidth=1,
-                font=dict(color="white", size=11),
+                font=dict(color="white", size=10),
             ),
+            annotations=[
+                # Información del jugador en la esquina superior derecha
+                dict(
+                    text=f"<i class='bi bi-geo-alt'></i> Position: {player_position}<br><i class='bi bi-diagram-3'></i> Zone: {player_zone}",
+                    xref="paper",
+                    yref="paper",
+                    x=0.98,
+                    y=0.98,
+                    xanchor="right",
+                    yanchor="top",
+                    showarrow=False,
+                    font=dict(size=10, color="#E0E0E0"),
+                    bgcolor="rgba(0,0,0,0.8)",
+                    bordercolor="rgba(66,165,245,0.3)",
+                    borderwidth=1,
+                    borderpad=5,
+                )
+            ],
             height=400,
-            margin=dict(t=60, b=40, l=60, r=120),
+            margin=dict(t=80, b=40, l=60, r=120),  # Más margen derecho para anotación
             hovermode="x unified",
         )
 

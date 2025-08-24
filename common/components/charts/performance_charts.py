@@ -217,7 +217,7 @@ def create_pdi_temporal_heatmap(player_id, seasons=None):
         # Layout del heat map
         fig.update_layout(
             title={
-                "text": "Performance Heat Map - Temporal Evolution",
+                "text": "",  # Título vacío - se usa título externo en card header
                 "x": 0.5,
                 "font": {"color": "#24DE84", "size": 18},
             },

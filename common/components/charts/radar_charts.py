@@ -483,9 +483,9 @@ def create_ml_enhanced_radar_chart(player_id, seasons=None):
 def create_league_comparative_radar(player_id, season="2024-25", position_filter=True):
     """
     Crea radar chart comparativo vs promedio de liga tailandesa.
-    MOVIDO desde pages/ballers_dash.py
 
-    Utiliza datos reales de ProfessionalStats para comparación académica rigurosa.
+    REUTILIZACIÓN: Usa create_position_radar_chart() que ya implementa
+    correctamente comparación CSV vs liga con datos reales (493 jugadores).
 
     Args:
         player_id: ID del jugador
@@ -496,138 +496,21 @@ def create_league_comparative_radar(player_id, season="2024-25", position_filter
         Componente dcc.Graph con radar comparativo
     """
     try:
-        # Importar aquí para evitar dependencias circulares
-        from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
-
-        logger.info(f"Creando radar comparativo vs liga para jugador {player_id}")
-
-        # Usar PlayerAnalyzer existente
-        player_analyzer = PlayerAnalyzer()
-
-        # Obtener métricas del jugador
-        player_metrics = player_analyzer.calculate_or_update_pdi_metrics(
-            player_id, season, force_recalculate=False
+        logger.info(
+            f"✅ Radar comparativo vs liga - reutilizando Position Analytics (CSV)"
         )
 
-        if not player_metrics:
-            return dbc.Alert(
-                "No hay métricas del jugador para radar comparativo", color="warning"
-            )
-
-        # Obtener posición del jugador
-        player_position = player_metrics.get("position_analyzed", "CF")
-
-        # Calcular promedios de liga
-        league_averages = _calculate_league_averages(
-            player_analyzer, season, player_position if position_filter else None
+        # REUTILIZACIÓN: Usar función Position Analytics que ya funciona correctamente
+        # create_position_radar_chart() ya usa CSVStatsController con datos reales
+        return create_position_radar_chart(
+            player_id=player_id,
+            season=season,
+            references=["league"],  # Solo comparación vs liga (493 jugadores CSV)
         )
-
-        if not league_averages:
-            return dbc.Alert("No hay datos de liga para comparación", color="warning")
-
-        # Métricas para el radar
-        metrics_for_radar = [
-            ("Technical", "technical_proficiency"),
-            ("Tactical", "tactical_intelligence"),
-            ("Physical", "physical_performance"),
-            ("Universal", "pdi_universal"),
-            ("Zone", "pdi_zone"),
-            ("Position", "pdi_position_specific"),
-            ("Consistency", "consistency_index"),
-            ("Overall PDI", "pdi_overall"),
-        ]
-
-        # Preparar datos para radar
-        categories = []
-        player_values = []
-        league_values = []
-
-        for label, metric_key in metrics_for_radar:
-            player_val = player_metrics.get(metric_key, 0)
-            league_val = league_averages.get(metric_key, 0)
-
-            categories.append(label)
-            player_values.append(min(100, max(0, player_val)))  # Clamp 0-100
-            league_values.append(min(100, max(0, league_val)))  # Clamp 0-100
-
-        # Cerrar el polígono
-        categories_closed = categories + [categories[0]]
-        player_values_closed = player_values + [player_values[0]]
-        league_values_closed = league_values + [league_values[0]]
-
-        # Crear radar chart
-        fig = go.Figure()
-
-        # Promedio de liga (área de referencia)
-        fig.add_trace(
-            go.Scatterpolar(
-                r=league_values_closed,
-                theta=categories_closed,
-                fill="toself",
-                fillcolor="rgba(255, 255, 255, 0.1)",
-                line=dict(color="rgba(255, 255, 255, 0.5)", width=2, dash="dot"),
-                name=f'Liga Thai {season} ({player_position if position_filter else "All"} Avg)',
-                hovertemplate="<b>%{theta}</b><br>"
-                + "Liga Avg: %{r:.1f}<br>"
-                + "<extra></extra>",
-            )
-        )
-
-        # Jugador (línea principal)
-        fig.add_trace(
-            go.Scatterpolar(
-                r=player_values_closed,
-                theta=categories_closed,
-                fill="toself",
-                fillcolor="rgba(36, 222, 132, 0.3)",  # Verde Ballers con transparencia
-                line=dict(color="#24DE84", width=3),
-                name="Player Performance",
-                hovertemplate="<b>%{theta}</b><br>"
-                + "Player: %{r:.1f}<br>"
-                + "<extra></extra>",
-            )
-        )
-
-        # Layout del radar
-        fig.update_layout(
-            polar=dict(
-                radialaxis=dict(
-                    visible=True,
-                    range=[0, 100],
-                    tickfont=dict(size=10, color="white"),
-                    gridcolor="rgba(255, 255, 255, 0.2)",
-                ),
-                angularaxis=dict(
-                    tickfont=dict(size=11, color="white"),
-                    gridcolor="rgba(255, 255, 255, 0.2)",
-                ),
-                bgcolor="rgba(0, 0, 0, 0)",
-            ),
-            title={
-                "text": f"Player vs Thai League Comparison - {season}",
-                "x": 0.5,
-                "font": {"color": "#24DE84", "size": 16},
-            },
-            showlegend=True,
-            legend=dict(
-                bgcolor="rgba(0, 0, 0, 0.8)",
-                bordercolor="#24DE84",
-                borderwidth=1,
-                font=dict(color="white", size=10),
-            ),
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="white", family="Inter, sans-serif"),
-            height=600,
-            margin=dict(l=80, r=80, t=100, b=80),
-        )
-
-        logger.info(f"✅ Radar comparativo creado exitosamente")
-        return dcc.Graph(figure=fig, className="chart-container")
 
     except Exception as e:
-        logger.error(f"❌ Error creando radar comparativo: {e}")
-        return dbc.Alert(f"Error generando radar: {str(e)}", color="danger")
+        logger.error(f"❌ Error en radar comparativo reutilizado: {e}")
+        return dbc.Alert(f"Error generando radar comparativo: {str(e)}", color="danger")
 
 
 def _calculate_league_averages(player_analyzer, season, position=None):

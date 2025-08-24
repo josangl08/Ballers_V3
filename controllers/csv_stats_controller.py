@@ -152,6 +152,7 @@ class CSVStatsController:
             "assists_per_90": "Assists per 90",
             "pass_accuracy_pct": "Accurate passes, %",
             "shots_on_target_pct": "Shots on target, %",
+            "goal_conversion_pct": "Goal conversion, %",
             # Métricas defensivas
             "defensive_actions_per_90": "Successful defensive actions per 90",
             "defensive_duels_won_pct": "Defensive duels won, %",

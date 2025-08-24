@@ -171,19 +171,10 @@ Use `ValidationController` for all input validation rather than inline validatio
 - Google API errors are logged but don't crash the application
 - User-facing error messages are localized in Spanish
 
-## 🚀 PROJECT MIGRATION STATUS & ROADMAP
+## 🚀 PROJECT STATUS REFERENCE
 
-### Migration Context
-The project successfully migrated from **Streamlit to Dash** for enhanced functionality and better performance. The migration is now **98% complete** with all major features implemented, tested, and functional.
-
-### Current Status: Phase 11 - Final Integration & Production Prep 🚀 **IN PROGRESS** (July 2025)
-**Latest Achievement**: Complete migration finalized with role-based access control fixes
-- ✅ Webhook integration system fully implemented and active
-- ✅ Complete backend migration from Streamlit to Dash
-- ✅ Role-based access control completely functional
-- ✅ JavaScript errors resolved and user restrictions working
-- ✅ All UI phases completed (9/9 phases)
-- ✅ Backend components 100% migrated and tested
+### Current State Summary
+The project has **completed the Streamlit to Dash migration (100%)** and is now in advanced functionality development phase. For detailed chronological information about phases and milestones, see **PROYECTO_STATUS.md**.
 
 ### Development Methodology
 - **Incremental Development**: Small, functional changes with frequent commits
@@ -191,66 +182,16 @@ The project successfully migrated from **Streamlit to Dash** for enhanced functi
 - **No AI Attribution**: Commits should appear as if created by the human developer
 - **Quality Focus**: Code must pass tests and work correctly before committing
 
-### Migration Phases Overview
+### Key Architectural Achievements
+- **Zero Streamlit Dependencies**: Complete migration to Dash architecture
+- **Real-time Webhook Integration**: Google Calendar SSE system (sub-100ms latency)
+- **Role-based Access Control**: Complete restrictions for admin/coach/player
+- **Professional Stats System**: 95% complete with ML baseline
+- **Machine Learning Analytics**: 85% complete with CRISP-DM methodology
 
-#### ✅ **Completed Phases (10/11)**:
-1. **Infrastructure Cleanup** - Project structure and imports (Dec 2024)
-2. **Sidebar Menu Migration** - Complete navigation system (July 2025)
-3. **Player Cards Optimization** - Responsive player displays (July 2025)
-4. **Calendar Features** - Visual improvements and data management (July 2025)
-5. **Player Profile Details** - Complete profile system (July 2025)
-6. **Administration Panel** - Full admin functionality (July 2025)
-7. **Advanced Calendar Features** - Auto-completion and visual enhancements (July 2025)
-8. **Financials Migration** - Google Sheets integration (July 2025)
-9. **Settings Migration** - Complete user and system settings functionality (July 2025)
-10. **Webhook Integration** - Real-time Google Calendar sync system (July 2025)
+### Current Architecture Status
 
-#### 🔄 **Current Phase (11/11)**:
-**Phase 11: Final Integration & Production Prep** 🚀 **IN PROGRESS** (July 2025)
-**Objetivo**: Final polish, optimization, and production deployment preparation
-- 🎯 **Performance Optimization**: Code cleanup and speed improvements
-- 🎯 **End-to-End Testing**: Complete system validation
-- 🎯 **Production Configuration**: Environment-specific setups
-- 🎯 **Documentation**: User and technical documentation finalization
-- 🎯 **Deployment Preparation**: Ready for Bangkok client production
-
-#### ✅ **Recently Completed Major Achievements**:
-**Backend Migration Completed** (July 2025):
-- ✅ Complete elimination of Streamlit dependencies
-- ✅ All controllers migrated to pure Dash architecture
-- ✅ Legacy code cleaned and removed
-
-**Role-Based Access Control Fixes** (July 2025):
-- ✅ JavaScript store reference errors resolved
-- ✅ Coach user restrictions fully implemented
-- ✅ Session filtering by user role working correctly
-- ✅ Create/Edit forms with appropriate role limitations
-- ✅ All user types (admin/coach/player) tested and functional
-
-### Current Project Status
-- **UI Migration**: 100% complete (10/10 phases)
-- **Backend Migration**: 100% complete (all controllers migrated)
-- **Webhook Integration**: 100% complete (real-time sync active)
-- **Role-Based Access Control**: 100% complete (all restrictions working)
-- **Overall Project**: **98% complete** (Phase 11 in progress)
-
-## ✅ PHASE 10: AUTOSYNC → WEBHOOKS MIGRATION - **COMPLETED** (July 2025)
-
-### **Migration Overview**
-Successfully transformed the polling system (every 5 minutes) to Google Calendar webhooks for real-time synchronization with minimal latency.
-
-### **✅ COMPLETED ACHIEVEMENTS**:
-- ✅ **Webhook Server Implementation**: Flask-based webhook server running on port 8001
-- ✅ **Real-time Google Calendar Integration**: Push notifications from Google Calendar working
-- ✅ **UI Updates in Real-time**: Automatic UI refresh based on webhook events
-- ✅ **Development Environment Setup**: Local webhook testing with manual fallback
-- ✅ **Legacy System Removal**: SimpleAutoSync polling system completely eliminated
-- ✅ **Notification System Integration**: Webhook events integrated with existing notification controller
-
-### **Implementation Results**
-The webhook system has been successfully implemented with the following architecture:
-
-#### **Current Architecture**:
+#### **Real-time Webhook System**:
 ```
 Google Calendar ──webhook──▶ Flask Server ──▶ calendar_sync_core ──▶ Database
      (events)       (port 8001)    (real-time)       (sessions)
@@ -260,108 +201,14 @@ Google Calendar ──webhook──▶ Flask Server ──▶ calendar_sync_core
                    (event tracking)      (real-time updates)
 ```
 
-#### **Key Technical Achievements**:
+#### **Technical Achievements**:
 - **Webhook Server**: Flask-based server running on localhost:8001
 - **Real-time Processing**: Events processed immediately upon Google Calendar changes
-- **Development Setup**: HTTP webhook endpoint for local development with manual testing
+- **Development Setup**: HTTP webhook endpoint for local development
 - **Fallback System**: Manual sync remains available as backup
 - **UI Integration**: Real-time updates reflected in Dash interface
 
-#### **Development Status**:
-- **Local Environment**: Webhook server active and functional
-- **Google Calendar**: HTTPS requirement noted for production (development uses HTTP)
-- **Testing**: Manual webhook testing available via curl commands
-- **Performance**: Near-zero latency for local event processing
-
-## 🛠️ ROLE-BASED ACCESS CONTROL FIXES - **COMPLETED** (July 2025)
-
-### **Critical Issues Resolved**
-This phase addressed critical JavaScript errors and implemented complete role-based restrictions for coach users.
-
-#### **✅ JavaScript Store Reference Errors Fixed**:
-- **Problem**: `user-type-store` references in administration callbacks causing JavaScript errors
-- **Solution**: Updated all references to use `admin-user-type-store` in administration pages
-- **Files Modified**: `callbacks/administration_callbacks.py` - Fixed State references in create/edit session callbacks
-- **Result**: No more JavaScript console errors, all callbacks working correctly
-
-#### **✅ Database Import Issues Resolved**:
-- **Problem**: Incorrect import of `db_session` instead of `get_db_session()` function
-- **Solution**: Fixed import statements and context manager usage
-- **Files Modified**: `controllers/session_controller.py` - Corrected `get_coach_by_user_id()` function
-- **Result**: Database operations working correctly without import errors
-
-#### **✅ Coach Role Restrictions Implemented**:
-- **Create Session Form**: Coach pre-selected and dropdown disabled for coach users
-- **Edit Session Form**: Coach users can only see and edit their own sessions
-- **Session Filtering**: Calendar and table views filtered by coach ID for coach users
-- **Table Functionality**: Extended `create_sessions_table_dash()` to support `coach_id` parameter
-
-#### **✅ Session Filtering by Role**:
-- **Calendar View**: Already working correctly, shows only coach's sessions
-- **Table View**: Fixed to apply coach filtering using updated table function
-- **Form Access**: Create/edit forms now respect role-based restrictions
-- **Admin Access**: Admin users maintain full access to all functionality
-
-### **Technical Implementation Details**
-- **Helper Function**: `get_coach_by_user_id()` properly maps user_id to coach_id
-- **Store Management**: Global `user-type-store` available across all layouts
-- **Role Detection**: Dynamic role detection from session data in callbacks
-- **Form Restrictions**: Automatic form field pre-population and disabling based on user role
-
-### **Testing Verification**
-- ✅ **Admin Role**: Full access to all sessions and functionality
-- ✅ **Coach Role**: Restricted to own sessions, pre-populated forms, no JavaScript errors
-- ✅ **Player Role**: Continues to work normally with profile restrictions
-- ✅ **Database Functions**: All context managers and imports working correctly
-- ✅ **UI Functionality**: All forms, tables, and navigation working without errors
-
-#### ✅ Phase 1: Infrastructure Cleanup (COMPLETED)
-**Status**: Successfully completed
-**Achievements**:
-- Project structure cleaned and organized
-- Import errors resolved (cloud_utils, app_dash → main_dash)
-- Obsolete tests updated to work with new Dash structure (13 tests passing)
-- Basic application functionality verified
-- Code style improved (removed unused imports, fixed formatting)
-
-**Key Files Cleaned**:
-- `/controllers/session_controller.py` - Fixed imports and cloud_utils references
-- `/controllers/sync_coordinator.py` - Fixed imports and cloud_utils references
-- `/tests/test_dash_app.py` - Completely rewritten for new structure
-- `/pages/administration_dash.py` - Added missing imports
-- `/pages/ballers_dash.py` - Added missing imports and callbacks
-- `/pages/settings_dash.py` - Massive cleanup of unused imports
-- `/common/` files - Cleaned unused imports across all files
-
-**Current State**:
-- Application initializes without errors
-- All tests pass (13/13)
-- Import structure optimized
-- Ready for incremental development
-
-#### 🎯 Phase 2: Core Interface Reconstruction (NEXT)
-**Status**: Ready to begin
-**Objectives**:
-- Rebuild login interface with proper styling
-- Reconstruct main menu/sidebar navigation
-- Rebuild ballers_dash with complete functionality
-- Ensure visual consistency with original design
-
-**Priority Features**:
-1. **Login System** - Complete authentication interface
-2. **Main Menu** - Sidebar navigation with role-based access
-3. **Ballers Dashboard** - Player management and profiles
-4. **Settings Panel** - User management and system configuration
-
-#### 🔄 Phase 3: Advanced Features (FUTURE)
-**Status**: Planned
-**Objectives**:
-- Google Calendar integration interface
-- Advanced user management features
-- Reporting and analytics dashboards
-- Performance optimization
-
-### Current Development Guidelines
+### Development Guidelines
 
 #### Commit Strategy
 ```bash
@@ -384,27 +231,6 @@ git add -A && git commit -m "Specific feature description
 - Use context managers for database operations
 - Implement proper error handling
 
-### Key Lessons Learned
-1. **Backup Strategy**: Always commit working states before major changes
-2. **Incremental Approach**: Small, testable changes are safer than large refactors
-3. **Test Coverage**: Maintain working tests to catch regressions early
-4. **Import Management**: Keep imports clean and organized to prevent cascading errors
-
-### Next Session Instructions
-When starting a new session, focus on:
-1. **Verify Current State**: Run tests and check app initialization
-2. **Identify Next Feature**: Choose the next logical UI component to rebuild
-3. **Implement Incrementally**: Make small, testable changes
-4. **Commit Frequently**: Each working feature gets its own commit
-5. **Document Progress**: Update this file with completed work
-
-### Files to Monitor
-- `main_dash.py` - Main application entry point
-- `tests/test_dash_app.py` - Test suite for verification
-- `pages/` - UI components that need rebuilding
-- `callbacks/` - Dash callback functions
-- `controllers/` - Business logic (should be stable)
-
 ### Success Metrics
 - Tests passing: 13/13 ✅
 - App initializes without errors ✅
@@ -413,82 +239,51 @@ When starting a new session, focus on:
 - User experience preserved ✅
 - Professional stats system functional ✅
 
-## 🚀 CURRENT PROJECT STATUS (Phase 12 - July 2025)
+## 🏗️ TECHNICAL ARCHITECTURE DETAILS
 
-### Migration Complete (100%)
-The **Streamlit to Dash migration** is **100% completed** with all 11 phases successfully implemented:
-- Full UI migration with responsive design
-- Complete backend independence from Streamlit
-- Real-time webhook integration with Google Calendar
-- Role-based access control with proper restrictions
+### CSS Architecture (Current Implementation)
+**Centralized Variables System**: Successfully migrated to CSS variables for maintainability
 
-### Professional Stats System (80% Complete)
-**Phase 12: Professional Player Statistics** is **80% functional** with:
-
-#### ✅ **Completed Components:**
-1. **Database Schema Extended**: `is_professional`, `wyscout_id` fields added to Player model
-2. **Professional Stats Model**: 50+ statistical metrics (goals, assists, defensive actions, etc.)
-3. **Thai League Controller**: Automated data extraction from GitHub repository with fuzzy matching
-4. **Form Integration**: Professional player checkbox with automatic Thai League search
-5. **Conditional UI System**: Tab-based interface for professional players
-   - **Info Tab**: Reuses original layout (maximum code reuse achieved)
-   - **Stats Tab**: Professional statistics with placeholder visualizations
-
-#### ✅ **Key Technical Achievements:**
-- **Maximum Code Reuse**: Info tab uses original elements without duplication
-- **Dynamic Visibility Control**: Stats tab shows only professional content
-- **No DOM Conflicts**: Eliminated "Multiple objects found" errors
-- **Seamless UX**: Amateur players see original interface, professionals get enhanced tabs
-
-#### 🎯 **Next Steps (Phase 12.5 - Remaining 20%):**
-- **Plotly Visualizations**: Evolution charts, radar plots, comparative analysis
-- **Data Normalization**: Position and age-based statistical adjustments
-- **ML Preparation**: Feature engineering and CRISP-DM methodology foundation
-
-## CSS Architecture Optimization & Cleanup - **COMPLETED** (Agosto 2025)
-
-### **Migration from Inline Styles to CSS Variables**
-Successfully migrated all hardcoded colors and styles to a centralized CSS variables system for better maintainability and consistency.
-
-### ✅ **Achievements Completed:**
-- **Corporate Color Standardization**: Migrated 100+ hardcoded color instances to CSS variables system
-- **CSS Variables Implementation**: Created 52 centralized variables for colors, spacing, typography, and effects
-- **Streamlit Legacy Cleanup**: Eliminated all Streamlit-specific CSS code (data-testid, st-emotion-cache, streamlit-* selectors)
-- **Architecture Consolidation**: Unified CSS architecture using Bootstrap + custom variables approach
-- **Code Optimization**: Reduced CSS file size while maintaining 100% visual functionality
-- **Focus States Fix**: Resolved tab focus styling issues maintaining accessibility
-
-### **Technical Implementation:**
+#### **Technical Implementation:**
 - **Primary Colors**: `--color-primary: #24DE84` with alpha variations (10%, 30%, 40%, 50%, 80%)
 - **Spacing Variables**: Consistent padding, margins, and sizing across components
 - **Typography System**: Standardized font weights, sizes, and line heights
 - **Effect Variables**: Transitions, shadows, and hover effects
 - **Bootstrap Integration**: Seamless integration with existing Bootstrap utilities
 
-### **Migration Statistics:**
-- **Files Modified**: 8 files across pages, callbacks, and components
-- **Inline Styles Migrated**: 102 instances converted to CSS classes/variables
-- **CSS Lines Optimized**: ~150 lines of legacy code removed
-- **Architecture Benefit**: Single source of truth for all visual styling
+#### **Key Files:**
+- `/assets/style.css` - Central CSS variables system
+- Pages and callbacks - Migrated from inline styles to CSS classes
 
-### **Files Enhanced:**
-- `/assets/style.css` - Central CSS variables system and legacy cleanup
-- `/callbacks/settings_callbacks.py` - 22 instances migrated
-- `/pages/ballers_dash.py` - 25 instances migrated
-- `/pages/settings_dash.py` - 30 instances migrated
-- `/pages/administration_dash.py` - 11 instances migrated
-- `/callbacks/administration_callbacks.py` - 5 instances migrated
-- `/callbacks/navigation_callbacks.py` - 4 instances migrated
-- `/common/upload_component.py` - 4 instances migrated
-- `/common/login_dash.py` - 1 instance migrated
+### Professional Stats System Architecture
+**Hybrid Platform**: Local training center + Professional analytics integration
 
-#### **Latest Commit:** `58e8d35` - CSS architecture optimization with centralized variables system
+#### **Database Schema:**
+- **Player Model Extensions**: `is_professional`, `wyscout_id` fields
+- **Professional Stats Model**: 50+ statistical metrics (goals, assists, defensive actions, etc.)
+- **Thai League Controller**: Automated data extraction with fuzzy matching
 
-### Development Environment Ready
+#### **UI Architecture:**
+- **Conditional Tabs System**: Info/Stats tabs for professional players only
+- **Maximum Code Reuse**: Info tab reuses original amateur layout
+- **Dynamic Visibility Control**: Stats tab shows only professional content
+
+### Machine Learning System
+**CRISP-DM Methodology**: Academic-grade ML implementation
+
+#### **Components:**
+- **Dataset**: 2,359 records × 127 columns (5 Thai League seasons)
+- **Feature Engineering**: 41 non-circular features validated
+- **Models**: Linear, Ridge, Ensemble baseline (MAE 0.774, R² 0.950)
+- **Validation**: 5-fold cross-validation with statistical significance tests
+
+### Development Environment Status
 - **Database**: SQLite with professional extensions
 - **Controllers**: ThaiLeagueController with 5 seasons of data (2020-2025)
 - **UI**: Conditional tabs system fully functional
 - **CSS Architecture**: Optimized with centralized variables system
 - **Testing**: All 13 tests passing, app initializes without errors
 
-**Ready for**: Implementation of advanced Plotly visualizations and ML preparation features.
+---
+
+**For project chronology and detailed phase information, see PROYECTO_STATUS.md**

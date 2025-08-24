@@ -1444,3 +1444,91 @@ class PlayerAnalyzer:
 
         except Exception as e:
             logger.error(f"Error limpiando cache: {e}")
+
+    def get_all_seasons_pdi_metrics(self, player_id: int) -> List[Dict]:
+        """
+        Obtiene métricas PDI para todas las temporadas disponibles de un jugador.
+
+        FUNCIÓN NUEVA - Requerida por create_pdi_evolution_chart()
+        Reutiliza funciones existentes: get_available_seasons_for_player() +
+        calculate_or_update_pdi_metrics()
+
+        Args:
+            player_id: ID del jugador
+
+        Returns:
+            Lista de diccionarios con métricas PDI por temporada, ordenados cronológicamente
+        """
+        try:
+            logger.info(
+                f"🎯 Obteniendo métricas PDI todas las temporadas - jugador {player_id}"
+            )
+
+            # 1. Obtener todas las temporadas disponibles (reutilizando función existente)
+            available_seasons = self.get_available_seasons_for_player(player_id)
+
+            if not available_seasons:
+                logger.warning(
+                    f"⚠️ No hay temporadas disponibles para jugador {player_id}"
+                )
+                return []
+
+            logger.info(
+                f"📅 Procesando {len(available_seasons)} temporadas: {available_seasons}"
+            )
+
+            # 2. Obtener métricas PDI para cada temporada (reutilizando función existente)
+            all_seasons_pdi = []
+
+            for season in available_seasons:
+                logger.info(f"🔄 Procesando temporada {season}")
+
+                # Obtener métricas PDI de la temporada (función existente)
+                pdi_metrics = self.calculate_or_update_pdi_metrics(player_id, season)
+
+                if pdi_metrics:
+                    # Añadir información adicional de la temporada
+                    with get_db_session() as session:
+                        prof_stats = (
+                            session.query(ProfessionalStats)
+                            .filter_by(player_id=player_id, season=season)
+                            .first()
+                        )
+
+                        if prof_stats:
+                            # Enriquecer con datos adicionales para visualización
+                            enhanced_metrics = {
+                                **pdi_metrics,  # Incluir todas las métricas PDI
+                                "team": prof_stats.team,
+                                "team_logo_url": prof_stats.team_logo_url,
+                                "matches_played": prof_stats.matches_played,
+                                "minutes_played": prof_stats.minutes_played,
+                                "goals": prof_stats.goals,
+                                "assists": prof_stats.assists,
+                            }
+                            all_seasons_pdi.append(enhanced_metrics)
+                            logger.info(
+                                f"✅ PDI temporada {season}: {pdi_metrics['pdi_overall']:.1f}"
+                            )
+                        else:
+                            # Fallback: solo métricas PDI sin datos adicionales
+                            all_seasons_pdi.append(pdi_metrics)
+                            logger.warning(
+                                f"⚠️ PDI {season} sin datos profesionales adicionales"
+                            )
+                else:
+                    logger.warning(
+                        f"❌ No se pudieron obtener métricas PDI para {season}"
+                    )
+
+            # 3. Ordenar por temporada (más reciente primero)
+            all_seasons_pdi.sort(key=lambda x: x.get("season", ""), reverse=True)
+
+            logger.info(
+                f"📊 Total métricas PDI obtenidas: {len(all_seasons_pdi)}/{len(available_seasons)} temporadas"
+            )
+            return all_seasons_pdi
+
+        except Exception as e:
+            logger.error(f"❌ Error obteniendo todas las métricas PDI temporales: {e}")
+            return []
