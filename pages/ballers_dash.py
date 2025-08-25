@@ -2621,11 +2621,6 @@ def create_professional_stats_content(player, user):
                             tab_id="position-tab",
                             tab_style={"color": "var(--color-white-faded)"},
                         ),
-                        dbc.Tab(
-                            label="AI Analytics",
-                            tab_id="ai-analytics-tab",
-                            tab_style={"color": "var(--color-white-faded)"},
-                        ),
                     ],
                     id="main-stats-tabs",
                     active_tab="performance-tab",
@@ -3883,6 +3878,55 @@ def create_evolution_tab_content(player, player_stats, player_analyzer):
                     )
                 ]
             ),
+            # Separador visual elegante
+            html.Hr(
+                className="my-4", style={"border-color": "rgba(36, 222, 132, 0.3)"}
+            ),
+            # NUEVA SECCIÓN: Development Roadmap (TRASLADADO desde AI Analytics)
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                [
+                                    dbc.CardHeader(
+                                        [
+                                            html.H6(
+                                                [
+                                                    html.I(
+                                                        className="bi bi-map me-2"
+                                                    ),
+                                                    "Development Roadmap & Recommendations",
+                                                ],
+                                                className="mb-0",
+                                                style={"color": "#24DE84"},
+                                            ),
+                                            html.P(
+                                                "AI-driven development plan based on current PDI analysis",
+                                                className="mb-0 small",
+                                                style={"color": "#42A5F5"},
+                                            ),
+                                        ]
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            create_development_roadmap_content(
+                                                player, player_stats
+                                            )  # EXISTING function - complete roadmap
+                                        ],
+                                        className="p-2",
+                                    ),
+                                ],
+                                style={
+                                    "background-color": "#2B2B2B",
+                                    "border-color": "rgba(36, 222, 132, 0.3)",
+                                },
+                            )
+                        ],
+                        width=12,
+                    )
+                ]
+            ),
         ],
         fluid=True,
     )
@@ -3952,200 +3996,9 @@ def create_position_tab_content(player, player_stats):
         )
 
 
-def create_ai_analytics_content(player, player_stats):
-    """
-    Crea contenido del tab AI Analytics según Subfase 13.5.4.
-
-    Sub-tabs:
-    - PDI Deep Analysis: Análisis detallado de componentes PDI
-    - IEP Clustering: Análisis no supervisado de eficiencia posicional
-    - League Comparison: Comparativas con promedios de liga
-    """
-    latest_stats = player_stats[-1] if player_stats else {}
-    position = latest_stats.get("primary_position", "CF")
-    season = latest_stats.get("season", "2024-25")
-
-    return dbc.Container(
-        [
-            # Sub-tabs de AI Analytics
-            dbc.Tabs(
-                [
-                    dbc.Tab(
-                        [html.I(className="bi bi-cpu me-2"), "🔬 PDI Deep Analysis"],
-                        tab_id="pdi-deep-analysis-tab",
-                        tab_style={"color": "var(--color-white-faded)"},
-                    ),
-                    dbc.Tab(
-                        [html.I(className="bi bi-diagram-3 me-2"), "🧠 IEP Clustering"],
-                        tab_id="iep-clustering-tab",
-                        tab_style={"color": "var(--color-white-faded)"},
-                    ),
-                    dbc.Tab(
-                        [html.I(className="bi bi-trophy me-2"), "⚖️ League Comparison"],
-                        tab_id="league-comparison-tab",
-                        tab_style={"color": "var(--color-white-faded)"},
-                    ),
-                    dbc.Tab(
-                        [html.I(className="bi bi-map me-2"), "🗺️ Development Roadmap"],
-                        tab_id="development-roadmap-tab",
-                        tab_style={"color": "var(--color-white-faded)"},
-                    ),
-                ],
-                id="ai-analytics-sub-tabs",
-                active_tab="pdi-deep-analysis-tab",  # PDI como default
-                className="mb-4",
-            ),
-            # Contenido dinámico de sub-tabs
-            html.Div(id="ai-sub-tab-content"),
-        ],
-        fluid=True,
-    )
 
 
-def create_pdi_development_content(player):
-    """Crea contenido del sub-tab PDI Development."""
-    return dbc.Container(
-        [
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            dbc.Card(
-                                [
-                                    dbc.CardHeader(
-                                        [
-                                            html.H6(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-graph-up me-2"
-                                                    ),
-                                                    "PDI Evolution Analysis",
-                                                ],
-                                                className="text-primary mb-0",
-                                            )
-                                        ]
-                                    ),
-                                    dbc.CardBody(
-                                        [create_pdi_evolution_chart(player.player_id)],
-                                        className="p-2",
-                                    ),
-                                ],
-                                style={
-                                    "background-color": "#2B2B2B",
-                                    "border-color": "rgba(36, 222, 132, 0.3)",
-                                },
-                            )
-                        ],
-                        width=12,
-                    )
-                ]
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            dbc.Card(
-                                [
-                                    dbc.CardHeader(
-                                        [
-                                            html.H6(
-                                                [
-                                                    html.I(className="bi bi-grid me-2"),
-                                                    "PDI Temporal Heatmap",
-                                                ],
-                                                className="text-primary mb-0",
-                                            )
-                                        ]
-                                    ),
-                                    dbc.CardBody(
-                                        [create_pdi_temporal_heatmap(player.player_id)],
-                                        className="p-2",
-                                    ),
-                                ],
-                                style={
-                                    "background-color": "#2B2B2B",
-                                    "border-color": "rgba(36, 222, 132, 0.3)",
-                                },
-                            )
-                        ],
-                        width=12,
-                        lg=8,
-                    ),
-                    dbc.Col(
-                        [
-                            dbc.Card(
-                                [
-                                    dbc.CardHeader(
-                                        [
-                                            html.H6(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-lightbulb me-2"
-                                                    ),
-                                                    "Development Insights",
-                                                ],
-                                                className="text-primary mb-0",
-                                            )
-                                        ]
-                                    ),
-                                    dbc.CardBody(
-                                        [
-                                            html.P(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-robot me-2 text-primary"
-                                                    ),
-                                                    "PDI Development Analysis",
-                                                ],
-                                                className="fw-bold mb-2",
-                                            ),
-                                            html.P(
-                                                [
-                                                    "• Supervised learning system",
-                                                    html.Br(),
-                                                    "• Academic rigor with predefined weights",
-                                                    html.Br(),
-                                                    "• Temporal evolution tracking",
-                                                    html.Br(),
-                                                    "• Performance trend identification",
-                                                ],
-                                                className="mb-3 text-base",
-                                                style={
-                                                    "color": "var(--color-white-faded)"
-                                                },
-                                            ),
-                                            dbc.Alert(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-info-circle me-2"
-                                                    ),
-                                                    "PDI provides structured development assessment based on established football analytics methodologies.",
-                                                ],
-                                                color="info",
-                                                className="mb-0",
-                                            ),
-                                        ]
-                                    ),
-                                ],
-                                style={
-                                    "background-color": "#2B2B2B",
-                                    "border-color": "rgba(36, 222, 132, 0.3)",
-                                },
-                            )
-                        ],
-                        width=12,
-                        lg=4,
-                    ),
-                ],
-                className="mt-3",
-            ),
-        ],
-        fluid=True,
-    )
-
-
-def create_iep_clustering_content(player, player_stats):
-    """Crea contenido del sub-tab IEP Clustering."""
+def create_development_roadmap_content(player, player_stats):
 
     # Debug: verificar datos recibidos
     try:
@@ -4259,135 +4112,10 @@ def create_iep_clustering_content(player, player_stats):
                         width=12,
                         lg=8,
                     ),
-                    dbc.Col(
-                        [
-                            dbc.Card(
-                                [
-                                    dbc.CardHeader(
-                                        [
-                                            html.H6(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-pie-chart me-2"
-                                                    ),
-                                                    "Cluster Profile",
-                                                ],
-                                                className="text-primary mb-0",
-                                            )
-                                        ]
-                                    ),
-                                    dbc.CardBody(
-                                        [
-                                            html.P(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-diagram-3 me-2 text-primary"
-                                                    ),
-                                                    f"Position: {position}",
-                                                ],
-                                                className="fw-bold mb-2",
-                                            ),
-                                            html.P(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-calendar-date me-2 text-primary"
-                                                    ),
-                                                    f"Season: {season}",
-                                                ],
-                                                className="fw-bold mb-3",
-                                            ),
-                                            html.P(
-                                                [
-                                                    "• Unsupervised K-means clustering",
-                                                    html.Br(),
-                                                    "• Natural efficiency patterns",
-                                                    html.Br(),
-                                                    "• PCA dimensionality reduction",
-                                                    html.Br(),
-                                                    "• Position-specific tiers",
-                                                ],
-                                                className="mb-3 text-base",
-                                                style={
-                                                    "color": "var(--color-white-faded)"
-                                                },
-                                            ),
-                                            dbc.Alert(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-info-circle me-2"
-                                                    ),
-                                                    "IEP discovers natural performance groups without predefined labels.",
-                                                ],
-                                                color="info",
-                                                className="mb-0",
-                                            ),
-                                        ]
-                                    ),
-                                ],
-                                style={
-                                    "background-color": "#2B2B2B",
-                                    "border-color": "rgba(36, 222, 132, 0.3)",
-                                },
-                            )
-                        ],
-                        width=12,
-                        lg=4,
-                    ),
                 ]
             ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            dbc.Card(
-                                [
-                                    dbc.CardHeader(
-                                        [
-                                            html.H6(
-                                                [
-                                                    html.I(className="bi bi-gear me-2"),
-                                                    "Efficiency Recommendations",
-                                                ],
-                                                className="text-primary mb-0",
-                                            )
-                                        ]
-                                    ),
-                                    dbc.CardBody(
-                                        [
-                                            html.P(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-cpu me-2 text-warning"
-                                                    ),
-                                                    "Machine Learning Insights",
-                                                ],
-                                                className="fw-bold mb-2",
-                                            ),
-                                            html.P(
-                                                [
-                                                    "Based on unsupervised analysis of positional efficiency patterns, "
-                                                    "this system identifies natural performance clusters and provides "
-                                                    "data-driven recommendations for player development."
-                                                ],
-                                                className="text-base",
-                                                style={
-                                                    "color": "var(--color-white-faded)"
-                                                },
-                                            ),
-                                        ]
-                                    ),
-                                ],
-                                style={
-                                    "background-color": "#2B2B2B",
-                                    "border-color": "rgba(36, 222, 132, 0.3)",
-                                },
-                            )
-                        ],
-                        width=12,
-                    )
-                ],
-                className="mt-3",
-            ),
+            # Toggle explicativo para IEP
+            create_iep_explanation_toggle(),
         ],
         fluid=True,
     )
@@ -4833,8 +4561,10 @@ def create_pdi_deep_analysis_content(player, player_stats):
 def create_development_roadmap_content(player, player_stats):
     """Crea contenido del sub-tab Development Roadmap según Subfase 13.5.4."""
     latest_stats = player_stats[-1] if player_stats else {}
-    position = latest_stats.get("primary_position", "CF")
     season = latest_stats.get("season", "2024-25")
+    
+    # Obtener posición real del jugador desde BD (no fallback genérico)
+    position = get_player_position_group_8_from_bd(player.player_id) if player else "CF"
 
     # Calcular métricas PDI actuales para recomendaciones
     current_pdi = {}
@@ -4843,8 +4573,24 @@ def create_development_roadmap_content(player, player_stats):
 
         pdi_calculator = PDICalculator()
 
-        if latest_stats:
-            current_pdi = pdi_calculator.calculate_comprehensive_pdi(latest_stats)
+        if latest_stats and player:
+            # DEBUG: Información del jugador
+            player_name = player.user.name if player.user else "Unknown"
+            print(f"DEBUG Roadmap: player={player_name}, position={position}, season={season}")
+            print(f"DEBUG Roadmap: latest_stats keys={list(latest_stats.keys()) if latest_stats else 'None'}")
+            
+            # Usar método correcto del PDICalculator
+            ml_metrics = pdi_calculator.get_or_calculate_metrics(player.player_id, season)
+            if ml_metrics:
+                current_pdi = {
+                    "pdi_overall": ml_metrics.pdi_overall,
+                    "pdi_universal": ml_metrics.pdi_universal,
+                    "pdi_zone": ml_metrics.pdi_zone,
+                    "pdi_position_specific": ml_metrics.pdi_position_specific
+                }
+                print(f"DEBUG Roadmap: current_pdi calculado={current_pdi}")
+            else:
+                print(f"DEBUG Roadmap: No se pudieron calcular métricas PDI para {player_name}")
     except Exception as e:
         print(f"Error calculating PDI for roadmap: {e}")
 
@@ -4862,82 +4608,14 @@ def create_development_roadmap_content(player, player_stats):
                                             html.H6(
                                                 [
                                                     html.I(className="bi bi-map me-2"),
-                                                    f"Development Roadmap - {position}",
+                                                    f"Development Roadmap - {player.user.name if player.user else 'Unknown'} ({position})",
                                                 ],
                                                 className="text-primary mb-0",
                                             )
                                         ]
                                     ),
                                     dbc.CardBody(
-                                        [
-                                            # Prioridad Alta
-                                            html.Div(
-                                                [
-                                                    html.H6(
-                                                        [
-                                                            html.I(
-                                                                className="bi bi-exclamation-triangle me-2",
-                                                                style={
-                                                                    "color": "#FF5722"
-                                                                },
-                                                            ),
-                                                            "High Priority Areas",
-                                                        ],
-                                                        className="mb-2",
-                                                        style={"color": "#FF5722"},
-                                                    ),
-                                                    _generate_priority_recommendations(
-                                                        current_pdi, "high", position
-                                                    ),
-                                                ],
-                                                className="mb-4",
-                                            ),
-                                            # Prioridad Media
-                                            html.Div(
-                                                [
-                                                    html.H6(
-                                                        [
-                                                            html.I(
-                                                                className="bi bi-arrow-up me-2",
-                                                                style={
-                                                                    "color": "#FF9800"
-                                                                },
-                                                            ),
-                                                            "Medium Priority Areas",
-                                                        ],
-                                                        className="mb-2",
-                                                        style={"color": "#FF9800"},
-                                                    ),
-                                                    _generate_priority_recommendations(
-                                                        current_pdi, "medium", position
-                                                    ),
-                                                ],
-                                                className="mb-4",
-                                            ),
-                                            # Fortalezas a mantener
-                                            html.Div(
-                                                [
-                                                    html.H6(
-                                                        [
-                                                            html.I(
-                                                                className="bi bi-check-circle me-2",
-                                                                style={
-                                                                    "color": "#4CAF50"
-                                                                },
-                                                            ),
-                                                            "Strengths to Maintain",
-                                                        ],
-                                                        className="mb-2",
-                                                        style={"color": "#4CAF50"},
-                                                    ),
-                                                    _generate_priority_recommendations(
-                                                        current_pdi,
-                                                        "maintain",
-                                                        position,
-                                                    ),
-                                                ]
-                                            ),
-                                        ]
+                                        _generate_selective_priority_sections(current_pdi, position)
                                     ),
                                 ],
                                 style={
@@ -5055,7 +4733,7 @@ def create_development_roadmap_content(player, player_stats):
                                     dbc.CardBody(
                                         [
                                             _generate_training_focus(
-                                                position, current_pdi
+                                                position, current_pdi, latest_stats
                                             )
                                         ]
                                     ),
@@ -5086,40 +4764,9 @@ def create_development_roadmap_content(player, player_stats):
                                     ),
                                     dbc.CardBody(
                                         [
-                                            html.P(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-cpu me-2 text-primary"
-                                                    ),
-                                                    "AI-Powered Development",
-                                                ],
-                                                className="fw-bold mb-2",
-                                            ),
-                                            html.P(
-                                                [
-                                                    "• ML-based performance analysis",
-                                                    html.Br(),
-                                                    "• Position-specific development paths",
-                                                    html.Br(),
-                                                    "• Continuous progress tracking",
-                                                    html.Br(),
-                                                    "• Data-driven recommendations",
-                                                ],
-                                                className="mb-3 text-base",
-                                                style={
-                                                    "color": "var(--color-white-faded)"
-                                                },
-                                            ),
-                                            dbc.Alert(
-                                                [
-                                                    html.I(
-                                                        className="bi bi-lightbulb me-2"
-                                                    ),
-                                                    "Roadmap updates automatically based on performance evolution",
-                                                ],
-                                                color="info",
-                                                className="mb-0 small",
-                                            ),
+                                            _create_methodology_content(
+                                                player, latest_stats, current_pdi, position, season
+                                            )
                                         ]
                                     ),
                                 ],
@@ -5184,16 +4831,15 @@ def _calculate_league_averages(player_analyzer, season, position=None):
 
             for stat in stats_data:
                 try:
-                    stat_dict = {
-                        column.name: getattr(stat, column.name)
-                        for column in stat.__table__.columns
-                    }
-                    pdi_result = pdi_calculator.calculate_comprehensive_pdi(stat_dict)
-
-                    if pdi_result:
-                        for key in total_metrics:
-                            if key in pdi_result:
-                                total_metrics[key] += pdi_result[key]
+                    # Usar método correcto del PDICalculator
+                    ml_metrics = pdi_calculator.get_or_calculate_metrics(stat.player_id, stat.season)
+                    
+                    if ml_metrics:
+                        total_metrics["pdi_overall"] += ml_metrics.pdi_overall or 0
+                        total_metrics["pdi_universal"] += ml_metrics.pdi_universal or 0
+                        total_metrics["pdi_zone"] += ml_metrics.pdi_zone or 0
+                        total_metrics["pdi_position_specific"] += ml_metrics.pdi_position_specific or 0
+                        # Los otros campos técnicos no están en MLMetrics, los dejamos en 0
                         valid_calculations += 1
 
                 except Exception as e:
@@ -5401,16 +5047,364 @@ def create_pdi_explanation_card():
     )
 
 
+def create_iep_explanation_toggle():
+    """
+    Crea un componente toggle explicativo para el gráfico IEP Clustering.
+    Similar al toggle PDI pero específico para análisis no supervisado.
+    """
+    return dbc.Card(
+        [
+            dbc.CardHeader(
+                [
+                    html.I(
+                        className="bi bi-info-circle me-2", style={"color": "#42A5F5"}
+                    ),
+                    html.Span(
+                        "How to Read This Clustering Chart",
+                        style={"color": "#24DE84", "font-weight": "600"},
+                    ),
+                    dbc.Button(
+                        [html.I(className="bi bi-chevron-down")],
+                        id="iep-explanation-toggle",
+                        size="sm",
+                        color="link",
+                        className="float-end p-1",
+                        style={"color": "#42A5F5"},
+                    ),
+                ],
+                style={"background-color": "rgba(36, 222, 132, 0.1)", "border": "none"},
+            ),
+            dbc.Collapse(
+                dbc.CardBody(
+                    [
+                        html.Div(
+                            [
+                                html.H6(
+                                    [
+                                        html.I(className="bi bi-diagram-3 me-2"),
+                                        "IEP Clustering Method:",
+                                    ],
+                                    className="mb-2",
+                                    style={"color": "#42A5F5"},
+                                ),
+                                html.P(
+                                    [
+                                        html.Strong(
+                                            "Unsupervised K-Means", style={"color": "#24DE84"}
+                                        ),
+                                        " clustering discovers natural performance groups without predefined labels",
+                                    ],
+                                    className="mb-1 small",
+                                    style={"color": "#E0E0E0"},
+                                ),
+                                html.P(
+                                    [
+                                        html.Strong(
+                                            "PCA Dimensionality", style={"color": "#26C6DA"}
+                                        ),
+                                        " reduces complex metrics to 2D visualization while preserving variance",
+                                    ],
+                                    className="mb-1 small",
+                                    style={"color": "#E0E0E0"},
+                                ),
+                                html.P(
+                                    [
+                                        html.Strong("Position-Specific", style={"color": "#AB47BC"}),
+                                        " analysis considers only players in similar roles for fair comparison",
+                                    ],
+                                    className="mb-3 small",
+                                    style={"color": "#E0E0E0"},
+                                ),
+                                html.H6(
+                                    [
+                                        html.I(className="bi bi-palette me-2"),
+                                        "Cluster Tiers:",
+                                    ],
+                                    className="mb-2",
+                                    style={"color": "#42A5F5"},
+                                ),
+                                html.P(
+                                    [
+                                        html.I(
+                                            className="bi bi-circle-fill me-2",
+                                            style={"color": "#4CAF50"},
+                                        ),
+                                        html.Strong(
+                                            "Elite Tier",
+                                            style={"color": "#4CAF50"},
+                                        ),
+                                        ": Highest efficiency players in position",
+                                    ],
+                                    className="mb-1 small",
+                                    style={"color": "#E0E0E0"},
+                                ),
+                                html.P(
+                                    [
+                                        html.I(
+                                            className="bi bi-circle-fill me-2",
+                                            style={"color": "#2196F3"},
+                                        ),
+                                        html.Strong(
+                                            "Strong Tier", style={"color": "#2196F3"}
+                                        ),
+                                        ": Solid professional performance level (4-cluster mode)",
+                                    ],
+                                    className="mb-1 small",
+                                    style={"color": "#E0E0E0"},
+                                ),
+                                html.P(
+                                    [
+                                        html.I(
+                                            className="bi bi-circle-fill me-2",
+                                            style={"color": "#FF9800"},
+                                        ),
+                                        html.Strong(
+                                            "Average Tier", style={"color": "#FF9800"}
+                                        ),
+                                        ": League average performance standard",
+                                    ],
+                                    className="mb-1 small",
+                                    style={"color": "#E0E0E0"},
+                                ),
+                                html.P(
+                                    [
+                                        html.I(
+                                            className="bi bi-circle-fill me-2",
+                                            style={"color": "#F44336"},
+                                        ),
+                                        html.Strong(
+                                            "Development Tier", style={"color": "#F44336"}
+                                        ),
+                                        ": Growth potential with specific focus areas",
+                                    ],
+                                    className="mb-3 small",
+                                    style={"color": "#E0E0E0"},
+                                ),
+                                html.H6(
+                                    [
+                                        html.I(className="bi bi-person-circle me-2"),
+                                        "Current Player Highlight:",
+                                    ],
+                                    className="mb-2",
+                                    style={"color": "#42A5F5"},
+                                ),
+                                html.P(
+                                    [
+                                        html.I(
+                                            className="bi bi-circle-fill me-2",
+                                            style={"color": "#8B5CF6"},
+                                        ),
+                                        html.Strong(
+                                            "Selected Player", style={"color": "#8B5CF6"}
+                                        ),
+                                        ": Your player appears in purple with red border for easy identification",
+                                    ],
+                                    className="mb-1 small",
+                                    style={"color": "#E0E0E0"},
+                                ),
+                                html.P(
+                                    [
+                                        "• Shown with ",
+                                        html.Strong("thick red border", style={"color": "#EF4444"}),
+                                        " for visibility",
+                                        html.Br(),
+                                        "• Appears in legend with real player name",
+                                        html.Br(),
+                                        "• Size reflects IEP score like other players",
+                                    ],
+                                    className="mb-3 small",
+                                    style={"color": "#E0E0E0"},
+                                ),
+                                html.H6(
+                                    [
+                                        html.I(className="bi bi-search me-2"),
+                                        "How to Interpret:",
+                                    ],
+                                    className="mb-2",
+                                    style={"color": "#42A5F5"},
+                                ),
+                                html.Ul(
+                                    [
+                                        html.Li(
+                                            [
+                                                html.Strong("Position on chart"),
+                                                " = Natural efficiency grouping discovered by K-means algorithm",
+                                            ],
+                                            className="small mb-1",
+                                            style={"color": "#E0E0E0"},
+                                        ),
+                                        html.Li(
+                                            [
+                                                html.Strong("Distance from center"),
+                                                " = Uniqueness of playing style within position",
+                                            ],
+                                            className="small mb-1",
+                                            style={"color": "#E0E0E0"},
+                                        ),
+                                        html.Li(
+                                            [
+                                                html.Strong("Cluster membership"),
+                                                " = Similar performance profile to other players in same tier",
+                                            ],
+                                            className="small mb-1",
+                                            style={"color": "#E0E0E0"},
+                                        ),
+                                        html.Li(
+                                            [
+                                                html.Strong("Dynamic clustering"),
+                                                " = 4 tiers with sufficient data, 3 tiers when limited players",
+                                            ],
+                                            className="small mb-1",
+                                            style={"color": "#E0E0E0"},
+                                        ),
+                                    ],
+                                    className="mb-0",
+                                ),
+                            ]
+                        )
+                    ],
+                    style={"background-color": "rgba(66, 165, 245, 0.05)"},
+                ),
+                id="iep-explanation-collapse",
+                is_open=False,
+            ),
+        ],
+        className="mt-3",
+        style={
+            "border": "1px solid rgba(66, 165, 245, 0.3)",
+            "background-color": "rgba(0, 0, 0, 0.3)",
+        },
+    )
+
+
 # ============================================================================
 # FUNCIONES AUXILIARES PARA DEVELOPMENT ROADMAP
 # ============================================================================
 
 
+def _generate_selective_priority_sections(current_pdi, position):
+    """
+    Genera secciones de prioridad selectivas basadas en PDI actual del jugador.
+    Solo muestra las secciones relevantes según el nivel de desarrollo.
+    """
+    if not current_pdi:
+        return [
+            html.P(
+                "No PDI data available for priority analysis",
+                className="text-center",
+                style={"color": "var(--color-white-faded)"},
+            )
+        ]
+
+    pdi_overall = current_pdi.get("pdi_overall", 0)
+    sections = []
+
+    # Lógica selectiva basada en PDI Overall
+    if pdi_overall < 40:
+        # Solo críticas para jugadores con PDI muy bajo (como Felipe: 34.86)
+        sections.append(
+            html.Div(
+                [
+                    html.H6(
+                        [
+                            html.I(
+                                className="bi bi-exclamation-triangle me-2",
+                                style={"color": "#FF5722"},
+                            ),
+                            "Critical Priority Areas",
+                        ],
+                        className="mb-2",
+                        style={"color": "#FF5722"},
+                    ),
+                    _generate_priority_recommendations(current_pdi, "high", position),
+                ],
+                className="mb-4",
+            )
+        )
+    elif pdi_overall < 65:
+        # Críticas + moderadas para jugadores medios
+        sections.extend([
+            html.Div(
+                [
+                    html.H6(
+                        [
+                            html.I(
+                                className="bi bi-exclamation-triangle me-2",
+                                style={"color": "#FF5722"},
+                            ),
+                            "High Priority Areas",
+                        ],
+                        className="mb-2",
+                        style={"color": "#FF5722"},
+                    ),
+                    _generate_priority_recommendations(current_pdi, "high", position),
+                ],
+                className="mb-4",
+            ),
+            html.Div(
+                [
+                    html.H6(
+                        [
+                            html.I(
+                                className="bi bi-arrow-up me-2",
+                                style={"color": "#FF9800"},
+                            ),
+                            "Medium Priority Areas",
+                        ],
+                        className="mb-2",
+                        style={"color": "#FF9800"},
+                    ),
+                    _generate_priority_recommendations(current_pdi, "medium", position),
+                ],
+                className="mb-4",
+            ),
+        ])
+    else:
+        # Moderadas + fortalezas para jugadores buenos
+        sections.extend([
+            html.Div(
+                [
+                    html.H6(
+                        [
+                            html.I(
+                                className="bi bi-arrow-up me-2",
+                                style={"color": "#FF9800"},
+                            ),
+                            "Development Areas",
+                        ],
+                        className="mb-2",
+                        style={"color": "#FF9800"},
+                    ),
+                    _generate_priority_recommendations(current_pdi, "medium", position),
+                ],
+                className="mb-4",
+            ),
+            html.Div(
+                [
+                    html.H6(
+                        [
+                            html.I(
+                                className="bi bi-check-circle me-2",
+                                style={"color": "#4CAF50"},
+                            ),
+                            "Strengths to Maintain",
+                        ],
+                        className="mb-2",
+                        style={"color": "#4CAF50"},
+                    ),
+                    _generate_priority_recommendations(current_pdi, "maintain", position),
+                ]
+            ),
+        ])
+
+    return sections
+
+
 def _generate_priority_recommendations(current_pdi, priority_level, position):
-    """Genera recomendaciones basadas en PDI actual y prioridad."""
+    """Genera recomendaciones estratégicas basadas en análisis PDI (enfoque macro)."""
     if not current_pdi:
         return html.P(
-            "No data available for recommendations",
+            "No PDI data available for strategic analysis",
             className="small",
             style={"color": "var(--color-white-faded)"},
         )
@@ -5422,7 +5416,7 @@ def _generate_priority_recommendations(current_pdi, priority_level, position):
         "maintain": 70,  # Fortalezas por encima de 70
     }
 
-    # Generar recomendaciones basadas en PDI actual
+    # Generar recomendaciones estratégicas basadas en componentes PDI
     recommendations = []
     threshold = thresholds[priority_level]
 
@@ -5433,56 +5427,41 @@ def _generate_priority_recommendations(current_pdi, priority_level, position):
 
     if priority_level == "high":
         if pdi_overall < threshold:
-            recommendations.append("• Focus on overall performance consistency")
+            recommendations.append(f"• Overall Performance Index: {pdi_overall:.1f} - requires strategic focus")
         if pdi_universal < threshold:
-            recommendations.append(
-                "• Improve fundamental skills: passing, first touch, ball control"
-            )
+            recommendations.append(f"• Universal Skills Index: {pdi_universal:.1f} - fundamental development needed")
         if pdi_zone < threshold:
-            recommendations.append(f"• Enhance zone-specific actions for {position}")
+            recommendations.append(f"• Zone Actions Index: {pdi_zone:.1f} - tactical understanding priority")
         if pdi_position < threshold:
-            recommendations.append(
-                f"• Develop {position}-specific skills and positioning"
-            )
+            recommendations.append(f"• Position-Specific Index: {pdi_position:.1f} - role specialization required")
 
     elif priority_level == "medium":
         if threshold <= pdi_overall < 75:
-            recommendations.append("• Continue developing tactical understanding")
+            recommendations.append(f"• Overall Performance Index: {pdi_overall:.1f} - maintain development pace")
         if threshold <= pdi_universal < 75:
-            recommendations.append("• Refine technique under pressure")
+            recommendations.append(f"• Universal Skills Index: {pdi_universal:.1f} - continue skill refinement")
         if threshold <= pdi_zone < 75:
-            recommendations.append("• Improve decision-making in different field zones")
+            recommendations.append(f"• Zone Actions Index: {pdi_zone:.1f} - enhance tactical execution")
 
     else:  # maintain
         if pdi_overall >= threshold:
-            recommendations.append("• Maintain excellent overall performance level")
+            recommendations.append(f"• Overall Performance Index: {pdi_overall:.1f} - excellent level achieved")
         if pdi_universal >= threshold:
-            recommendations.append("• Keep up outstanding universal skills")
+            recommendations.append(f"• Universal Skills Index: {pdi_universal:.1f} - maintain high standards")
         if pdi_zone >= threshold:
-            recommendations.append("• Continue excelling in zone-specific actions")
+            recommendations.append(f"• Zone Actions Index: {pdi_zone:.1f} - continue excellence")
 
-    # Si no hay recomendaciones específicas, dar consejos generales
+    # Si no hay recomendaciones específicas, análisis general del perfil PDI
     if not recommendations:
-        if priority_level == "high":
-            recommendations = [
-                "• Focus on consistency in key performance areas",
-                "• Work on fundamental technical skills",
-            ]
-        elif priority_level == "medium":
-            recommendations = [
-                "• Continue current development trajectory",
-                "• Add more tactical complexity to training",
-            ]
-        else:
-            recommendations = [
-                "• Maintain current training intensity",
-                "• Share expertise with teammates",
-            ]
+        recommendations = [
+            f"• PDI Profile Analysis: Overall {pdi_overall:.1f}, Universal {pdi_universal:.1f}, Zone {pdi_zone:.1f}, Position {pdi_position:.1f}",
+            "• Strategic Development: Focus on lowest scoring component for maximum impact",
+        ]
 
     return html.P(
         [
-            html.Span(rec, style={"display": "block"}) for rec in recommendations[:3]
-        ],  # Máximo 3
+            html.Span(rec, style={"display": "block"}) for rec in recommendations[:4]
+        ],  # Máximo 4 para análisis completo
         className="small mb-0",
         style={"color": "var(--color-white-faded)"},
     )
@@ -5523,56 +5502,214 @@ def _create_progress_bar(current_pdi):
     )
 
 
-def _generate_training_focus(position, current_pdi):
-    """Genera áreas de enfoque específicas para entrenamiento."""
+def _generate_training_focus(position, current_pdi, latest_stats):
+    """
+    Genera recomendaciones dinámicas de entrenamiento basadas en análisis de debilidades del jugador.
+    Solo recomienda áreas que necesitan trabajo según métricas reales.
+    """
 
-    # Áreas de entrenamiento por posición
-    position_focus = {
-        "GK": [
-            "Shot stopping drills with varied angles",
-            "Distribution practice under pressure",
-            "1v1 situations and decision making",
-            "Aerial dominance in set pieces",
-        ],
-        "CB": [
-            "Defensive positioning in different formations",
-            "Aerial duels and heading accuracy",
-            "Long passing and build-up play",
-            "1v1 defending techniques",
-        ],
-        "FB": [
-            "Crossing from wide positions",
-            "Overlapping runs and timing",
-            "Defensive transitions and recovery",
-            "Set piece defending",
-        ],
-        "CM": [
-            "Passing under pressure drills",
-            "Vision and through ball execution",
-            "Box-to-box movement patterns",
-            "Pressing and counter-pressing",
-        ],
-        "CF": [
-            "Finishing in various situations",
-            "Movement and positioning in the box",
-            "Link-up play with midfielders",
-            "Creating space and stretching defenses",
-        ],
+    # Mapeo de métricas a ejercicios específicos
+    METRIC_TO_EXERCISE = {
+        'shots_on_target_pct': 'Finishing accuracy drills',
+        'shots_per_90': 'Shot creation and positioning',
+        'pass_accuracy_pct': 'Passing under pressure drills',
+        'assists_per_90': 'Creative playmaking and vision',
+        'defensive_actions_per_90': 'Pressing and defensive positioning',
+        'duels_won_pct': 'Physical duels and aerial challenges',
+        'goals_per_90': 'Goal scoring opportunities',
+        'expected_goals': 'Movement in dangerous areas',
+        'expected_assists': 'Final pass execution'
     }
 
-    # Usar CF como default
-    focus_areas = position_focus.get(position, position_focus["CF"])
+    # Thresholds por posición (critical, good, excellent)
+    POSITION_THRESHOLDS = {
+        'GK': {
+            'pass_accuracy_pct': (60.0, 75.0, 85.0),
+            'duels_won_pct': (40.0, 60.0, 75.0),
+        },
+        'CB': {
+            'defensive_actions_per_90': (3.0, 6.0, 9.0),
+            'duels_won_pct': (45.0, 65.0, 80.0),
+            'pass_accuracy_pct': (60.0, 70.0, 80.0),
+        },
+        'FB': {
+            'assists_per_90': (0.05, 0.2, 0.4),
+            'defensive_actions_per_90': (2.0, 4.0, 6.5),
+            'duels_won_pct': (35.0, 55.0, 70.0),
+        },
+        'CM': {
+            'pass_accuracy_pct': (70.0, 80.0, 88.0),
+            'assists_per_90': (0.05, 0.15, 0.35),
+            'defensive_actions_per_90': (2.5, 4.0, 6.0),
+        },
+        'CF': {
+            'shots_on_target_pct': (20.0, 35.0, 50.0),
+            'shots_per_90': (1.5, 2.5, 4.0),
+            'pass_accuracy_pct': (60.0, 70.0, 80.0),
+            'assists_per_90': (0.03, 0.1, 0.25),
+        }
+    }
+
+    def analyze_player_weaknesses():
+        """Analiza métricas reales del jugador y genera recomendaciones específicas."""
+        if not latest_stats:
+            return ["No training data available - focus on fundamental skills"]
+
+        recommendations = []
+        position_metrics = POSITION_THRESHOLDS.get(position, POSITION_THRESHOLDS['CF'])
+        
+        # Analizar cada métrica relevante para la posición
+        for metric, thresholds in position_metrics.items():
+            metric_value = latest_stats.get(metric)
+            if metric_value is not None:
+                critical, good, excellent = thresholds
+                exercise = METRIC_TO_EXERCISE.get(metric, f"Work on {metric.replace('_', ' ')}")
+                
+                # Solo recomendar si está por debajo del nivel "excellent" 
+                if metric_value < excellent:
+                    recommendations.append(add_context(exercise, metric, critical, good, excellent))
+        
+        # Si no hay recomendaciones específicas, dar consejos de posición
+        if not recommendations:
+            recommendations = [f"Continue excellent {position} performance - maintain current training intensity"]
+        
+        # Máximo 4 recomendaciones para mantener foco
+        return recommendations[:4]
+
+    # Áreas de entrenamiento por posición con contexto de métricas reales y 4 niveles
+    def add_context(area, metric_key, threshold_critical, threshold_good, threshold_excellent):
+        """
+        Añade contexto de métrica específica con 4 niveles de prioridad y colores CSS.
+        - Critical (rojo): < threshold_critical - URGENT
+        - Moderate (amarillo): critical <= value < threshold_good - needs improvement  
+        - Good (verde): threshold_good <= value < threshold_excellent - good level
+        - Strength (azul): >= threshold_excellent - leverage this advantage
+        """
+        if not latest_stats:
+            return area
+        
+        metric_value = latest_stats.get(metric_key)
+        if metric_value is not None and isinstance(metric_value, (int, float)):
+            # Formatear número según el tipo de métrica
+            if 'pct' in metric_key or 'per_90' in metric_key:
+                value_str = f"{metric_value:.1f}"
+            else:
+                value_str = f"{metric_value:.0f}"
+            
+            # Determinar nivel y color según thresholds
+            metric_display = metric_key.replace('_', ' ')
+            
+            if metric_value < threshold_critical:
+                context = html.Span(
+                    f"({metric_display}: {value_str} - URGENT - needs immediate work)",
+                    style={"color": "#dc3545", "font-weight": "500"}
+                )
+            elif metric_value < threshold_good:
+                context = html.Span(
+                    f"({metric_display}: {value_str} - needs improvement)",
+                    style={"color": "#ffc107", "font-weight": "500"}
+                )
+            elif metric_value < threshold_excellent:
+                context = html.Span(
+                    f"({metric_display}: {value_str} - good level)",
+                    style={"color": "#28a745", "font-weight": "500"}
+                )
+            else:
+                context = html.Span(
+                    [
+                        html.I(className="bi bi-star-fill me-1", style={"font-size": "0.8em"}),
+                        f"({metric_display}: {value_str} - STRENGTH - leverage this advantage)"
+                    ],
+                    style={"color": "#17a2b8", "font-weight": "500"}
+                )
+            
+            return html.Span([area, " ", context])
+        
+        return area
+
+    # Generar recomendaciones dinámicas basadas en análisis real del jugador
+    focus_areas = analyze_player_weaknesses()
 
     return html.Div(
         [
-            html.P(
-                f"🎯 {area}",
-                className="small mb-2",
+            html.Div(
+                [
+                    html.I(
+                        className="bi bi-arrow-right me-2", 
+                        style={"color": "var(--color-primary)"}
+                    ),
+                    area
+                ],
+                className="d-flex align-items-center small mb-2",
                 style={"color": "var(--color-white-faded)"},
             )
             for area in focus_areas
         ]
     )
+
+
+def _create_methodology_content(player, latest_stats, current_pdi, position, season):
+    """
+    Crea contenido methodology personalizado combinando:
+    1. Qué datos tenemos (Data Sources)
+    2. Cómo se calcula (PDI Calculation) 
+    3. Con qué se compara (Benchmarks)
+    """
+    try:
+        # Extraer datos específicos del jugador
+        player_name = player.user.name if player.user else "Unknown"
+        matches = latest_stats.get('matches_played', 'N/A')
+        minutes = latest_stats.get('minutes_played', 'N/A') 
+        team = latest_stats.get('team', 'Unknown')
+        pdi_score = current_pdi.get('pdi_overall', 0) if current_pdi else 0
+        
+        return html.Div([
+            # DATA SOURCES
+            html.H6(
+                [
+                    html.I(className="bi bi-database me-2", style={"color": "var(--color-info)"}),
+                    "Data Sources"
+                ], 
+                className="text-info mb-2"
+            ),
+            html.P([
+                f"Season: {season} • Matches: {matches} • Minutes: {minutes:,}" if isinstance(minutes, (int, float)) else f"Season: {season} • Matches: {matches} • Minutes: {minutes}",
+                html.Br(),
+                "Statistical Indicators: 31+ metrics tracked from Thai League database"
+            ], className="small mb-3", style={"color": "var(--color-white-faded)"}),
+            
+            # PDI CALCULATION
+            html.H6(
+                [
+                    html.I(className="bi bi-calculator me-2", style={"color": "var(--color-warning)"}),
+                    "PDI Calculation Method"
+                ], 
+                className="text-warning mb-2"
+            ), 
+            html.P([
+                f"Universal Skills (40%) + Zone Actions (35%) + Position-Specific (25%)",
+                html.Br(),
+                f"Your PDI Score: {pdi_score:.1f}/100" if pdi_score > 0 else "Your PDI Score: Calculating..."
+            ], className="small mb-3", style={"color": "var(--color-white-faded)"}),
+            
+            # BENCHMARKS
+            html.H6(
+                [
+                    html.I(className="bi bi-graph-up me-2", style={"color": "var(--color-success)"}),
+                    "Benchmarking Context"
+                ], 
+                className="text-success mb-2"
+            ),
+            html.P([
+                f"League: Thai League {season} • Position: {position} players",
+                html.Br(),
+                f"Team Context: {team} squad • Performance ranking vs. position group"
+            ], className="small mb-0", style={"color": "var(--color-white-faded)"})
+        ])
+    
+    except Exception as e:
+        print(f"Error creating methodology content: {e}")
+        return html.P("Methodology information unavailable", className="small text-muted")
 
 
 if __name__ == "__main__":

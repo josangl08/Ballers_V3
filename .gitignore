@@ -173,24 +173,71 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-# Streamlit
-.secrets/
-data/test/
-data/usuarios_generados.txt
+# ==============================================
+# BALLERS APP - PRODUCTION CONFIGURATION
+# ==============================================
+
+# Datos sensibles y configuración
 data/google_service_account.json
+config/credentials.json
+.env.local
+.env.production
+
+# Base de datos
 data/ballers_app.db
 data/ballers_app.db*
 *.db-journal
-assets/ballers
-assets/profile_photos
-logs/
-backups/
 
-# Claude Code documentation (private)
+# Assets dinámicos
+assets/profile_photos/*
+!assets/profile_photos/.gitkeep
+!assets/default_profile.png
+assets/ballers/
+assets/exports/*.pdf
+exports/*.pdf
+
+# Logs y temporales de desarrollo
+logs/
+data/logs/
+*.log
+
+# ML System - outputs intermedios
+ml_system/outputs/models/*.joblib
+ml_system/outputs/models/*.pickle
+ml_system/outputs/models/*.pkl
+ml_system/outputs/results/intermediate/
+ml_system/outputs/results/debug/
+ml_system/outputs/results/temp/
+ml_system/outputs/visualizations/temp/
+ml_system/outputs/visualizations/debug/
+
+# Dash temporales
+.dash_callback_cache/
+assets/.dash_callback_cache/
+
+# Archivos de desarrollo y backups
+backups/
+data/test/
+data/usuarios_generados.txt
+*.backup
+*.bak
+tmp/
+temp/
+
+# Documentación de desarrollo (mantener README.md)
 CLAUDE.md
 PROYECTO_STATUS.md
 
-# Legacy files (migrated Streamlit components)
+# Legacy - no necesario en producción
 legacy/
-# Large processed files
+
+# Archivos grandes procesados
 data/thai_league_processed/processed_complete.csv
+
+# Scripts de migración completados
+data/migrate_*.py
+scripts/migration_*.py
+
+# Sistema operativo
+.DS_Store
+._*

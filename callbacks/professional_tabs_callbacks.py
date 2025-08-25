@@ -10,12 +10,8 @@ from controllers.player_controller import get_player_profile_data
 from models.professional_stats_model import ProfessionalStats
 from models.user_model import UserType
 from pages.ballers_dash import (
-    create_ai_analytics_content,
     create_development_roadmap_content,
     create_evolution_tab_content,
-    create_iep_clustering_content,
-    create_league_comparison_content,
-    create_pdi_deep_analysis_content,
     create_performance_tab_content,
     create_position_tab_content,
     create_professional_info_content,
@@ -353,8 +349,6 @@ def register_professional_tabs_callbacks(app):
                 )
             elif active_tab == "position-tab":
                 return create_position_tab_content(player, player_stats)
-            elif active_tab == "ai-analytics-tab":
-                return create_ai_analytics_content(player, player_stats)
             else:
                 return html.Div("Tab not implemented yet")
 
@@ -365,57 +359,6 @@ def register_professional_tabs_callbacks(app):
             traceback.print_exc()
             return html.Div(f"Error loading tab content: {str(e)}")
 
-    @app.callback(
-        Output("ai-sub-tab-content", "children"),
-        [Input("ai-analytics-sub-tabs", "active_tab")],
-        [State("stats-player-data", "data")],
-        prevent_initial_call=False,
-    )
-    def update_ai_sub_tab_content(active_sub_tab, player_data):
-        """
-        Callback para manejar el contenido de los sub-tabs de AI Analytics.
-        PDI Development/IEP Clustering/League Comparison.
-        """
-        if not active_sub_tab or not player_data:
-            return html.Div()
-
-        try:
-            from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
-
-            # Obtener datos del jugador desde el store
-            player_id = player_data.get("player_id")
-            season = player_data.get("season")
-
-            # Obtener objetos player desde la base de datos
-            profile_data = get_player_profile_data(player_id=player_id)
-            if not profile_data:
-                return html.Div("Error: Player data not found")
-
-            player = profile_data["player"]
-            player_analyzer = PlayerAnalyzer()
-
-            # Obtener player_stats usando PlayerAnalyzer (formato correcto: lista de diccionarios)
-            all_stats = player_analyzer.get_player_stats(player_id)
-            # Usar todas las temporadas disponibles para análisis temporal completo
-            player_stats = all_stats if all_stats else []
-
-            if active_sub_tab == "pdi-deep-analysis-tab":
-                return create_pdi_deep_analysis_content(player, player_stats)
-            elif active_sub_tab == "iep-clustering-tab":
-                return create_iep_clustering_content(player, player_stats)
-            elif active_sub_tab == "league-comparison-tab":
-                return create_league_comparison_content(player, player_stats)
-            elif active_sub_tab == "development-roadmap-tab":
-                return create_development_roadmap_content(player, player_stats)
-            else:
-                return html.Div("Sub-tab not implemented yet")
-
-        except Exception as e:
-            import traceback
-
-            print(f"Error in update_ai_sub_tab_content: {e}")
-            traceback.print_exc()
-            return html.Div(f"Error loading sub-tab content: {str(e)}")
 
     @app.callback(
         [
@@ -429,6 +372,29 @@ def register_professional_tabs_callbacks(app):
     def toggle_pdi_explanation(n_clicks, is_open):
         """
         Callback para toggle de la explicación del gráfico PDI.
+        """
+        if n_clicks:
+            new_state = not is_open
+            icon = (
+                html.I(className="bi bi-chevron-up")
+                if new_state
+                else html.I(className="bi bi-chevron-down")
+            )
+            return new_state, icon
+        return is_open, html.I(className="bi bi-chevron-down")
+
+    @app.callback(
+        [
+            Output("iep-explanation-collapse", "is_open"),
+            Output("iep-explanation-toggle", "children"),
+        ],
+        [Input("iep-explanation-toggle", "n_clicks")],
+        [State("iep-explanation-collapse", "is_open")],
+        prevent_initial_call=True,
+    )
+    def toggle_iep_explanation(n_clicks, is_open):
+        """
+        Callback para toggle de la explicación del gráfico IEP Clustering.
         """
         if n_clicks:
             new_state = not is_open

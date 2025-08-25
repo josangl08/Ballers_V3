@@ -1667,6 +1667,75 @@ def create_position_insights_panel(player_id: int, season: str) -> html.Div:
         # RECOMENDACIONES ELIMINADAS: Solo mostrar análisis objetivo sin recomendaciones
         # Usuario solicitó remover completamente las recomendaciones del panel de insights
 
+        # NUEVA SECCIÓN: IEP Cluster Context
+        try:
+            from ml_system.evaluation.analysis.iep_analyzer import IEPAnalyzer
+
+            iep_analyzer = IEPAnalyzer()
+            cluster_analysis = iep_analyzer.get_position_cluster_analysis(
+                position=mapped_position,
+                season=reference_season,
+                current_player_id=player_id,
+                use_cache=True,
+            )
+
+            if cluster_analysis and "error" not in cluster_analysis:
+                # Obtener información del cluster del jugador
+                player_cluster_info = cluster_analysis.get("player_cluster_info", {})
+                if player_cluster_info:
+                    player_tier = player_cluster_info.get("tier", "Unknown")
+                    percentile = player_cluster_info.get("percentile", 0)
+                    
+                    # Mapear tier a color
+                    tier_colors = {
+                        "Elite": "#4CAF50",
+                        "Strong": "#2196F3", 
+                        "Average": "#FF9800",
+                        "Development": "#F44336"
+                    }
+                    tier_color = tier_colors.get(player_tier, "#9E9E9E")
+                    
+                    insights_content.append(
+                        html.Hr(style={"border-color": "rgba(255,255,255,0.2)"})
+                    )
+                    insights_content.append(
+                        html.Div(
+                            [
+                                html.H6(
+                                    [
+                                        html.I(
+                                            className="bi bi-diagram-3-fill me-2",
+                                            style={"color": tier_color},
+                                        ),
+                                        "IEP Cluster Context",
+                                    ],
+                                    style={
+                                        "color": tier_color,
+                                        "margin-bottom": "10px",
+                                    },
+                                ),
+                                html.P(
+                                    f"Player cluster tier: {player_tier} (Top {100-percentile:.0f}% of {mapped_position} players)",
+                                    style={
+                                        "color": "white",
+                                        "margin-bottom": "8px",
+                                        "font-weight": "500",
+                                    },
+                                ),
+                                html.P(
+                                    "Based on unsupervised K-means clustering of position-specific efficiency patterns using IEP methodology.",
+                                    style={
+                                        "color": "var(--color-white-faded)",
+                                        "margin-bottom": "0px",
+                                        "font-size": "0.85rem",
+                                    },
+                                ),
+                            ]
+                        )
+                    )
+        except Exception as e:
+            logger.warning(f"Could not add IEP cluster context: {e}")
+
         # Create final insights container with CSS classes
         insights_card = html.Div(
             [
