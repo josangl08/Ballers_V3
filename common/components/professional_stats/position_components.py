@@ -1685,16 +1685,16 @@ def create_position_insights_panel(player_id: int, season: str) -> html.Div:
                 if player_cluster_info:
                     player_tier = player_cluster_info.get("tier", "Unknown")
                     percentile = player_cluster_info.get("percentile", 0)
-                    
+
                     # Mapear tier a color
                     tier_colors = {
                         "Elite": "#4CAF50",
-                        "Strong": "#2196F3", 
+                        "Strong": "#2196F3",
                         "Average": "#FF9800",
-                        "Development": "#F44336"
+                        "Development": "#F44336",
                     }
                     tier_color = tier_colors.get(player_tier, "#9E9E9E")
-                    
+
                     insights_content.append(
                         html.Hr(style={"border-color": "rgba(255,255,255,0.2)"})
                     )

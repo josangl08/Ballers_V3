@@ -359,7 +359,6 @@ def register_professional_tabs_callbacks(app):
             traceback.print_exc()
             return html.Div(f"Error loading tab content: {str(e)}")
 
-
     @app.callback(
         [
             Output("pdi-explanation-collapse", "is_open"),
