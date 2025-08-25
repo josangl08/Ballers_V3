@@ -173,6 +173,14 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# Cache files
+*.cache
+.cache/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*$py.class
+
 # ==============================================
 # BALLERS APP - PRODUCTION CONFIGURATION
 # ==============================================
