@@ -26,6 +26,7 @@ from common.components.shared.cards import (
 )
 from controllers.db import get_db_session
 from ml_system.evaluation.analysis.position_analyzer import PositionAnalyzer
+from models.player_model import Player
 from models.professional_stats_model import ProfessionalStats
 
 logger = logging.getLogger(__name__)
@@ -111,7 +112,6 @@ def get_available_seasons_for_player(player_id: int) -> List[str]:
                 reverse=True
             )  # Más reciente primero: 2024-25, 2023-24, etc.
 
-            logger.info(f"📅 Player {player_id} has data for seasons: {season_list}")
             return season_list
 
     except Exception as e:
@@ -320,11 +320,11 @@ def create_position_metrics_cards(player_id: int, season: str) -> html.Div:
 
                 if players_analyzed == 0:
                     logger.warning(
-                        f"      ⚠️ No league players found in CSV for position {mapped_position} in {season}"
+                        f"No league players found in CSV for position {mapped_position} in {season}"
                     )
                 elif players_analyzed < 10:
                     logger.warning(
-                        f"      ⚠️ Only {players_analyzed} league players found in CSV - comparisons may have limited reliability"
+                        f"Only {players_analyzed} league players found in CSV - comparisons may have limited reliability"
                     )
                 for i, metric_key in enumerate(
                     primary_metrics[:6], 1
@@ -332,13 +332,11 @@ def create_position_metrics_cards(player_id: int, season: str) -> html.Div:
                     field_name = analyzer._map_metric_to_field(metric_key)
 
                     if not field_name:
-                        logger.warning(f"      ⚠️ No field mapping for {metric_key}")
+                        logger.warning(f"No field mapping for {metric_key}")
                         continue
 
                     if not hasattr(player_stats, field_name):
-                        logger.warning(
-                            f"      ⚠️ Field {field_name} not found in player_stats"
-                        )
+                        logger.warning(f"Field {field_name} not found in player_stats")
                         continue
 
                     player_value = getattr(player_stats, field_name) or 0.0
@@ -368,7 +366,7 @@ def create_position_metrics_cards(player_id: int, season: str) -> html.Div:
                         }
                     else:
                         logger.warning(
-                            f"      ⚠️ No league average found for {metric_key} in CSV data"
+                            f"No league average found for {metric_key} in CSV data"
                         )
                         # Fallback sin comparación
                         comparisons[metric_key] = {
@@ -406,7 +404,7 @@ def create_position_metrics_cards(player_id: int, season: str) -> html.Div:
 
             # Warning if position was mapped to fallback
             position_warning = (
-                f" ⚠️ (Original: {primary_position})"
+                f" (Original: {primary_position})"
                 if mapped_position == "CF" and primary_position != "CF"
                 else ""
             )
@@ -1667,75 +1665,6 @@ def create_position_insights_panel(player_id: int, season: str) -> html.Div:
         # RECOMENDACIONES ELIMINADAS: Solo mostrar análisis objetivo sin recomendaciones
         # Usuario solicitó remover completamente las recomendaciones del panel de insights
 
-        # NUEVA SECCIÓN: IEP Cluster Context
-        try:
-            from ml_system.evaluation.analysis.iep_analyzer import IEPAnalyzer
-
-            iep_analyzer = IEPAnalyzer()
-            cluster_analysis = iep_analyzer.get_position_cluster_analysis(
-                position=mapped_position,
-                season=reference_season,
-                current_player_id=player_id,
-                use_cache=True,
-            )
-
-            if cluster_analysis and "error" not in cluster_analysis:
-                # Obtener información del cluster del jugador
-                player_cluster_info = cluster_analysis.get("player_cluster_info", {})
-                if player_cluster_info:
-                    player_tier = player_cluster_info.get("tier", "Unknown")
-                    percentile = player_cluster_info.get("percentile", 0)
-
-                    # Mapear tier a color
-                    tier_colors = {
-                        "Elite": "#4CAF50",
-                        "Strong": "#2196F3",
-                        "Average": "#FF9800",
-                        "Development": "#F44336",
-                    }
-                    tier_color = tier_colors.get(player_tier, "#9E9E9E")
-
-                    insights_content.append(
-                        html.Hr(style={"border-color": "rgba(255,255,255,0.2)"})
-                    )
-                    insights_content.append(
-                        html.Div(
-                            [
-                                html.H6(
-                                    [
-                                        html.I(
-                                            className="bi bi-diagram-3-fill me-2",
-                                            style={"color": tier_color},
-                                        ),
-                                        "IEP Cluster Context",
-                                    ],
-                                    style={
-                                        "color": tier_color,
-                                        "margin-bottom": "10px",
-                                    },
-                                ),
-                                html.P(
-                                    f"Player cluster tier: {player_tier} (Top {100-percentile:.0f}% of {mapped_position} players)",
-                                    style={
-                                        "color": "white",
-                                        "margin-bottom": "8px",
-                                        "font-weight": "500",
-                                    },
-                                ),
-                                html.P(
-                                    "Based on unsupervised K-means clustering of position-specific efficiency patterns using IEP methodology.",
-                                    style={
-                                        "color": "var(--color-white-faded)",
-                                        "margin-bottom": "0px",
-                                        "font-size": "0.85rem",
-                                    },
-                                ),
-                            ]
-                        )
-                    )
-        except Exception as e:
-            logger.warning(f"Could not add IEP cluster context: {e}")
-
         # Create final insights container with CSS classes
         insights_card = html.Div(
             [
@@ -1924,7 +1853,7 @@ def create_position_analysis_components_simplified(
                 all_stats = player_analyzer.get_player_stats(player_id)
                 player_stats_list = all_stats if all_stats else []
 
-                # Reutilizar función IEP de AI Analytics
+                # Cargar gráfico IEP clustering
                 try:
                     from pages.ballers_dash import create_iep_clustering_content
 
@@ -1932,7 +1861,7 @@ def create_position_analysis_components_simplified(
                         player_obj, player_stats_list
                     )
                 except Exception as e:
-                    logger.warning(f"No se pudo cargar IEP clustering: {e}")
+                    logger.warning(f"Could not load IEP clustering chart: {e}")
                     iep_section = None
             else:
                 iep_section = None
@@ -1947,20 +1876,28 @@ def create_position_analysis_components_simplified(
                 # Radar chart con ID fijo para actualización dinámica
                 dbc.Card(
                     [
-                        dbc.CardBody(
+                        dbc.CardHeader(
                             [
-                                html.H5(
+                                html.H6(
                                     [
                                         html.I(className="bi bi-radar me-2"),
                                         "Performance Radar",
                                     ],
-                                    className="mb-3 text-primary",
-                                ),
+                                    className="text-primary mb-0",
+                                )
+                            ],
+                            style={
+                                "background-color": "#2B2B2B",
+                                "border-bottom": "1px solid rgba(255,255,255,0.2)",
+                            },
+                        ),
+                        dbc.CardBody(
+                            [
                                 html.Div(
                                     id="position-radar-chart", children=[radar_chart]
                                 ),
                             ]
-                        )
+                        ),
                     ],
                     className="mb-4",
                     style={
@@ -1969,24 +1906,37 @@ def create_position_analysis_components_simplified(
                     },
                 ),
                 # IEP Clustering Analysis (REUTILIZADO de AI Analytics)
-                iep_section if iep_section else html.Div(),
+                html.Div(
+                    [
+                        iep_section if iep_section else html.Div(),
+                        html.Hr(className="my-4") if iep_section else html.Div(),
+                    ]
+                ),
                 # Panel de insights y recomendaciones (moved before detailed table)
                 create_position_insights_panel(player_id, season),
                 # Tabla de comparación detallada (moved after insights)
                 dbc.Card(
                     [
-                        dbc.CardBody(
+                        dbc.CardHeader(
                             [
-                                html.H5(
+                                html.H6(
                                     [
                                         html.I(className="bi bi-table me-2"),
                                         "Detailed Comparison",
                                     ],
-                                    className="mb-3 text-primary",
-                                ),
+                                    className="text-primary mb-0",
+                                )
+                            ],
+                            style={
+                                "background-color": "#2B2B2B",
+                                "border-bottom": "1px solid rgba(255,255,255,0.2)",
+                            },
+                        ),
+                        dbc.CardBody(
+                            [
                                 create_position_comparison_table(player_id, season),
                             ]
-                        )
+                        ),
                     ],
                     className="mb-4",
                     style={

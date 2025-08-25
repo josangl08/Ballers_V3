@@ -135,7 +135,7 @@ def create_info_card(
                 ],
                 style={
                     "background-color": "#2B2B2B",
-                    "border-bottom": f"1px solid {main_color}80",
+                    "border-bottom": "1px solid rgba(255,255,255,0.2)",
                 },
             ),
             dbc.CardBody(

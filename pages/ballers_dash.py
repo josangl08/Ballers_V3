@@ -5810,6 +5810,112 @@ def _create_methodology_content(player, latest_stats, current_pdi, position, sea
         )
 
 
+def create_iep_clustering_content(player, player_stats):
+    """Crea contenido del sub-tab IEP Clustering."""
+
+    # Debug: verificar datos recibidos
+    try:
+        player_name = (
+            player.user.name if hasattr(player, "user") and player.user else "Unknown"
+        )
+    except Exception as e:
+        player_name = f"Unknown (error: {e})"
+
+    # Obtener la temporada más reciente para referencia
+    latest_stats = player_stats[-1] if player_stats else {}
+    season = latest_stats.get("season", "2024-25")
+
+    # Fallback robusto: Si player_stats está vacío, consultar BD directamente
+    if not player_stats and player.player_id:
+        try:
+            from controllers.db import get_db_session
+            from models.professional_stats_model import ProfessionalStats
+
+            with get_db_session() as session:
+                latest_bd_stats = (
+                    session.query(ProfessionalStats)
+                    .filter(ProfessionalStats.player_id == player.player_id)
+                    .order_by(ProfessionalStats.season.desc())
+                    .first()
+                )
+
+                if latest_bd_stats:
+                    season = latest_bd_stats.season
+                else:
+                    logger.warning(
+                        f"No se encontraron stats en BD para player {player.player_id}"
+                    )
+        except Exception as e:
+            logger.error(f"Error en fallback BD: {e}")
+
+    # Obtener posición con fallbacks inteligentes
+    position = latest_stats.get("primary_position")
+
+    # Si no hay posición en stats, intentar obtener de la BD
+    if not position:
+        try:
+            from controllers.db import get_db_session
+            from models.professional_stats_model import ProfessionalStats
+
+            with get_db_session() as session:
+                latest_db_stats = (
+                    session.query(ProfessionalStats)
+                    .filter(ProfessionalStats.player_id == player.player_id)
+                    .order_by(ProfessionalStats.season.desc())
+                    .first()
+                )
+
+                if latest_db_stats:
+                    position = latest_db_stats.primary_position
+        except Exception as e:
+            logger.warning(f"Error obteniendo posición de BD: {e}")
+
+    # Fallback final a posición neutral (MID es más común que CF)
+    if not position:
+        position = "CMF"  # Centro medio, mapea a MID
+        logger.info(f"Usando posición fallback CMF para clustering")
+
+    # Mapear posición específica a grupo para clustering
+    # Para jugadores profesionales, usar el sistema de 8 grupos específicos
+    if player.is_professional:
+        position_group = get_player_position_group_8_from_bd(player.player_id)
+        if not position_group:  # Fallback si falla la función específica
+            position_group = map_position(position)
+    else:
+        position_group = map_position(position)
+
+    # Nota: player_stats contiene todas las temporadas para análisis IEP completo
+
+    return dbc.Card(
+        [
+            dbc.CardHeader(
+                [
+                    html.H6(
+                        [
+                            html.I(className="bi bi-diagram-3 me-2"),
+                            "IEP Clustering Analysis",
+                        ],
+                        className="text-primary mb-0",
+                    )
+                ],
+                style={
+                    "background-color": "#2B2B2B",
+                    "border-bottom": "1px solid rgba(255,255,255,0.2)",
+                },
+            ),
+            dbc.CardBody(
+                [create_iep_clustering_chart(position_group, season, player.player_id)],
+                className="p-2",
+            ),
+        ],
+        className="mb-4",
+        style={
+            "background-color": "#2B2B2B",
+            "border-color": "rgba(36, 222, 132, 0.3)",
+        },
+    )
+
+
 if __name__ == "__main__":
     # Para testing
     pass
