@@ -42,7 +42,15 @@ def register_navigation_callbacks(app):
 
         # Inicializar base de datos
         try:
-            if not initialize_database():
+            print(f"🔍 NAVIGATION DEBUG - Iniciando initialize_database() desde callback web")
+            print(f"   ENVIRONMENT (direct en callback): {os.getenv('ENVIRONMENT', 'NOT_SET')}")
+            print(f"   DEBUG mode: {DEBUG_MODE}")
+            
+            db_init_result = initialize_database()
+            print(f"🔍 NAVIGATION DEBUG - initialize_database() resultado: {db_init_result}")
+            
+            if not db_init_result:
+                print(f"❌ NAVIGATION ERROR - initialize_database() retornó False")
                 return dbc.Alert(
                     [
                         "❌ Critical error: Failed to initialise database",
