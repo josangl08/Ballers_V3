@@ -77,6 +77,17 @@ DEBUG = get_config_value("DEBUG", "False") == "True"
 LOG_LEVEL = get_config_value("LOG_LEVEL", "INFO")
 ENVIRONMENT = get_config_value("ENVIRONMENT", "development")
 
+# Debug: Logging de configuración en tiempo de importación
+if DEBUG or os.getenv("DEBUG") == "True":
+    print(f"🔍 CONFIG DEBUG - Tiempo de importación:")
+    print(f"   DEBUG: {DEBUG}")
+    print(f"   ENVIRONMENT: {ENVIRONMENT}")
+    print(f"   ENVIRONMENT (direct os.getenv): {os.getenv('ENVIRONMENT', 'NOT_SET')}")
+    print(f"   Variables críticas disponibles:")
+    print(f"     SUPABASE_URL: {'✅' if os.getenv('SUPABASE_URL') else '❌'}")
+    print(f"     SUPABASE_DATABASE_URL: {'✅' if os.getenv('SUPABASE_DATABASE_URL') else '❌'}")
+    print(f"     GOOGLE_PROJECT_ID: {'✅' if os.getenv('GOOGLE_PROJECT_ID') else '❌'}")
+
 
 # URL de base de datos inteligente basada en entorno
 def get_database_url():

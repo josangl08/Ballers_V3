@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy.orm import sessionmaker
 
-from config import DATABASE_PATH, DATABASE_URL, ENVIRONMENT
+from config import DATABASE_PATH
 from models import Base
 
 # Variables globales para reutilizar engine y Session
@@ -26,22 +26,31 @@ def initialize_database() -> bool:
 
     try:
         if _engine is None:
-            if not DATABASE_URL:
-                raise ValueError("DATABASE_URL must be configured")
+            # Lectura directa de variables en tiempo de ejecución (no importación)
+            environment = os.getenv('ENVIRONMENT', 'development')
+            supabase_db_url = os.getenv('SUPABASE_DATABASE_URL', '')
+            
+            # Determinar DATABASE_URL basado en entorno en tiempo real
+            if environment == 'production':
+                if not supabase_db_url:
+                    raise ValueError("SUPABASE_DATABASE_URL no configurada para producción")
+                database_url = supabase_db_url
+            else:
+                database_url = f"sqlite:///{DATABASE_PATH}"
 
             # Debug: Verificar detección de variables de entorno críticas
-            print(f"🔍 DEBUG - Variables de entorno:")
-            print(f"   ENVIRONMENT (config): {ENVIRONMENT}")
-            print(f"   ENVIRONMENT (direct): {os.getenv('ENVIRONMENT', 'NOT_SET')}")
-            print(f"   DATABASE_URL: {DATABASE_URL.split('@')[0] if '@' in DATABASE_URL else DATABASE_URL[:50]}...")
+            print(f"🔍 DEBUG - Variables de entorno en tiempo de ejecución:")
+            print(f"   ENVIRONMENT (direct): {environment}")
+            print(f"   DATABASE_URL determinada: {database_url.split('@')[0] if '@' in database_url else database_url[:50]}...")
+            print(f"   SUPABASE_URL disponible: {'SÍ' if os.getenv('SUPABASE_URL') else 'NO'}")
 
             print(
-                f"🔧 Conectando a base de datos ({ENVIRONMENT}): {DATABASE_URL.split('@')[0] if '@' in DATABASE_URL else DATABASE_URL[:50]}..."
+                f"🔧 Conectando a base de datos ({environment}): {database_url.split('@')[0] if '@' in database_url else database_url[:50]}..."
             )
-            _engine = create_engine(DATABASE_URL)
+            _engine = create_engine(database_url)
 
             # Para SQLite, crear tablas si no existe o está vacía
-            if ENVIRONMENT != "production":
+            if environment != "production":
                 if (
                     not os.path.exists(DATABASE_PATH)
                     or os.path.getsize(DATABASE_PATH) == 0
@@ -54,7 +63,7 @@ def initialize_database() -> bool:
                 print("✅ Usando base de datos PostgreSQL existente en Supabase")
 
             _Session = sessionmaker(bind=_engine)
-            print(f"✅ Base de datos {ENVIRONMENT} inicializada correctamente")
+            print(f"✅ Base de datos {environment} inicializada correctamente")
             return True
 
     except Exception as e:
