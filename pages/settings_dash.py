@@ -632,7 +632,7 @@ def create_user_form_dash():
 
 
 def create_sync_settings_dash():
-    """Crea la configuración de sync para Dash - migrado de Streamlit"""
+    """Crea la configuración de sync para Dash - adaptado para Dash"""
 
     return dbc.Card(
         [
@@ -929,7 +929,7 @@ def create_system_settings_dash():
 
 
 def create_settings_dashboard_dash():
-    """Crea el dashboard de configuración para Dash - migrado de Streamlit"""
+    """Crea el dashboard de configuración para Dash - adaptado para Dash"""
 
     return dbc.Container(
         [
@@ -955,7 +955,7 @@ def create_settings_dashboard_dash():
                 ],
                 className="mb-4",
             ),
-            # Navegación por pestañas (migrado de Streamlit)
+            # Navegación por pestañas (adaptado para Dash)
             dbc.Tabs(
                 [
                     dbc.Tab(
@@ -1912,7 +1912,7 @@ def create_edit_user_form_dash():
 
 
 def create_users_list_dash():
-    """Crea la lista de usuarios para Dash - migrado de Streamlit"""
+    """Crea la lista de usuarios para Dash - adaptado para Dash"""
 
     return dbc.Card(
         [

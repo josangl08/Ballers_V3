@@ -195,7 +195,7 @@ def register_settings_callbacks(app):
         [Input("user-type-selector", "value")],
     )
     def toggle_user_type_fields(user_type):
-        """Muestra/oculta campos según el tipo de usuario - migrado de Streamlit"""
+        """Muestra/oculta campos según el tipo de usuario - adaptado para Dash"""
         player_style = (
             {"display": "block"} if user_type == "player" else {"display": "none"}
         )

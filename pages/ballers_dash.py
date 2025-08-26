@@ -134,11 +134,7 @@ from models.user_model import UserType
 logger = logging.getLogger(__name__)
 
 
-# Funciones simples para reemplazar cloud_utils removido
-def is_streamlit_cloud():
-    return False
-
-
+# Función de utilidad para características no disponibles
 def show_cloud_feature_limitation(feature_name):
     return f"Feature {feature_name} not available in local mode"
 
@@ -1626,7 +1622,7 @@ def create_players_list_dash():
 
 
 def create_overview_content_dash():
-    """Crea el contenido de overview para Dash - migrado de Streamlit"""
+    """Crea el contenido de overview para Dash - adaptado para Dash"""
 
     return dbc.Container(
         [
@@ -1855,7 +1851,7 @@ def create_test_results_content_dash():
 
     return dbc.Container(
         [
-            # Selector de métricas (usando controller como en Streamlit)
+            # Selector de métricas (usando controller como Dash)
             dbc.Row(
                 [
                     dbc.Col(
@@ -1869,7 +1865,7 @@ def create_test_results_content_dash():
                                 options=dropdown_options,
                                 value=metrics_list[
                                     :3
-                                ],  # Primeras 3 métricas por defecto como en Streamlit
+                                ],  # Primeras 3 métricas por defecto como Dash
                                 multi=True,
                                 style={
                                     "border-radius": "5px",
@@ -2783,7 +2779,7 @@ def create_sessions_calendar_dash(
         if isinstance(to_date, str):
             to_date = dt.datetime.fromisoformat(to_date).date()
 
-        # Status filter por defecto (todos los estados como en Streamlit)
+        # Status filter por defecto (todos los estados como Dash)
         if status_filter is None:
             status_filter = ["scheduled", "completed", "canceled"]
 

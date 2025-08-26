@@ -599,7 +599,7 @@ def create_session_form():
 
 
 def create_edit_session_form():
-    """Formulario completo para editar sesiones - migrado desde Streamlit"""
+    """Formulario completo para editar sesiones - adaptado para Dash"""
 
     return html.Div(
         [

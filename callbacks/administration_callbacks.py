@@ -1192,7 +1192,7 @@ def register_administration_callbacks(app):
                 import plotly.graph_objs as go
                 from dash import dcc
 
-                # Procesar datos para el gráfico como en Streamlit
+                # Procesar datos para el gráfico como Dash
                 fecha_col = df_no_total.columns[0]
                 df_chart = df_no_total.copy()
                 df_chart[fecha_col] = pd.to_datetime(
@@ -1964,7 +1964,7 @@ def register_administration_callbacks(app):
 
             from controllers.export_controller import generate_financials_pdf
 
-            # Usar rango amplio para incluir todos los datos como en Streamlit
+            # Usar rango amplio para incluir todos los datos como Dash
             start_date = dt.date(2020, 1, 1)
             end_date = dt.date.today()
 

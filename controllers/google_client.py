@@ -29,7 +29,7 @@ def _creds():
     # Si no hay credenciales disponibles
     raise ValueError(
         "No se pudieron cargar las credenciales de Google Service Account. "
-        "Verifica que GOOGLE_SA_PATH esté configurado o que los secrets de Streamlit estén disponibles."
+        "Verifica que GOOGLE_SA_PATH esté configurado o que GOOGLE_SERVICE_ACCOUNT_JSON esté disponible en producción."
     )
 
 

@@ -1,8 +1,7 @@
 # requirements.txt - Ballers App Dependencies
 
 # Core Web Framework
-# streamlit>=1.28.0  # REMOVED - Legacy dependency, migration to Dash completed
-dash>=3.2.0  # UPGRADED - Latest stable version with improved loading components and devtools
+dash>=3.2.0  # Latest stable version with improved loading components and devtools
 dash-bootstrap-components>=1.5.0
 dash-table>=5.0.0
 flask>=3.0.0  # For webhook server
@@ -39,7 +38,7 @@ schedule>=1.2.0  # For Thai League weekly updates
 python-dotenv>=1.0.0
 
 # UI Components
-# streamlit-option-menu>=0.3.6  # REMOVED - Legacy dependency, migration to Dash completed
+# Dash Bootstrap Components is the primary UI framework
 
 # Utilities
 unidecode>=1.3.7

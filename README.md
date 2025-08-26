@@ -1,6 +1,6 @@
 # ⚽ Ballers App
 
-> **Una aplicación completa de gestión deportiva desarrollada con Streamlit para coaches, jugadores y administradores.**
+> **Una aplicación completa de gestión deportiva desarrollada con Dash para coaches, jugadores y administradores.**
 
 Ballers App es una plataforma web moderna que integra gestión de sesiones de entrenamiento, calendario inteligente, análisis de rendimiento y reportes financieros, todo en una interfaz intuitiva y responsive.
 
@@ -40,9 +40,9 @@ Ballers App es una plataforma web moderna que integra gestión de sesiones de en
 
 ## 🚀 **Demo en Vivo**
 
-🌐 **[Ver Demo](https://ballers-sportsdatacampus.streamlit.app)**
+🌐 **Aplicación Disponible en Producción**
 
-*La aplicación está desplegada en Streamlit Cloud con datos de demostración.*
+*La aplicación está desplegada en Render con base de datos Supabase PostgreSQL.*
 
 ## 📸 **Screenshots**
 
@@ -124,7 +124,7 @@ python data/seed_database.py
 
 ### **7. Ejecutar la aplicación**
 ```bash
-streamlit run main.py
+python main_dash.py
 ```
 
 ## ⚙️ **Configuración**
@@ -241,14 +241,14 @@ ballers-app/
 ## 🔧 **Tecnologías Utilizadas**
 
 ### **Backend**
-- **[Streamlit](https://streamlit.io/)** - Framework web principal
+- **[Dash](https://dash.plotly.com/)** - Framework web principal
 - **[SQLAlchemy](https://www.sqlalchemy.org/)** - ORM para base de datos
 - **[SQLite](https://www.sqlite.org/)** - Base de datos
 - **[Google APIs](https://developers.google.com/)** - Calendar y Sheets
 
 ### **Frontend**
 - **[Plotly](https://plotly.com/)** - Gráficos interactivos
-- **[Streamlit Components](https://docs.streamlit.io/library/components)** - Componentes personalizados
+- **[Dash Bootstrap Components](https://dash-bootstrap-components.opensource.faculty.ai/)** - Componentes UI
 - **CSS Custom** - Estilos personalizados
 
 ### **Reportes**
@@ -257,7 +257,8 @@ ballers-app/
 - **[Pandas](https://pandas.pydata.org/)** - Manipulación de datos
 
 ### **Deployment**
-- **[Streamlit Cloud](https://streamlit.io/cloud)** - Hosting gratuito
+- **[Render](https://render.com/)** - Hosting en la nube
+- **[Supabase](https://supabase.com/)** - Base de datos PostgreSQL
 - **[GitHub](https://github.com/)** - Control de versiones
 
 

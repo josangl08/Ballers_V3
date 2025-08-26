@@ -208,7 +208,7 @@ def register_player_callbacks(app):
         prevent_initial_call=False,
     )
     def update_profile_tab_content(active_tab):
-        """Actualiza contenido de las tabs del perfil - migrado de Streamlit"""
+        """Actualiza contenido de las tabs del perfil - adaptado para Dash"""
         from pages.ballers_dash import (
             create_notes_content_dash,
             create_test_results_content_dash,
@@ -267,7 +267,7 @@ def register_player_callbacks(app):
         prevent_initial_call=False,
     )
     def update_performance_chart(selected_metrics, player_id):
-        """Actualiza el gráfico de evolución de rendimiento - migrado de Streamlit"""
+        """Actualiza el gráfico de evolución de rendimiento - adaptado para Dash"""
         import pandas as pd
         import plotly.express as px
 
@@ -351,7 +351,7 @@ def register_player_callbacks(app):
                 )
                 return no_tests_fig
 
-            # Usar PlayerController para formatear datos como en Streamlit
+            # Usar PlayerController para formatear datos como Dash
             with PlayerController() as controller:
                 test_data = controller.format_test_data_for_chart(test_results)
 
@@ -450,7 +450,7 @@ def register_player_callbacks(app):
     def update_test_history(active_tab, player_id):
         """Actualiza el contenido del historial de tests usando accordions.
 
-        Migrado de Streamlit.
+        adaptado para Dash.
         """
         print("🔍 TEST HISTORY DEBUG:")
         print(f"  - active_tab: {active_tab}")
@@ -484,7 +484,7 @@ def register_player_callbacks(app):
                     },
                 )
 
-            # Crear accordions como los expanders de Streamlit
+            # Crear accordions como Dash
             accordion_items = []
 
             for i, test in enumerate(test_results):
