@@ -108,17 +108,68 @@ APP_ICON = "assets/ballers/favicon.ico"
 
 
 # Configuración de Google Services
+def get_google_service_account_from_env_vars():
+    """
+    Obtiene credenciales de Google Service Account desde variables de entorno individuales.
+    
+    Variables requeridas:
+    - GOOGLE_PROJECT_ID
+    - GOOGLE_PRIVATE_KEY_ID  
+    - GOOGLE_PRIVATE_KEY
+    - GOOGLE_CLIENT_EMAIL
+    - GOOGLE_CLIENT_ID
+    """
+    try:
+        project_id = get_config_value("GOOGLE_PROJECT_ID")
+        private_key_id = get_config_value("GOOGLE_PRIVATE_KEY_ID")
+        private_key = get_config_value("GOOGLE_PRIVATE_KEY")
+        client_email = get_config_value("GOOGLE_CLIENT_EMAIL")
+        client_id = get_config_value("GOOGLE_CLIENT_ID")
+        
+        if all([project_id, private_key_id, private_key, client_email, client_id]):
+            # Construir el diccionario de credenciales
+            credentials = {
+                "type": "service_account",
+                "project_id": project_id,
+                "private_key_id": private_key_id,
+                "private_key": private_key,
+                "client_email": client_email,
+                "client_id": client_id,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{client_email.replace('@', '%40')}",
+                "universe_domain": "googleapis.com"
+            }
+            
+            if os.getenv("DEBUG") == "True":
+                print("✅ Credenciales Google cargadas desde variables de entorno individuales")
+            return credentials
+            
+    except Exception as e:
+        if os.getenv("DEBUG") == "True":
+            print(f"⚠️ Error obteniendo credenciales desde variables individuales: {e}")
+    
+    return None
+
+
 def get_google_service_account_info():
     """
     Obtiene información de la cuenta de servicio de Google con debug.
 
     Orden de prioridad:
-    1. Variables de entorno como JSON string (GOOGLE_SERVICE_ACCOUNT_JSON)
-    2. Archivo JSON especificado en GOOGLE_SA_PATH
-    3. Archivo por defecto en data/google_service_account.json
+    1. Variables de entorno individuales (GOOGLE_PROJECT_ID, GOOGLE_PRIVATE_KEY, etc.)
+    2. Variables de entorno como JSON string (GOOGLE_SERVICE_ACCOUNT_JSON)
+    3. Archivo JSON especificado en GOOGLE_SA_PATH
+    4. Archivo por defecto en data/google_service_account.json
     """
     try:
-        # 1. Intentar desde variable de entorno como JSON string
+        # 1. Intentar desde variables de entorno individuales (más fácil para producción)
+        env_vars_credentials = get_google_service_account_from_env_vars()
+        if env_vars_credentials:
+            return env_vars_credentials
+
+        # 2. Intentar desde variable de entorno como JSON string
         google_json_str = get_config_value("GOOGLE_SERVICE_ACCOUNT_JSON")
         if google_json_str:
             try:
@@ -136,7 +187,7 @@ def get_google_service_account_info():
                         f"GOOGLE_SERVICE_ACCOUNT_JSON: {e}"
                     )
 
-        # 2. Intentar desde archivo especificado en GOOGLE_SA_PATH
+        # 3. Intentar desde archivo especificado en GOOGLE_SA_PATH
         google_sa_path = get_config_value("GOOGLE_SA_PATH")
         if google_sa_path and os.path.exists(google_sa_path):
             with open(google_sa_path, "r") as f:
@@ -147,7 +198,7 @@ def get_google_service_account_info():
                     )
                 return json.load(f)
 
-        # 3. Intentar archivo por defecto
+        # 4. Intentar archivo por defecto
         default_path = os.path.join(DATA_DIR, "google_service_account.json")
         if os.path.exists(default_path):
             with open(default_path, "r") as f:
