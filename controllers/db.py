@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy.orm import sessionmaker
 
-from config import DATABASE_PATH
+from config import DATABASE_PATH, DATABASE_URL, ENVIRONMENT
 from models import Base
 
 # Variables globales para reutilizar engine y Session
@@ -17,6 +17,7 @@ _Session: Optional[sessionmaker] = None
 def initialize_database() -> bool:
     """
     Inicializa la base de datos solo una vez al inicio de la aplicación.
+    Usa configuración dual: SQLite para desarrollo, PostgreSQL para producción.
 
     Returns:
         bool: True si la inicialización fue exitosa, False en caso contrario
@@ -25,19 +26,29 @@ def initialize_database() -> bool:
 
     try:
         if _engine is None:
-            if not DATABASE_PATH or not isinstance(DATABASE_PATH, str):
-                raise ValueError("DATABASE_PATH must be a valid string path")
+            if not DATABASE_URL:
+                raise ValueError("DATABASE_URL must be configured")
 
-            _engine = create_engine(f"sqlite:///{DATABASE_PATH}")
+            print(
+                f"🔧 Conectando a base de datos ({ENVIRONMENT}): {DATABASE_URL.split('@')[0]}..."
+            )
+            _engine = create_engine(DATABASE_URL)
 
-            # Solo crear tablas si la base de datos no existe o está vacía
-            if not os.path.exists(DATABASE_PATH) or os.path.getsize(DATABASE_PATH) == 0:
-                print("🔧 Creando nueva base de datos...")
-                Base.metadata.create_all(_engine)
-                print("✅ Tablas creadas exitosamente")
+            # Para SQLite, crear tablas si no existe o está vacía
+            if ENVIRONMENT != "production":
+                if (
+                    not os.path.exists(DATABASE_PATH)
+                    or os.path.getsize(DATABASE_PATH) == 0
+                ):
+                    print("🔧 Creando nueva base de datos SQLite...")
+                    Base.metadata.create_all(_engine)
+                    print("✅ Tablas SQLite creadas exitosamente")
+            else:
+                # Para PostgreSQL, las tablas ya existen en Supabase
+                print("✅ Usando base de datos PostgreSQL existente en Supabase")
 
             _Session = sessionmaker(bind=_engine)
-            print("✅ Base de datos inicializada correctamente")
+            print(f"✅ Base de datos {ENVIRONMENT} inicializada correctamente")
             return True
 
     except Exception as e:
@@ -97,13 +108,28 @@ def get_database_info() -> dict:
     Returns:
         dict: Información sobre la base de datos
     """
-    exists = os.path.exists(DATABASE_PATH) if DATABASE_PATH else False
-    return {
-        "database_path": DATABASE_PATH,
-        "exists": exists,
-        "size_bytes": (
-            os.path.getsize(DATABASE_PATH) if (exists and DATABASE_PATH) else 0
-        ),
-        "is_initialized": _Session is not None,
-        "engine_active": _engine is not None,
-    }
+    if ENVIRONMENT == "production":
+        # Para PostgreSQL/Supabase
+        return {
+            "database_url": (
+                DATABASE_URL.split("@")[0] + "@***" if DATABASE_URL else None
+            ),
+            "environment": ENVIRONMENT,
+            "database_type": "PostgreSQL (Supabase)",
+            "is_initialized": _Session is not None,
+            "engine_active": _engine is not None,
+        }
+    else:
+        # Para SQLite local
+        exists = os.path.exists(DATABASE_PATH) if DATABASE_PATH else False
+        return {
+            "database_path": DATABASE_PATH,
+            "environment": ENVIRONMENT,
+            "database_type": "SQLite (Local)",
+            "exists": exists,
+            "size_bytes": (
+                os.path.getsize(DATABASE_PATH) if (exists and DATABASE_PATH) else 0
+            ),
+            "is_initialized": _Session is not None,
+            "engine_active": _engine is not None,
+        }

@@ -15,7 +15,7 @@ from controllers.db import get_database_info, get_db_session, initialize_databas
 # Asegúrate de que el script pueda importar los modelos
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from config import DATABASE_PATH
+from config import DATABASE_URL, ENVIRONMENT
 
 # Importar los modelos
 from models import (
@@ -31,7 +31,6 @@ from models import (
 )
 
 # Configuración - Ajustada según tus requerimientos
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"  # Base de datos en la misma carpeta data
 NUM_ADMINS = 2
 NUM_COACHES = 6
 NUM_PLAYERS = 30
@@ -41,12 +40,6 @@ TESTS_PER_PLAYER = 4
 # Inicializar Faker para generar datos realistas
 fake = Faker()
 db_session = None
-
-# Conectar a la base de datos
-engine = create_engine(DATABASE_URL, echo=False)
-Base.metadata.create_all(engine)
-DBSession = sessionmaker(bind=engine)
-db_session = DBSession()
 
 
 # Función para crear hash de contraseña (igual que en login.py)
@@ -420,7 +413,12 @@ def main():
     """Función principal para ejecutar la carga de datos"""
     global db_session
 
-    print("Iniciando población de la base de datos...")
+    print(f"Iniciando población de la base de datos ({ENVIRONMENT})...")
+    print(
+        f"Conectando a: {DATABASE_URL.split('@')[0]}..."
+        if "@" in DATABASE_URL
+        else f"Conectando a: {DATABASE_URL}"
+    )
 
     try:
         # Inicializar base de datos
@@ -453,15 +451,17 @@ def main():
         else:
             print("✅ Base de datos vacía, procediendo con la población...")
 
-        # Verificar si el directorio de perfiles existe, si no, advertir
-        # Ajustamos la ruta para acceder a un directorio fuera de la carpeta data
-        assets_dir = "../assets/profile_photos"
-        if not os.path.exists(assets_dir):
-            print(f"ADVERTENCIA: El directorio {assets_dir} no existe.")
-            print("Se creará el directorio para las fotos de perfil.")
-            os.makedirs(assets_dir, exist_ok=True)
-            print(f"Directorio {assets_dir} creado.")
-            print("---")
+        # Solo crear directorio de fotos para desarrollo local
+        if ENVIRONMENT != "production":
+            # Verificar si el directorio de perfiles existe, si no, advertir
+            # Ajustamos la ruta para acceder a un directorio fuera de la carpeta data
+            assets_dir = "../assets/profile_photos"
+            if not os.path.exists(assets_dir):
+                print(f"ADVERTENCIA: El directorio {assets_dir} no existe.")
+                print("Se creará el directorio para las fotos de perfil.")
+                os.makedirs(assets_dir, exist_ok=True)
+                print(f"Directorio {assets_dir} creado.")
+                print("---")
 
         print("Creando usuarios...")
         users = create_users()

@@ -62,10 +62,43 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(STYLES_DIR, exist_ok=True)
 os.makedirs(PROFILE_PHOTOS_DIR, exist_ok=True)
 
-# Rutas de archivos importantes
+# Configuración de base de datos dual (SQLite local / PostgreSQL producción)
 DATABASE_PATH = get_config_value(
     "DATABASE_PATH", os.path.join(DATA_DIR, "ballers_app.db")
 )
+
+# Configuración Supabase para producción
+SUPABASE_URL = get_config_value("SUPABASE_URL", "")
+SUPABASE_ANON_KEY = get_config_value("SUPABASE_ANON_KEY", "")
+SUPABASE_DATABASE_URL = get_config_value("SUPABASE_DATABASE_URL", "")
+
+# Configuración de la aplicación (definir antes de usar en funciones)
+DEBUG = get_config_value("DEBUG", "False") == "True"
+LOG_LEVEL = get_config_value("LOG_LEVEL", "INFO")
+ENVIRONMENT = get_config_value("ENVIRONMENT", "development")
+
+
+# URL de base de datos inteligente basada en entorno
+def get_database_url():
+    """
+    Retorna la URL de base de datos apropiada según el entorno.
+
+    Returns:
+        str: URL de conexión a la base de datos
+    """
+    if ENVIRONMENT == "production":
+        # En producción usar PostgreSQL de Supabase
+        if SUPABASE_DATABASE_URL:
+            return SUPABASE_DATABASE_URL
+        else:
+            raise ValueError("SUPABASE_DATABASE_URL no configurada para producción")
+    else:
+        # En desarrollo usar SQLite local
+        return f"sqlite:///{DATABASE_PATH}"
+
+
+DATABASE_URL = get_database_url()
+
 DEFAULT_PROFILE_PHOTO = os.path.join(ASSETS_DIR, "default_profile.png")
 CSS_FILE = os.path.join(STYLES_DIR, "style.css")
 
@@ -145,10 +178,6 @@ if os.getenv("DEBUG") == "True":
         f"📊 ACCOUNTING_SHEET_ID configurado: {'✅' if ACCOUNTING_SHEET_ID else '❌'}"
     )
 
-# Configuración de la aplicación
-DEBUG = get_config_value("DEBUG", "False") == "True"
-LOG_LEVEL = get_config_value("LOG_LEVEL", "INFO")
-ENVIRONMENT = get_config_value("ENVIRONMENT", "development")
 
 # Lista de tipos de archivos permitidos para fotos de perfil
 ALLOWED_PHOTO_EXTENSIONS = ["jpg", "jpeg", "png"]
@@ -191,7 +220,14 @@ SESSION_DURATION = {
 if DEBUG:
     print("🔧 Configuración cargada:")
     print(f"   - Entorno: {ENVIRONMENT}")
-    print(f"   - Base de datos: {DATABASE_PATH}")
+    print(f"   - Base de datos: {DATABASE_URL}")
+    if ENVIRONMENT == "production":
+        print(
+            f"   - Supabase URL: {'✅ Configurado' if SUPABASE_URL else '❌ No configurado'}"
+        )
+        print(
+            f"   - Supabase Key: {'✅ Configurado' if SUPABASE_ANON_KEY else '❌ No configurado'}"
+        )
     print(
         f"   - Calendar ID: {CALENDAR_ID[:20]}..."
         if CALENDAR_ID
