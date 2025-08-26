@@ -77,38 +77,7 @@ DEBUG = get_config_value("DEBUG", "False") == "True"
 LOG_LEVEL = get_config_value("LOG_LEVEL", "INFO")
 ENVIRONMENT = get_config_value("ENVIRONMENT", "development")
 
-# Debug: Logging de configuración en tiempo de importación
-if DEBUG or os.getenv("DEBUG") == "True":
-    print(f"🔍 CONFIG DEBUG - Tiempo de importación:")
-    print(f"   DEBUG: {DEBUG}")
-    print(f"   ENVIRONMENT: {ENVIRONMENT}")
-    print(f"   ENVIRONMENT (direct os.getenv): {os.getenv('ENVIRONMENT', 'NOT_SET')}")
-    print(f"   Variables críticas disponibles:")
-    print(f"     SUPABASE_URL: {'✅' if os.getenv('SUPABASE_URL') else '❌'}")
-    print(f"     SUPABASE_DATABASE_URL: {'✅' if os.getenv('SUPABASE_DATABASE_URL') else '❌'}")
-    print(f"     GOOGLE_PROJECT_ID: {'✅' if os.getenv('GOOGLE_PROJECT_ID') else '❌'}")
-
-
-# URL de base de datos inteligente basada en entorno
-def get_database_url():
-    """
-    Retorna la URL de base de datos apropiada según el entorno.
-
-    Returns:
-        str: URL de conexión a la base de datos
-    """
-    if ENVIRONMENT == "production":
-        # En producción usar PostgreSQL de Supabase
-        if SUPABASE_DATABASE_URL:
-            return SUPABASE_DATABASE_URL
-        else:
-            raise ValueError("SUPABASE_DATABASE_URL no configurada para producción")
-    else:
-        # En desarrollo usar SQLite local
-        return f"sqlite:///{DATABASE_PATH}"
-
-
-DATABASE_URL = get_database_url()
+# Configuración simplificada - solo Supabase PostgreSQL
 
 DEFAULT_PROFILE_PHOTO = os.path.join(ASSETS_DIR, "default_profile.png")
 CSS_FILE = os.path.join(STYLES_DIR, "style.css")

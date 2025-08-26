@@ -6,7 +6,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy.orm import sessionmaker
 
-from config import DATABASE_PATH
 from models import Base
 
 # Variables globales para reutilizar engine y Session
@@ -16,8 +15,8 @@ _Session: Optional[sessionmaker] = None
 
 def initialize_database() -> bool:
     """
-    Inicializa la base de datos solo una vez al inicio de la aplicación.
-    Usa configuración dual: SQLite para desarrollo, PostgreSQL para producción.
+    Inicializa la base de datos PostgreSQL de Supabase.
+    Configuración simplificada solo para producción.
 
     Returns:
         bool: True si la inicialización fue exitosa, False en caso contrario
@@ -26,48 +25,27 @@ def initialize_database() -> bool:
 
     try:
         if _engine is None:
-            # Lectura directa de variables en tiempo de ejecución (no importación)
-            environment = os.getenv('ENVIRONMENT', 'development')
-            supabase_db_url = os.getenv('SUPABASE_DATABASE_URL', '')
+            # Obtener URL de Supabase directamente
+            supabase_db_url = os.getenv('SUPABASE_DATABASE_URL')
             
-            # Determinar DATABASE_URL basado en entorno en tiempo real
-            if environment == 'production':
-                if not supabase_db_url:
-                    raise ValueError("SUPABASE_DATABASE_URL no configurada para producción")
-                database_url = supabase_db_url
-            else:
-                database_url = f"sqlite:///{DATABASE_PATH}"
+            if not supabase_db_url:
+                print("❌ SUPABASE_DATABASE_URL no está configurada")
+                return False
 
-            # Debug: Verificar detección de variables de entorno críticas
-            print(f"🔍 DEBUG - Variables de entorno en tiempo de ejecución:")
-            print(f"   ENVIRONMENT (direct): {environment}")
-            print(f"   DATABASE_URL determinada: {database_url.split('@')[0] if '@' in database_url else database_url[:50]}...")
-            print(f"   SUPABASE_URL disponible: {'SÍ' if os.getenv('SUPABASE_URL') else 'NO'}")
+            print(f"🔧 Conectando a Supabase PostgreSQL...")
+            print(f"   URL: {supabase_db_url.split('@')[0]}...")
+            
+            _engine = create_engine(supabase_db_url)
 
-            print(
-                f"🔧 Conectando a base de datos ({environment}): {database_url.split('@')[0] if '@' in database_url else database_url[:50]}..."
-            )
-            _engine = create_engine(database_url)
-
-            # Para SQLite, crear tablas si no existe o está vacía
-            if environment != "production":
-                if (
-                    not os.path.exists(DATABASE_PATH)
-                    or os.path.getsize(DATABASE_PATH) == 0
-                ):
-                    print("🔧 Creando nueva base de datos SQLite...")
-                    Base.metadata.create_all(_engine)
-                    print("✅ Tablas SQLite creadas exitosamente")
-            else:
-                # Para PostgreSQL, las tablas ya existen en Supabase
-                print("✅ Usando base de datos PostgreSQL existente en Supabase")
+            # Para PostgreSQL de Supabase, las tablas ya existen
+            print("✅ Conectado a base de datos PostgreSQL de Supabase")
 
             _Session = sessionmaker(bind=_engine)
-            print(f"✅ Base de datos {environment} inicializada correctamente")
+            print("✅ Base de datos inicializada correctamente")
             return True
 
     except Exception as e:
-        print(f"❌ Error inicializando base de datos: {e}")
+        print(f"❌ Error conectando a Supabase: {e}")
         _engine = None
         _Session = None
         return False

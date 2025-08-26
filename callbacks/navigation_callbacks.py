@@ -40,50 +40,12 @@ def register_navigation_callbacks(app):
                 level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
             )
 
-        # Inicializar base de datos con manejo robusto de excepciones
+        # Inicializar base de datos (configuración simplificada)
         try:
-            print(f"🔍 NAVIGATION DEBUG - Iniciando initialize_database() desde callback web")
-            print(f"   ENVIRONMENT (direct en callback): {os.getenv('ENVIRONMENT', 'NOT_SET')}")
-            print(f"   DEBUG mode: {DEBUG_MODE}")
-            
-            # Verificar imports antes de llamar a la función
-            try:
-                from controllers.db import initialize_database as db_init_func
-                print(f"✅ NAVIGATION DEBUG - Import de initialize_database exitoso")
-            except Exception as import_error:
-                print(f"❌ NAVIGATION ERROR - Error importando initialize_database: {import_error}")
+            if not initialize_database():
                 return dbc.Alert(
                     [
-                        f"❌ Critical error: Import failed - {str(import_error)}",
-                        html.Br(),
-                        "💡 Check controllers/db.py imports",
-                    ],
-                    color="danger",
-                )
-            
-            # Intentar inicializar base de datos con captura completa de errores
-            try:
-                db_init_result = db_init_func()
-                print(f"🔍 NAVIGATION DEBUG - initialize_database() resultado: {db_init_result}")
-            except Exception as db_error:
-                print(f"❌ NAVIGATION ERROR - Excepción en initialize_database(): {db_error}")
-                print(f"❌ NAVIGATION ERROR - Tipo de error: {type(db_error).__name__}")
-                import traceback
-                print(f"❌ NAVIGATION ERROR - Traceback: {traceback.format_exc()}")
-                return dbc.Alert(
-                    [
-                        f"❌ Database initialization exception: {str(db_error)}",
-                        html.Br(),
-                        f"💡 Error type: {type(db_error).__name__}",
-                    ],
-                    color="danger",
-                )
-            
-            if not db_init_result:
-                print(f"❌ NAVIGATION ERROR - initialize_database() retornó False")
-                return dbc.Alert(
-                    [
-                        "❌ Critical error: Failed to initialise database",
+                        "❌ Critical error: Failed to connect to Supabase database",
                         html.Br(),
                         "💡 Suggested solutions:",
                         html.Br(),
