@@ -29,7 +29,8 @@ def _creds():
     # Si no hay credenciales disponibles
     raise ValueError(
         "No se pudieron cargar las credenciales de Google Service Account. "
-        "Verifica que GOOGLE_SA_PATH esté configurado o que GOOGLE_SERVICE_ACCOUNT_JSON esté disponible en producción."
+        "Verifica que las variables GOOGLE_PROJECT_ID, GOOGLE_PRIVATE_KEY, GOOGLE_CLIENT_EMAIL, "
+        "GOOGLE_CLIENT_ID y GOOGLE_PRIVATE_KEY_ID estén configuradas, o que GOOGLE_SA_PATH esté disponible."
     )
 
 
