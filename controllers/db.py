@@ -29,8 +29,14 @@ def initialize_database() -> bool:
             if not DATABASE_URL:
                 raise ValueError("DATABASE_URL must be configured")
 
+            # Debug: Verificar detección de variables de entorno críticas
+            print(f"🔍 DEBUG - Variables de entorno:")
+            print(f"   ENVIRONMENT (config): {ENVIRONMENT}")
+            print(f"   ENVIRONMENT (direct): {os.getenv('ENVIRONMENT', 'NOT_SET')}")
+            print(f"   DATABASE_URL: {DATABASE_URL.split('@')[0] if '@' in DATABASE_URL else DATABASE_URL[:50]}...")
+
             print(
-                f"🔧 Conectando a base de datos ({ENVIRONMENT}): {DATABASE_URL.split('@')[0]}..."
+                f"🔧 Conectando a base de datos ({ENVIRONMENT}): {DATABASE_URL.split('@')[0] if '@' in DATABASE_URL else DATABASE_URL[:50]}..."
             )
             _engine = create_engine(DATABASE_URL)
 
