@@ -4,7 +4,6 @@ import enum
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
-import sqlalchemy
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,7 +20,7 @@ class SessionStatus(enum.Enum):
     CANCELED = "canceled"
 
 
-# Nota: Usando ENUM nativo de PostgreSQL (session_status_enum) para máxima compatibilidad
+# Nota: Usando ENUM nativo PostgreSQL para compatibilidad
 
 
 class Session(Base):
@@ -51,10 +50,14 @@ class Session(Base):
     )
 
     status: Mapped[str] = mapped_column(
-        Enum('scheduled', 'completed', 'canceled', 
-             name='session_status_enum',
-             native_enum=True), 
-        default="scheduled"
+        Enum(
+            "scheduled",
+            "completed",
+            "canceled",
+            name="session_status_enum",
+            native_enum=True,
+        ),
+        default="scheduled",
     )
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
