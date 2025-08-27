@@ -567,7 +567,9 @@ class ValidationController:
                     key=lambda t: abs(
                         (
                             dt.datetime.combine(dt.date.today(), t).replace(tzinfo=None)
-                            - dt.datetime.combine(dt.date.today(), time_value).replace(tzinfo=None)
+                            - dt.datetime.combine(dt.date.today(), time_value).replace(
+                                tzinfo=None
+                            )
                         ).total_seconds()
                     ),
                 )

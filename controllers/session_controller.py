@@ -522,7 +522,9 @@ class SessionController:
             raise RuntimeError("Controller debe usarse como context manager")
 
         # Asegurar que los datetime sean timezone-naive para compatibilidad con BD
-        start_datetime = dt.datetime.combine(start_date, dt.time.min).replace(tzinfo=None)
+        start_datetime = dt.datetime.combine(start_date, dt.time.min).replace(
+            tzinfo=None
+        )
         end_datetime = dt.datetime.combine(end_date, dt.time.max).replace(tzinfo=None)
 
         # Convertir status strings a enums si se proporcionan
@@ -537,7 +539,7 @@ class SessionController:
             player_id=player_id,
             statuses=status_enums,
         )
-        
+
         # Asegurar que todas las sesiones devueltas sean timezone-naive
         # para evitar errores en comparaciones posteriores (ej. calendarios)
         for session in sessions:
@@ -545,7 +547,7 @@ class SessionController:
                 session.start_time = session.start_time.replace(tzinfo=None)
             if session.end_time and session.end_time.tzinfo:
                 session.end_time = session.end_time.replace(tzinfo=None)
-        
+
         return sessions
 
     def format_sessions_for_table(self, sessions: List[Session]) -> List[dict]:
@@ -656,8 +658,12 @@ class SessionController:
             if start_date and end_date:
                 query = query.filter(
                     # Asegurar timezone-naive para comparaciones con BD
-                    Session.start_time >= dt.datetime.combine(start_date, dt.time.min).replace(tzinfo=None),
-                    Session.start_time <= dt.datetime.combine(end_date, dt.time.max).replace(tzinfo=None),
+                    Session.start_time
+                    >= dt.datetime.combine(start_date, dt.time.min).replace(
+                        tzinfo=None
+                    ),
+                    Session.start_time
+                    <= dt.datetime.combine(end_date, dt.time.max).replace(tzinfo=None),
                 )
 
         sessions = query.all()
@@ -904,11 +910,15 @@ def update_session_with_calendar(session_id: int, **kwargs) -> tuple[bool, str]:
 
         if "start_time" in kwargs:
             start_time = kwargs.pop("start_time")
-            kwargs["start_time"] = dt.datetime.combine(session_date, start_time).replace(tzinfo=None)
+            kwargs["start_time"] = dt.datetime.combine(
+                session_date, start_time
+            ).replace(tzinfo=None)
 
         if "end_time" in kwargs:
             end_time = kwargs.pop("end_time")
-            kwargs["end_time"] = dt.datetime.combine(session_date, end_time).replace(tzinfo=None)
+            kwargs["end_time"] = dt.datetime.combine(session_date, end_time).replace(
+                tzinfo=None
+            )
 
     # 🔧 FIX: Convertir status string a enum si necesario
     if "status" in kwargs and isinstance(kwargs["status"], str):

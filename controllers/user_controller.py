@@ -276,7 +276,9 @@ class UserController:
                 line=line,
                 profile_photo=profile_photo_path,
                 date_of_birth=(
-                    dt.datetime.combine(date_of_birth, dt.datetime.min.time()).replace(tzinfo=None)
+                    dt.datetime.combine(date_of_birth, dt.datetime.min.time()).replace(
+                        tzinfo=None
+                    )
                     if date_of_birth
                     else None
                 ),

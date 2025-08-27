@@ -122,8 +122,12 @@ class ExportController:
                 .filter(
                     Session.player_id == player.player_id,
                     # Asegurar timezone-naive para comparaciones con BD
-                    Session.start_time >= dt.datetime.combine(start_date, dt.time.min).replace(tzinfo=None),
-                    Session.start_time <= dt.datetime.combine(end_date, dt.time.max).replace(tzinfo=None),
+                    Session.start_time
+                    >= dt.datetime.combine(start_date, dt.time.min).replace(
+                        tzinfo=None
+                    ),
+                    Session.start_time
+                    <= dt.datetime.combine(end_date, dt.time.max).replace(tzinfo=None),
                 )
             )
 
@@ -355,8 +359,12 @@ class ExportController:
                 )
                 .filter(
                     # Asegurar timezone-naive para comparaciones con BD
-                    Session.start_time >= dt.datetime.combine(start_date, dt.time.min).replace(tzinfo=None),
-                    Session.start_time <= dt.datetime.combine(end_date, dt.time.max).replace(tzinfo=None),
+                    Session.start_time
+                    >= dt.datetime.combine(start_date, dt.time.min).replace(
+                        tzinfo=None
+                    ),
+                    Session.start_time
+                    <= dt.datetime.combine(end_date, dt.time.max).replace(tzinfo=None),
                 )
             )
 
