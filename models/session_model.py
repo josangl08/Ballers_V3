@@ -49,15 +49,9 @@ class Session(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    status: Mapped[str] = mapped_column(
-        Enum(
-            "scheduled",
-            "completed",
-            "canceled",
-            name="session_status_enum",
-            native_enum=True,
-        ),
-        default="scheduled",
+    status: Mapped[SessionStatus] = mapped_column(
+        Enum(SessionStatus, name="session_status_enum", native_enum=True),
+        default=SessionStatus.SCHEDULED,
     )
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
