@@ -64,8 +64,17 @@ class WebhookIntegration:
             return False
 
     def _initialize_webhook_server(self) -> bool:
-        """Inicializa el servidor webhook Flask."""
+        """Inicializa el servidor webhook Flask (desarrollo) o endpoints integrados (producción)."""
         try:
+            # Detectar entorno de producción
+            from config import ENVIRONMENT
+            
+            if ENVIRONMENT == "production":
+                logger.info("🌍 Production environment detected - using integrated webhook endpoints")
+                logger.info("📡 Webhook endpoints will be served by main Dash server")
+                return True  # En producción, endpoints están integrados en main_dash.py
+            
+            # Desarrollo: usar servidor webhook separado (comportamiento actual)
             if is_webhook_server_running():
                 logger.info("📡 Webhook server already running")
                 return True
@@ -224,14 +233,22 @@ class WebhookIntegration:
             Dict con estado del servidor webhook y channel de Google Calendar
         """
         try:
-            # Estado del servidor webhook
-            server_running = is_webhook_server_running()
-            endpoint_url = get_webhook_endpoint_url() if server_running else None
-
-            # Detectar modo de desarrollo
-            is_development = endpoint_url and (
-                "localhost" in endpoint_url or "127.0.0.1" in endpoint_url
-            )
+            # Detectar entorno
+            from config import ENVIRONMENT
+            is_production_integrated = (ENVIRONMENT == "production")
+            
+            if is_production_integrated:
+                # En producción: endpoints integrados en Dash
+                server_running = True  # Asumimos que Dash está corriendo
+                endpoint_url = get_webhook_endpoint_url()
+                is_development = False
+            else:
+                # En desarrollo: servidor webhook separado
+                server_running = is_webhook_server_running()
+                endpoint_url = get_webhook_endpoint_url() if server_running else None
+                is_development = endpoint_url and (
+                    "localhost" in endpoint_url or "127.0.0.1" in endpoint_url
+                )
 
             # Estado del channel de Google Calendar
             channel_status = get_webhook_channel_status()

@@ -1,12 +1,17 @@
 # main_dash.py - Aplicación principal migrada de Streamlit a Dash
 import atexit
+import datetime as dt
+import json
 import logging
 import os
+import queue
+import threading
 import time
 
 import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html, no_update
+from flask import Response, jsonify, request
 
 from callbacks.administration_callbacks import register_administration_callbacks
 from callbacks.ballers_callbacks import register_ballers_callbacks
@@ -36,6 +41,14 @@ from controllers.webhook_integration import (
     shutdown_webhook_integration,
 )
 
+# Importar componentes webhook para integración
+from controllers.calendar_sync_core import (
+    sync_calendar_to_db_with_feedback,
+    sync_db_to_calendar,
+)
+from controllers.notification_controller import save_sync_problems
+from controllers.session_controller import update_past_sessions
+
 # Sistema de webhook events movido a callbacks/webhook_callbacks.py
 
 # Configuración de la aplicación Dash
@@ -50,6 +63,16 @@ app = dash.Dash(
 )
 app.title = APP_NAME
 server = app.server
+
+# Variables globales para webhook integrado
+_webhook_stats = {
+    "webhooks_received": 0,
+    "webhooks_processed": 0,
+    "last_webhook_time": None,
+    "server_started_at": None,
+    "sync_errors": 0,
+}
+_sse_event_queue = queue.Queue(maxsize=100)
 
 # Usar layout estándar de Dash - eliminamos JavaScript manual
 
@@ -98,6 +121,90 @@ def get_app_layout():
 
 # Layout principal de la aplicación
 app.layout = get_app_layout()
+
+
+# =============================================================================
+# WEBHOOK ENDPOINTS INTEGRADOS PARA PRODUCCIÓN
+# =============================================================================
+
+# Solo en producción: agregar endpoints webhook al servidor Dash
+from config import ENVIRONMENT
+
+if ENVIRONMENT == "production":
+    import logging
+    
+    @server.route("/webhook/calendar", methods=["POST"])
+    def handle_calendar_webhook():
+        """Endpoint principal para webhooks de Google Calendar (integrado en Dash)"""
+        try:
+            # Validar headers básicos de Google
+            required_headers = ["X-Goog-Channel-ID", "X-Goog-Resource-ID", "X-Goog-Resource-State"]
+            for header in required_headers:
+                if header not in request.headers:
+                    logging.warning(f"Missing required header: {header}")
+                    return jsonify({"error": "Invalid webhook"}), 401
+
+            # Extraer información del webhook
+            channel_id = request.headers.get("X-Goog-Channel-ID")
+            resource_state = request.headers.get("X-Goog-Resource-State")
+            
+            logging.info(f"📡 Webhook received (integrated): channel={channel_id}, state={resource_state}")
+
+            # Procesar webhook si es necesario
+            if resource_state in ["exists", "updated"]:
+                # Importar y ejecutar sync en background
+                def process_webhook():
+                    try:
+                        from controllers.calendar_sync_core import sync_calendar_to_db_with_feedback
+                        from controllers.session_controller import update_past_sessions
+                        from controllers.notification_controller import save_sync_problems
+                        
+                        # Ejecutar sincronización
+                        imported, updated, deleted, rejected_events, warning_events = sync_calendar_to_db_with_feedback()
+                        
+                        # Actualizar sesiones pasadas si es necesario
+                        n_past = update_past_sessions()
+                        
+                        total_changes = imported + updated + deleted
+                        logging.info(f"✅ Integrated webhook sync completed: {imported}+{updated}+{deleted} changes")
+                        
+                        # Guardar problemas
+                        save_sync_problems(rejected_events, warning_events)
+                        
+                    except Exception as e:
+                        logging.error(f"❌ Integrated webhook sync error: {e}")
+                
+                # Ejecutar en thread separado para no bloquear response
+                import threading
+                threading.Thread(target=process_webhook, daemon=True).start()
+                
+            elif resource_state == "sync":
+                logging.info("📞 Webhook sync message received (integrated endpoint)")
+            
+            return jsonify({"status": "received", "server": "dash_integrated"}), 200
+
+        except Exception as e:
+            logging.error(f"❌ Integrated webhook processing error: {e}")
+            return jsonify({"error": "Webhook processing failed"}), 500
+
+    @server.route("/webhook/status", methods=["GET"])
+    def webhook_status():
+        """Endpoint para verificar estado del servidor webhook (integrado en Dash)"""
+        return jsonify({
+            "status": "active",
+            "server_type": "dash_integrated",
+            "environment": "production",
+            "integration": "enabled"
+        }), 200
+
+    @server.route("/health", methods=["GET"])
+    def health_check():
+        """Health check endpoint (integrado en Dash)"""
+        return jsonify({
+            "status": "healthy", 
+            "server_type": "dash_integrated",
+            "environment": "production"
+        }), 200
 
 
 # Registrar todos los callbacks organizados
