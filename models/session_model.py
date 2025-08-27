@@ -50,7 +50,12 @@ class Session(Base):
     )
 
     status: Mapped[SessionStatus] = mapped_column(
-        Enum(SessionStatus, name="session_status_enum", native_enum=True),
+        Enum(
+            SessionStatus,
+            values_callable=lambda x: [e.value for e in x],
+            name="session_status_enum",
+            native_enum=True,
+        ),
         default=SessionStatus.SCHEDULED,
     )
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
