@@ -144,6 +144,30 @@ def calculate_event_hash(event_data: dict) -> str:
         return ""
 
 
+def _datetime_naive_to_google_utc(datetime_naive: dt.datetime) -> str:
+    """
+    Convierte datetime naive (asumido Madrid timezone) a UTC para Google Calendar.
+    
+    Args:
+        datetime_naive: datetime sin timezone info, asumido en Madrid (+2)
+        
+    Returns:
+        ISO string en UTC para Google Calendar API
+    """
+    if datetime_naive is None:
+        return None
+    
+    # Asumir que datetime naive está en Madrid timezone (+2h respecto UTC)
+    madrid_tz = dt.timezone(dt.timedelta(hours=2))
+    madrid_aware = datetime_naive.replace(tzinfo=madrid_tz)
+    
+    # Convertir a UTC
+    utc_aware = madrid_aware.astimezone(dt.timezone.utc)
+    
+    # Retornar formato ISO requerido por Google Calendar
+    return utc_aware.isoformat()
+
+
 def build_calendar_event_body(session: Session) -> dict:
     """Devuelve el diccionario body que Calendar API espera."""
 
@@ -167,9 +191,9 @@ def build_calendar_event_body(session: Session) -> dict:
         ),
         "description": session.notes or "",
         "start": {
-            "dateTime": session.start_time.astimezone(dt.timezone.utc).isoformat()
+            "dateTime": _datetime_naive_to_google_utc(session.start_time)
         },
-        "end": {"dateTime": session.end_time.astimezone(dt.timezone.utc).isoformat()},
+        "end": {"dateTime": _datetime_naive_to_google_utc(session.end_time)},
         "colorId": COLOR[session.status.value],
         "extendedProperties": {
             "private": {

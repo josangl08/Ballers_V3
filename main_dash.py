@@ -385,9 +385,19 @@ if __name__ == "__main__":
 
     # Solo mostrar mensajes en el proceso principal (no en Flask reloader)
     if os.getenv("WERKZEUG_RUN_MAIN") != "true":
+        # Configuración adaptativa según entorno
+        from config import ENVIRONMENT, WEBHOOK_BASE_URL
+        
         print("🚀 Starting Ballers Dash Application...")
-        print("📊 Main app: http://127.0.0.1:8050")
-        print("📡 Webhook integration: http://127.0.0.1:8001/webhook/calendar")
+        
+        if ENVIRONMENT == "production":
+            print("🌍 Modo producción (Render)")
+            print(f"📊 Main app: https://ballers-v3.onrender.com")
+            print(f"📡 Webhook endpoint: {WEBHOOK_BASE_URL}/webhook/calendar")
+        else:
+            print("🔧 Modo desarrollo")
+            print("📊 Main app: http://127.0.0.1:8050")
+            print("📡 Webhook integration: http://127.0.0.1:8001/webhook/calendar")
 
         # Verificar estado de integración después de inicialización
         try:
@@ -398,7 +408,17 @@ if __name__ == "__main__":
         except Exception:
             print("🟡 Real-time sync: INACTIVE (manual sync available)")
 
-    # Puerto y host configurables para desarrollo/producción
-    port = int(os.getenv("PORT", 8050))
-    host = "0.0.0.0" if os.getenv("ENVIRONMENT") == "production" else "127.0.0.1"
-    app.run(debug=True, host=host, port=port)
+    # Configuración puerto y host para Render
+    # Render usa PORT env var dinámicamente
+    port = int(os.getenv("PORT", "8050"))
+    
+    # Host binding: 0.0.0.0 para producción, 127.0.0.1 para desarrollo
+    if os.getenv("ENVIRONMENT") == "production":
+        host = "0.0.0.0"
+        debug = False
+    else:
+        host = "127.0.0.1"
+        debug = True
+    
+    print(f"🎯 Starting server on {host}:{port} (debug={debug})")
+    app.run(debug=debug, host=host, port=port)

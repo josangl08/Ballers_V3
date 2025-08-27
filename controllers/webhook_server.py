@@ -277,8 +277,23 @@ class WebhookServer:
                 logger.warning("Webhook server already running")
                 return False
 
-            # Crear servidor
-            self.server = make_server("localhost", self.port, self.app, threaded=True)
+            # Configuración para Render: host 0.0.0.0 y puerto dinámico
+            import os
+            from config import ENVIRONMENT
+            
+            if ENVIRONMENT == "production":
+                # Render: puerto dinámico, host público
+                host = "0.0.0.0"
+                port = int(os.getenv("PORT", str(self.port)))
+                logger.info(f"🌍 Configuración producción: {host}:{port}")
+            else:
+                # Desarrollo: localhost
+                host = "localhost"
+                port = self.port
+                logger.info(f"🔧 Configuración desarrollo: {host}:{port}")
+
+            # Crear servidor con configuración adaptativa
+            self.server = make_server(host, port, self.app, threaded=True)
             self.stats["server_started_at"] = time.time()
 
             # Iniciar en thread separado
@@ -287,10 +302,17 @@ class WebhookServer:
             )
             self.thread.start()
 
-            logger.info(f"🚀 Webhook server started on http://localhost:{self.port}")
-            logger.info(
-                f"📡 Calendar webhook endpoint: http://localhost:{self.port}/webhook/calendar"
-            )
+            # Logging adaptativo según entorno
+            protocol = "https" if ENVIRONMENT == "production" else "http"
+            if ENVIRONMENT == "production":
+                from config import WEBHOOK_BASE_URL
+                logger.info(f"🚀 Webhook server started on {host}:{port}")
+                logger.info(f"📡 Public webhook endpoint: {WEBHOOK_BASE_URL}/webhook/calendar")
+            else:
+                logger.info(f"🚀 Webhook server started on {protocol}://{host}:{port}")
+                logger.info(
+                    f"📡 Calendar webhook endpoint: {protocol}://{host}:{port}/webhook/calendar"
+                )
 
             return True
 
@@ -316,10 +338,18 @@ class WebhookServer:
 
     def get_status(self) -> Dict[str, Any]:
         """Obtiene estado detallado del servidor"""
+        # URL adaptativa según entorno
+        from config import ENVIRONMENT, WEBHOOK_BASE_URL
+        if ENVIRONMENT == "production":
+            webhook_url = f"{WEBHOOK_BASE_URL}/webhook/calendar"
+        else:
+            webhook_url = f"http://localhost:{self.port}/webhook/calendar"
+            
         return {
             "running": self.is_running(),
             "port": self.port,
-            "webhook_url": f"http://localhost:{self.port}/webhook/calendar",
+            "webhook_url": webhook_url,
+            "environment": ENVIRONMENT,
             "stats": self.stats.copy(),
         }
 

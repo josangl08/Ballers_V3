@@ -225,10 +225,38 @@ SESSION_SECRET = get_config_value("SESSION_SECRET", "your-default-secret-key")
 # Configuración de calendario
 CALENDAR_ENABLED = get_config_value("CALENDAR_ENABLED", "True") == "True"
 
-# Configuración de webhook-based sync (future implementation)
-WEBHOOK_PORT = int(str(get_config_value("WEBHOOK_PORT", "8001")))
-WEBHOOK_SECRET_TOKEN = get_config_value("WEBHOOK_SECRET_TOKEN", "default-secret-token")
-WEBHOOK_BASE_URL = get_config_value("WEBHOOK_BASE_URL", "http://localhost:8001")
+# Configuración webhook para producción Render
+def get_webhook_config():
+    """
+    Configuración webhook adaptativa para desarrollo y producción.
+    
+    Desarrollo: localhost con puerto fijo
+    Producción: Render con puerto dinámico y HTTPS
+    """
+    # Puerto dinámico para Render (usa PORT env var)
+    port = int(str(get_config_value("PORT", get_config_value("WEBHOOK_PORT", "8001"))))
+    
+    # Base URL adaptativa según entorno
+    base_url = get_config_value("WEBHOOK_BASE_URL")
+    if not base_url:
+        if ENVIRONMENT == "production":
+            # URL Render automática (debe configurarse en env vars)
+            base_url = "https://ballers-v3.onrender.com"
+        else:
+            # Desarrollo local
+            base_url = f"http://localhost:{port}"
+    
+    return {
+        "port": port,
+        "base_url": base_url,
+        "secret_token": get_config_value("WEBHOOK_SECRET_TOKEN", "default-secret-token")
+    }
+
+# Configuración webhook
+_webhook_config = get_webhook_config()
+WEBHOOK_PORT = _webhook_config["port"]
+WEBHOOK_BASE_URL = _webhook_config["base_url"]
+WEBHOOK_SECRET_TOKEN = _webhook_config["secret_token"]
 
 # Colores para las sesiones (código Google Calendar + color HEX para la UI)
 CALENDAR_COLORS = {
