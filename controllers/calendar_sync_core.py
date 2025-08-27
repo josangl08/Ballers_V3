@@ -267,7 +267,10 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
         logger.info(f"📋 Encontrados {len(events)} eventos en Google Calendar")
 
         def _to_dt(iso: str) -> dt.datetime:
-            return dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))
+            # Convertir UTC de Google Calendar a Madrid timezone (+2) como naive
+            utc_dt = dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))
+            madrid_dt = utc_dt.astimezone(dt.timezone(dt.timedelta(hours=2)))
+            return madrid_dt.replace(tzinfo=None)
 
         # Cargar todas las sesiones con calendar_event_id ya guardado
         logger.info("🗄️ Cargando sesiones existentes de la BD...")
