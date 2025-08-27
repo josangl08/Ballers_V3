@@ -521,21 +521,32 @@ class SessionController:
         if not self.db:
             raise RuntimeError("Controller debe usarse como context manager")
 
-        start_datetime = dt.datetime.combine(start_date, dt.time.min)
-        end_datetime = dt.datetime.combine(end_date, dt.time.max)
+        # Asegurar que los datetime sean timezone-naive para compatibilidad con BD
+        start_datetime = dt.datetime.combine(start_date, dt.time.min).replace(tzinfo=None)
+        end_datetime = dt.datetime.combine(end_date, dt.time.max).replace(tzinfo=None)
 
         # Convertir status strings a enums si se proporcionan
         status_enums = None
         if status_filter:
             status_enums = [SessionStatus(s) for s in status_filter]
 
-        return self.get_sessions(
+        sessions = self.get_sessions(
             start=start_datetime,
             end=end_datetime,
             coach_id=coach_id,
             player_id=player_id,
             statuses=status_enums,
         )
+        
+        # Asegurar que todas las sesiones devueltas sean timezone-naive
+        # para evitar errores en comparaciones posteriores (ej. calendarios)
+        for session in sessions:
+            if session.start_time and session.start_time.tzinfo:
+                session.start_time = session.start_time.replace(tzinfo=None)
+            if session.end_time and session.end_time.tzinfo:
+                session.end_time = session.end_time.replace(tzinfo=None)
+        
+        return sessions
 
     def format_sessions_for_table(self, sessions: List[Session]) -> List[dict]:
         """Formatea sesiones para mostrar en tabla de UI."""
@@ -644,8 +655,9 @@ class SessionController:
             start_date, end_date = self._get_date_range_for_filter(date_filter)
             if start_date and end_date:
                 query = query.filter(
-                    Session.start_time >= dt.datetime.combine(start_date, dt.time.min),
-                    Session.start_time <= dt.datetime.combine(end_date, dt.time.max),
+                    # Asegurar timezone-naive para comparaciones con BD
+                    Session.start_time >= dt.datetime.combine(start_date, dt.time.min).replace(tzinfo=None),
+                    Session.start_time <= dt.datetime.combine(end_date, dt.time.max).replace(tzinfo=None),
                 )
 
         sessions = query.all()
@@ -866,8 +878,9 @@ def create_session_with_calendar(
     """Función de conveniencia para crear sesión con sincronización."""
 
     # Combinar date + time para crear datetimes
-    start_datetime = dt.datetime.combine(session_date, start_time)
-    end_datetime = dt.datetime.combine(session_date, end_time)
+    # Asegurar timezone-naive para compatibilidad con modelo Session
+    start_datetime = dt.datetime.combine(session_date, start_time).replace(tzinfo=None)
+    end_datetime = dt.datetime.combine(session_date, end_time).replace(tzinfo=None)
 
     with SessionController() as controller:
         return controller.create_session(
@@ -891,11 +904,11 @@ def update_session_with_calendar(session_id: int, **kwargs) -> tuple[bool, str]:
 
         if "start_time" in kwargs:
             start_time = kwargs.pop("start_time")
-            kwargs["start_time"] = dt.datetime.combine(session_date, start_time)
+            kwargs["start_time"] = dt.datetime.combine(session_date, start_time).replace(tzinfo=None)
 
         if "end_time" in kwargs:
             end_time = kwargs.pop("end_time")
-            kwargs["end_time"] = dt.datetime.combine(session_date, end_time)
+            kwargs["end_time"] = dt.datetime.combine(session_date, end_time).replace(tzinfo=None)
 
     # 🔧 FIX: Convertir status string a enum si necesario
     if "status" in kwargs and isinstance(kwargs["status"], str):

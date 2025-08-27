@@ -276,7 +276,7 @@ class UserController:
                 line=line,
                 profile_photo=profile_photo_path,
                 date_of_birth=(
-                    dt.datetime.combine(date_of_birth, dt.datetime.min.time())
+                    dt.datetime.combine(date_of_birth, dt.datetime.min.time()).replace(tzinfo=None)
                     if date_of_birth
                     else None
                 ),
@@ -361,9 +361,10 @@ class UserController:
             if line is not None:
                 user.line = line
             if date_of_birth is not None:
+                # Asegurar timezone-naive para compatibilidad con BD
                 user.date_of_birth = dt.datetime.combine(
                     date_of_birth, dt.datetime.min.time()
-                )
+                ).replace(tzinfo=None)
             if is_active is not None and hasattr(user, "is_active"):
                 user.is_active = is_active
 

@@ -12,6 +12,10 @@ from models import Base
 _engine = None
 _Session: Optional[sessionmaker] = None
 
+# Connection pooling configuration optimizado para Supabase
+POOL_SIZE = int(os.getenv('DB_POOL_SIZE', '3'))  # Reducido para Supabase
+MAX_OVERFLOW = int(os.getenv('DB_MAX_OVERFLOW', '2'))  # Total máximo: 5 conexiones
+
 
 def initialize_database() -> bool:
     """
@@ -35,7 +39,24 @@ def initialize_database() -> bool:
             print(f"🔧 Conectando a Supabase PostgreSQL...")
             print(f"   URL: {supabase_db_url.split('@')[0]}...")
             
-            _engine = create_engine(supabase_db_url)
+            # Configurar engine con connection pooling optimizado para Supabase
+            _engine = create_engine(
+                supabase_db_url,
+                pool_size=POOL_SIZE,           # Conexiones persistentes en el pool
+                max_overflow=MAX_OVERFLOW,     # Conexiones adicionales si es necesario
+                pool_timeout=20,               # Timeout más agresivo para Supabase
+                pool_recycle=1800,             # Reciclar cada 30 min (Supabase cierra idle)
+                pool_pre_ping=True,            # Verificar conexiones antes de usar
+                pool_reset_on_return='rollback',  # Limpiar transacciones al devolver
+                echo=False                     # No logging SQL (performance)
+            )
+            
+            print(f"🏊 Connection pool configurado (optimizado para Supabase):")
+            print(f"   - Pool size: {POOL_SIZE}")
+            print(f"   - Max overflow: {MAX_OVERFLOW}")
+            print(f"   - Pool timeout: 20s")
+            print(f"   - Pool recycle: 30m")
+            print(f"   - Pool reset: rollback")
 
             # Para PostgreSQL de Supabase, las tablas ya existen
             print("✅ Conectado a base de datos PostgreSQL de Supabase")
@@ -83,46 +104,43 @@ def get_db_session() -> SQLAlchemySession:
 
 
 def close_all_connections():
-    """Cierra todas las conexiones y limpia los recursos globales."""
+    """Cierra todas las conexiones del pool y limpia los recursos globales."""
     global _engine, _Session
 
     if _engine is not None:
-        _engine.dispose()
+        print(f"🔒 Cerrando connection pool...")
+        print(f"   - Conexiones activas: {_engine.pool.checkedout()}")
+        print(f"   - Conexiones en pool: {_engine.pool.checkedin()}")
+        
+        _engine.dispose()  # Cierra todas las conexiones del pool
         _engine = None
 
     _Session = None
-    print("🔒 Conexiones de base de datos cerradas")
+    print("✅ Connection pool cerrado correctamente")
 
 
 def get_database_info() -> dict:
     """
-    Devuelve información sobre el estado de la base de datos.
+    Devuelve información sobre el estado de la base de datos incluyendo pool info.
 
     Returns:
         dict: Información sobre la base de datos
     """
-    if ENVIRONMENT == "production":
-        # Para PostgreSQL/Supabase
-        return {
-            "database_url": (
-                DATABASE_URL.split("@")[0] + "@***" if DATABASE_URL else None
-            ),
-            "environment": ENVIRONMENT,
-            "database_type": "PostgreSQL (Supabase)",
-            "is_initialized": _Session is not None,
-            "engine_active": _engine is not None,
-        }
-    else:
-        # Para SQLite local
-        exists = os.path.exists(DATABASE_PATH) if DATABASE_PATH else False
-        return {
-            "database_path": DATABASE_PATH,
-            "environment": ENVIRONMENT,
-            "database_type": "SQLite (Local)",
-            "exists": exists,
-            "size_bytes": (
-                os.path.getsize(DATABASE_PATH) if (exists and DATABASE_PATH) else 0
-            ),
-            "is_initialized": _Session is not None,
-            "engine_active": _engine is not None,
-        }
+    base_info = {
+        "database_type": "PostgreSQL (Supabase)",
+        "is_initialized": _Session is not None,
+        "engine_active": _engine is not None,
+    }
+    
+    # Información del connection pool si está disponible
+    if _engine is not None:
+        pool = _engine.pool
+        base_info.update({
+            "pool_size": pool.size(),
+            "pool_checked_in": pool.checkedin(),
+            "pool_checked_out": pool.checkedout(),
+            "pool_overflow": pool.overflow(),
+            "pool_invalid": pool.invalid(),
+        })
+    
+    return base_info

@@ -251,8 +251,9 @@ class ValidationController:
         """
         Validación unificada de duración de sesión.
         """
-        start_dt = dt.datetime.combine(session_date, start_time)
-        end_dt = dt.datetime.combine(session_date, end_time)
+        # Asegurar timezone-naive para compatibilidad con BD
+        start_dt = dt.datetime.combine(session_date, start_time).replace(tzinfo=None)
+        end_dt = dt.datetime.combine(session_date, end_time).replace(tzinfo=None)
         duration_minutes = (end_dt - start_dt).total_seconds() / 60
 
         if strict:
@@ -565,8 +566,8 @@ class ValidationController:
                     available_times,
                     key=lambda t: abs(
                         (
-                            dt.datetime.combine(dt.date.today(), t)
-                            - dt.datetime.combine(dt.date.today(), time_value)
+                            dt.datetime.combine(dt.date.today(), t).replace(tzinfo=None)
+                            - dt.datetime.combine(dt.date.today(), time_value).replace(tzinfo=None)
                         ).total_seconds()
                     ),
                 )
