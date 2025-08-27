@@ -21,7 +21,7 @@ class SessionStatus(enum.Enum):
     CANCELED = "canceled"
 
 
-# Nota: Usar String en lugar de Enum para compatibilidad con Supabase
+# Nota: Usando ENUM nativo de PostgreSQL (session_status_enum) para máxima compatibilidad
 
 
 class Session(Base):
@@ -50,7 +50,12 @@ class Session(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    status: Mapped[str] = mapped_column(String(20), default="scheduled")
+    status: Mapped[str] = mapped_column(
+        Enum('scheduled', 'completed', 'canceled', 
+             name='session_status_enum',
+             native_enum=True), 
+        default="scheduled"
+    )
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
