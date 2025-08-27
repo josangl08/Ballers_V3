@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String
@@ -43,10 +43,10 @@ class Session(Base):
     )
 
     start_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=False), default=lambda: datetime.now()
     )
     end_time: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        DateTime(timezone=False), nullable=True
     )
 
     status: Mapped[SessionStatus] = mapped_column(
@@ -60,18 +60,18 @@ class Session(Base):
     )
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=False), default=lambda: datetime.now()
     )
 
     calendar_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default=lambda: datetime.now(),
+        onupdate=lambda: datetime.now(),
     )
 
     last_sync_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        DateTime(timezone=False), nullable=True
     )
 
     sync_hash: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
