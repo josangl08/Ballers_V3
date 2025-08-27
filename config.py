@@ -91,10 +91,10 @@ APP_ICON = "assets/ballers/favicon.ico"
 def get_google_service_account_from_env_vars():
     """
     Obtiene credenciales de Google Service Account desde variables de entorno individuales.
-    
+
     Variables requeridas:
     - GOOGLE_PROJECT_ID
-    - GOOGLE_PRIVATE_KEY_ID  
+    - GOOGLE_PRIVATE_KEY_ID
     - GOOGLE_PRIVATE_KEY
     - GOOGLE_CLIENT_EMAIL
     - GOOGLE_CLIENT_ID
@@ -105,7 +105,7 @@ def get_google_service_account_from_env_vars():
         private_key = get_config_value("GOOGLE_PRIVATE_KEY")
         client_email = get_config_value("GOOGLE_CLIENT_EMAIL")
         client_id = get_config_value("GOOGLE_CLIENT_ID")
-        
+
         if all([project_id, private_key_id, private_key, client_email, client_id]):
             # Construir el diccionario de credenciales
             credentials = {
@@ -119,17 +119,19 @@ def get_google_service_account_from_env_vars():
                 "token_uri": "https://oauth2.googleapis.com/token",
                 "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
                 "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{client_email.replace('@', '%40')}",
-                "universe_domain": "googleapis.com"
+                "universe_domain": "googleapis.com",
             }
-            
+
             if os.getenv("DEBUG") == "True":
-                print("✅ Credenciales Google cargadas desde variables de entorno individuales")
+                print(
+                    "✅ Credenciales Google cargadas desde variables de entorno individuales"
+                )
             return credentials
-            
+
     except Exception as e:
         if os.getenv("DEBUG") == "True":
             print(f"⚠️ Error obteniendo credenciales desde variables individuales: {e}")
-    
+
     return None
 
 
@@ -251,7 +253,7 @@ SESSION_DURATION = {
 if DEBUG:
     print("🔧 Configuración cargada:")
     print(f"   - Entorno: {ENVIRONMENT}")
-    print(f"   - Base de datos: {DATABASE_URL}")
+    print(f"   - Base de datos: {SUPABASE_DATABASE_URL}")
     if ENVIRONMENT == "production":
         print(
             f"   - Supabase URL: {'✅ Configurado' if SUPABASE_URL else '❌ No configurado'}"

@@ -4,6 +4,7 @@ import enum
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
+import sqlalchemy
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,6 +19,9 @@ class SessionStatus(enum.Enum):
     SCHEDULED = "scheduled"
     COMPLETED = "completed"
     CANCELED = "canceled"
+
+
+# Nota: Usar String en lugar de Enum para compatibilidad con Supabase
 
 
 class Session(Base):
@@ -46,9 +50,7 @@ class Session(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    status: Mapped[SessionStatus] = mapped_column(
-        Enum(SessionStatus, native_enum=False), default=SessionStatus.SCHEDULED
-    )
+    status: Mapped[str] = mapped_column(String(20), default="scheduled")
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
