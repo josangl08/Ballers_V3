@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy.orm import sessionmaker
 
 from config import DATABASE_PATH
-from models import Base
+
+# from models import Base # Moved import inside initialize_database() to prevent circular imports
 
 # Variables globales para reutilizar engine y Session
 _engine = None
@@ -28,7 +29,11 @@ def initialize_database() -> bool:
             if not DATABASE_PATH or not isinstance(DATABASE_PATH, str):
                 raise ValueError("DATABASE_PATH must be a valid string path")
 
+            print(f"DEBUG: DATABASE_PATH is {DATABASE_PATH}")  # Added for debugging
             _engine = create_engine(f"sqlite:///{DATABASE_PATH}")
+
+            # Import Base here to prevent circular imports
+            from models import Base
 
             # Solo crear tablas si la base de datos no existe o está vacía
             if not os.path.exists(DATABASE_PATH) or os.path.getsize(DATABASE_PATH) == 0:

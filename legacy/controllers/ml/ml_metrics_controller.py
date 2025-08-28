@@ -20,7 +20,6 @@ from typing import Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from controllers.db import get_db_session
-
 # Import directo para evitar circular imports
 from models.ml_metrics_model import MLMetrics
 from models.player_model import Player

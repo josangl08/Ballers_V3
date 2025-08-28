@@ -7,25 +7,17 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from common.cloud_utils import (
-    is_streamlit_cloud,
-    show_cloud_feature_limitation,
-    show_cloud_mode_info,
-)
-from common.export import (
-    create_download_link,
-    show_export_error_message,
-    show_export_success_message,
-    trigger_browser_print,
-)
+from common.cloud_utils import (is_streamlit_cloud,
+                                show_cloud_feature_limitation,
+                                show_cloud_mode_info)
+from common.export import (create_download_link, show_export_error_message,
+                           show_export_success_message, trigger_browser_print)
 from controllers.export_controller import generate_player_pdf
 from controllers.internal_calendar import show_calendar
-from controllers.player_controller import (
-    PlayerController,
-    get_player_profile_data,
-    get_players_for_list,
-    update_player_notes_simple,
-)
+from controllers.player_controller import (PlayerController,
+                                           get_player_profile_data,
+                                           get_players_for_list,
+                                           update_player_notes_simple)
 from controllers.session_controller import SessionController
 from controllers.validation_controller import ValidationController
 from models import SessionStatus

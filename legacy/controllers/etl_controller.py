@@ -8,13 +8,9 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 
 from controllers.db import get_db_session
-from controllers.etl import (
-    DataQualityValidator,
-    StatsAnalyzer,
-    ThaiLeagueExtractor,
-    ThaiLeagueLoader,
-    ThaiLeagueTransformer,
-)
+from controllers.etl import (DataQualityValidator, StatsAnalyzer,
+                             ThaiLeagueExtractor, ThaiLeagueLoader,
+                             ThaiLeagueTransformer)
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +237,8 @@ class ETLController:
             Diccionario con resultados de matching
         """
         # Usar el nuevo FuzzyMatcher migrado del ThaiLeagueController
-        from ml_system.data_processing.processors.fuzzy_matcher import FuzzyMatcher
+        from ml_system.data_processing.processors.fuzzy_matcher import \
+            FuzzyMatcher
 
         fuzzy_matcher = FuzzyMatcher(self.session_factory)
         return fuzzy_matcher.find_matching_players(df, threshold)

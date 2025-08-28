@@ -123,6 +123,173 @@ class PDICalculator:
             "⚖️ Versión 1.1: 8 grupos científicos + Pesos Legacy específicos por posición"
         )
 
+    def _calculate_hierarchical_pdi(self, stats: ProfessionalStats) -> Optional[Dict]:
+        """
+        Calcula el PDI Jerárquico basado en dominios de habilidad y pesos por posición.
+        Este es el nuevo método de cálculo que reemplaza la lógica anterior.
+
+        Args:
+            stats: Objeto ProfessionalStats con las estadísticas del jugador.
+
+        Returns:
+            dict: Un diccionario con el PDI general y el desglose por dominios.
+        """
+        logger.debug(
+            f"Iniciando cálculo de PDI Jerárquico para jugador {stats.player_id}"
+        )
+
+        # 1. Definición de Dominios de Habilidad y las métricas que los componen
+        SKILL_DOMAINS = {
+            "attacking": {
+                "goals_per_90": {"weight": 0.3, "range": (0, 1)},
+                "expected_goals": {"weight": 0.3, "range": (0, 1)},
+                "shots_on_target_pct": {"weight": 0.2, "range": (0, 100)},
+                "goal_conversion_pct": {"weight": 0.2, "range": (0, 100)},
+            },
+            "playmaking": {
+                "assists_per_90": {"weight": 0.3, "range": (0, 1)},
+                "expected_assists": {"weight": 0.3, "range": (0, 1)},
+                "key_passes_per_90": {"weight": 0.2, "range": (0, 5)},
+                "progressive_passes_per_90": {"weight": 0.2, "range": (0, 20)},
+            },
+            "defending": {
+                "defensive_duels_won_pct": {"weight": 0.4, "range": (0, 100)},
+                "interceptions_per_90": {"weight": 0.3, "range": (0, 10)},
+                "successful_defensive_actions_per_90": {
+                    "weight": 0.3,
+                    "range": (0, 15),
+                },
+            },
+            "passing": {
+                "pass_accuracy_pct": {"weight": 0.5, "range": (50, 100)},
+                "long_passes_accuracy_pct": {"weight": 0.2, "range": (40, 100)},
+                "accurate_passes_to_final_third_pct": {
+                    "weight": 0.3,
+                    "range": (50, 100),
+                },
+            },
+            "physical": {
+                "duels_won_pct": {"weight": 0.4, "range": (40, 100)},
+                "aerial_duels_won_pct": {"weight": 0.3, "range": (30, 100)},
+                "minutes_played": {
+                    "weight": 0.3,
+                    "range": (0, 3000),
+                },  # As a proxy for stamina/availability
+            },
+        }
+
+        # 2. Definición de Pesos por Posición (usando los 8 grupos científicos)
+        POSITION_WEIGHTS = {
+            "GK": {
+                "defending": 0.5,
+                "passing": 0.4,
+                "physical": 0.1,
+                "attacking": 0.0,
+                "playmaking": 0.0,
+            },
+            "CB": {
+                "defending": 0.6,
+                "physical": 0.2,
+                "passing": 0.2,
+                "attacking": 0.0,
+                "playmaking": 0.0,
+            },
+            "FB": {
+                "defending": 0.4,
+                "physical": 0.2,
+                "passing": 0.2,
+                "playmaking": 0.1,
+                "attacking": 0.1,
+            },
+            "DMF": {
+                "defending": 0.4,
+                "passing": 0.3,
+                "physical": 0.2,
+                "playmaking": 0.1,
+                "attacking": 0.0,
+            },
+            "CMF": {
+                "passing": 0.4,
+                "playmaking": 0.3,
+                "physical": 0.1,
+                "defending": 0.1,
+                "attacking": 0.1,
+            },
+            "AMF": {
+                "playmaking": 0.4,
+                "attacking": 0.3,
+                "passing": 0.2,
+                "physical": 0.1,
+                "defending": 0.0,
+            },
+            "W": {
+                "attacking": 0.4,
+                "playmaking": 0.4,
+                "physical": 0.1,
+                "passing": 0.1,
+                "defending": 0.0,
+            },
+            "CF": {
+                "attacking": 0.6,
+                "physical": 0.2,
+                "playmaking": 0.1,
+                "passing": 0.1,
+                "defending": 0.0,
+            },
+        }
+
+        # Función helper para normalizar un valor
+        def normalize(value, min_val, max_val):
+            if value is None:
+                return 0
+            # Clamp the value to be within the expected range
+            value = max(min_val, min(value, max_val))
+            # Normalize to 0-100 scale
+            return (
+                ((value - min_val) / (max_val - min_val)) * 100
+                if (max_val - min_val) != 0
+                else 0
+            )
+
+        # 3. Calcular el score para cada dominio
+        domain_scores = {}
+        for domain, metrics in SKILL_DOMAINS.items():
+            total_score = 0
+            total_weight = 0
+            for metric, config in metrics.items():
+                value = getattr(stats, metric, None)
+                if value is not None:
+                    min_val, max_val = config["range"]
+                    weight = config["weight"]
+                    normalized_score = normalize(value, min_val, max_val)
+                    total_score += normalized_score * weight
+                    total_weight += weight
+
+            domain_scores[domain] = (
+                total_score / total_weight if total_weight > 0 else 0
+            )
+            logger.debug(f"Dominio '{domain}' score: {domain_scores[domain]:.2f}")
+
+        # 4. Calcular el PDI final usando los pesos de la posición
+        position = self._normalize_position(stats.primary_position)
+        position_weights = POSITION_WEIGHTS.get(
+            position, POSITION_WEIGHTS["CMF"]
+        )  # Fallback to CMF
+
+        final_pdi_score = 0
+        for domain, score in domain_scores.items():
+            final_pdi_score += score * position_weights.get(domain, 0)
+
+        logger.info(
+            f"PDI Jerárquico calculado para {stats.player_id} en posición {position}: {final_pdi_score:.2f}"
+        )
+
+        # 5. Devolver el resultado completo
+        result = {f"pdi_{domain}": score for domain, score in domain_scores.items()}
+        result["pdi_overall"] = final_pdi_score
+
+        return result
+
     def _normalize_position(self, original_position: str) -> str:
         """
         Normaliza posición original (27 variantes) a grupo científico (8 grupos).

@@ -3608,7 +3608,7 @@ def create_iep_clustering_chart(
 # ============================================================================
 
 
-def create_performance_tab_content(player_stats):
+def create_performance_tab_content(player_id: int, season: str, player_stats: list):
     """Crea contenido del tab Performance Overview."""
     return dbc.Container(
         [
@@ -3625,14 +3625,14 @@ def create_performance_tab_content(player_stats):
                                                     html.I(
                                                         className="bi bi-radar me-2"
                                                     ),
-                                                    "Skills Profile",
+                                                    "Hierarchical PDI Profile",
                                                 ],
                                                 className="text-primary mb-0",
                                             )
                                         ]
                                     ),
                                     dbc.CardBody(
-                                        [create_radar_chart(player_stats)],
+                                        [create_radar_chart(player_id, season)],
                                         className="p-2",
                                         style={"height": "420px"},
                                     ),

@@ -6,11 +6,9 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 
 from controllers.auth_controller import clear_user_session
-from controllers.menu_controller import (
-    MenuController,
-    get_sync_status_for_ui,
-    handle_sync_details_redirect,
-)
+from controllers.menu_controller import (MenuController,
+                                         get_sync_status_for_ui,
+                                         handle_sync_details_redirect)
 from controllers.sync_coordinator import force_manual_sync
 
 

@@ -9,10 +9,7 @@ from typing import Any, Dict, Optional
 
 from dash import Input, Output, no_update
 
-from common.notification_component import (
-    NotificationComponent,
-    NotificationStyles,
-)
+from common.notification_component import NotificationComponent, NotificationStyles
 from common.notification_system import NotificationManager
 
 

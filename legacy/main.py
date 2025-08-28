@@ -7,7 +7,6 @@ import streamlit as st
 
 from common.login import login_page
 from common.menu import create_sidebar_menu, get_content_path
-
 # Importar configuración
 from config import APP_ICON, APP_NAME, CSS_FILE, STYLES_DIR
 from controllers.auth_controller import AuthController

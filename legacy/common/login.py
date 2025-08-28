@@ -4,13 +4,10 @@ import sys
 
 import streamlit as st
 
-from controllers.auth_controller import (
-    AuthController,
-    authenticate_user,
-    clear_user_session,
-    create_user_session,
-    restore_session_from_url,
-)
+from controllers.auth_controller import (AuthController, authenticate_user,
+                                         clear_user_session,
+                                         create_user_session,
+                                         restore_session_from_url)
 
 # Agregar la ruta raíz al path de Python para importar config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

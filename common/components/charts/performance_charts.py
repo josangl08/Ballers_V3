@@ -114,135 +114,78 @@ def create_performance_heatmap(player_stats):
 
 def create_pdi_temporal_heatmap(player_id, seasons=None):
     """
-    Crea heat map temporal de rendimiento PDI por temporada.
-    MOVIDO desde pages/ballers_dash.py
-
-    Visualización avanzada que complementa el gráfico de evolución existente.
+    Crea un heatmap temporal de los componentes del PDI Jerárquico.
 
     Args:
-        player_id: ID del jugador
-        seasons: Temporadas a analizar (opcional)
+        player_id: ID del jugador.
+        seasons: Temporadas a analizar (opcional).
 
     Returns:
-        Componente dcc.Graph con heat map temporal
+        Componente dcc.Graph con el heatmap temporal.
     """
     try:
-        # Importar aquí para evitar dependencias circulares
         from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
 
-        logger.info(f"Creando heat map temporal PDI para jugador {player_id}")
+        logger.info(
+            f"Creando heatmap temporal de PDI Jerárquico para jugador {player_id}"
+        )
 
-        # Usar PlayerAnalyzer existente
         player_analyzer = PlayerAnalyzer()
+        all_seasons_data = player_analyzer.get_all_seasons_hierarchical_pdi(player_id)
 
-        if not seasons:
-            seasons = player_analyzer.get_available_seasons_for_player(player_id)
-
-        if not seasons:
+        if not all_seasons_data:
             return dbc.Alert(
-                "No hay temporadas con datos para heat map temporal", color="warning"
+                "No hay datos de PDI Jerárquico para el heatmap.", color="warning"
             )
 
-        # Recopilar métricas PDI por temporada
-        heatmap_data = []
+        if seasons:
+            all_seasons_data = [
+                s for s in all_seasons_data if s.get("season") in seasons
+            ]
 
-        for season in seasons:
-            try:
-                ml_metrics = player_analyzer.calculate_or_update_pdi_metrics(
-                    player_id, season, force_recalculate=False
-                )
-
-                if ml_metrics:
-                    season_metrics = {
-                        "Season": season,
-                        "PDI Overall": ml_metrics.get("pdi_overall", 0),
-                        "Universal": ml_metrics.get("pdi_universal", 0),
-                        "Zone": ml_metrics.get("pdi_zone", 0),
-                        "Position": ml_metrics.get("pdi_position_specific", 0),
-                        "Technical": ml_metrics.get("technical_proficiency", 0),
-                        "Tactical": ml_metrics.get("tactical_intelligence", 0),
-                        "Physical": ml_metrics.get("physical_performance", 0),
-                        "Consistency": ml_metrics.get("consistency_index", 0),
-                    }
-                    heatmap_data.append(season_metrics)
-
-            except Exception as e:
-                logger.error(f"Error procesando temporada {season}: {e}")
-                continue
-
-        if not heatmap_data:
+        if not all_seasons_data:
             return dbc.Alert(
-                "No hay métricas PDI calculadas para heat map", color="warning"
+                "No hay datos para las temporadas seleccionadas.", color="info"
             )
 
-        # Preparar datos para heat map
+        # Preparar datos para el heatmap
         import pandas as pd
 
-        df = pd.DataFrame(heatmap_data)
+        # Renombrar claves para que se vean mejor en el gráfico
+        for row in all_seasons_data:
+            row["Overall"] = row.pop("pdi_overall", 0)
+            row["Attacking"] = row.pop("pdi_attacking", 0)
+            row["Playmaking"] = row.pop("pdi_playmaking", 0)
+            row["Defending"] = row.pop("pdi_defending", 0)
+            row["Passing"] = row.pop("pdi_passing", 0)
+            row["Physical"] = row.pop("pdi_physical", 0)
+
+        df = pd.DataFrame(all_seasons_data)
         df.set_index("Season", inplace=True)
+        df = df.T  # Transponer para que los dominios estén en el eje Y
 
-        # Normalizar valores para mejor visualización (0-100)
-        df_normalized = df.copy()
-        for col in df.columns:
-            max_val = df[col].max()
-            if max_val > 0:
-                df_normalized[col] = (df[col] / max_val) * 100
-
-        # Crear heat map
         fig = go.Figure(
             data=go.Heatmap(
-                z=df_normalized.values.T,
-                x=df_normalized.index,
-                y=df_normalized.columns,
-                colorscale=[
-                    [0, "#E57373"],  # Rojo para valores bajos
-                    [0.3, "#FFCA28"],  # Amarillo para valores medios
-                    [0.6, "#FFA726"],  # Naranja
-                    [1, "#24DE84"],  # Verde Ballers para valores altos
-                ],
+                z=df.values,
+                x=df.columns,
+                y=df.index,
+                colorscale="Viridis",
                 hoverongaps=False,
-                hovertemplate="<b>%{y}</b><br>"
-                + "Season: %{x}<br>"
-                + "Score: %{z:.1f}/100<br>"
-                + "<extra></extra>",
-                colorbar=dict(
-                    title=dict(
-                        text="Performance Score", font=dict(color="#24DE84", size=12)
-                    ),
-                    tickfont=dict(color="white"),
-                ),
+                hovertemplate="<b>%{y}</b><br>Season: %{x}<br>Score: %{z:.1f}<extra></extra>",
             )
         )
 
-        # Layout del heat map
         fig.update_layout(
-            title={
-                "text": "",  # Título vacío - se usa título externo en card header
-                "x": 0.5,
-                "font": {"color": "#24DE84", "size": 18},
-            },
-            xaxis_title="Season",
-            yaxis_title="Performance Metrics",
+            title="Evolución de Dominios de Habilidad (PDI)",
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="white", family="Inter, sans-serif"),
-            height=500,
-            margin=dict(l=120, r=80, t=80, b=80),
+            font={"color": "#FFFFFF"},
+            height=400,
+            margin=dict(l=100, r=50, t=50, b=50),
         )
 
-        # Personalizar ejes
-        fig.update_xaxes(
-            tickangle=45,
-            gridcolor="rgba(255,255,255,0.1)",
-            tickfont=dict(color="white", size=10),
-        )
-        fig.update_yaxes(
-            gridcolor="rgba(255,255,255,0.1)", tickfont=dict(color="white", size=10)
-        )
-
-        logger.info(f"✅ Heat map temporal creado: {len(heatmap_data)} temporadas")
         return dcc.Graph(figure=fig, className="chart-container")
 
     except Exception as e:
-        logger.error(f"❌ Error creando heat map temporal: {e}")
-        return dbc.Alert(f"Error generando heat map: {str(e)}", color="danger")
+        logger.error(f"❌ Error creando heat map temporal jerárquico: {e}")
+        return dbc.Alert(f"Error generando heatmap: {str(e)}", color="danger")

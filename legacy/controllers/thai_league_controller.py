@@ -20,14 +20,8 @@ from unidecode import unidecode
 
 from config import DATABASE_PATH
 from controllers.db import get_db_session
-from models import (
-    ImportStatus,
-    Player,
-    ProfessionalStats,
-    ThaiLeagueSeason,
-    User,
-    UserType,
-)
+from models import (ImportStatus, Player, ProfessionalStats, ThaiLeagueSeason,
+                    User, UserType)
 
 logger = logging.getLogger(__name__)
 

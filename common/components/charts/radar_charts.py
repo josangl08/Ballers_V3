@@ -17,239 +17,53 @@ from dash import dcc, html
 logger = logging.getLogger(__name__)
 
 
-def create_radar_chart(player_stats):
+def create_radar_chart(player_id: int, season: str):
     """
-    Crea radar chart híbrido avanzado con análisis temporal y comparativa real.
-    MOVIDO desde pages/ballers_dash.py
+    Crea un gráfico de radar basado en el PDI Jerárquico de un jugador.
+    Esta es la nueva implementación que usa el PlayerAnalyzer.
 
     Args:
-        player_stats: Lista de diccionarios con estadísticas por temporada
+        player_id: ID del jugador.
+        season: Temporada a analizar.
 
     Returns:
-        Componente con selector y radar chart interactivo
+        Componente dcc.Graph con el gráfico de radar.
     """
-    if not player_stats:
-        return dbc.Alert("No statistical data available", color="warning")
+    from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
 
-    # Calcular métricas tanto para temporada actual como histórico
-    latest_stats = player_stats[-1] if player_stats else {}
-    current_season = latest_stats.get("season", "Current")
+    logger.info(f"Creando nuevo radar chart jerárquico para jugador {player_id}")
+    player_analyzer = PlayerAnalyzer()
+    pdi_data = player_analyzer.get_hierarchical_pdi_analysis(player_id, season)
 
-    # Calcular promedios históricos del jugador (todas las temporadas)
-    def calculate_historical_avg(metric_key):
-        """Calcula promedio histórico de una métrica."""
-        values = [
-            stat.get(metric_key, 0) or 0
-            for stat in player_stats
-            if stat.get(metric_key) is not None
-        ]
-        return sum(values) / len(values) if values else 0
+    if not pdi_data:
+        return dbc.Alert(
+            "No se pudieron calcular los datos del PDI Jerárquico para el radar.",
+            color="warning",
+        )
 
-    # Métricas simples universales para comparar jugadores de cualquier posición
-    categories = [
-        "Pass Acc %",  # pass_accuracy_pct
-        "Duels Won %",  # duels_won_pct
-        "Goals/90",  # goals_per_90
-        "Assists/90",  # assists_per_90
-        "Def Actions/90",  # defensive_actions_per_90
-        "Availability %",  # matches_played / 30 * 100
-    ]
-
-    # Calcular métricas simples para temporada actual
-    def calculate_current_metrics():
-        pass_acc = latest_stats.get("pass_accuracy_pct", 0) or 0
-        duels_won = latest_stats.get("duels_won_pct", 0) or 0
-        goals_90 = latest_stats.get("goals_per_90", 0) or 0
-        assists_90 = latest_stats.get("assists_per_90", 0) or 0
-        def_actions_90 = latest_stats.get("defensive_actions_per_90", 0) or 0
-        matches = latest_stats.get("matches_played", 0) or 0
-
-        return {
-            "pass_accuracy": min(100, pass_acc),  # 0-100 directo
-            "duels_won": min(100, duels_won),  # 0-100 directo
-            "goals_per_90": min(100, goals_90 * 80),  # 0-1.25 -> 0-100 (optimizado)
-            "assists_per_90": min(100, assists_90 * 100),  # 0-1.0 -> 0-100 (optimizado)
-            "defensive_actions": min(
-                100, def_actions_90 * 10
-            ),  # 0-10 -> 0-100 (optimizado)
-            "availability": min(100, (matches / 30) * 100),  # 0-30 partidos -> 0-100
-        }
-
-    # Calcular métricas históricas simples (promedio de todas las temporadas)
-    def calculate_historical_metrics():
-        pass_acc_avg = calculate_historical_avg("pass_accuracy_pct")
-        duels_won_avg = calculate_historical_avg("duels_won_pct")
-        goals_90_avg = calculate_historical_avg("goals_per_90")
-        assists_90_avg = calculate_historical_avg("assists_per_90")
-        def_actions_90_avg = calculate_historical_avg("defensive_actions_per_90")
-        matches_avg = calculate_historical_avg("matches_played")
-
-        return {
-            "pass_accuracy": min(100, pass_acc_avg),  # 0-100 directo
-            "duels_won": min(100, duels_won_avg),  # 0-100 directo
-            "goals_per_90": min(100, goals_90_avg * 80),  # 0-1.25 -> 0-100 (optimizado)
-            "assists_per_90": min(
-                100, assists_90_avg * 100
-            ),  # 0-1.0 -> 0-100 (optimizado)
-            "defensive_actions": min(
-                100, def_actions_90_avg * 10
-            ),  # 0-10 -> 0-100 (optimizado)
-            "availability": min(
-                100, (matches_avg / 30) * 100
-            ),  # 0-30 partidos -> 0-100
-        }
-
-    current_metrics = calculate_current_metrics()
-    historical_metrics = calculate_historical_metrics()
-
-    # Valores de referencia de liga Thai League (promedio real)
-    league_reference = {
-        "pass_accuracy": 75,  # 75% promedio pass accuracy
-        "duels_won": 50,  # 50% promedio duels won
-        "goals_per_90": 32,  # ~0.4 goals/90 promedio -> 32/100 (con escala *80)
-        "assists_per_90": 30,  # ~0.3 assists/90 promedio -> 30/100 (con escala *100)
-        "defensive_actions": 50,  # ~5 acc def/90 promedio -> 50/100 (con escala *10)
-        "availability": 70,  # ~21 partidos promedio -> 70/100
+    # Excluir el PDI general del radar, solo mostrar dominios
+    metrics = {
+        k.replace("pdi_", "").replace("_", " ").capitalize(): v
+        for k, v in pdi_data.items()
+        if k != "pdi_overall"
     }
 
-    # Función auxiliar para preparar valores reales para tooltips
-    def prepare_real_values(stats_dict, is_league_ref=False):
-        """Prepara valores reales para mostrar en tooltips."""
-        if is_league_ref:
-            # Valores de referencia de liga (ya son reales)
-            return [
-                75.0,  # pass_accuracy_pct
-                50.0,  # duels_won_pct
-                0.4,  # goals_per_90
-                0.3,  # assists_per_90
-                5.0,  # defensive_actions_per_90
-                21,  # matches_played (de 30)
-            ]
-        else:
-            # Valores reales del jugador
-            pass_acc = stats_dict.get("pass_accuracy_pct", 0) or 0
-            duels_won = stats_dict.get("duels_won_pct", 0) or 0
-            goals_90 = stats_dict.get("goals_per_90", 0) or 0
-            assists_90 = stats_dict.get("assists_per_90", 0) or 0
-            def_actions_90 = stats_dict.get("defensive_actions_per_90", 0) or 0
-            matches = stats_dict.get("matches_played", 0) or 0
+    pdi_overall = pdi_data.get("pdi_overall", 0)
 
-            return [pass_acc, duels_won, goals_90, assists_90, def_actions_90, matches]
-
-    # Preparar datos para el gráfico
-    metric_keys = [
-        "pass_accuracy",
-        "duels_won",
-        "goals_per_90",
-        "assists_per_90",
-        "defensive_actions",
-        "availability",
-    ]
-    current_values = [current_metrics[key] for key in metric_keys]
-    historical_values = [historical_metrics[key] for key in metric_keys]
-    league_values = [league_reference[key] for key in metric_keys]
-
-    # Preparar valores reales para tooltips
-    current_real_values = prepare_real_values(latest_stats)
-    historical_real_values = prepare_real_values(
-        {
-            "pass_accuracy_pct": calculate_historical_avg("pass_accuracy_pct"),
-            "duels_won_pct": calculate_historical_avg("duels_won_pct"),
-            "goals_per_90": calculate_historical_avg("goals_per_90"),
-            "assists_per_90": calculate_historical_avg("assists_per_90"),
-            "defensive_actions_per_90": calculate_historical_avg(
-                "defensive_actions_per_90"
-            ),
-            "matches_played": calculate_historical_avg("matches_played"),
-        }
-    )
-    league_real_values = prepare_real_values({}, is_league_ref=True)
-
-    # Función para crear tooltip customizado
-    def create_custom_tooltip(metric_index, value, prefix=""):
-        """Crea tooltip personalizado según la métrica."""
-        metric_names = [
-            "Pass Acc %",
-            "Duels Won %",
-            "Goals/90",
-            "Assists/90",
-            "Def Actions/90",
-            "Availability %",
-        ]
-        metric_name = metric_names[metric_index]
-
-        if metric_index in [0, 1]:  # Pass Acc %, Duels Won %
-            return f"<b>{metric_name}</b><br>{prefix}: {value:.1f}%<extra></extra>"
-        elif metric_index in [2, 3, 4]:  # Goals/90, Assists/90, Def Actions/90
-            units = ["/90", "/90", "/90"]
-            return f"<b>{metric_name}</b><br>{prefix}: {value:.1f}{units[metric_index-2]}<extra></extra>"
-        else:  # Availability (matches)
-            return f"<b>{metric_name}</b><br>{prefix}: {int(value)} of 30 matches<extra></extra>"
-
-    # Crear tooltips personalizados para cada trace
-    def create_trace_tooltips(real_values, prefix):
-        """Crea array de tooltips para un trace completo."""
-        return [
-            create_custom_tooltip(i, val, prefix) for i, val in enumerate(real_values)
-        ]
-
-    # Crear radar chart híbrido
     fig = go.Figure()
 
-    # Liga promedio (referencia) - Más visible
     fig.add_trace(
         go.Scatterpolar(
-            r=league_values,
-            theta=categories,
+            r=list(metrics.values()),
+            theta=list(metrics.keys()),
             fill="toself",
-            fillcolor="rgba(255, 255, 255, 0.15)",
-            line=dict(color="rgba(255, 255, 255, 0.8)", width=2, dash="solid"),
-            name="Thai League Avg",
-            customdata=league_real_values,
-            hovertemplate=[
-                create_custom_tooltip(i, val, "League Avg")
-                for i, val in enumerate(league_real_values)
-            ],
-        )
-    )
-
-    # Promedio histórico del jugador
-    if len(player_stats) > 1:
-        fig.add_trace(
-            go.Scatterpolar(
-                r=historical_values,
-                theta=categories,
-                fill="toself",
-                fillcolor="rgba(255, 165, 0, 0.15)",
-                line=dict(color="#FFA500", width=2, dash="dash"),
-                name=f"Career Average ({len(player_stats)} seasons)",
-                customdata=historical_real_values,
-                hovertemplate=[
-                    create_custom_tooltip(i, val, "Career Avg")
-                    for i, val in enumerate(historical_real_values)
-                ],
-            )
-        )
-
-    # Temporada actual (principal)
-    fig.add_trace(
-        go.Scatterpolar(
-            r=current_values,
-            theta=categories,
-            fill="toself",
+            name=f"PDI General: {pdi_overall:.1f}",
             fillcolor="rgba(36, 222, 132, 0.3)",
             line=dict(color="#24DE84", width=3),
-            marker=dict(size=8, color="#24DE84"),
-            name=f"Current Season ({current_season})",
-            customdata=current_real_values,
-            hovertemplate=[
-                create_custom_tooltip(i, val, "Current")
-                for i, val in enumerate(current_real_values)
-            ],
+            hovertemplate="<b>%{theta}</b><br>Score: %{r:.1f}<extra></extra>",
         )
     )
 
-    # Layout mejorado
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
@@ -258,32 +72,26 @@ def create_radar_chart(player_stats):
                 gridcolor="rgba(255,255,255,0.2)",
                 linecolor="rgba(255,255,255,0.3)",
                 tickfont=dict(color="white", size=9),
-                tickvals=[20, 40, 60, 80, 100],  # Menos ticks para claridad
-                ticktext=["20", "40", "60", "80", "100"],
             ),
             angularaxis=dict(
                 gridcolor="rgba(255,255,255,0.3)",
                 tickfont=dict(color="white", size=10, family="Inter"),
-                rotation=0,
             ),
             bgcolor="rgba(0,0,0,0)",
         ),
         showlegend=True,
         legend=dict(
-            orientation="h",  # Leyenda horizontal
-            x=0.5,  # Centrado horizontalmente
-            xanchor="center",  # Anclaje central
-            y=1.08,  # Posición donde estaba el título
-            yanchor="bottom",  # Anclaje inferior
-            bgcolor="rgba(0,0,0,0.8)",
-            bordercolor="rgba(36,222,132,0.3)",
-            borderwidth=1,
-            font=dict(color="white", size=10),
+            orientation="h",
+            x=0.5,
+            xanchor="center",
+            y=1.15,
+            yanchor="top",
+            font=dict(color="white"),
         ),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         height=450,
-        margin=dict(t=40, b=40, l=60, r=60),  # Márgenes reducidos para maximizar radar
+        margin=dict(t=80, b=40, l=60, r=60),
     )
 
     return dcc.Graph(

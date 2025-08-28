@@ -510,9 +510,7 @@ def register_administration_callbacks(app):
             # Coach filter - Si es coach, solo ver sus propias sesiones
             if user_type == "coach" and user_id:
                 # CORREGIDO: Obtener el coach_id correcto desde user_id
-                from controllers.session_controller import (
-                    get_coach_by_user_id,
-                )
+                from controllers.session_controller import get_coach_by_user_id
 
                 coach = get_coach_by_user_id(user_id)
                 if coach:

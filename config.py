@@ -63,9 +63,10 @@ os.makedirs(STYLES_DIR, exist_ok=True)
 os.makedirs(PROFILE_PHOTOS_DIR, exist_ok=True)
 
 # Rutas de archivos importantes
-DATABASE_PATH = get_config_value(
-    "DATABASE_PATH", os.path.join(DATA_DIR, "ballers_app.db")
-)
+db_path = get_config_value("DATABASE_PATH", os.path.join(DATA_DIR, "ballers_app.db"))
+if not os.path.isabs(db_path):
+    db_path = os.path.join(BASE_DIR, db_path)
+DATABASE_PATH = db_path
 DEFAULT_PROFILE_PHOTO = os.path.join(ASSETS_DIR, "default_profile.png")
 CSS_FILE = os.path.join(STYLES_DIR, "style.css")
 

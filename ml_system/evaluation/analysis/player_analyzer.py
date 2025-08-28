@@ -9,7 +9,11 @@ para mantener arquitectura ml_system sin duplicar funcionalidad.
 """
 
 import logging
+import os
 from typing import Any, Dict, List, Optional, Tuple
+
+import joblib
+import pandas as pd
 
 from controllers.db import get_db_session
 from ml_system.data_processing.processors.position_mapper import PositionMapper
@@ -45,6 +49,18 @@ class PlayerAnalyzer:
         self.enhanced_feature_engineer = AdvancedFeatureEngineer()  # NUEVO
         self.legacy_weights = LegacyFeatureWeights()  # NUEVO
 
+        # Cargar el modelo predictivo de PDI futuro
+        self.pdi_predictor_model = None
+        model_path = "ml_system/outputs/models/future_pdi_predictor_v1.joblib"
+        try:
+            if os.path.exists(model_path):
+                self.pdi_predictor_model = joblib.load(model_path)
+                logger.info(f"Modelo predictivo de PDI cargado desde {model_path}")
+            else:
+                logger.warning(f"No se encontró el modelo predictivo en {model_path}")
+        except Exception as e:
+            logger.error(f"Error al cargar el modelo predictivo de PDI: {e}")
+
         # Posiciones soportadas (compatible con controlador original)
         self.supported_positions = {
             "GK",
@@ -68,6 +84,132 @@ class PlayerAnalyzer:
         logger.info(
             "⚖️ Versión 2.0: PDI Calculator + Advanced Feature Engineer + Legacy Integration"
         )
+
+    def predict_future_pdi(self, player_id: int, season: str) -> Optional[float]:
+        """
+        Predice el PDI futuro de un jugador usando el modelo entrenado.
+
+        Args:
+            player_id: ID del jugador.
+            season: La temporada actual del jugador, a partir de la cual predecir.
+
+        Returns:
+            El PDI predicho para el año siguiente, o None si no se puede predecir.
+        """
+        if self.pdi_predictor_model is None:
+            logger.warning(
+                "El modelo predictivo de PDI no está cargado. No se puede predecir."
+            )
+            return None
+
+        logger.debug(
+            f"Iniciando predicción de PDI futuro para jugador {player_id} desde la temporada {season}"
+        )
+
+        # 1. Obtener las features del jugador para la temporada actual
+        current_pdi_features = self.get_hierarchical_pdi_analysis(player_id, season)
+        if not current_pdi_features:
+            logger.warning(
+                f"No se pudieron obtener las features del PDI jerárquico para la predicción."
+            )
+            return None
+
+        # 2. Obtener features adicionales (edad, minutos)
+        try:
+            with self.session_factory() as session:
+                stats = (
+                    session.query(ProfessionalStats)
+                    .filter_by(player_id=player_id, season=season)
+                    .first()
+                )
+                if not stats:
+                    return None
+                age = stats.age or 25
+                minutes_played = stats.minutes_played or 0
+        except Exception as e:
+            logger.error(f"Error obteniendo stats adicionales para predicción: {e}")
+            return None
+
+        # 3. Construir el DataFrame de features para el modelo
+        features = current_pdi_features
+        features["age"] = age
+        features["minutes_played"] = minutes_played
+
+        # Definir el orden exacto de las columnas como en el entrenamiento
+        TRAINING_FEATURE_ORDER = [
+            "pdi_attacking",
+            "pdi_playmaking",
+            "pdi_defending",
+            "pdi_passing",
+            "pdi_physical",
+            "age",
+            "minutes_played",
+        ]
+
+        # El PDI general no es una feature para el modelo, lo eliminamos si existe
+        features.pop("pdi_overall", None)
+
+        try:
+            features_df = pd.DataFrame([features])
+            # Reordenar el DataFrame para que coincida con el entrenamiento
+            features_df = features_df[TRAINING_FEATURE_ORDER]
+        except KeyError as e:
+            logger.error(f"Falta una o más columnas necesarias para la predicción: {e}")
+            return None
+
+        # 4. Realizar la predicción
+        try:
+            prediction = self.pdi_predictor_model.predict(features_df)
+            predicted_pdi = prediction[0]
+            logger.info(
+                f"Predicción de PDI para jugador {player_id} para la próxima temporada: {predicted_pdi:.2f}"
+            )
+            return predicted_pdi
+        except Exception as e:
+            logger.error(f"Error durante la predicción del modelo: {e}")
+            return None
+
+    def get_hierarchical_pdi_analysis(
+        self, player_id: int, season: str = "2024-25"
+    ) -> Optional[Dict]:
+        """
+        Calcula y devuelve el análisis completo del PDI Jerárquico.
+
+        Args:
+            player_id: ID del jugador.
+            season: Temporada a analizar.
+
+        Returns:
+            Un diccionario con el PDI general y el desglose por dominios, o None si hay un error.
+        """
+        logger.debug(
+            f"Solicitando PDI Jerárquico para jugador {player_id}, temporada {season}"
+        )
+        try:
+            with self.session_factory() as session:
+                stats = (
+                    session.query(ProfessionalStats)
+                    .filter_by(player_id=player_id, season=season)
+                    .first()
+                )
+
+                if not stats:
+                    logger.warning(
+                        f"No se encontraron stats para el PDI Jerárquico (jugador {player_id}, temporada {season})"
+                    )
+                    return None
+
+                # Llamar a la nueva función en el PDICalculator
+                hierarchical_pdi_data = self.pdi_calculator._calculate_hierarchical_pdi(
+                    stats
+                )
+                return hierarchical_pdi_data
+
+        except Exception as e:
+            logger.error(
+                f"Error al obtener PDI Jerárquico para jugador {player_id}: {e}"
+            )
+            return None
 
     def get_enhanced_player_analysis(
         self, player_id: int, season: str = "2024-25"
@@ -1532,3 +1674,34 @@ class PlayerAnalyzer:
         except Exception as e:
             logger.error(f"❌ Error obteniendo todas las métricas PDI temporales: {e}")
             return []
+
+    def get_all_seasons_hierarchical_pdi(self, player_id: int) -> List[Dict]:
+        """
+        Obtiene el PDI Jerárquico para todas las temporadas de un jugador.
+
+        Args:
+            player_id: ID del jugador.
+
+        Returns:
+            Lista de diccionarios con el PDI jerárquico por temporada.
+        """
+        logger.debug(
+            f"Obteniendo PDI jerárquico de todas las temporadas para el jugador {player_id}"
+        )
+        available_seasons = self.get_available_seasons_for_player(player_id)
+        if not available_seasons:
+            return []
+
+        all_seasons_data = []
+        for season in available_seasons:
+            pdi_data = self.get_hierarchical_pdi_analysis(player_id, season)
+            if pdi_data:
+                pdi_data["season"] = (
+                    season  # Asegurarnos que la temporada está en los datos
+                )
+                all_seasons_data.append(pdi_data)
+
+        all_seasons_data.sort(
+            key=lambda x: x.get("season", ""), reverse=False
+        )  # Ordenar de más antigua a más reciente
+        return all_seasons_data

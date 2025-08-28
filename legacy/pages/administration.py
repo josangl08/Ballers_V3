@@ -7,40 +7,27 @@ from typing import Optional
 import pandas as pd
 import streamlit as st
 
-from common.cloud_utils import (
-    is_streamlit_cloud,
-    show_cloud_feature_limitation,
-    show_cloud_mode_info,
-)
-from common.export import (
-    create_download_link,
-    show_export_error_message,
-    show_export_success_message,
-    trigger_browser_print,
-)
-from controllers.export_controller import generate_financials_pdf, generate_sessions_pdf
+from common.cloud_utils import (is_streamlit_cloud,
+                                show_cloud_feature_limitation,
+                                show_cloud_mode_info)
+from common.export import (create_download_link, show_export_error_message,
+                           show_export_success_message, trigger_browser_print)
+from controllers.export_controller import (generate_financials_pdf,
+                                           generate_sessions_pdf)
 from controllers.internal_calendar import show_calendar
 from controllers.notification_controller import get_sync_problems
-from controllers.session_controller import (
-    SessionController,
-    create_session_with_calendar,
-    delete_session_with_calendar,
-    update_session_with_calendar,
-)
+from controllers.session_controller import (SessionController,
+                                            create_session_with_calendar,
+                                            delete_session_with_calendar,
+                                            update_session_with_calendar)
 from controllers.sheets_controller import get_accounting_df
-from controllers.sync_coordinator import (
-    filter_sync_results_by_coach,
-    get_coach_id_if_needed,
-)
+from controllers.sync_coordinator import (filter_sync_results_by_coach,
+                                          get_coach_id_if_needed)
 from controllers.validation_controller import (
-    ValidationController,
-    check_session_time_recommendation,
-    get_create_session_hours,
-    get_edit_session_hours,
-    validate_coach_selection_safe,
-    validate_player_selection_safe,
-    validate_session_form_data,
-)
+    ValidationController, check_session_time_recommendation,
+    get_create_session_hours, get_edit_session_hours,
+    validate_coach_selection_safe, validate_player_selection_safe,
+    validate_session_form_data)
 from models import Coach, Session, SessionStatus, User
 
 # Agregar la ruta raíz al path de Python para importar config
