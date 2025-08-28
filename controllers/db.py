@@ -13,8 +13,10 @@ _engine = None
 _Session: Optional[sessionmaker] = None
 
 # Connection pooling configuration optimizado para Supabase
-POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "3"))  # Reducido para Supabase
-MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "2"))  # Total máximo: 5 conexiones
+POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "2"))  # Muy conservador para Supabase
+MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "1"))  # Total máximo: 3 conexiones
+POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", "10"))  # Timeout más agresivo
+POOL_RECYCLE = int(os.getenv("DB_POOL_RECYCLE", "900"))  # 15 minutos (más agresivo)
 
 
 def initialize_database() -> bool:
@@ -39,24 +41,30 @@ def initialize_database() -> bool:
             print(f"🔧 Conectando a Supabase PostgreSQL...")
             print(f"   URL: {supabase_db_url.split('@')[0]}...")
 
-            # Configurar engine con connection pooling optimizado para Supabase
+            # Configurar engine con connection pooling ultra-conservador para Supabase
             _engine = create_engine(
                 supabase_db_url,
                 pool_size=POOL_SIZE,  # Conexiones persistentes en el pool
                 max_overflow=MAX_OVERFLOW,  # Conexiones adicionales si es necesario
-                pool_timeout=20,  # Timeout más agresivo para Supabase
-                pool_recycle=1800,  # Reciclar cada 30 min (Supabase cierra idle)
+                pool_timeout=POOL_TIMEOUT,  # Timeout agresivo para liberación rápida
+                pool_recycle=POOL_RECYCLE,  # Reciclar cada 15 min (evita conexiones idle)
                 pool_pre_ping=True,  # Verificar conexiones antes de usar
                 pool_reset_on_return="rollback",  # Limpiar transacciones al devolver
                 echo=False,  # No logging SQL (performance)
+                # Configuraciones adicionales para Supabase
+                connect_args={
+                    "options": "-c default_transaction_isolation=read_committed"
+                },
             )
 
-            print(f"🏊 Connection pool configurado (optimizado para Supabase):")
+            print(f"🏊 Connection pool configurado (ultra-conservador para Supabase):")
             print(f"   - Pool size: {POOL_SIZE}")
             print(f"   - Max overflow: {MAX_OVERFLOW}")
-            print(f"   - Pool timeout: 20s")
-            print(f"   - Pool recycle: 30m")
+            print(f"   - Pool timeout: {POOL_TIMEOUT}s")
+            print(f"   - Pool recycle: {POOL_RECYCLE//60}m")
             print(f"   - Pool reset: rollback")
+            print(f"   - Max conexiones total: {POOL_SIZE + MAX_OVERFLOW}")
+            print("   ⚠️ Configuración ultra-conservadora para evitar límites Supabase")
 
             # Para PostgreSQL de Supabase, las tablas ya existen
             print("✅ Conectado a base de datos PostgreSQL de Supabase")
@@ -101,6 +109,26 @@ def get_db_session() -> SQLAlchemySession:
         )
 
     return _Session()
+
+
+def force_cleanup_connections():
+    """Fuerza limpieza de conexiones idle y huérfanas."""
+    global _engine
+
+    if _engine is not None:
+        try:
+            # Información del pool antes de limpieza
+            print(f"🧹 Limpieza forzada de conexiones:")
+            print(f"   - Conexiones activas: {_engine.pool.checkedout()}")
+            print(f"   - Conexiones en pool: {_engine.pool.checkedin()}")
+            print(f"   - Conexiones inválidas: {_engine.pool.invalid()}")
+
+            # Invalidar todas las conexiones del pool
+            _engine.pool.invalidate()
+
+            print("✅ Conexiones idle limpiadas")
+        except Exception as e:
+            print(f"⚠️ Error durante limpieza: {e}")
 
 
 def close_all_connections():
