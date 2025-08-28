@@ -64,15 +64,7 @@ app = dash.Dash(
 app.title = APP_NAME
 server = app.server
 
-# Variables globales para webhook integrado
-_webhook_stats = {
-    "webhooks_received": 0,
-    "webhooks_processed": 0,
-    "last_webhook_time": None,
-    "server_started_at": None,
-    "sync_errors": 0,
-}
-_sse_event_queue = queue.Queue(maxsize=100)
+# Eliminar variables globales duplicadas - usar las de webhook_server.py
 
 # Usar layout estándar de Dash - eliminamos JavaScript manual
 
@@ -171,6 +163,16 @@ if ENVIRONMENT == "production":
                         # Guardar problemas
                         save_sync_problems(rejected_events, warning_events)
                         
+                        # CRÍTICO: Notificar cambios a la UI usando webhook_server existente
+                        if total_changes > 0:
+                            from controllers.webhook_server import _webhook_server
+                            _webhook_server._notify_ui_changes(total_changes, {
+                                "imported": imported,
+                                "updated": updated, 
+                                "deleted": deleted,
+                                "problems": len(rejected_events) + len(warning_events)
+                            })
+                        
                     except Exception as e:
                         logging.error(f"❌ Integrated webhook sync error: {e}")
                 
@@ -206,6 +208,52 @@ if ENVIRONMENT == "production":
             "environment": "production"
         }), 200
 
+    @server.route("/webhook/events", methods=["GET"])
+    def sse_event_stream():
+        """
+        Server-Sent Events endpoint reutilizando webhook_server existente.
+        DELEGACIÓN: Usa la implementación y cola del webhook_server.
+        """
+        from controllers.webhook_server import _webhook_server
+        
+        # Reutilizar el generador existente del webhook_server
+        def generate_sse_events():
+            """Generador que delega al webhook_server existente"""
+            try:
+                logging.info("🌐 New SSE client connected to integrated endpoint (delegating to webhook_server)")
+
+                while True:
+                    try:
+                        # Usar la cola SSE del webhook_server existente
+                        event_data = _webhook_server.sse_event_queue.get(timeout=30)
+
+                        # Enviar evento al cliente
+                        sse_message = f"data: {json.dumps(event_data)}\\n\\n"
+                        logging.debug(f"📤 Sending SSE event via delegation: {event_data}")
+                        yield sse_message
+
+                    except queue.Empty:
+                        # Heartbeat para mantener conexión viva
+                        heartbeat = f"data: {json.dumps({'type': 'heartbeat', 'timestamp': time.time()})}\\n\\n"
+                        yield heartbeat
+
+            except GeneratorExit:
+                logging.info("🔌 SSE client disconnected from integrated endpoint")
+            except Exception as e:
+                logging.error(f"❌ SSE stream error: {e}")
+
+        # Retornar stream SSE con headers correctos
+        return Response(
+            generate_sse_events(),
+            mimetype="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type",
+            },
+        )
+
 
 # Registrar todos los callbacks organizados
 def register_all_callbacks():
@@ -237,8 +285,17 @@ def register_all_callbacks():
             if (!window.webhookSSE) {
                 console.log('🌐 Establishing SSE connection for real-time updates...');
 
-                // Crear conexión SSE al webhook server
-                window.webhookSSE = new EventSource('http://localhost:8001/webhook/events');
+                // SOLUCIÓN: URL SSE dinámica según entorno
+                // Desarrollo: http://localhost:8001/webhook/events (servidor separado)
+                // Producción: https://ballers-v3.onrender.com/webhook/events (integrado)
+                const baseUrl = window.location.origin;
+                const isDev = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
+                const sseUrl = isDev ? 'http://localhost:8001/webhook/events' : baseUrl + '/webhook/events';
+                
+                console.log(`🌍 Environment detected: ${isDev ? 'development' : 'production'}`);
+                console.log(`📡 SSE URL: ${sseUrl}`);
+                
+                window.webhookSSE = new EventSource(sseUrl);
 
                 // Handler para eventos SSE - Updates directos a UI
                 window.webhookSSE.onmessage = function(event) {
