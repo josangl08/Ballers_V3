@@ -25,6 +25,7 @@ from callbacks.professional_tabs_callbacks import register_professional_tabs_cal
 from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
 from callbacks.webhook_callbacks import register_webhook_callbacks
+from callbacks.notification_callbacks import NotificationCallbacks
 from common.datepicker_utils import (
     create_datepicker_dummy_divs,
     register_datepicker_callbacks,

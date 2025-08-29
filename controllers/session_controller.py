@@ -257,7 +257,6 @@ class SessionController:
             # Actualizar campos
             coach_changed = False
             player_changed = False
-
             for field, value in kwargs.items():
                 if hasattr(session, field):
                     setattr(session, field, value)

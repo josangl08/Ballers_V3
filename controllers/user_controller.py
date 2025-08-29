@@ -805,7 +805,6 @@ class UserController:
 
         # Encontrar otro coach activo para reasignar
         from sqlalchemy.orm import joinedload
-
         available_coaches = (
             self.db.query(Coach)
             .options(joinedload(Coach.user))

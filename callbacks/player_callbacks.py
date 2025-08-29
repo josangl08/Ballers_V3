@@ -295,7 +295,6 @@ def register_player_callbacks(app):
     )
     def toggle_export_modal(open_click, cancel_click, is_open):
         from dash import callback_context
-
         if not callback_context.triggered:
             return is_open
         trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -688,3 +687,4 @@ def register_player_callbacks(app):
                     "color": "#F44336",
                 },
             )
+

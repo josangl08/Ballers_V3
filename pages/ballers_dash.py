@@ -13,6 +13,7 @@ import numpy as np
 import plotly.graph_objects as go
 import requests
 from dash import Input, Output, State, dcc, html  # noqa: F401
+from common.datepicker_utils import create_auto_hide_datepicker
 
 from common.components.charts.comparison_charts import (
     create_comparison_bar_chart,
@@ -48,9 +49,8 @@ from common.components.shared.cards import (
     create_stats_card,
 )
 from common.components.shared.tables import create_statistics_summary
-from common.datepicker_utils import create_auto_hide_datepicker
-from common.format_utils import format_name_with_del
 from common.notification_component import NotificationComponent
+from common.format_utils import format_name_with_del
 from controllers.player_controller import get_player_profile_data, get_players_for_list
 from ml_system.data_processing.processors.position_mapper import (
     get_group_info,
@@ -136,7 +136,11 @@ from models.user_model import UserType
 logger = logging.getLogger(__name__)
 
 
-# Función de utilidad para características no disponibles
+# Funciones simples para reemplazar cloud_utils removido
+def is_streamlit_cloud():
+    return False
+
+
 def show_cloud_feature_limitation(feature_name):
     return f"Feature {feature_name} not available in local mode"
 
@@ -1602,7 +1606,7 @@ def create_players_list_dash():
 
 
 def create_overview_content_dash():
-    """Crea el contenido de overview para Dash - adaptado para Dash"""
+    """Crea el contenido de overview para Dash - migrado de Streamlit"""
 
     return dbc.Container(
         [
@@ -1831,7 +1835,7 @@ def create_test_results_content_dash():
 
     return dbc.Container(
         [
-            # Selector de métricas (usando controller como Dash)
+            # Selector de métricas (usando controller como en Streamlit)
             dbc.Row(
                 [
                     dbc.Col(
@@ -1845,7 +1849,7 @@ def create_test_results_content_dash():
                                 options=dropdown_options,
                                 value=metrics_list[
                                     :3
-                                ],  # Primeras 3 métricas por defecto como Dash
+                                ],  # Primeras 3 métricas por defecto como en Streamlit
                                 multi=True,
                                 style={
                                     "border-radius": "5px",
@@ -2759,7 +2763,7 @@ def create_sessions_calendar_dash(
         if isinstance(to_date, str):
             to_date = dt.datetime.fromisoformat(to_date).date()
 
-        # Status filter por defecto (todos los estados como Dash)
+        # Status filter por defecto (todos los estados como en Streamlit)
         if status_filter is None:
             status_filter = ["scheduled", "completed", "canceled"]
 
