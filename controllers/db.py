@@ -6,7 +6,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy.orm import sessionmaker
 
-from models import Base
+from config import DATABASE_PATH
+
+# from models import Base # Moved import inside initialize_database() to prevent circular imports
 
 # Variables globales para reutilizar engine y Session
 _engine = None
