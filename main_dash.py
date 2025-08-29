@@ -19,6 +19,7 @@ from callbacks.ballers_callbacks import register_ballers_callbacks
 
 # Importar callbacks organizados
 from callbacks.navigation_callbacks import register_navigation_callbacks
+from callbacks.notification_callbacks import NotificationCallbacks
 from callbacks.player_callbacks import register_player_callbacks
 from callbacks.professional_tabs_callbacks import register_professional_tabs_callbacks
 from callbacks.settings_callbacks import register_settings_callbacks
@@ -33,7 +34,15 @@ from common.menu_dash import register_menu_callbacks
 
 # Importar configuración
 from config import APP_ICON, APP_NAME  # noqa: F401
+
+# Importar componentes webhook para integración
+from controllers.calendar_sync_core import (
+    sync_calendar_to_db_with_feedback,
+    sync_db_to_calendar,
+)
 from controllers.db import initialize_database  # noqa: F401
+from controllers.notification_controller import save_sync_problems
+from controllers.session_controller import update_past_sessions
 
 # Importar integración completa de webhooks
 from controllers.webhook_integration import (
@@ -42,18 +51,10 @@ from controllers.webhook_integration import (
     shutdown_webhook_integration,
 )
 
-# Importar componentes webhook para integración
-from controllers.calendar_sync_core import (
-    sync_calendar_to_db_with_feedback,
-    sync_db_to_calendar,
-)
-from controllers.notification_controller import save_sync_problems
-from controllers.session_controller import update_past_sessions
-
 # Sistema de webhook events movido a callbacks/webhook_callbacks.py
 
 # Configurar React version para dash-mantine-components
-dash._dash_renderer._set_react_version('18.2.0')
+dash._dash_renderer._set_react_version("18.2.0")
 
 # Configuración de la aplicación Dash
 app = dash.Dash(
@@ -78,43 +79,49 @@ def get_app_layout():
     """Retorna el layout principal de la aplicación Dash."""
     return dmc.MantineProvider(
         dbc.Container(
-        [
-            dcc.Location(id="url", refresh=False),
-            # SISTEMA HÍBRIDO DE SESIONES:
-            # Store principal (expira al cerrar navegador si no hay "Remember Me")
-            dcc.Store(id="session-store", storage_type="session"),
-            # Store persistente para "Remember Me" (localStorage, 30 días)
-            dcc.Store(id="persistent-session-store", storage_type="local"),
-            # Store para gestión de timeout e inactividad
-            dcc.Store(
-                id="session-activity",
-                storage_type="memory",
-                data={"last_activity": None, "remember_me": False},
-            ),
-            # 🛡️ FALLBACK STORE: Para modo degradado sin SSE
-            dcc.Store(id="fallback-trigger", storage_type="memory", data=0),
-            dcc.Store(
-                id="sse-status",
-                storage_type="memory",
-                data={"connected": False, "last_heartbeat": 0},
-            ),
-            # 🛡️ FALLBACK INTELIGENTE: Interval de seguridad si SSE falla (deshabilitado por defecto)
-            dcc.Interval(
-                id="fallback-interval",
-                interval=30000,  # 30 segundos - muy conservador
-                disabled=True,  # INACTIVO por defecto - solo se activa si SSE falla
-                max_intervals=-1,
-                n_intervals=0,
-            ),
-            # SSE connector para real-time updates (SOLUCIÓN: Zero-polling)
-            html.Div(id="sse-connector", style={"display": "none"}),
-            # Layout principal
-            html.Div(id="main-content"),
-            # Divs dummy para callbacks de datepicker
-            *create_datepicker_dummy_divs(),
-        ],
-        fluid=True,
-    )
+            [
+                dcc.Location(id="url", refresh=False),
+                # SISTEMA HÍBRIDO DE SESIONES:
+                # Store principal (expira al cerrar navegador si no hay "Remember Me")
+                dcc.Store(id="session-store", storage_type="session"),
+                # Store persistente para "Remember Me" (localStorage, 30 días)
+                dcc.Store(id="persistent-session-store", storage_type="local"),
+                # Store para gestión de timeout e inactividad
+                dcc.Store(
+                    id="session-activity",
+                    storage_type="memory",
+                    data={"last_activity": None, "remember_me": False},
+                ),
+                # 🛡️ FALLBACK STORE: Para modo degradado sin SSE
+                dcc.Store(id="fallback-trigger", storage_type="memory", data=0),
+                dcc.Store(
+                    id="sse-status",
+                    storage_type="memory",
+                    data={"connected": False, "last_heartbeat": 0},
+                ),
+                # 🛡️ FALLBACK INTELIGENTE: Interval de seguridad si SSE falla (deshabilitado por defecto)
+                dcc.Interval(
+                    id="fallback-interval",
+                    interval=30000,  # 30 segundos - muy conservador
+                    disabled=True,  # INACTIVO por defecto - solo se activa si SSE falla
+                    max_intervals=-1,
+                    n_intervals=0,
+                ),
+                # SSE connector para real-time updates (SOLUCIÓN: Zero-polling)
+                html.Div(id="sse-connector", style={"display": "none"}),
+                # Layout principal
+                html.Div(id="main-content"),
+                # Download for player PDF exports
+                dcc.Download(id="download-profile-pdf"),
+                # html2canvas for client-side snapshots
+                html.Script(
+                    src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
+                ),
+                # Divs dummy para callbacks de datepicker
+                *create_datepicker_dummy_divs(),
+            ],
+            fluid=True,
+        )
     )
 
 
@@ -131,13 +138,17 @@ from config import ENVIRONMENT
 
 if ENVIRONMENT == "production":
     import logging
-    
+
     @server.route("/webhook/calendar", methods=["POST"])
     def handle_calendar_webhook():
         """Endpoint principal para webhooks de Google Calendar (integrado en Dash)"""
         try:
             # Validar headers básicos de Google
-            required_headers = ["X-Goog-Channel-ID", "X-Goog-Resource-ID", "X-Goog-Resource-State"]
+            required_headers = [
+                "X-Goog-Channel-ID",
+                "X-Goog-Resource-ID",
+                "X-Goog-Resource-State",
+            ]
             for header in required_headers:
                 if header not in request.headers:
                     logging.warning(f"Missing required header: {header}")
@@ -146,50 +157,66 @@ if ENVIRONMENT == "production":
             # Extraer información del webhook
             channel_id = request.headers.get("X-Goog-Channel-ID")
             resource_state = request.headers.get("X-Goog-Resource-State")
-            
-            logging.info(f"📡 Webhook received (integrated): channel={channel_id}, state={resource_state}")
+
+            logging.info(
+                f"📡 Webhook received (integrated): channel={channel_id}, state={resource_state}"
+            )
 
             # Procesar webhook si es necesario
             if resource_state in ["exists", "updated"]:
                 # Importar y ejecutar sync en background
                 def process_webhook():
                     try:
-                        from controllers.calendar_sync_core import sync_calendar_to_db_with_feedback
+                        from controllers.calendar_sync_core import (
+                            sync_calendar_to_db_with_feedback,
+                        )
+                        from controllers.notification_controller import (
+                            save_sync_problems,
+                        )
                         from controllers.session_controller import update_past_sessions
-                        from controllers.notification_controller import save_sync_problems
-                        
+
                         # Ejecutar sincronización
-                        imported, updated, deleted, rejected_events, warning_events = sync_calendar_to_db_with_feedback()
-                        
+                        imported, updated, deleted, rejected_events, warning_events = (
+                            sync_calendar_to_db_with_feedback()
+                        )
+
                         # Actualizar sesiones pasadas si es necesario
                         n_past = update_past_sessions()
-                        
+
                         total_changes = imported + updated + deleted
-                        logging.info(f"✅ Integrated webhook sync completed: {imported}+{updated}+{deleted} changes")
-                        
+                        logging.info(
+                            f"✅ Integrated webhook sync completed: {imported}+{updated}+{deleted} changes"
+                        )
+
                         # Guardar problemas
                         save_sync_problems(rejected_events, warning_events)
-                        
+
                         # CRÍTICO: Notificar cambios a la UI usando webhook_server existente
                         if total_changes > 0:
                             from controllers.webhook_server import _webhook_server
-                            _webhook_server._notify_ui_changes(total_changes, {
-                                "imported": imported,
-                                "updated": updated, 
-                                "deleted": deleted,
-                                "problems": len(rejected_events) + len(warning_events)
-                            })
-                        
+
+                            _webhook_server._notify_ui_changes(
+                                total_changes,
+                                {
+                                    "imported": imported,
+                                    "updated": updated,
+                                    "deleted": deleted,
+                                    "problems": len(rejected_events)
+                                    + len(warning_events),
+                                },
+                            )
+
                     except Exception as e:
                         logging.error(f"❌ Integrated webhook sync error: {e}")
-                
+
                 # Ejecutar en thread separado para no bloquear response
                 import threading
+
                 threading.Thread(target=process_webhook, daemon=True).start()
-                
+
             elif resource_state == "sync":
                 logging.info("📞 Webhook sync message received (integrated endpoint)")
-            
+
             return jsonify({"status": "received", "server": "dash_integrated"}), 200
 
         except Exception as e:
@@ -199,21 +226,31 @@ if ENVIRONMENT == "production":
     @server.route("/webhook/status", methods=["GET"])
     def webhook_status():
         """Endpoint para verificar estado del servidor webhook (integrado en Dash)"""
-        return jsonify({
-            "status": "active",
-            "server_type": "dash_integrated",
-            "environment": "production",
-            "integration": "enabled"
-        }), 200
+        return (
+            jsonify(
+                {
+                    "status": "active",
+                    "server_type": "dash_integrated",
+                    "environment": "production",
+                    "integration": "enabled",
+                }
+            ),
+            200,
+        )
 
     @server.route("/health", methods=["GET"])
     def health_check():
         """Health check endpoint (integrado en Dash)"""
-        return jsonify({
-            "status": "healthy", 
-            "server_type": "dash_integrated",
-            "environment": "production"
-        }), 200
+        return (
+            jsonify(
+                {
+                    "status": "healthy",
+                    "server_type": "dash_integrated",
+                    "environment": "production",
+                }
+            ),
+            200,
+        )
 
     @server.route("/webhook/events", methods=["GET"])
     def sse_event_stream():
@@ -222,12 +259,14 @@ if ENVIRONMENT == "production":
         DELEGACIÓN: Usa la implementación y cola del webhook_server.
         """
         from controllers.webhook_server import _webhook_server
-        
+
         # Reutilizar el generador existente del webhook_server
         def generate_sse_events():
             """Generador que delega al webhook_server existente"""
             try:
-                logging.info("🌐 New SSE client connected to integrated endpoint (delegating to webhook_server)")
+                logging.info(
+                    "🌐 New SSE client connected to integrated endpoint (delegating to webhook_server)"
+                )
 
                 while True:
                     try:
@@ -236,7 +275,9 @@ if ENVIRONMENT == "production":
 
                         # Enviar evento al cliente
                         sse_message = f"data: {json.dumps(event_data)}\\n\\n"
-                        logging.debug(f"📤 Sending SSE event via delegation: {event_data}")
+                        logging.debug(
+                            f"📤 Sending SSE event via delegation: {event_data}"
+                        )
                         yield sse_message
 
                     except queue.Empty:
@@ -284,6 +325,9 @@ def register_all_callbacks():
     # 🛡️ Registrar callbacks legacy (ahora vacíos) y fallback
     register_webhook_callbacks(app)
 
+    # Notificaciones (toast) para página Ballers
+    NotificationCallbacks.register_notification_callbacks(app, "ballers")
+
     # SSE Client Callback para real-time updates (SOLUCIÓN: Zero-polling)
     app.clientside_callback(
         """
@@ -298,10 +342,10 @@ def register_all_callbacks():
                 const baseUrl = window.location.origin;
                 const isDev = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
                 const sseUrl = isDev ? 'http://localhost:8001/webhook/events' : baseUrl + '/webhook/events';
-                
+
                 console.log(`🌍 Environment detected: ${isDev ? 'development' : 'production'}`);
                 console.log(`📡 SSE URL: ${sseUrl}`);
-                
+
                 window.webhookSSE = new EventSource(sseUrl);
 
                 // Handler para eventos SSE - Updates directos a UI
@@ -558,9 +602,9 @@ if __name__ == "__main__":
     if os.getenv("WERKZEUG_RUN_MAIN") != "true":
         # Configuración adaptativa según entorno
         from config import ENVIRONMENT, WEBHOOK_BASE_URL
-        
+
         print("🚀 Starting Ballers Dash Application...")
-        
+
         if ENVIRONMENT == "production":
             print("🌍 Modo producción (Render)")
             print(f"📊 Main app: https://ballers-v3.onrender.com")
@@ -582,7 +626,7 @@ if __name__ == "__main__":
     # Configuración puerto y host para Render
     # Render usa PORT env var dinámicamente
     port = int(os.getenv("PORT", "8050"))
-    
+
     # Host binding: 0.0.0.0 para producción, 127.0.0.1 para desarrollo
     if os.getenv("ENVIRONMENT") == "production":
         host = "0.0.0.0"
@@ -590,6 +634,6 @@ if __name__ == "__main__":
     else:
         host = "127.0.0.1"
         debug = True
-    
+
     print(f"🎯 Starting server on {host}:{port} (debug={debug})")
     app.run(debug=debug, host=host, port=port)

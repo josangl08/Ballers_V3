@@ -5,7 +5,7 @@ Callbacks relacionados con la página de Administration - COPIANDO ESTRUCTURA DE
 import datetime as dt
 
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, html
+from dash import Input, Output, State, dcc, html
 
 from controllers.internal_calendar import show_calendar_dash, update_and_get_sessions
 from controllers.session_controller import SessionController
@@ -79,12 +79,14 @@ def _update_calendar_and_table_content(from_date, to_date, coach_filter, status_
                     status_filter=status_filter,
                 )
             else:
-                table_content = html.Div(
+                table_content = dbc.Alert(
                     "No sessions found for the selected filters",
+                    color="info",
                     style={
-                        "text-align": "center",
-                        "padding": "20px",
-                        "color": "#FFFFFF",
+                        "background-color": "#2A2A2A",
+                        "border": "none",
+                        "color": "#CCCCCC",
+                        "text-align": "left",
                     },
                 )
 
@@ -235,12 +237,17 @@ def register_administration_callbacks(app):
                     {"label": name, "value": player_id} for player_id, name in players
                 ]
 
-                # Opciones de horario
-                time_options = []
+                # Opciones de horario (slots de 30 min entre 08:00 y 21:30)
+                full_time_options = []
                 for hour in range(8, 22):
                     for minute in [0, 30]:
                         time_str = f"{hour:02d}:{minute:02d}"
-                        time_options.append({"label": time_str, "value": time_str})
+                        full_time_options.append({"label": time_str, "value": time_str})
+
+                # Restringir horas de inicio para garantizar al menos un fin válido
+                # Excluir el último slot (21:30) como hora de inicio
+                start_time_options = full_time_options[:-1]
+                end_time_options = full_time_options
 
                 # COACH RESTRICTIONS: Si es coach, predefinir y deshabilitar dropdown
                 coach_value = None
@@ -263,14 +270,91 @@ def register_administration_callbacks(app):
                 return (
                     coach_options,
                     player_options,
-                    time_options,
-                    time_options,
+                    start_time_options,
+                    end_time_options,
                     coach_value,
                     coach_disabled,
                 )
         except Exception as e:
             print(f"❌ Error loading create session options: {e}")
             return [], [], [], [], None, False
+
+    # ============================================================
+    # Helpers para lógica de horas
+    # ============================================================
+    def _all_time_options():
+        opts = []
+        for hour in range(8, 22):
+            for minute in [0, 30]:
+                s = f"{hour:02d}:{minute:02d}"
+                opts.append({"label": s, "value": s})
+        return opts
+
+    def _to_minutes(hhmm: str) -> int:
+        try:
+            h, m = hhmm.split(":")
+            return int(h) * 60 + int(m)
+        except Exception:
+            return -1
+
+    def _minutes_to_hhmm(total: int) -> str:
+        h = total // 60
+        m = total % 60
+        return f"{h:02d}:{m:02d}"
+
+    # ============================================================
+    # Callbacks: ajustar fin según inicio (crear/editar)
+    # ============================================================
+
+    @app.callback(
+        [
+            Output("admin-new-session-end-time", "options", allow_duplicate=True),
+            Output("admin-new-session-end-time", "value", allow_duplicate=True),
+        ],
+        [Input("admin-new-session-start-time", "value")],
+        prevent_initial_call=True,
+    )
+    def adjust_new_session_end_options(start_value):
+        all_opts = _all_time_options()
+        if not start_value:
+            return all_opts, None
+
+        start_min = _to_minutes(start_value)
+        end_opts = [o for o in all_opts if _to_minutes(o["value"]) > start_min]
+
+        preferred = _minutes_to_hhmm(start_min + 60)
+        values = [o["value"] for o in end_opts]
+        end_value = (
+            preferred if preferred in values else (values[0] if values else None)
+        )
+        return end_opts, end_value
+
+    @app.callback(
+        [
+            Output("admin-edit-session-end-time", "options", allow_duplicate=True),
+            Output("admin-edit-session-end-time", "value", allow_duplicate=True),
+        ],
+        [Input("admin-edit-session-start-time", "value")],
+        [State("admin-edit-session-end-time", "value")],
+        prevent_initial_call=True,
+    )
+    def adjust_edit_session_end_options(start_value, current_end_value):
+        all_opts = _all_time_options()
+        if not start_value:
+            return all_opts, current_end_value
+
+        start_min = _to_minutes(start_value)
+        end_opts = [o for o in all_opts if _to_minutes(o["value"]) > start_min]
+
+        values = [o["value"] for o in end_opts]
+        if current_end_value in values and _to_minutes(current_end_value) > start_min:
+            return end_opts, current_end_value
+
+        preferred = _minutes_to_hhmm(start_min + 60)
+        end_value = (
+            preferred if preferred in values else (values[0] if values else None)
+        )
+        return end_opts, end_value
 
     # Callback para manejar filtros rápidos y actualizar estilos
     @app.callback(
@@ -425,6 +509,7 @@ def register_administration_callbacks(app):
                         {"label": "No sessions found", "value": "", "disabled": True}
                     ]
 
+                # CORREGIDO: La etiqueta debe ser un string, no un componente Markdown
                 session_options = [
                     {"label": desc, "value": sid}
                     for sid, desc in session_descriptions.items()
@@ -551,12 +636,14 @@ def register_administration_callbacks(app):
                         status_filter=status_filter,
                     )
                 else:
-                    table_content = html.Div(
+                    table_content = dbc.Alert(
                         "No sessions found for the selected filters",
+                        color="info",
                         style={
-                            "text-align": "center",
-                            "padding": "20px",
-                            "color": "#FFFFFF",
+                            "background-color": "#2A2A2A",
+                            "border": "none",
+                            "color": "#CCCCCC",
+                            "text-align": "left",
                         },
                     )
 
@@ -1939,49 +2026,7 @@ def register_administration_callbacks(app):
                 no_update,
             )
 
-    # Callback para export PDF de financials
-    @app.callback(
-        [
-            Output("admin-alert", "children", allow_duplicate=True),
-            Output("admin-alert", "is_open", allow_duplicate=True),
-            Output("admin-alert", "color", allow_duplicate=True),
-            Output("admin-alert", "style", allow_duplicate=True),
-        ],
-        [Input("admin-financials-export-btn", "n_clicks")],
-        prevent_initial_call=True,
-    )
-    def handle_financials_export(n_clicks):
-        """Maneja la exportación de financials a PDF."""
-        if not n_clicks:
-            from dash import no_update
-
-            return no_update, no_update, no_update, no_update
-
-        try:
-            import datetime as dt
-
-            from controllers.export_controller import generate_financials_pdf
-
-            # Usar rango amplio para incluir todos los datos como Dash
-            start_date = dt.date(2020, 1, 1)
-            end_date = dt.date.today()
-
-            buffer, filename = generate_financials_pdf(start_date, end_date)
-
-            return (
-                f"✅ Financial report generated successfully: {filename}",
-                True,
-                "success",
-                _get_toast_style(),
-            )
-
-        except Exception as e:
-            return (
-                f"❌ Error generating financial report: {str(e)}",
-                True,
-                "danger",
-                _get_toast_style(),
-            )
+    # (Financial export removed)
 
 
 def create_webhook_update_callback(app):

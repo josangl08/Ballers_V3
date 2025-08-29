@@ -2037,7 +2037,6 @@ def register_settings_callbacks(app):
         [
             Input("backup-db-btn", "n_clicks"),
             Input("refresh-sheets-btn", "n_clicks"),
-            Input("sync-to-calendar-btn", "n_clicks"),
             Input("sync-from-calendar-btn", "n_clicks"),
             Input("manual-sync-btn", "n_clicks"),
             Input("clear-sync-results-btn", "n_clicks"),
@@ -2047,7 +2046,6 @@ def register_settings_callbacks(app):
     def handle_system_settings_actions(
         backup_clicks,
         refresh_clicks,
-        sync_to_clicks,
         sync_from_clicks,
         manual_sync_clicks,
         clear_results_clicks,
@@ -2091,21 +2089,6 @@ def register_settings_callbacks(app):
                     return "✅ Google Sheets updated successfully", True, "success"
                 except Exception as e:
                     return f"❌ Error updating Google Sheets: {e}", True, "danger"
-
-            elif trigger_id == "sync-to-calendar-btn" and sync_to_clicks:
-                from controllers.calendar_sync_core import sync_db_to_calendar
-
-                try:
-                    pushed, updated = sync_db_to_calendar()
-                    sessions_msg = f"✅ {pushed} new sessions sent"
-                    updates_msg = f"{updated} sessions updated in Google Calendar"
-                    return (
-                        f"{sessions_msg}, {updates_msg}",
-                        True,
-                        "success",
-                    )
-                except Exception as e:
-                    return f"❌ Error syncing to calendar: {e}", True, "danger"
 
             elif trigger_id == "sync-from-calendar-btn" and sync_from_clicks:
                 from controllers.sync_coordinator import force_manual_sync
@@ -2219,10 +2202,26 @@ def register_settings_callbacks(app):
         [
             Input("settings-main-tabs", "active_tab"),
             Input("clear-sync-results-btn", "n_clicks"),
+            Input("manual-sync-btn", "n_clicks"),
+            Input("sync-from-calendar-btn", "n_clicks"),
+            Input("sync-results-refresh-interval", "n_intervals"),
+            # Escuchar cambios del alert para refrescar al instante
+            Input("system-settings-alert", "children"),
+            Input("system-settings-alert", "color"),
+            Input("system-settings-alert", "is_open"),
         ],
         prevent_initial_call=False,
     )
-    def update_sync_results_display(active_tab, clear_clicks):
+    def update_sync_results_display(
+        active_tab,
+        clear_clicks,
+        manual_clicks,
+        pull_clicks,
+        n_intervals,
+        alert_children,
+        alert_color,
+        alert_open,
+    ):
         """Actualiza la visualización de resultados de sync."""
         if active_tab != "system-tab":
             return ""
@@ -2304,13 +2303,26 @@ def register_settings_callbacks(app):
                     className="mb-3",
                 )
 
-                return html.Div([metrics])
+                # Mostrar, debajo de métricas, el mismo mensaje del alert de acciones de sync
+                alert_block = (
+                    dbc.Alert(alert_children, color=alert_color, className="mb-2")
+                    if alert_open and alert_children
+                    else None
+                )
+                return html.Div([metrics, alert_block] if alert_block else [metrics])
             else:
-                return dbc.Alert(
+                # Sin métricas detalladas: mostrar resumen y, debajo, el mismo alert si está abierto
+                summary = dbc.Alert(
                     f"📊 Sync problems detected: {len(problems.get('rejected', []))} rejected, {len(problems.get('warnings', []))} warnings",
                     color="warning",
                     style={"font-size": "0.9rem"},
                 )
+                alert_block = (
+                    dbc.Alert(alert_children, color=alert_color, className="mt-2")
+                    if alert_open and alert_children
+                    else None
+                )
+                return html.Div([summary, alert_block] if alert_block else [summary])
 
         except Exception as e:
             return dbc.Alert(

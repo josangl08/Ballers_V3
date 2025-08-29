@@ -3,6 +3,7 @@ import datetime
 
 import dash_bootstrap_components as dbc
 from dash import dcc, html
+
 from common.datepicker_utils import create_auto_hide_datepicker
 
 
@@ -79,7 +80,7 @@ def show_administration_content_dash(session_data=None):
                 id="admin-status-filters", data=["scheduled", "completed", "canceled"]
             ),
             # Store for active filter in edit session
-            dcc.Store(id="admin-active-filter", data=None),
+            dcc.Store(id="admin-active-filter", data="today"),
             # Input invisible para search (usado en callbacks)
             dbc.Input(id="admin-session-search", style={"display": "none"}),
             # Toast alert (invisible inicialmente, se posiciona con callback)
@@ -134,7 +135,9 @@ def create_sessions_content():
                                                                 "admin-filter-from-date",
                                                                 value=(
                                                                     datetime.date.today()
-                                                                    - datetime.timedelta(days=7)
+                                                                    - datetime.timedelta(
+                                                                        days=7
+                                                                    )
                                                                 ).isoformat(),
                                                                 placeholder="From date",
                                                             ),
@@ -160,7 +163,9 @@ def create_sessions_content():
                                                                 "admin-filter-to-date",
                                                                 value=(
                                                                     datetime.date.today()
-                                                                    + datetime.timedelta(days=21)
+                                                                    + datetime.timedelta(
+                                                                        days=21
+                                                                    )
                                                                 ).isoformat(),
                                                                 placeholder="To date",
                                                             ),
@@ -608,7 +613,7 @@ def create_edit_session_form():
                                             html.Button(
                                                 "Today",
                                                 id="filter-today",
-                                                className="btn-filter-quick",
+                                                className="btn-filter-quick filter-active",
                                                 style={
                                                     "background-color": "#3b3b3a",
                                                     "border": "1px solid #555",
@@ -1077,34 +1082,7 @@ def create_financials_content():
                     "font-size": "1.1rem",
                 },
             ),
-            # Export button - mismo estilo que Export Profile PDF
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            dbc.Button(
-                                [
-                                    html.I(className="bi bi-file-earmark-pdf me-2"),
-                                    "Export Financial PDF",
-                                ],
-                                id="admin-financials-export-btn",
-                                className="custom-button",
-                                style={
-                                    "border-radius": "20px",
-                                    "background-color": "#333333",
-                                    "color": "#24DE84",
-                                    "border": "none",
-                                    "padding": "0.5rem 1rem",
-                                    "font-weight": "500",
-                                    "transition": "all 0.3s ease",
-                                },
-                            ),
-                        ],
-                        width=12,
-                        className="text-end mb-4",
-                    ),
-                ]
-            ),
+            # (Financial export removed)
             # Financial content
             html.Div(id="admin-financials-content"),
             html.Div(id="admin-financials-metrics", className="mb-4"),

@@ -1,8 +1,8 @@
 # pages/settings_dash.py - Migración visual de settings.py a Dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
-from common.datepicker_utils import create_auto_hide_datepicker
 
+from common.datepicker_utils import create_auto_hide_datepicker
 from common.notification_component import NotificationComponent
 from common.upload_component import create_upload_component
 
@@ -815,7 +815,7 @@ def create_system_settings_dash():
                     "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
                 },
             ),
-            # Manual Synchronization (migrado de lines 1022-1040)
+            # Manual Synchronization (limpiado: solo Manual Sync y Pull from Google)
             dbc.Card(
                 [
                     dbc.CardBody(
@@ -833,8 +833,8 @@ def create_system_settings_dash():
                                     dbc.Col(
                                         [
                                             dbc.Button(
-                                                "Push local sessions → Google Calendar",
-                                                id="sync-to-calendar-btn",
+                                                "Manual Sync Now (2-way)",
+                                                id="manual-sync-btn",
                                                 className="btn-admin-style w-100",
                                             )
                                         ],
@@ -843,7 +843,7 @@ def create_system_settings_dash():
                                     dbc.Col(
                                         [
                                             dbc.Button(
-                                                "Bring events ← Google Calendar",
+                                                "Pull from Google Calendar",
                                                 id="sync-from-calendar-btn",
                                                 className="btn-admin-style w-100",
                                             )
@@ -861,6 +861,21 @@ def create_system_settings_dash():
                     "border-radius": "10px",
                     "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
                 },
+            ),
+            # Intervalo de refresco de resultados de sync (también se actualiza en clicks)
+            dcc.Interval(
+                id="sync-results-refresh-interval",
+                interval=10_000,  # 10 segundos
+                n_intervals=0,
+            ),
+            # Alert para mensajes (oculto, solo para propagar eventos/mensajes a Monitoring)
+            dbc.Alert(
+                "",
+                id="system-settings-alert",
+                is_open=False,
+                dismissable=False,
+                className="mt-3",
+                style={"display": "none"},
             ),
             # Real-time Sync Management (Webhook-based)
             dbc.Card(

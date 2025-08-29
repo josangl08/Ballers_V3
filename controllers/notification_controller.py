@@ -109,7 +109,7 @@ class NotificationController:
         try:
             # Verificar si existe en almacenamiento global
             if self.STORAGE_KEY not in _global_notifications_store:
-                return self._try_autosync_fallback()
+                return None
 
             # Obtener el valor
             problems = _global_notifications_store[self.STORAGE_KEY]
@@ -126,60 +126,12 @@ class NotificationController:
             return None
 
         except Exception as e:
-            # Si hay error, intentar fallback antes de limpiar
-            fallback_result = self._try_autosync_fallback()
-            if fallback_result:
-                return fallback_result
-
-            # Si no hay fallback, limpiar datos corruptos
+            # Si hay error, limpiar datos corruptos
             if self.STORAGE_KEY in _global_notifications_store:
                 del _global_notifications_store[self.STORAGE_KEY]
             print(f"⚠️ Error getting sync problems: {e}")
             return None
 
-    def _try_autosync_fallback(self) -> Optional[SyncProblemsData]:
-        """Intenta obtener datos desde AutoSyncStats como fallback."""
-        try:
-            from controllers.sync_coordinator import get_auto_sync_status
-
-            auto_status = get_auto_sync_status()
-
-            rejected_events = auto_status.get("last_rejected_events", [])
-            warning_events = auto_status.get("last_warning_events", [])
-            problems_timestamp = auto_status.get("problems_timestamp")
-
-            if (rejected_events or warning_events) and problems_timestamp:
-                print(
-                    f"🔍 Fallback AutoSyncStats: {len(rejected_events)} rejected, "
-                    f"{len(warning_events)} warnings"
-                )
-
-                # Crear SyncProblemsData extendida con stats adicionales
-                problems_data = SyncProblemsData(
-                    rejected=rejected_events,
-                    warnings=warning_events,
-                    timestamp=problems_timestamp,
-                    seen=False,
-                )
-
-                # Añadir stats adicionales como atributo dinámico
-                problems_data.duration = auto_status.get("last_sync_duration", 0)
-                problems_data.imported = auto_status.get("last_changes", {}).get(
-                    "imported", 0
-                )
-                problems_data.updated = auto_status.get("last_changes", {}).get(
-                    "updated", 0
-                )
-                problems_data.deleted = auto_status.get("last_changes", {}).get(
-                    "deleted", 0
-                )
-
-                return problems_data
-
-        except Exception as e:
-            print(f"⚠️ Warning: AutoSyncStats fallback failed: {e}")
-
-        return None
 
     def has_problems(self) -> bool:
         """

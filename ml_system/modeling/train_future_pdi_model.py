@@ -16,9 +16,7 @@ if project_root not in sys.path:
 import logging
 
 import pandas as pd
-import lightgbm as lgb
 import xgboost as xgb
-from sklearn.linear_model import LinearRegression
 
 
 class Stats:
@@ -256,7 +254,7 @@ class FuturePDIPredictor:
         logger.info(f"Dataset de entrenamiento creado con {len(X)} muestras.")
         return X, y, seasons
 
-    def train_and_evaluate_model(self, X: pd.DataFrame, y: pd.Series, seasons: pd.Series, model_name: str = "lightgbm") -> object:
+    def train_and_evaluate_model(self, X: pd.DataFrame, y: pd.Series, seasons: pd.Series) -> object:
         """
         Entrena y evalúa el modelo de regresión, y guarda los resultados.
 
@@ -264,17 +262,15 @@ class FuturePDIPredictor:
             X: DataFrame de features.
             y: Series de target.
             seasons: Series con las temporadas de cada muestra.
-            model_name: El nombre del modelo a entrenar ('xgboost', 'lightgbm', 'linear_regression').
 
         Returns:
             El modelo entrenado.
         """
-        logger.info(f"Entrenando y evaluando el modelo {model_name}...")
+        logger.info(f"Entrenando y evaluando el modelo XGBoost...")
         import json
         import os
         from datetime import datetime
 
-        from sklearn.model_selection import RandomizedSearchCV
         from sklearn.metrics import mean_absolute_error, r2_score
 
         if X.empty or y.empty:
@@ -293,50 +289,19 @@ class FuturePDIPredictor:
             f"Dataset dividido en: {len(X_train)} para entrenamiento (temporadas < {test_season}), {len(X_test)} para prueba (temporada = {test_season})."
         )
 
-        model = None
-        best_params = {}
+        best_params = {
+            'subsample': 0.9,
+            'n_estimators': 700,
+            'max_depth': 3,
+            'learning_rate': 0.01,
+            'gamma': 0.2,
+            'colsample_bytree': 1.0
+        }
 
-        if model_name == 'lightgbm':
-            param_distributions = {
-                'n_estimators': [100, 200, 300, 500, 700],
-                'learning_rate': [0.01, 0.05, 0.1, 0.15],
-                'num_leaves': [20, 31, 40, 50, 60],
-                'max_depth': [-1, 5, 10, 15],
-                'subsample': [0.6, 0.7, 0.8, 0.9, 1.0],
-                'colsample_bytree': [0.6, 0.7, 0.8, 0.9, 1.0],
-            }
-            lgbm = lgb.LGBMRegressor(random_state=42)
-            lgbm_random = RandomizedSearchCV(estimator = lgbm, param_distributions = param_distributions, n_iter = 150, cv = 5, verbose=2, random_state=42, n_jobs = -1)
-            logger.info("Entrenando LGBMRegressor con RandomizedSearchCV...")
-            lgbm_random.fit(X_train, y_train)
-            logger.info(f"Mejores hiperparámetros encontrados: {lgbm_random.best_params_}")
-            model = lgbm_random.best_estimator_
-            best_params = lgbm_random.best_params_
+        model = xgb.XGBRegressor(**best_params, random_state=42)
 
-        elif model_name == 'xgboost':
-            param_distributions = {
-                'n_estimators': [100, 200, 300, 500, 700],
-                'learning_rate': [0.01, 0.05, 0.1, 0.15],
-                'max_depth': [3, 4, 5, 6, 7, 8, 9, 10],
-                'subsample': [0.6, 0.7, 0.8, 0.9, 1.0],
-                'colsample_bytree': [0.6, 0.7, 0.8, 0.9, 1.0],
-                'gamma': [0, 0.1, 0.2, 0.3]
-            }
-            xgbr = xgb.XGBRegressor(random_state=42)
-            xgbr_random = RandomizedSearchCV(estimator = xgbr, param_distributions = param_distributions, n_iter = 150, cv = 5, verbose=2, random_state=42, n_jobs = -1)
-            logger.info("Entrenando XGBRegressor con RandomizedSearchCV...")
-            xgbr_random.fit(X_train, y_train)
-            logger.info(f"Mejores hiperparámetros encontrados: {xgbr_random.best_params_}")
-            model = xgbr_random.best_estimator_
-            best_params = xgbr_random.best_params_
-
-        elif model_name == 'linear_regression':
-            model = LinearRegression()
-            model.fit(X_train, y_train)
-
-        else:
-            raise ValueError(f"Modelo '{model_name}' no soportado.")
-
+        logger.info("Entrenando XGBRegressor con los mejores hiperparámetros...")
+        model.fit(X_train, y_train)
 
         # Mostrar las características más importantes
         if hasattr(model, 'feature_importances_'):
@@ -351,7 +316,7 @@ class FuturePDIPredictor:
         r2 = r2_score(y_test, predictions)
 
         logger.info("--- Resultados de la Evaluación del Modelo ---")
-        logger.info(f"Modelo: {model_name}")
+        logger.info(f"Modelo: XGBoost")
         logger.info(f"Error Absoluto Medio (MAE): {mae:.2f}")
         logger.info(f"Coeficiente de Determinación (R²): {r2:.2f}")
         logger.info("---------------------------------------------")
@@ -364,14 +329,14 @@ class FuturePDIPredictor:
         # Guardar feature importances
         if hasattr(model, 'feature_importances_'):
             feature_importances_df = pd.DataFrame(model.feature_importances_, index=X_train.columns, columns=['importance']).sort_values('importance', ascending=False)
-            feature_importances_path = os.path.join(reports_dir, f"feature_importances_{model_name}_{timestamp}.csv")
+            feature_importances_path = os.path.join(reports_dir, f"feature_importances_xgboost_{timestamp}.csv")
             feature_importances_df.to_csv(feature_importances_path)
             logger.info(f"Feature importances guardadas en: {feature_importances_path}")
 
         # 1. Fichero de resultados JSON
         results_data = {
             "timestamp": datetime.now().isoformat(),
-            "model_type": model_name,
+            "model_type": "xgboost",
             "training_samples": len(X_train),
             "test_samples": len(X_test),
             "metrics": {"mean_absolute_error": mae, "r2_score": r2},
@@ -380,7 +345,7 @@ class FuturePDIPredictor:
         results_dir = "ml_system/outputs/results"
         os.makedirs(results_dir, exist_ok=True)
         results_path = os.path.join(
-            results_dir, f"future_pdi_model_results_{model_name}_{timestamp}.json"
+            results_dir, f"future_pdi_model_results_xgboost_{timestamp}.json"
         )
         with open(results_path, "w") as f:
             json.dump(results_data, f, indent=4)
@@ -394,7 +359,7 @@ class FuturePDIPredictor:
 
         Configuración del Modelo
         --------------------------
-        Tipo de Modelo: {model_name}
+        Tipo de Modelo: XGBoost
         Parámetros: {best_params}
 
         Datos
@@ -413,7 +378,7 @@ class FuturePDIPredictor:
         R²: El modelo es capaz de explicar el {r2:.1%} de la variabilidad en el PDI futuro, lo cual indica un poder predictivo robusto.
         """
         report_path = os.path.join(
-            reports_dir, f"future_pdi_model_report_{model_name}_{timestamp}.txt"
+            reports_dir, f"future_pdi_model_report_xgboost_{timestamp}.txt"
         )
         with open(report_path, "w") as f:
             f.write(report_content)
@@ -422,7 +387,7 @@ class FuturePDIPredictor:
         return model
 
     def save_model(
-        self, model: object, model_name: str = "lightgbm"
+        self, model: object, model_name: str = "xgboost"
     ):
         """
         Guarda el modelo entrenado en un fichero.
@@ -454,16 +419,16 @@ class FuturePDIPredictor:
         except Exception as e:
             logger.error(f"Error al guardar el modelo: {e}")
 
-    def run_training_pipeline(self, model_name: str = "lightgbm"):
+    def run_training_pipeline(self):
         """
         Orquesta la ejecución de todo el pipeline de entrenamiento.
         """
-        logger.info(f"Iniciando pipeline de entrenamiento de PDI futuro para el modelo {model_name}...")
+        logger.info(f"Iniciando pipeline de entrenamiento de PDI futuro para el modelo XGBoost...")
         historical_data = self.load_historical_data()
         X, y, seasons = self.create_training_dataset(historical_data)
-        model = self.train_and_evaluate_model(X, y, seasons, model_name)
-        self.save_model(model, model_name)
-        logger.info(f"Pipeline de entrenamiento para {model_name} completado.")
+        model = self.train_and_evaluate_model(X, y, seasons)
+        self.save_model(model)
+        logger.info(f"Pipeline de entrenamiento para XGBoost completado.")
 
 
 if __name__ == "__main__":
@@ -472,11 +437,5 @@ if __name__ == "__main__":
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    # Se puede especificar el modelo a entrenar desde la línea de comandos
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="lightgbm", help="Nombre del modelo a entrenar (lightgbm, xgboost, linear_regression)")
-    args = parser.parse_args()
-
     pipeline = FuturePDIPredictor()
-    pipeline.run_training_pipeline(model_name=args.model)
+    pipeline.run_training_pipeline()

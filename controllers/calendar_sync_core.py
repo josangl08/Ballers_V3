@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Tuple
 
 from googleapiclient.errors import HttpError
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from config import CALENDAR_COLORS
 from controllers.db import get_db_session
@@ -601,10 +602,16 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
 
                 # Validar que coach y player exiten en bd
                 coach_exists = (
-                    db.query(Coach).filter(Coach.coach_id == coach_id).first()
+                    db.query(Coach)
+                    .options(joinedload(Coach.user))
+                    .filter(Coach.coach_id == coach_id)
+                    .first()
                 )
                 player_exists = (
-                    db.query(Player).filter(Player.player_id == player_id).first()
+                    db.query(Player)
+                    .options(joinedload(Player.user))
+                    .filter(Player.player_id == player_id)
+                    .first()
                 )
 
                 if not coach_exists:
@@ -676,6 +683,18 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                         f"✅ Mapeado y validado - Coach ID: {coach_id}, Player ID: {player_id}"
                     )
 
+                # Obtener nombres para snapshots
+                coach_name_snapshot = (
+                    coach_exists.user.name
+                    if coach_exists and coach_exists.user
+                    else f"Coach {coach_id}"
+                )
+                player_name_snapshot = (
+                    player_exists.user.name
+                    if player_exists and player_exists.user
+                    else f"Player {player_id}"
+                )
+
                 new_session = Session(
                     coach_id=coach_id,
                     player_id=player_id,
@@ -683,6 +702,8 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                     end_time=end_dt,
                     status=status,
                     notes=ev.get("description"),
+                    coach_name_snapshot=coach_name_snapshot,
+                    player_name_snapshot=player_name_snapshot,
                     calendar_event_id=ev_id,
                     source="calendar",
                     version=1,
