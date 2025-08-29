@@ -5,9 +5,8 @@ Ahora integradas con dash-mantine-components para una UX mejorada.
 Incluye callbacks clientside legacy (seguros) y fábricas de DatePicker Mantine.
 """
 
-import dash
-from dash import ALL, MATCH, Input, Output, State
 import dash_mantine_components as dmc
+from dash import ALL, MATCH, Input, Output
 
 
 def register_datepicker_callbacks(app):
@@ -31,7 +30,10 @@ def register_datepicker_callbacks(app):
                 dateInputs.forEach(function(input) {
                     // Si el input tiene foco y tiene valor, aplicar blur
                     if (document.activeElement === input && input.value) {
-                        console.log('[DatePicker Callback] Applying blur to:', input.id || input.className);
+                        console.log(
+                            '[DatePicker Callback] Applying blur to:',
+                            input.id || input.className
+                        );
                         input.blur();
                     }
                 });
@@ -55,7 +57,8 @@ def register_datepicker_callbacks(app):
                 // Aplicar blur al elemento activo si es un datepicker
                 setTimeout(function() {
                     const activeElement = document.activeElement;
-                    if (activeElement && activeElement.type === 'date' && activeElement.value) {
+                    if (activeElement && activeElement.type === 'date' && 
+                        activeElement.value) {
                         console.log('[DatePicker Callback] Blurring active datepicker');
                         activeElement.blur();
                     }
@@ -89,12 +92,13 @@ def create_datepicker_dummy_divs():
         html.Div(id="datepicker-dummy-output", style={"display": "none"}),
     ]
 
+
 def _mantine_datepicker_styles():
     """Estilos nativos para Mantine DatePicker usando Styles API (DMC 1.2.0+)."""
     return {
         "input": {
             "backgroundColor": "#3b3b3a",
-            "color": "#FFFFFF", 
+            "color": "#FFFFFF",
             "borderColor": "rgba(255,255,255,0.2)",
             "borderRadius": "10px",
             "fontSize": "0.9rem",
@@ -170,7 +174,9 @@ def _mantine_datepicker_styles():
     }
 
 
-def create_auto_hide_datepicker(input_id, value=None, min_date=None, max_date=None, placeholder="Select date"):
+def create_auto_hide_datepicker(
+    input_id, value=None, min_date=None, max_date=None, placeholder="Select date"
+):
     """
     Crea un DatePicker de Mantine con IDs compatibles con callbacks existentes.
 
@@ -189,8 +195,8 @@ def create_auto_hide_datepicker(input_id, value=None, min_date=None, max_date=No
     output_id = {"type": "datepicker-output", "index": input_id}
 
     # Convertir fechas string a objetos date si es necesario
-    from datetime import datetime, date
-    
+    from datetime import date, datetime
+
     parsed_value = None
     if value:
         if isinstance(value, str):
@@ -200,7 +206,7 @@ def create_auto_hide_datepicker(input_id, value=None, min_date=None, max_date=No
                 parsed_value = None
         elif isinstance(value, date):
             parsed_value = value
-    
+
     parsed_min_date = None
     if min_date:
         if isinstance(min_date, str):
@@ -210,7 +216,7 @@ def create_auto_hide_datepicker(input_id, value=None, min_date=None, max_date=No
                 parsed_min_date = None
         elif isinstance(min_date, date):
             parsed_min_date = min_date
-    
+
     parsed_max_date = None
     if max_date:
         if isinstance(max_date, str):
@@ -220,7 +226,7 @@ def create_auto_hide_datepicker(input_id, value=None, min_date=None, max_date=No
                 parsed_max_date = None
         elif isinstance(max_date, date):
             parsed_max_date = max_date
-    
+
     dp = dmc.DatePickerInput(
         id=component_id,
         value=parsed_value,
@@ -236,13 +242,15 @@ def create_auto_hide_datepicker(input_id, value=None, min_date=None, max_date=No
     return [dp, html.Div(id=output_id, style={"display": "none"})]
 
 
-def create_standard_datepicker(input_id, value=None, min_date=None, max_date=None, placeholder="Select date"):
+def create_standard_datepicker(
+    input_id, value=None, min_date=None, max_date=None, placeholder="Select date"
+):
     """DatePickerInput de Mantine con ID genérico (para ALL pattern)."""
     component_id = {"type": "date-input", "index": input_id}
-    
+
     # Convertir fechas string a objetos date si es necesario
-    from datetime import datetime, date
-    
+    from datetime import date, datetime
+
     parsed_value = None
     if value:
         if isinstance(value, str):
@@ -252,7 +260,7 @@ def create_standard_datepicker(input_id, value=None, min_date=None, max_date=Non
                 parsed_value = None
         elif isinstance(value, date):
             parsed_value = value
-    
+
     parsed_min_date = None
     if min_date:
         if isinstance(min_date, str):
@@ -262,7 +270,7 @@ def create_standard_datepicker(input_id, value=None, min_date=None, max_date=Non
                 parsed_min_date = None
         elif isinstance(min_date, date):
             parsed_min_date = min_date
-    
+
     parsed_max_date = None
     if max_date:
         if isinstance(max_date, str):

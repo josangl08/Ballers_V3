@@ -209,15 +209,8 @@ logs/
 data/logs/
 *.log
 
-# ML System - outputs intermedios
-ml_system/outputs/models/*.joblib
-ml_system/outputs/models/*.pickle
-ml_system/outputs/models/*.pkl
-ml_system/outputs/results/intermediate/
-ml_system/outputs/results/debug/
-ml_system/outputs/results/temp/
-ml_system/outputs/visualizations/temp/
-ml_system/outputs/visualizations/debug/
+# ML System - outputs completos
+ml_system/outputs/
 
 # Dash temporales
 .dash_callback_cache/

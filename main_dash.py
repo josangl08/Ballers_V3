@@ -6,6 +6,7 @@ import time
 
 import dash
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 from dash import Input, Output, dcc, html, no_update
 
 from callbacks.administration_callbacks import register_administration_callbacks
@@ -38,12 +39,16 @@ from controllers.webhook_integration import (
 
 # Sistema de webhook events movido a callbacks/webhook_callbacks.py
 
+# Configurar React version para dash-mantine-components
+dash._dash_renderer._set_react_version('18.2.0')
+
 # Configuración de la aplicación Dash
 app = dash.Dash(
     __name__,
     external_stylesheets=[
         dbc.themes.BOOTSTRAP,
         "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css",
+        dmc.styles.ALL,  # Todos los estilos de Mantine incluyendo DatePicker
     ],
     suppress_callback_exceptions=True,
     assets_folder="assets",
@@ -56,7 +61,8 @@ server = app.server
 
 def get_app_layout():
     """Retorna el layout principal de la aplicación Dash."""
-    return dbc.Container(
+    return dmc.MantineProvider(
+        dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
             # SISTEMA HÍBRIDO DE SESIONES:
@@ -93,6 +99,7 @@ def get_app_layout():
             *create_datepicker_dummy_divs(),
         ],
         fluid=True,
+    )
     )
 
 
