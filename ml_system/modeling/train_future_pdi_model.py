@@ -16,6 +16,9 @@ if project_root not in sys.path:
 import logging
 
 import pandas as pd
+import lightgbm as lgb
+import xgboost as xgb
+from sklearn.linear_model import LinearRegression
 
 
 class Stats:
@@ -103,7 +106,10 @@ class FuturePDIPredictor:
             "Yellow cards per 90": "yellow_cards_per_90",
             "Red cards per 90": "red_cards_per_90",
         }
-        return df.rename(columns=column_mapping)
+        df = df.rename(columns=column_mapping)
+        # Sanitize column names for LightGBM
+        df.columns = [c.replace(', ', '_').replace('%', 'pct').replace(' ', '_') for c in df.columns]
+        return df
 
     def load_historical_data(self) -> pd.DataFrame:
         """
@@ -139,7 +145,7 @@ class FuturePDIPredictor:
 
     def create_training_dataset(
         self, historical_df: pd.DataFrame, years_ahead: int = 1
-    ) -> tuple[pd.DataFrame, pd.Series]:
+    ) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
         """
         Transforma los datos históricos en un dataset de entrenamiento con features (X) y target (y).
 
@@ -148,16 +154,11 @@ class FuturePDIPredictor:
             years_ahead: El número de años en el futuro a predecir (1 o 2).
 
         Returns:
-            Tuple[pd.DataFrame, pd.Series]: Features (X) y target (y).
+            Tuple[pd.DataFrame, pd.Series, pd.Series]: Features (X), target (y) y seasons.
         """
         logger.info(
             f"Creando dataset de entrenamiento para predecir PDI a {years_ahead} año(s)..."
         )
-
-        # Necesitamos el PDICalculator para calcular las métricas jerárquicas
-        from ml_system.evaluation.metrics.pdi_calculator import PDICalculator
-
-        pdi_calculator = PDICalculator()
 
         # Convertir la columna de temporada a un formato numérico para facilitar la búsqueda
         def season_to_year(season_str):
@@ -170,6 +171,7 @@ class FuturePDIPredictor:
 
         features_list = []
         target_list = []
+        season_list = []
 
         # Agrupar por jugador para procesar el historial de cada uno
         for player_id, player_df in historical_df.groupby("player_id"):
@@ -187,27 +189,42 @@ class FuturePDIPredictor:
                 if not target_season_stats.empty:
                     target_stats_row = target_season_stats.iloc[0]
 
-                    # 1. Calcular features de la temporada actual
-                    # Convertir la fila del DataFrame a un objeto simulado que espera el calculador
-                    current_stats_dict = current_season_stats.to_dict()
-                    current_stats_dict.pop("season_year", None)
-                    current_stats_obj = Stats(**current_stats_dict)
-                    print(current_stats_obj.__dict__)
-                    feature_pdi = pdi_calculator._calculate_hierarchical_pdi(
-                        current_stats_obj
-                    )
+                    # 1. Usar métricas crudas como features
+                    features = current_season_stats.to_dict()
 
-                    if not feature_pdi:
-                        continue
+                    # --- Feature Selection and Engineering ---
+                    # Remove redundant or low-correlation features based on analysis
+                    features_to_remove = [
+                        "matches_played", "expected_goals", "expected_assists", "goals", "assists",
+                        "defensive_actions_per_90", "sliding_tackles_per_90", "shots",
+                        "player_name", "full_name", "wyscout_id", "team", "team_within_timeframe",
+                        "team_logo_url", "competition", "birthday", "Contract_expires",
+                        "processing_date", "data_source", "birth_country", "passport_country",
+                        "foot", "season", "player_id", "primary_position", "secondary_position",
+                        "third_position", "Position", "season_year"
+                    ]
+                    for feature in features_to_remove:
+                        features.pop(feature, None)
 
-                    # Añadir features adicionales como la edad
-                    features = feature_pdi
-                    features["age"] = current_season_stats.get("age", 25)
-                    features["minutes_played"] = current_season_stats.get(
-                        "minutes_played", 0
-                    )
+                    # One-hot encode Position_Group
+                    if "Position_Group" in features:
+                        position_group = features.pop("Position_Group")
+                        # Create dummy variables for all possible positions
+                        for pos in ["GK", "CB", "FB", "DMF", "CMF", "AMF", "W", "CF"]:
+                            features[f"pos_{pos}"] = 1 if position_group == pos else 0
 
-                    # 2. Calcular el target de la temporada futura
+                    # Add lag feature for previous season's PDI
+                    from ml_system.evaluation.metrics.pdi_calculator import PDICalculator
+                    pdi_calculator = PDICalculator()
+                    
+                    current_stats_obj = Stats(**current_season_stats.to_dict())
+                    current_pdi = pdi_calculator._calculate_hierarchical_pdi(current_stats_obj)
+                    if current_pdi and "pdi_overall" in current_pdi:
+                        features['pdi_overall_lag1'] = current_pdi["pdi_overall"]
+                    else:
+                        features['pdi_overall_lag1'] = 0 # Or some other imputation
+
+                    # 2. Calcular el target de la temporada futura (PDI)
                     target_stats_dict = target_stats_row.to_dict()
                     target_stats_dict.pop("season_year", None)
                     target_stats_obj = Stats(**target_stats_dict)
@@ -223,54 +240,109 @@ class FuturePDIPredictor:
                     # 3. Añadir al dataset
                     features_list.append(features)
                     target_list.append(target_value)
+                    season_list.append(current_year)
 
         if not features_list:
             logger.warning(
                 "No se pudieron crear pares de entrenamiento. El dataset podría ser insuficiente."
             )
-            return pd.DataFrame(), pd.Series()
+            return pd.DataFrame(), pd.Series(), pd.Series()
 
         X = pd.DataFrame(features_list)
+        X = X.fillna(0)
         y = pd.Series(target_list)
+        seasons = pd.Series(season_list)
 
         logger.info(f"Dataset de entrenamiento creado con {len(X)} muestras.")
-        return X, y
+        return X, y, seasons
 
-    def train_and_evaluate_model(self, X: pd.DataFrame, y: pd.Series) -> object:
+    def train_and_evaluate_model(self, X: pd.DataFrame, y: pd.Series, seasons: pd.Series, model_name: str = "lightgbm") -> object:
         """
         Entrena y evalúa el modelo de regresión, y guarda los resultados.
 
         Args:
             X: DataFrame de features.
             y: Series de target.
+            seasons: Series con las temporadas de cada muestra.
+            model_name: El nombre del modelo a entrenar ('xgboost', 'lightgbm', 'linear_regression').
 
         Returns:
             El modelo entrenado.
         """
-        logger.info("Entrenando y evaluando el modelo...")
+        logger.info(f"Entrenando y evaluando el modelo {model_name}...")
         import json
         import os
         from datetime import datetime
 
-        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.model_selection import RandomizedSearchCV
         from sklearn.metrics import mean_absolute_error, r2_score
-        from sklearn.model_selection import train_test_split
 
         if X.empty or y.empty:
             logger.error("El dataset está vacío. No se puede entrenar el modelo.")
             return None
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
-        )
+        # Time-based split
+        test_season = seasons.max()
+        train_indices = seasons[seasons < test_season].index
+        test_indices = seasons[seasons == test_season].index
+
+        X_train, X_test = X.loc[train_indices], X.loc[test_indices]
+        y_train, y_test = y.loc[train_indices], y.loc[test_indices]
 
         logger.info(
-            f"Dataset dividido en: {len(X_train)} para entrenamiento, {len(X_test)} para prueba."
+            f"Dataset dividido en: {len(X_train)} para entrenamiento (temporadas < {test_season}), {len(X_test)} para prueba (temporada = {test_season})."
         )
 
-        model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-        logger.info("Entrenando RandomForestRegressor...")
-        model.fit(X_train, y_train)
+        model = None
+        best_params = {}
+
+        if model_name == 'lightgbm':
+            param_distributions = {
+                'n_estimators': [100, 200, 300, 500, 700],
+                'learning_rate': [0.01, 0.05, 0.1, 0.15],
+                'num_leaves': [20, 31, 40, 50, 60],
+                'max_depth': [-1, 5, 10, 15],
+                'subsample': [0.6, 0.7, 0.8, 0.9, 1.0],
+                'colsample_bytree': [0.6, 0.7, 0.8, 0.9, 1.0],
+            }
+            lgbm = lgb.LGBMRegressor(random_state=42)
+            lgbm_random = RandomizedSearchCV(estimator = lgbm, param_distributions = param_distributions, n_iter = 150, cv = 5, verbose=2, random_state=42, n_jobs = -1)
+            logger.info("Entrenando LGBMRegressor con RandomizedSearchCV...")
+            lgbm_random.fit(X_train, y_train)
+            logger.info(f"Mejores hiperparámetros encontrados: {lgbm_random.best_params_}")
+            model = lgbm_random.best_estimator_
+            best_params = lgbm_random.best_params_
+
+        elif model_name == 'xgboost':
+            param_distributions = {
+                'n_estimators': [100, 200, 300, 500, 700],
+                'learning_rate': [0.01, 0.05, 0.1, 0.15],
+                'max_depth': [3, 4, 5, 6, 7, 8, 9, 10],
+                'subsample': [0.6, 0.7, 0.8, 0.9, 1.0],
+                'colsample_bytree': [0.6, 0.7, 0.8, 0.9, 1.0],
+                'gamma': [0, 0.1, 0.2, 0.3]
+            }
+            xgbr = xgb.XGBRegressor(random_state=42)
+            xgbr_random = RandomizedSearchCV(estimator = xgbr, param_distributions = param_distributions, n_iter = 150, cv = 5, verbose=2, random_state=42, n_jobs = -1)
+            logger.info("Entrenando XGBRegressor con RandomizedSearchCV...")
+            xgbr_random.fit(X_train, y_train)
+            logger.info(f"Mejores hiperparámetros encontrados: {xgbr_random.best_params_}")
+            model = xgbr_random.best_estimator_
+            best_params = xgbr_random.best_params_
+
+        elif model_name == 'linear_regression':
+            model = LinearRegression()
+            model.fit(X_train, y_train)
+
+        else:
+            raise ValueError(f"Modelo '{model_name}' no soportado.")
+
+
+        # Mostrar las características más importantes
+        if hasattr(model, 'feature_importances_'):
+            feature_importances = pd.DataFrame(model.feature_importances_, index = X_train.columns, columns=['importance']).sort_values('importance', ascending=False)
+            logger.info("Top 50 características más importantes:")
+            logger.info(feature_importances.head(50))
 
         logger.info("Realizando predicciones en el conjunto de prueba...")
         predictions = model.predict(X_test)
@@ -279,25 +351,36 @@ class FuturePDIPredictor:
         r2 = r2_score(y_test, predictions)
 
         logger.info("--- Resultados de la Evaluación del Modelo ---")
+        logger.info(f"Modelo: {model_name}")
         logger.info(f"Error Absoluto Medio (MAE): {mae:.2f}")
         logger.info(f"Coeficiente de Determinación (R²): {r2:.2f}")
         logger.info("---------------------------------------------")
 
         # Guardar reportes y resultados
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        reports_dir = "ml_system/outputs/reports"
+        os.makedirs(reports_dir, exist_ok=True)
+
+        # Guardar feature importances
+        if hasattr(model, 'feature_importances_'):
+            feature_importances_df = pd.DataFrame(model.feature_importances_, index=X_train.columns, columns=['importance']).sort_values('importance', ascending=False)
+            feature_importances_path = os.path.join(reports_dir, f"feature_importances_{model_name}_{timestamp}.csv")
+            feature_importances_df.to_csv(feature_importances_path)
+            logger.info(f"Feature importances guardadas en: {feature_importances_path}")
 
         # 1. Fichero de resultados JSON
         results_data = {
             "timestamp": datetime.now().isoformat(),
-            "model_type": type(model).__name__,
+            "model_type": model_name,
             "training_samples": len(X_train),
             "test_samples": len(X_test),
             "metrics": {"mean_absolute_error": mae, "r2_score": r2},
+            "best_hyperparameters": best_params
         }
         results_dir = "ml_system/outputs/results"
         os.makedirs(results_dir, exist_ok=True)
         results_path = os.path.join(
-            results_dir, f"future_pdi_model_results_{timestamp}.json"
+            results_dir, f"future_pdi_model_results_{model_name}_{timestamp}.json"
         )
         with open(results_path, "w") as f:
             json.dump(results_data, f, indent=4)
@@ -311,8 +394,8 @@ class FuturePDIPredictor:
 
         Configuración del Modelo
         --------------------------
-        Tipo de Modelo: {type(model).__name__}
-        Parámetros: n_estimators=100, random_state=42
+        Tipo de Modelo: {model_name}
+        Parámetros: {best_params}
 
         Datos
         -----
@@ -329,10 +412,8 @@ class FuturePDIPredictor:
         MAE: En promedio, las predicciones del modelo se desvían en {mae:.2f} puntos del PDI real del jugador al año siguiente.
         R²: El modelo es capaz de explicar el {r2:.1%} de la variabilidad en el PDI futuro, lo cual indica un poder predictivo robusto.
         """
-        reports_dir = "ml_system/outputs/reports"
-        os.makedirs(reports_dir, exist_ok=True)
         report_path = os.path.join(
-            reports_dir, f"future_pdi_model_report_{timestamp}.txt"
+            reports_dir, f"future_pdi_model_report_{model_name}_{timestamp}.txt"
         )
         with open(report_path, "w") as f:
             f.write(report_content)
@@ -341,7 +422,7 @@ class FuturePDIPredictor:
         return model
 
     def save_model(
-        self, model: object, filename: str = "future_pdi_predictor_v1.joblib"
+        self, model: object, model_name: str = "lightgbm"
     ):
         """
         Guarda el modelo entrenado en un fichero.
@@ -358,6 +439,7 @@ class FuturePDIPredictor:
 
         import joblib
 
+        filename = f"future_pdi_predictor_{model_name}.joblib"
         logger.info(f"Guardando el modelo en {filename}...")
 
         # Definir una ruta de salida estándar
@@ -372,16 +454,16 @@ class FuturePDIPredictor:
         except Exception as e:
             logger.error(f"Error al guardar el modelo: {e}")
 
-    def run_training_pipeline(self):
+    def run_training_pipeline(self, model_name: str = "lightgbm"):
         """
         Orquesta la ejecución de todo el pipeline de entrenamiento.
         """
-        logger.info("Iniciando pipeline de entrenamiento de PDI futuro...")
+        logger.info(f"Iniciando pipeline de entrenamiento de PDI futuro para el modelo {model_name}...")
         historical_data = self.load_historical_data()
-        X, y = self.create_training_dataset(historical_data)
-        model = self.train_and_evaluate_model(X, y)
-        self.save_model(model)
-        logger.info("Pipeline de entrenamiento completado.")
+        X, y, seasons = self.create_training_dataset(historical_data)
+        model = self.train_and_evaluate_model(X, y, seasons, model_name)
+        self.save_model(model, model_name)
+        logger.info(f"Pipeline de entrenamiento para {model_name} completado.")
 
 
 if __name__ == "__main__":
@@ -390,5 +472,11 @@ if __name__ == "__main__":
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
+    # Se puede especificar el modelo a entrenar desde la línea de comandos
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, default="lightgbm", help="Nombre del modelo a entrenar (lightgbm, xgboost, linear_regression)")
+    args = parser.parse_args()
+
     pipeline = FuturePDIPredictor()
-    pipeline.run_training_pipeline()
+    pipeline.run_training_pipeline(model_name=args.model)
