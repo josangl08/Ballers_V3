@@ -13,7 +13,6 @@ import numpy as np
 import plotly.graph_objects as go
 import requests
 from dash import Input, Output, State, dcc, html  # noqa: F401
-from common.datepicker_utils import create_auto_hide_datepicker
 
 from common.components.charts.comparison_charts import (
     create_comparison_bar_chart,
@@ -49,8 +48,9 @@ from common.components.shared.cards import (
     create_stats_card,
 )
 from common.components.shared.tables import create_statistics_summary
-from common.notification_component import NotificationComponent
+from common.datepicker_utils import create_auto_hide_datepicker
 from common.format_utils import format_name_with_del
+from common.notification_component import NotificationComponent
 from controllers.player_controller import get_player_profile_data, get_players_for_list
 from ml_system.data_processing.processors.position_mapper import (
     get_group_info,

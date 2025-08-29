@@ -1,17 +1,15 @@
 # main_dash.py - Aplicación principal migrada de Streamlit a Dash
 import atexit
-import datetime as dt
 import json
 import logging
 import os
 import queue
-import threading
 import time
 
 import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
-from dash import Input, Output, dcc, html, no_update
+from dash import Input, Output, dcc, html
 from flask import Response, jsonify, request
 
 from callbacks.administration_callbacks import register_administration_callbacks
@@ -25,7 +23,6 @@ from callbacks.professional_tabs_callbacks import register_professional_tabs_cal
 from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
 from callbacks.webhook_callbacks import register_webhook_callbacks
-from callbacks.notification_callbacks import NotificationCallbacks
 from common.datepicker_utils import (
     create_datepicker_dummy_divs,
     register_datepicker_callbacks,
@@ -37,13 +34,7 @@ from common.menu_dash import register_menu_callbacks
 from config import APP_ICON, APP_NAME  # noqa: F401
 
 # Importar componentes webhook para integración
-from controllers.calendar_sync_core import (
-    sync_calendar_to_db_with_feedback,
-    sync_db_to_calendar,
-)
 from controllers.db import initialize_database  # noqa: F401
-from controllers.notification_controller import save_sync_problems
-from controllers.session_controller import update_past_sessions
 
 # Importar integración completa de webhooks
 from controllers.webhook_integration import (

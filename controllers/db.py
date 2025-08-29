@@ -14,11 +14,11 @@ from config import DATABASE_PATH
 _engine = None
 _Session: Optional[sessionmaker] = None
 
-# Connection pooling configuration optimizado para Supabase
-POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "2"))  # Muy conservador para Supabase
-MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "1"))  # Total máximo: 3 conexiones
-POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", "10"))  # Timeout más agresivo
-POOL_RECYCLE = int(os.getenv("DB_POOL_RECYCLE", "900"))  # 15 minutos (más agresivo)
+# Connection pooling configuration optimizado para Supabase Transaction Pooler
+POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))  # Más conexiones base para Transaction Pooler
+MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))  # Total máximo: 15 conexiones
+POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", "30"))  # Timeout más generoso
+POOL_RECYCLE = int(os.getenv("DB_POOL_RECYCLE", "3600"))  # 1 hora (más estable)
 
 
 def initialize_database() -> bool:
@@ -48,10 +48,10 @@ def initialize_database() -> bool:
                 supabase_db_url,
                 pool_size=POOL_SIZE,  # Conexiones persistentes en el pool
                 max_overflow=MAX_OVERFLOW,  # Conexiones adicionales si es necesario
-                pool_timeout=POOL_TIMEOUT,  # Timeout agresivo para liberación rápida
-                pool_recycle=POOL_RECYCLE,  # Reciclar cada 15 min (evita conexiones idle)
+                pool_timeout=POOL_TIMEOUT,  # Timeout generoso para Transaction Pooler
+                pool_recycle=POOL_RECYCLE,  # Reciclar cada 1 hora (más estable)
                 pool_pre_ping=True,  # Verificar conexiones antes de usar
-                pool_reset_on_return="rollback",  # Limpiar transacciones al devolver
+                pool_reset_on_return="commit",  # Mejor para Transaction Pooler
                 echo=False,  # No logging SQL (performance)
                 # Configuraciones adicionales para Supabase
                 connect_args={
@@ -59,14 +59,14 @@ def initialize_database() -> bool:
                 },
             )
 
-            print(f"🏊 Connection pool configurado (ultra-conservador para Supabase):")
+            print(f"🏊 Connection pool configurado (optimizado para Transaction Pooler):")
             print(f"   - Pool size: {POOL_SIZE}")
             print(f"   - Max overflow: {MAX_OVERFLOW}")
             print(f"   - Pool timeout: {POOL_TIMEOUT}s")
             print(f"   - Pool recycle: {POOL_RECYCLE//60}m")
-            print(f"   - Pool reset: rollback")
+            print(f"   - Pool reset: commit")
             print(f"   - Max conexiones total: {POOL_SIZE + MAX_OVERFLOW}")
-            print("   ⚠️ Configuración ultra-conservadora para evitar límites Supabase")
+            print("   ✅ Configuración optimizada para Transaction Pooler (puerto 6543)")
 
             # Para PostgreSQL de Supabase, las tablas ya existen
             print("✅ Conectado a base de datos PostgreSQL de Supabase")
