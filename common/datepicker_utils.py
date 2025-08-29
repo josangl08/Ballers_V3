@@ -1,11 +1,13 @@
 # common/datepicker_utils.py
 """
 Utilidades comunes para manejo de datepickers en Dash.
-Proporciona callbacks reutilizables para auto-cerrar datepickers.
+Ahora integradas con dash-mantine-components para una UX mejorada.
+Incluye callbacks clientside legacy (seguros) y fábricas de DatePicker Mantine.
 """
 
 import dash
 from dash import ALL, MATCH, Input, Output, State
+import dash_mantine_components as dmc
 
 
 def register_datepicker_callbacks(app):
@@ -87,65 +89,198 @@ def create_datepicker_dummy_divs():
         html.Div(id="datepicker-dummy-output", style={"display": "none"}),
     ]
 
+def _mantine_datepicker_styles():
+    """Estilos nativos para Mantine DatePicker usando Styles API (DMC 1.2.0+)."""
+    return {
+        "input": {
+            "backgroundColor": "#3b3b3a",
+            "color": "#FFFFFF", 
+            "borderColor": "rgba(255,255,255,0.2)",
+            "borderRadius": "10px",
+            "fontSize": "0.9rem",
+            "textAlign": "center",  # Centrar fecha DD/MM/YYYY
+        },
+        "dropdown": {
+            "backgroundColor": "#333333",
+            "color": "#FFFFFF",
+            "border": "1px solid rgba(255,255,255,0.1)",
+            "borderRadius": "10px",
+            "boxShadow": "0 6px 12px rgba(36, 222, 132, 0.3)",
+        },
+        "calendarHeader": {
+            "color": "#FFFFFF",
+        },
+        "calendarHeaderControl": {
+            "color": "#24DE84",
+            "borderColor": "transparent",
+            "&:hover": {
+                "backgroundColor": "rgba(36, 222, 132, 0.2)",
+            },
+        },
+        "calendarHeaderLevel": {
+            "color": "#FFFFFF",
+            "&:hover": {
+                "backgroundColor": "rgba(36, 222, 132, 0.15)",
+            },
+        },
+        "weekday": {
+            "color": "#BBBBBB",
+            "fontSize": "0.8rem",
+        },
+        "day": {
+            "color": "#FFFFFF",
+            "borderRadius": "3px",
+            "&:hover": {
+                "backgroundColor": "rgba(36, 222, 132, 0.2)",
+                "color": "#FFFFFF",
+            },
+            "&[data-selected]": {
+                "backgroundColor": "#24DE84",
+                "color": "#1D1B1A",
+                "fontWeight": "600",
+            },
+            "&[data-weekend]": {
+                "color": "rgba(36, 222, 132, 0.8)",
+            },
+            "&[data-today]": {
+                "border": "2px solid #24DE84",
+                "fontWeight": "600",
+            },
+        },
+        "monthsListControl": {
+            "color": "#FFFFFF",
+            "&:hover": {
+                "backgroundColor": "rgba(36, 222, 132, 0.2)",
+            },
+            "&[data-selected]": {
+                "backgroundColor": "#24DE84",
+                "color": "#1D1B1A",
+            },
+        },
+        "yearsListControl": {
+            "color": "#FFFFFF",
+            "&:hover": {
+                "backgroundColor": "rgba(36, 222, 132, 0.2)",
+            },
+            "&[data-selected]": {
+                "backgroundColor": "#24DE84",
+                "color": "#1D1B1A",
+            },
+        },
+    }
 
-def create_auto_hide_datepicker(input_id, **kwargs):
+
+def create_auto_hide_datepicker(input_id, value=None, min_date=None, max_date=None, placeholder="Select date"):
     """
-    Crea un input de fecha con auto-hide automático.
+    Crea un DatePicker de Mantine con IDs compatibles con callbacks existentes.
 
     Args:
-        input_id: ID único para el input
-        **kwargs: Argumentos adicionales para dbc.Input
+        input_id: índice para el pattern-matching ID
+        value: valor inicial (YYYY-MM-DD)
+        min_date, max_date: límites opcionales (YYYY-MM-DD)
+        placeholder: texto del placeholder
 
     Returns:
-        Lista con componente dbc.Input y div de output para auto-hide
+        Lista [DatePicker, Div dummy] para compatibilidad con callbacks legacy
     """
-    import dash_bootstrap_components as dbc
     from dash import html
 
-    # Configurar el ID para pattern matching
     component_id = {"type": "auto-hide-date", "index": input_id}
     output_id = {"type": "datepicker-output", "index": input_id}
 
-    # Configurar argumentos por defecto
-    default_kwargs = {
-        "type": "date",
-        "className": "date-filter-input",
-        "id": component_id,
-    }
+    # Convertir fechas string a objetos date si es necesario
+    from datetime import datetime, date
+    
+    parsed_value = None
+    if value:
+        if isinstance(value, str):
+            try:
+                parsed_value = datetime.fromisoformat(value).date()
+            except ValueError:
+                parsed_value = None
+        elif isinstance(value, date):
+            parsed_value = value
+    
+    parsed_min_date = None
+    if min_date:
+        if isinstance(min_date, str):
+            try:
+                parsed_min_date = datetime.fromisoformat(min_date).date()
+            except ValueError:
+                parsed_min_date = None
+        elif isinstance(min_date, date):
+            parsed_min_date = min_date
+    
+    parsed_max_date = None
+    if max_date:
+        if isinstance(max_date, str):
+            try:
+                parsed_max_date = datetime.fromisoformat(max_date).date()
+            except ValueError:
+                parsed_max_date = None
+        elif isinstance(max_date, date):
+            parsed_max_date = max_date
+    
+    dp = dmc.DatePickerInput(
+        id=component_id,
+        value=parsed_value,
+        minDate=parsed_min_date,
+        maxDate=parsed_max_date,
+        placeholder=placeholder,
+        valueFormat="DD/MM/YYYY",  # Formato español DD/MM/YYYY
+        clearable=False,
+        styles=_mantine_datepicker_styles(),
+        style={"width": "100%"},
+    )
 
-    # Combinar con argumentos proporcionados
-    default_kwargs.update(kwargs)
-
-    return [
-        dbc.Input(**default_kwargs),
-        html.Div(id=output_id, style={"display": "none"}),
-    ]
+    return [dp, html.Div(id=output_id, style={"display": "none"})]
 
 
-def create_standard_datepicker(input_id, **kwargs):
-    """
-    Crea un input de fecha estándar con auto-hide usando pattern matching genérico.
-
-    Args:
-        input_id: ID único para el input
-        **kwargs: Argumentos adicionales para dbc.Input
-
-    Returns:
-        Componente dbc.Input configurado para auto-hide
-    """
-    import dash_bootstrap_components as dbc
-
-    # Configurar el ID para pattern matching
+def create_standard_datepicker(input_id, value=None, min_date=None, max_date=None, placeholder="Select date"):
+    """DatePickerInput de Mantine con ID genérico (para ALL pattern)."""
     component_id = {"type": "date-input", "index": input_id}
+    
+    # Convertir fechas string a objetos date si es necesario
+    from datetime import datetime, date
+    
+    parsed_value = None
+    if value:
+        if isinstance(value, str):
+            try:
+                parsed_value = datetime.fromisoformat(value).date()
+            except ValueError:
+                parsed_value = None
+        elif isinstance(value, date):
+            parsed_value = value
+    
+    parsed_min_date = None
+    if min_date:
+        if isinstance(min_date, str):
+            try:
+                parsed_min_date = datetime.fromisoformat(min_date).date()
+            except ValueError:
+                parsed_min_date = None
+        elif isinstance(min_date, date):
+            parsed_min_date = min_date
+    
+    parsed_max_date = None
+    if max_date:
+        if isinstance(max_date, str):
+            try:
+                parsed_max_date = datetime.fromisoformat(max_date).date()
+            except ValueError:
+                parsed_max_date = None
+        elif isinstance(max_date, date):
+            parsed_max_date = max_date
 
-    # Configurar argumentos por defecto
-    default_kwargs = {
-        "type": "date",
-        "className": "date-filter-input",
-        "id": component_id,
-    }
-
-    # Combinar con argumentos proporcionados
-    default_kwargs.update(kwargs)
-
-    return dbc.Input(**default_kwargs)
+    return dmc.DatePickerInput(
+        id=component_id,
+        value=parsed_value,
+        minDate=parsed_min_date,
+        maxDate=parsed_max_date,
+        placeholder=placeholder,
+        valueFormat="DD/MM/YYYY",  # Formato español DD/MM/YYYY
+        clearable=False,
+        styles=_mantine_datepicker_styles(),
+        style={"width": "100%"},
+    )
