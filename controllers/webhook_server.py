@@ -6,13 +6,18 @@ Runs as separate Flask server to receive real-time calendar events.
 import datetime as dt
 import json
 import logging
+import os
 import queue
 import threading
 import time
 from typing import Any, Dict
 
+from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request
 from werkzeug.serving import make_server
+
+# Cargar variables de entorno al inicio del webhook server
+load_dotenv()
 
 from config import WEBHOOK_PORT, WEBHOOK_SECRET_TOKEN
 from controllers.calendar_sync_core import (
