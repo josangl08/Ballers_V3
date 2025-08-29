@@ -1,6 +1,7 @@
 # pages/settings_dash.py - Migración visual de settings.py a Dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
+from common.datepicker_utils import create_auto_hide_datepicker
 
 from common.notification_component import NotificationComponent
 from common.upload_component import create_upload_component
@@ -147,21 +148,9 @@ def create_user_form_dash():
                                                 "Date of Birth",
                                                 className="mt-2 filter-label",
                                             ),
-                                            dbc.Input(
-                                                id={
-                                                    "type": "auto-hide-date",
-                                                    "index": "new-birth-date",
-                                                },
-                                                type="date",
-                                                className="date-filter-input",
-                                            ),
-                                            # Div de output para auto-hide callback
-                                            html.Div(
-                                                id={
-                                                    "type": "datepicker-output",
-                                                    "index": "new-birth-date",
-                                                },
-                                                style={"display": "none"},
+                                            *create_auto_hide_datepicker(
+                                                "new-birth-date",
+                                                placeholder="Select birth date",
                                             ),
                                         ],
                                         width=6,
@@ -1184,25 +1173,9 @@ def create_edit_user_form_dash():
                                                         "Date of Birth",
                                                         className="mt-2 filter-label",
                                                     ),
-                                                    dbc.Input(
-                                                        id={
-                                                            "type": "auto-hide-date",
-                                                            "index": "edit-birth-date",
-                                                        },
-                                                        type="date",
-                                                        className=("date-filter-input"),
-                                                    ),
-                                                    # Div de output para auto-hide
-                                                    html.Div(
-                                                        id={
-                                                            "type": (
-                                                                "datepicker-output"
-                                                            ),
-                                                            "index": (
-                                                                "edit-birth-date"
-                                                            ),
-                                                        },
-                                                        style={"display": "none"},
+                                                    *create_auto_hide_datepicker(
+                                                        "edit-birth-date",
+                                                        placeholder="Select birth date",
                                                     ),
                                                 ],
                                                 width=6,

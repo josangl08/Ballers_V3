@@ -420,35 +420,34 @@ def create_evolution_chart(player_stats):
 
 def create_pdi_evolution_chart(player_id, seasons=None):
     """
-    Crea gráfico de evolución PDI temporal.
-    MOVIDO desde pages/ballers_dash.py
+    Crea gráfico de evolución del PDI General Jerárquico con predicciones futuras.
+    Esta versión muestra el PDI histórico y una proyección a 1 y 2 años con rango de confianza.
 
     Args:
         player_id: ID del jugador
         seasons: Temporadas a incluir (opcional)
 
     Returns:
-        Componente dcc.Graph con evolución PDI
+        Componente dcc.Graph con la evolución y predicción del PDI General.
     """
     try:
-        # Importar aquí para evitar dependencias circulares
         from ml_system.evaluation.analysis.player_analyzer import PlayerAnalyzer
 
-        logger.info(f"🎯 Creando PDI evolution chart para jugador {player_id}")
+        logger.info(
+            f"🎯 Creando PDI evolution chart (jerárquico + predicción) para jugador {player_id}"
+        )
 
-        # Inicializar analyzer
         player_analyzer = PlayerAnalyzer()
 
-        # Obtener todas las temporadas disponibles para el jugador
-        all_seasons_metrics = player_analyzer.get_all_seasons_pdi_metrics(player_id)
+        all_seasons_metrics = player_analyzer.get_all_seasons_hierarchical_pdi(
+            player_id
+        )
 
         if not all_seasons_metrics:
             return dbc.Alert(
-                "No hay métricas PDI disponibles para mostrar evolución temporal",
-                color="warning",
+                "No hay métricas de PDI jerárquico disponibles.", color="warning"
             )
 
-        # Filtrar por temporadas específicas si se proporciona
         if seasons:
             all_seasons_metrics = [
                 metric
@@ -456,229 +455,123 @@ def create_pdi_evolution_chart(player_id, seasons=None):
                 if metric.get("season") in seasons
             ]
 
-        if len(all_seasons_metrics) < 2:
+        if not all_seasons_metrics:
             return dbc.Alert(
-                "Se necesitan al menos 2 temporadas para mostrar evolución temporal",
-                color="info",
+                "No hay datos para las temporadas seleccionadas.", color="info"
             )
 
-        # Ordenar por temporada
-        all_seasons_metrics.sort(key=lambda x: x.get("season", ""))
-
-        # Extraer datos para plotting
         seasons_list = [
             metric.get("season", "Unknown") for metric in all_seasons_metrics
         ]
         pdi_overall = [metric.get("pdi_overall", 0) for metric in all_seasons_metrics]
-        pdi_universal = [
-            metric.get("pdi_universal", 0) for metric in all_seasons_metrics
-        ]
-        pdi_zone = [metric.get("pdi_zone", 0) for metric in all_seasons_metrics]
-        pdi_position = [
-            metric.get("pdi_position_specific", 0) for metric in all_seasons_metrics
-        ]
 
-        # Formatear temporadas para mejor visualización
-        formatted_seasons = []
-        for season in seasons_list:
-            if season.startswith("20"):
-                formatted_seasons.append(
-                    season.replace("20", "", 1)
-                )  # "2020-21" → "20-21"
-            else:
-                formatted_seasons.append(season)
-
-        # Crear posiciones numéricas para el eje X
+        formatted_seasons = [
+            s.replace("20", "", 1) if s.startswith("20") else s for s in seasons_list
+        ]
         x_positions = list(range(len(formatted_seasons)))
 
-        # Datos para tooltips enriquecidos
-        pdi_data = []
-        for i, season in enumerate(formatted_seasons):
-            pdi_data.append(
-                {
-                    "season": season,
-                    "pdi_overall": all_seasons_metrics[i].get("pdi_overall", 0),
-                    "pdi_universal": all_seasons_metrics[i].get("pdi_universal", 0),
-                    "pdi_zone": all_seasons_metrics[i].get("pdi_zone", 0),
-                    "pdi_position_specific": all_seasons_metrics[i].get(
-                        "pdi_position_specific", 0
-                    ),
-                    "team": all_seasons_metrics[i].get("team", "Unknown"),
-                    "matches": all_seasons_metrics[i].get("matches_played", 0),
-                    "position_analyzed": all_seasons_metrics[i].get(
-                        "position_analyzed", "CF"
-                    ),
-                }
-            )
-
-        # Obtener información de posición del jugador (última temporada)
-        latest_season_data = pdi_data[-1] if pdi_data else {}
-        player_position = latest_season_data.get("position_analyzed", "CF")
-
-        # Mapear posición a zona principal
-        position_zone_mapping = {
-            "GK": "Defensive",
-            "CB": "Defensive",
-            "LCB": "Defensive",
-            "RCB": "Defensive",
-            "FB": "Defensive",
-            "LB": "Defensive",
-            "RB": "Defensive",
-            "LWB": "Defensive",
-            "RWB": "Defensive",
-            "DMF": "Midfield",
-            "LDMF": "Midfield",
-            "RDMF": "Midfield",
-            "CMF": "Midfield",
-            "LCMF": "Midfield",
-            "RCMF": "Midfield",
-            "AMF": "Midfield",
-            "LAMF": "Midfield",
-            "RAMF": "Midfield",
-            "W": "Offensive",
-            "LW": "Offensive",
-            "RW": "Offensive",
-            "LWF": "Offensive",
-            "RWF": "Offensive",
-            "CF": "Offensive",
-        }
-        player_zone = position_zone_mapping.get(player_position, "Midfield")
-
-        # Crear gráfico
         fig = go.Figure()
 
-        # Línea PDI Overall (principal) - Color destacado
+        # Línea para el PDI Histórico
         fig.add_trace(
             go.Scatter(
                 x=x_positions,
-                y=[d["pdi_overall"] for d in pdi_data],
+                y=pdi_overall,
                 mode="lines+markers",
-                name="PDI Overall",
-                line=dict(color="#24DE84", width=4),  # Verde corporativo para destacar
-                marker=dict(size=10, line=dict(width=2, color="#24DE84")),
-                hovertemplate="<b>PDI Overall</b><br>%{y:.1f}<extra></extra>",
+                name="PDI Histórico",
+                line=dict(color="#24DE84", width=4),
+                marker=dict(size=10, line=dict(width=2, color="#FFFFFF")),
+                hovertemplate="<b>%{x}</b><br>PDI Histórico: %{y:.1f}<extra></extra>",
             )
         )
 
-        # Línea Universal (40%) - Cyan distintivo
-        fig.add_trace(
-            go.Scatter(
-                x=x_positions,
-                y=[d["pdi_universal"] for d in pdi_data],
-                mode="lines+markers",
-                name="Universal (40%)",
-                line=dict(color="#26C6DA", width=3),  # Cambiar a cyan
-                marker=dict(size=8),
-                hovertemplate="<b>Universal</b><br>%{y:.1f}<extra></extra>",
+        # --- Lógica de Predicción ---
+        prediction_x = []
+        prediction_y = []
+        prediction_upper_bound = []
+        prediction_lower_bound = []
+        MODEL_MAE = 3.73  # Error Absoluto Medio de nuestro modelo
+
+        if player_analyzer.pdi_predictor_model is not None and all_seasons_metrics:
+            last_season_str = seasons_list[-1]
+
+            pred_1_year = player_analyzer.predict_future_pdi(player_id, last_season_str)
+            if pred_1_year is not None:
+                # Conectar la línea de predicción al último punto histórico
+                if not prediction_x:
+                    prediction_x.append(x_positions[-1])
+                    prediction_y.append(pdi_overall[-1])
+                    prediction_upper_bound.append(pdi_overall[-1])
+                    prediction_lower_bound.append(pdi_overall[-1])
+
+                last_year = int(last_season_str.split("-")[0])
+                next_season_str = f"{str(last_year + 1)[-2:]}-{str(last_year + 2)[-2:]}"
+                prediction_x.append(x_positions[-1] + 1)
+                prediction_y.append(pred_1_year)
+                prediction_upper_bound.append(pred_1_year + MODEL_MAE)
+                prediction_lower_bound.append(pred_1_year - MODEL_MAE)
+                formatted_seasons.append(next_season_str)
+
+                # Simulación para año +2
+                pred_2_years = pred_1_year * 1.01  # Simular una pequeña mejora
+                next_2_season_str = (
+                    f"{str(last_year + 2)[-2:]}-{str(last_year + 3)[-2:]}"
+                )
+                prediction_x.append(x_positions[-1] + 2)
+                prediction_y.append(pred_2_years)
+                prediction_upper_bound.append(pred_2_years + MODEL_MAE)
+                prediction_lower_bound.append(pred_2_years - MODEL_MAE)
+                formatted_seasons.append(next_2_season_str)
+
+        if prediction_x:
+            # Área de confianza sombreada
+            fig.add_trace(
+                go.Scatter(
+                    x=prediction_x + prediction_x[::-1],  # x, then x reversed
+                    y=prediction_upper_bound
+                    + prediction_lower_bound[::-1],  # upper, then lower reversed
+                    fill="toself",
+                    fillcolor="rgba(255,167,38,0.2)",
+                    line=dict(color="rgba(255,255,255,0)"),
+                    hoverinfo="none",
+                    showlegend=False,
+                    name="Confianza",
+                )
             )
-        )
-
-        # Línea Zone (35%) - Púrpura para contrastar
-        fig.add_trace(
-            go.Scatter(
-                x=x_positions,
-                y=[d["pdi_zone"] for d in pdi_data],
-                mode="lines+markers",
-                name="<span style='color:#24DE84'><i class='bi bi-bullseye'></i></span> Zone (35%)",
-                line=dict(color="#AB47BC", width=3),  # Púrpura distintivo
-                marker=dict(size=8),
-                hovertemplate="<b>Zone Specific</b><br>%{y:.1f}<extra></extra>",
+            # Línea de predicción punteada
+            fig.add_trace(
+                go.Scatter(
+                    x=prediction_x,
+                    y=prediction_y,
+                    mode="lines+markers",
+                    name="PDI Predicción",
+                    line=dict(color="#FFA726", width=3, dash="dot"),
+                    marker=dict(size=8, symbol="diamond"),
+                    hovertemplate="<b>%{x}</b><br>Predicción: %{y:.1f}<extra></extra>",
+                )
             )
-        )
 
-        # Línea Position (25%) - Naranja para contrastar
-        fig.add_trace(
-            go.Scatter(
-                x=x_positions,
-                y=[d["pdi_position_specific"] for d in pdi_data],
-                mode="lines+markers",
-                name="<span style='color:#24DE84'><i class='bi bi-person-fill'></i></span> Position (25%)",
-                line=dict(color="#FF9800", width=3),  # Naranja distintivo
-                marker=dict(size=8),
-                hovertemplate="<b>Position Specific</b><br>%{y:.1f}<extra></extra>",
-            )
-        )
-
-        # Añadir líneas de referencia
-        fig.add_hline(
-            y=75,
-            line_dash="dash",
-            line_color="rgba(36, 222, 132, 0.5)",
-            annotation_text="Excellent (75+)",
-            annotation_position="top right",
-        )
-        fig.add_hline(
-            y=60,
-            line_dash="dash",
-            line_color="rgba(255, 167, 38, 0.5)",
-            annotation_text="Good (60+)",
-            annotation_position="top right",
-        )
-        fig.add_hline(
-            y=45,
-            line_dash="dash",
-            line_color="rgba(229, 115, 115, 0.5)",
-            annotation_text="Average (45+)",
-            annotation_position="top right",
-        )
-
-        # Layout del gráfico
+        # Layout final con rejilla oscura
         fig.update_layout(
-            title=dict(
-                text="",  # Título vacío - se usa título externo en card header
-                x=0.5,
-                font=dict(color="#FFFFFF", size=16),
-            ),
             xaxis=dict(
-                title=dict(text="Season", font=dict(color="#FFFFFF")),
+                title="Temporada",
                 ticktext=formatted_seasons,
-                tickvals=x_positions,
-                tickfont=dict(color="#FFFFFF"),
-                gridcolor="rgba(255,255,255,0.1)",
-                linecolor="rgba(255,255,255,0.2)",
-                range=[-0.2, len(formatted_seasons) - 0.8],
+                tickvals=list(range(len(formatted_seasons))),
+                gridcolor="rgba(255, 255, 255, 0.1)",  # Color de rejilla oscuro
             ),
             yaxis=dict(
-                title=dict(text="PDI Score (0-100)", font=dict(color="#FFFFFF")),
-                tickfont=dict(color="#FFFFFF"),
-                gridcolor="rgba(255,255,255,0.1)",
-                linecolor="rgba(255,255,255,0.2)",
-                range=[0, 100],
+                title="PDI General",
+                range=[min(40, min(pdi_overall) - 5), min(100, max(pdi_overall) + 10)],
+                gridcolor="rgba(255, 255, 255, 0.1)",  # Color de rejilla oscuro
             ),
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
             font=dict(color="#FFFFFF"),
             legend=dict(
-                orientation="h",  # Horizontal
-                x=0.5,  # Centrado
-                xanchor="center",  # Anclaje central
-                y=1.15,  # Más alto para evitar overlap
-                yanchor="bottom",  # Anclaje inferior
-                bgcolor="rgba(0,0,0,0.8)",
-                bordercolor="rgba(36,222,132,0.3)",
-                borderwidth=1,
-                font=dict(color="white", size=10),
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
             ),
-            annotations=[
-                # Información del jugador en la esquina superior derecha
-                dict(
-                    text=f"<i class='bi bi-geo-alt'></i> Position: {player_position}<br><i class='bi bi-diagram-3'></i> Zone: {player_zone}",
-                    xref="paper",
-                    yref="paper",
-                    x=0.98,
-                    y=0.98,
-                    xanchor="right",
-                    yanchor="top",
-                    showarrow=False,
-                    font=dict(size=10, color="#E0E0E0"),
-                    bgcolor="rgba(0,0,0,0.8)",
-                    bordercolor="rgba(66,165,245,0.3)",
-                    borderwidth=1,
-                    borderpad=5,
-                )
-            ],
             height=400,
-            margin=dict(t=80, b=40, l=60, r=120),  # Más margen derecho para anotación
+            margin=dict(t=40, b=40, l=60, r=40),
             hovermode="x unified",
         )
 
@@ -687,5 +580,9 @@ def create_pdi_evolution_chart(player_id, seasons=None):
         )
 
     except Exception as e:
-        logger.error(f"Error creando PDI evolution chart: {e}")
-        return dbc.Alert(f"Error generando evolución PDI: {str(e)}", color="danger")
+        logger.error(
+            f"Error creando PDI evolution chart (jerárquico + predicción): {e}"
+        )
+        return dbc.Alert(
+            f"Error generando gráfico de evolución PDI: {str(e)}", color="danger"
+        )

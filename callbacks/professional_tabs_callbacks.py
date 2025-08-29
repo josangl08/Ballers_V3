@@ -342,7 +342,7 @@ def register_professional_tabs_callbacks(app):
             player_stats = all_stats if all_stats else []
 
             if active_tab == "performance-tab":
-                return create_performance_tab_content(player_stats)
+                return create_performance_tab_content(player_id, season, player_stats)
             elif active_tab == "evolution-tab":
                 return create_evolution_tab_content(
                     player, player_stats, player_analyzer

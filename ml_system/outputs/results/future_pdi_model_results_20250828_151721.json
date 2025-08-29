@@ -1,0 +1,10 @@
+{
+    "timestamp": "2025-08-28T15:17:21.729355",
+    "model_type": "RandomForestRegressor",
+    "training_samples": 928,
+    "test_samples": 232,
+    "metrics": {
+        "mean_absolute_error": 7.895701644643347,
+        "r2_score": 0.22014051789198008
+    }
+}

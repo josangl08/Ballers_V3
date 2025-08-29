@@ -76,9 +76,6 @@ SUPABASE_DATABASE_URL = get_config_value("SUPABASE_DATABASE_URL", "")
 DEBUG = get_config_value("DEBUG", "False") == "True"
 LOG_LEVEL = get_config_value("LOG_LEVEL", "INFO")
 ENVIRONMENT = get_config_value("ENVIRONMENT", "development")
-
-# Configuración simplificada - solo Supabase PostgreSQL
-
 DEFAULT_PROFILE_PHOTO = os.path.join(ASSETS_DIR, "default_profile.png")
 CSS_FILE = os.path.join(STYLES_DIR, "style.css")
 

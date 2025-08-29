@@ -13,6 +13,7 @@ import numpy as np
 import plotly.graph_objects as go
 import requests
 from dash import Input, Output, State, dcc, html  # noqa: F401
+from common.datepicker_utils import create_auto_hide_datepicker
 
 from common.components.charts.comparison_charts import (
     create_comparison_bar_chart,
@@ -1304,25 +1305,13 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             "font-size": "0.9rem",
                                         },
                                     ),
-                                    dbc.Input(
-                                        id={
-                                            "type": "auto-hide-date",
-                                            "index": "ballers-filter-from-date",
-                                        },
-                                        type="date",
-                                        className="date-filter-input",
+                                    *create_auto_hide_datepicker(
+                                        "ballers-filter-from-date",
                                         value=(
                                             datetime.date.today()
                                             - datetime.timedelta(days=7)
                                         ).isoformat(),
-                                    ),
-                                    # Div de output para auto-hide callback
-                                    html.Div(
-                                        id={
-                                            "type": "datepicker-output",
-                                            "index": "ballers-filter-from-date",
-                                        },
-                                        style={"display": "none"},
+                                        placeholder="From date",
                                     ),
                                 ],
                                 width=3,
@@ -1337,25 +1326,13 @@ def create_player_profile_dash(player_id=None, user_id=None):
                                             "font-size": "0.9rem",
                                         },
                                     ),
-                                    dbc.Input(
-                                        id={
-                                            "type": "auto-hide-date",
-                                            "index": "ballers-filter-to-date",
-                                        },
-                                        type="date",
-                                        className="date-filter-input",
+                                    *create_auto_hide_datepicker(
+                                        "ballers-filter-to-date",
                                         value=(
                                             datetime.date.today()
                                             + datetime.timedelta(days=21)
                                         ).isoformat(),
-                                    ),
-                                    # Div de output para auto-hide callback
-                                    html.Div(
-                                        id={
-                                            "type": "datepicker-output",
-                                            "index": "ballers-filter-to-date",
-                                        },
-                                        style={"display": "none"},
+                                        placeholder="To date",
                                     ),
                                 ],
                                 width=3,
@@ -3604,7 +3581,7 @@ def create_iep_clustering_chart(
 # ============================================================================
 
 
-def create_performance_tab_content(player_stats):
+def create_performance_tab_content(player_id: int, season: str, player_stats: list):
     """Crea contenido del tab Performance Overview."""
     return dbc.Container(
         [
@@ -3621,14 +3598,14 @@ def create_performance_tab_content(player_stats):
                                                     html.I(
                                                         className="bi bi-radar me-2"
                                                     ),
-                                                    "Skills Profile",
+                                                    "Hierarchical PDI Profile",
                                                 ],
                                                 className="text-primary mb-0",
                                             )
                                         ]
                                     ),
                                     dbc.CardBody(
-                                        [create_radar_chart(player_stats)],
+                                        [create_radar_chart(player_id, season)],
                                         className="p-2",
                                         style={"height": "420px"},
                                     ),

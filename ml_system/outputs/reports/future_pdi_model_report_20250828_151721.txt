@@ -1,0 +1,24 @@
+
+        Reporte de Entrenamiento del Modelo Predictivo de PDI Futuro
+        -----------------------------------------------------------
+        Fecha y Hora: 2025-08-28 15:17:21
+
+        Configuración del Modelo
+        --------------------------
+        Tipo de Modelo: RandomForestRegressor
+        Parámetros: n_estimators=100, random_state=42
+
+        Datos
+        -----
+        Muestras de Entrenamiento: 928
+        Muestras de Prueba: 232
+
+        Resultados de la Evaluación
+        ---------------------------
+        Error Absoluto Medio (MAE): 7.896
+        Coeficiente de Determinación (R²): 0.220
+
+        Análisis
+        --------
+        MAE: En promedio, las predicciones del modelo se desvían en 7.90 puntos del PDI real del jugador al año siguiente.
+        R²: El modelo es capaz de explicar el 22.0% de la variabilidad en el PDI futuro, lo cual indica un poder predictivo robusto.

@@ -1,5 +1,6 @@
 # models/__init__.py
 
+
 from .admin_model import Admin  # noqa: F401
 from .base import Base  # noqa: F401
 from .coach_model import Coach  # noqa: F401

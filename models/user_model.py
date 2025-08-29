@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from models.coach_model import Coach
     from models.player_model import Player
     from models.admin_model import Admin
+    from models.admin_model import Admin
 
 from .base import Base
 
