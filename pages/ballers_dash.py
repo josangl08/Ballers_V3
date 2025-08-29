@@ -49,6 +49,7 @@ from common.components.shared.cards import (
     create_stats_card,
 )
 from common.components.shared.tables import create_statistics_summary
+from common.notification_component import NotificationComponent
 from common.format_utils import format_name_with_del
 from controllers.player_controller import get_player_profile_data, get_players_for_list
 from ml_system.data_processing.processors.position_mapper import (
@@ -1009,6 +1010,8 @@ def create_player_profile_dash(player_id=None, user_id=None):
     # Layout completo del perfil migrado exactamente de Streamlit (lines 35-285)
     return dbc.Container(
         [
+            # Sistema de notificaciones (toast) para Ballers
+            *NotificationComponent.create_toast_notification("ballers"),
             # Cabecera con foto e info (reestructurada)
             dbc.Row(
                 [
@@ -1839,7 +1842,7 @@ def create_test_results_content_dash():
                         [
                             dbc.Label(
                                 "Select metrics for visualization",
-                                style={"font-weight": "500"},
+                                style={"font-weight": "500", "color": "#FFFFFF"},
                             ),
                             dcc.Dropdown(
                                 id="metrics-selector",

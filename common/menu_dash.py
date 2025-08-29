@@ -6,6 +6,38 @@ from dash import dcc, html
 
 from controllers.menu_controller import MenuController
 
+# Utilidad para resolver la foto de perfil del usuario logueado
+def _resolve_profile_photo(session_data: Optional[Dict]) -> str:
+    """Obtiene la ruta accesible de la foto de perfil.
+
+    Prioridad:
+    1) session_data['profile_photo'] si existe
+    2) Consultar BD por user_id y usar user.profile_photo
+    3) Fallback a /assets/profile_photos/default_profile.png
+    """
+    default_src = "/assets/profile_photos/default_profile.png"
+    try:
+        if session_data and session_data.get("profile_photo"):
+            src = session_data.get("profile_photo")
+            if isinstance(src, str) and src.startswith("assets/"):
+                return "/" + src
+            return src
+
+        user_id = session_data.get("user_id") if session_data else None
+        if user_id:
+            from controllers.auth_controller import AuthController
+
+            with AuthController() as auth:
+                user = auth.get_user_by_id(user_id)
+                if user and getattr(user, "profile_photo", None):
+                    src = user.profile_photo
+                    if isinstance(src, str) and src.startswith("assets/"):
+                        return "/" + src
+                    return src
+    except Exception:
+        pass
+    return default_src
+
 # force_manual_sync importado solo donde se necesita (settings_callbacks.py)
 # get_sync_status_for_ui no utilizado - eliminado para cumplir flake8
 
@@ -164,7 +196,7 @@ def create_sidebar_menu_dash(session_data: Optional[Dict] = None):
                         # Foto de perfil
                         html.Div(
                             html.Img(
-                                src="/assets/profile_photos/default_profile.png",
+                                src=_resolve_profile_photo(session_data),
                                 style={
                                     "width": "40px",
                                     "height": "40px",
@@ -188,26 +220,39 @@ def create_sidebar_menu_dash(session_data: Optional[Dict] = None):
                                         "margin-bottom": "2px",
                                     },
                                 ),
-                                html.Div(
-                                    [
-                                        html.I(
-                                            className="bi bi-key",
-                                            style={
-                                                "color": "#FFD700",
-                                                "font-size": "12px",
-                                                "margin-right": "5px",
-                                            },
+                                # Rol + icono específico por tipo (admin/coach/player)
+                                (lambda _role: (
+                                    (lambda _icon_cls, _color, _label: html.Div(
+                                        [
+                                            html.I(
+                                                className=f"bi {_icon_cls}",
+                                                style={
+                                                    "color": _color,
+                                                    "font-size": "12px",
+                                                    "margin-right": "6px",
+                                                },
+                                            ),
+                                            html.Span(
+                                                _label,
+                                                style={
+                                                    "color": "#FFFFFF",
+                                                    "font-size": "12px",
+                                                },
+                                            ),
+                                        ],
+                                        className="sidebar-user-type",
+                                    ))(
+                                        "bi-shield-lock-fill" if _role == "admin" else (
+                                            "bi-person-workspace" if _role == "coach" else "bi-person-fill"
                                         ),
-                                        html.Span(
-                                            "Admin",
-                                            style={
-                                                "color": "#FFFFFF",
-                                                "font-size": "12px",
-                                            },
+                                        "#FFD700" if _role == "admin" else (
+                                            "#4FC3F7" if _role == "coach" else "#24DE84"
                                         ),
-                                    ],
-                                    className="sidebar-user-type",
-                                ),
+                                        "Admin" if _role == "admin" else (
+                                            "Coach" if _role == "coach" else "Player"
+                                        ),
+                                    )
+                                ))(getattr(controller, "user_type", "player")),
                             ],
                             className="sidebar-user-info",
                             style={"display": "flex", "flex-direction": "column"},

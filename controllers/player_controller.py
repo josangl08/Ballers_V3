@@ -209,12 +209,9 @@ class PlayerController:
             "profile_photo": player.user.profile_photo,
             "age": stats["age"],
             "service": player.service,
-            "enrolment": player.enrolment,
-            "remaining": stats["remaining"],
+            "sessions_count": stats["completed"],  # Muestra sesiones completadas
+            "remaining_sessions": stats["remaining"], # Muestra sesiones restantes
             "next_session": stats["next_session"],
-            "email": player.user.email,
-            "phone": player.user.phone,
-            "line": player.user.line,
         }
 
     # Resultados de tests

@@ -178,8 +178,69 @@ def register_player_callbacks(app):
                                                     "padding": "0.5rem 1rem",
                                                     "font-weight": "500",
                                                     "transition": "all 0.3s ease",
+                                                    "minWidth": "240px",
                                                 },
-                                            )
+                                            ),
+                                            # Modal básico de exportación
+                                            dbc.Modal(
+                                                [
+                                                    dbc.ModalHeader(
+                                                        dbc.ModalTitle(
+                                                            [
+                                                                html.I(
+                                                                    className="bi bi-file-earmark-pdf me-2",
+                                                                    style={
+                                                                        "color": "#24DE84",
+                                                                        "font-size": "1.0rem",
+                                                                    },
+                                                                ),
+                                                                "Export Profile PDF",
+                                                            ],
+                                                            style={
+                                                                "color": "#FFFFFF",
+                                                                "font-weight": "600",
+                                                                "font-size": "1.0rem",
+                                                            },
+                                                        ),
+                                                        style={
+                                                            "background-color": "rgba(51,51,51,1)",
+                                                            "border-bottom": "2px solid #24DE84",
+                                                            "padding": "1rem 1.5rem",
+                                                        },
+                                                    ),
+                                                    dbc.ModalBody(
+                                                        [
+                                                            html.P(
+                                                                "PDF export functionality will be available soon.",
+                                                                style={
+                                                                    "color": "#FFFFFF",
+                                                                    "fontSize": "1.0rem",
+                                                                    "textAlign": "center",
+                                                                    "margin": "2rem 0",
+                                                                },
+                                                            ),
+                                                        ],
+                                                        className="modal-body-standard",
+                                                    ),
+                                                    dbc.ModalFooter(
+                                                        [
+                                                            dbc.Button(
+                                                                "Close",
+                                                                id="export-cancel-btn",
+                                                                className="btn-modal-cancel",
+                                                            ),
+                                                        ],
+                                                        className="modal-footer-standard",
+                                                    ),
+                                                ],
+                                                id="export-profile-modal",
+                                                is_open=False,
+                                                size="md",
+                                                centered=True,
+                                                backdrop="static",
+                                                fade=True,
+                                                style={"z-index": "1060"},
+                                            ),
                                         ],
                                         width="auto",
                                         className="ms-auto",  # Empujar hacia la derecha
@@ -218,8 +279,28 @@ def register_player_callbacks(app):
             return create_test_results_content_dash()
         elif active_tab == "notes":
             return create_notes_content_dash()
-        else:
-            return html.Div("Select a tab to view content")
+
+    # ============================
+    # Export PDF (modal básico)
+    # ============================
+
+    @app.callback(
+        Output("export-profile-modal", "is_open"),
+        [Input("export-profile-btn", "n_clicks"), Input("export-cancel-btn", "n_clicks")],
+        [State("export-profile-modal", "is_open")],
+        prevent_initial_call=True,
+    )
+    def toggle_export_modal(open_click, cancel_click, is_open):
+        from dash import callback_context
+        if not callback_context.triggered:
+            return is_open
+        trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
+        if trigger == "export-profile-btn":
+            return True
+        if trigger == "export-cancel-btn":
+            return False
+        return is_open
+
 
     @app.callback(
         Output("calendar-display", "children"),
@@ -604,3 +685,4 @@ def register_player_callbacks(app):
                     "color": "#F44336",
                 },
             )
+

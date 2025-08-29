@@ -19,6 +19,7 @@ from callbacks.professional_tabs_callbacks import register_professional_tabs_cal
 from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
 from callbacks.webhook_callbacks import register_webhook_callbacks
+from callbacks.notification_callbacks import NotificationCallbacks
 from common.datepicker_utils import (
     create_datepicker_dummy_divs,
     register_datepicker_callbacks,
@@ -95,6 +96,10 @@ def get_app_layout():
             html.Div(id="sse-connector", style={"display": "none"}),
             # Layout principal
             html.Div(id="main-content"),
+            # Download for player PDF exports
+            dcc.Download(id="download-profile-pdf"),
+            # html2canvas for client-side snapshots
+            html.Script(src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"),
             # Divs dummy para callbacks de datepicker
             *create_datepicker_dummy_divs(),
         ],
@@ -128,6 +133,9 @@ def register_all_callbacks():
 
     # 🛡️ Registrar callbacks legacy (ahora vacíos) y fallback
     register_webhook_callbacks(app)
+
+    # Notificaciones (toast) para página Ballers
+    NotificationCallbacks.register_notification_callbacks(app, "ballers")
 
     # SSE Client Callback para real-time updates (SOLUCIÓN: Zero-polling)
     app.clientside_callback(

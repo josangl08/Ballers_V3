@@ -157,19 +157,23 @@ class SessionController:
 
         try:
             # Usar ValidationController para coach/player existence
-            coach = self.db.query(Coach).filter_by(coach_id=coach_id).first()
+            coach = self.db.query(Coach).options(joinedload(Coach.user)).filter_by(coach_id=coach_id).first()
             coach_valid, coach_error = ValidationController.validate_coach_exists(coach)
             if not coach_valid:
                 return False, coach_error, None
 
-            player = self.db.query(Player).filter_by(player_id=player_id).first()
+            player = self.db.query(Player).options(joinedload(Player.user)).filter_by(player_id=player_id).first()
             player_valid, player_error = ValidationController.validate_player_exists(
                 player
             )
             if not player_valid:
                 return False, player_error, None
 
-            # Crear sesión
+            # Obtener nombres para snapshots
+            coach_name_snapshot = coach.user.name if coach and coach.user else f"Coach {coach_id}"
+            player_name_snapshot = player.user.name if player and player.user else f"Player {player_id}"
+
+            # Crear sesión con snapshots de nombres
             new_session = Session(
                 coach_id=coach_id,
                 player_id=player_id,
@@ -177,6 +181,8 @@ class SessionController:
                 end_time=end_time,
                 status=status,
                 notes=notes,
+                coach_name_snapshot=coach_name_snapshot,
+                player_name_snapshot=player_name_snapshot,
                 source="app",
                 version=1,
             )
@@ -235,9 +241,28 @@ class SessionController:
 
         try:
             # Actualizar campos
+            coach_changed = False
+            player_changed = False
+            
             for field, value in kwargs.items():
                 if hasattr(session, field):
                     setattr(session, field, value)
+                    # Detectar cambios en coach/player para actualizar snapshots
+                    if field == 'coach_id':
+                        coach_changed = True
+                    elif field == 'player_id':
+                        player_changed = True
+
+            # Actualizar snapshots si coach o player cambiaron
+            if coach_changed or player_changed:
+                # Obtener nombres actualizados para snapshots
+                if coach_changed and hasattr(session, 'coach_id'):
+                    coach = self.db.query(Coach).options(joinedload(Coach.user)).filter_by(coach_id=session.coach_id).first()
+                    session.coach_name_snapshot = coach.user.name if coach and coach.user else f"Coach {session.coach_id}"
+                
+                if player_changed and hasattr(session, 'player_id'):
+                    player = self.db.query(Player).options(joinedload(Player.user)).filter_by(player_id=session.player_id).first()
+                    session.player_name_snapshot = player.user.name if player and player.user else f"Player {session.player_id}"
 
             # Marcar como dirty para sincronización
             session.is_dirty = True
