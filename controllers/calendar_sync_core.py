@@ -4,6 +4,7 @@ Núcleo de sincronización con Google Calendar.
 Maneja la sincronización bidireccional sin coordinar auto-sync ni estadísticas.
 """
 import datetime as dt
+import os
 import logging
 import os
 import re
@@ -243,11 +244,15 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
         seen_ev_ids: set[str] = set()
 
         now = dt.datetime.now(dt.timezone.utc)
-        win_start = now - dt.timedelta(days=15)
-        win_end = now + dt.timedelta(days=30)
+        # Ventana configurable por variables de entorno (valores por defecto: 10 atrás, 20 adelante)
+        past_days = int(os.getenv("SYNC_WINDOW_PAST_DAYS", "10"))
+        future_days = int(os.getenv("SYNC_WINDOW_FUTURE_DAYS", "20"))
+        win_start = now - dt.timedelta(days=past_days)
+        win_end = now + dt.timedelta(days=future_days)
 
         logger.info(
-            f"📅 Ventana de sincronización: {win_start.date()} a {win_end.date()}"
+            f"📅 Ventana de sincronización: {win_start.date()} a {win_end.date()} "
+            f"(past={past_days}d, future={future_days}d)"
         )
 
         # Obtener eventos de Google Calendar

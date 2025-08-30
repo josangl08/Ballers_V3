@@ -2115,87 +2115,181 @@ def register_settings_callbacks(app):
                         changes_text = ", ".join(changes) if changes else "no changes"
 
                         if len(rejected_events) > 0:
-                            rejected_msg = f"⚠️ Sync completed with {len(rejected_events)} rejected events"
-                            time_msg = f"({duration:.1f}s) | {changes_text}"
+                            msg = f"Sync completed with {len(rejected_events)} rejected events ({duration:.1f}s) | {changes_text}"
                             return (
-                                f"{rejected_msg} {time_msg}",
+                                html.Span([
+                                    html.I(className="bi bi-exclamation-triangle-fill me-2"),
+                                    msg,
+                                ]),
                                 True,
                                 "warning",
                             )
                         elif len(warning_events) > 0:
-                            warning_msg = (
-                                f"⚠️ Sync completed with {len(warning_events)} warnings"
-                            )
-                            time_msg = f"({duration:.1f}s) | {changes_text}"
+                            msg = f"Sync completed with {len(warning_events)} warnings ({duration:.1f}s) | {changes_text}"
                             return (
-                                f"{warning_msg} {time_msg}",
+                                html.Span([
+                                    html.I(className="bi bi-exclamation-triangle-fill me-2"),
+                                    msg,
+                                ]),
                                 True,
                                 "warning",
                             )
                         elif imported + updated + deleted > 0:
-                            success_msg = f"✅ Sync completed successfully"
-                            time_msg = f"({duration:.1f}s) | {changes_text}"
+                            msg = f"Sync completed successfully ({duration:.1f}s) | {changes_text}"
                             return (
-                                f"{success_msg} {time_msg}",
+                                html.Span([
+                                    html.I(className="bi bi-check-circle-fill me-2"),
+                                    msg,
+                                ]),
                                 True,
                                 "success",
                             )
                         else:
+                            msg = f"Sync completed - no changes ({duration:.1f}s)"
                             return (
-                                f"ℹ️ Sync completed - no changes ({duration:.1f}s)",
+                                html.Span([
+                                    html.I(className="bi bi-info-circle-fill me-2"),
+                                    msg,
+                                ]),
                                 True,
                                 "info",
                             )
                     else:
-                        return f"❌ Sync failed: {result['error']}", True, "danger"
+                        return (
+                            html.Span([
+                                html.I(className="bi bi-x-circle-fill me-2"),
+                                f"Sync failed: {result['error']}",
+                            ]),
+                            True,
+                            "danger",
+                        )
                 except Exception as e:
-                    return f"❌ Error during manual sync: {e}", True, "danger"
+                    return (
+                        html.Span([
+                            html.I(className="bi bi-x-circle-fill me-2"),
+                            f"Error during manual sync: {e}",
+                        ]),
+                        True,
+                        "danger",
+                    )
 
             elif trigger_id == "manual-sync-btn" and manual_sync_clicks:
                 from controllers.sync_coordinator import force_manual_sync
 
                 try:
                     result = force_manual_sync()
+
                     if result["success"]:
-                        total_changes = (
-                            result.get("imported", 0)
-                            + result.get("updated", 0)
-                            + result.get("deleted", 0)
-                        )
-                        if total_changes > 0:
+                        duration = result["duration"]
+                        imported = result.get("imported", 0)
+                        updated = result.get("updated", 0)
+                        deleted = result.get("deleted", 0)
+                        rejected_events = result.get("rejected_events", [])
+                        warning_events = result.get("warning_events", [])
+
+                        changes = []
+                        if imported > 0:
+                            changes.append(f"{imported} imported")
+                        if updated > 0:
+                            changes.append(f"{updated} updated")
+                        if deleted > 0:
+                            changes.append(f"{deleted} deleted")
+
+                        changes_text = ", ".join(changes) if changes else "no changes"
+
+                        if len(rejected_events) > 0:
+                            msg = f"Sync completed with {len(rejected_events)} rejected events ({duration:.1f}s) | {changes_text}"
                             return (
-                                f"✅ Manual sync completed: {total_changes} changes",
+                                html.Span([
+                                    html.I(className="bi bi-exclamation-triangle-fill me-2"),
+                                    msg,
+                                ]),
+                                True,
+                                "warning",
+                            )
+                        elif len(warning_events) > 0:
+                            msg = f"Sync completed with {len(warning_events)} warnings ({duration:.1f}s) | {changes_text}"
+                            return (
+                                html.Span([
+                                    html.I(className="bi bi-exclamation-triangle-fill me-2"),
+                                    msg,
+                                ]),
+                                True,
+                                "warning",
+                            )
+                        elif imported + updated + deleted > 0:
+                            msg = f"Sync completed successfully ({duration:.1f}s) | {changes_text}"
+                            return (
+                                html.Span([
+                                    html.I(className="bi bi-check-circle-fill me-2"),
+                                    msg,
+                                ]),
                                 True,
                                 "success",
                             )
                         else:
+                            msg = f"Sync completed - no changes ({duration:.1f}s)"
                             return (
-                                "✅ Manual sync completed: No changes",
+                                html.Span([
+                                    html.I(className="bi bi-info-circle-fill me-2"),
+                                    msg,
+                                ]),
                                 True,
-                                "success",
+                                "info",
                             )
                     else:
                         return (
-                            f"❌ Manual sync failed: {result['error']}",
+                            html.Span([
+                                html.I(className="bi bi-x-circle-fill me-2"),
+                                f"Sync failed: {result['error']}",
+                            ]),
                             True,
                             "danger",
                         )
                 except Exception as e:
-                    return f"❌ Error during manual sync: {e}", True, "danger"
+                    return (
+                        html.Span([
+                            html.I(className="bi bi-x-circle-fill me-2"),
+                            f"Error during manual sync: {e}",
+                        ]),
+                        True,
+                        "danger",
+                    )
 
             elif trigger_id == "clear-sync-results-btn" and clear_results_clicks:
                 from controllers.notification_controller import clear_sync_problems
 
                 try:
                     clear_sync_problems()
-                    return "✅ Sync results cleared successfully", True, "success"
+                    return (
+                        html.Span([
+                            html.I(className="bi bi-check-circle-fill me-2"),
+                            "Sync results cleared successfully",
+                        ]),
+                        True,
+                        "success",
+                    )
                 except Exception as e:
-                    return f"❌ Error clearing sync results: {e}", True, "danger"
+                    return (
+                        html.Span([
+                            html.I(className="bi bi-x-circle-fill me-2"),
+                            f"Error clearing sync results: {e}",
+                        ]),
+                        True,
+                        "danger",
+                    )
 
             return "", False, "info"
 
         except Exception as e:
-            return f"❌ Unexpected error: {str(e)}", True, "danger"
+            return (
+                html.Span([
+                    html.I(className="bi bi-x-circle-fill me-2"),
+                    f"Unexpected error: {str(e)}",
+                ]),
+                True,
+                "danger",
+            )
 
     @app.callback(
         Output("sync-results-content", "children"),
@@ -2204,15 +2298,14 @@ def register_settings_callbacks(app):
             Input("clear-sync-results-btn", "n_clicks"),
             Input("manual-sync-btn", "n_clicks"),
             Input("sync-from-calendar-btn", "n_clicks"),
-            Input("sync-results-refresh-interval", "n_intervals"),
-            # Escuchar cambios del alert para refrescar al instante
+            # Refrescar al finalizar acciones (usa alert oculto)
             Input("system-settings-alert", "children"),
             Input("system-settings-alert", "color"),
             Input("system-settings-alert", "is_open"),
         ],
         prevent_initial_call=False,
     )
-    def update_sync_results_display(active_tab, clear_clicks, manual_clicks, pull_clicks, n_intervals,
+    def update_sync_results_display(active_tab, clear_clicks, manual_clicks, pull_clicks,
                                     alert_children, alert_color, alert_open):
         """Actualiza la visualización de resultados de sync."""
         if active_tab != "system-tab":
@@ -2224,7 +2317,10 @@ def register_settings_callbacks(app):
             problems = get_sync_problems()
             if not problems:
                 return dbc.Alert(
-                    "ℹ️ No recent sync data available",
+                    html.Span([
+                        html.I(className="bi bi-info-circle-fill me-2"),
+                        "No recent sync data available",
+                    ]),
                     color="info",
                     style={"font-size": "0.9rem"},
                 )
@@ -2241,52 +2337,76 @@ def register_settings_callbacks(app):
                     [
                         dbc.Col(
                             dbc.Alert(
-                                f"📥 {imported}",
-                                color="primary",
+                                html.Span([
+                                    html.I(className="bi bi-box-arrow-in-down me-2"),
+                                    str(imported),
+                                ]),
+                                color="success",
+                                className="border border-2 border-success",
                                 style={"text-align": "center", "font-size": "0.8rem"},
                             ),
                             width=2,
                         ),
                         dbc.Col(
                             dbc.Alert(
-                                f"🔄 {updated}",
+                                html.Span([
+                                    html.I(className="bi bi-arrow-repeat me-2"),
+                                    str(updated),
+                                ]),
                                 color="info",
+                                className="border border-2 border-info",
                                 style={"text-align": "center", "font-size": "0.8rem"},
                             ),
                             width=2,
                         ),
                         dbc.Col(
                             dbc.Alert(
-                                f"🗑️ {deleted}",
-                                color="secondary",
-                                style={"text-align": "center", "font-size": "0.8rem"},
-                            ),
-                            width=2,
-                        ),
-                        dbc.Col(
-                            dbc.Alert(
-                                f"🚫 {len(problems.get('rejected', []))}",
-                                color="danger",
-                                style={"text-align": "center", "font-size": "0.8rem"},
-                            ),
-                            width=2,
-                        ),
-                        dbc.Col(
-                            dbc.Alert(
-                                f"⚠️ {len(problems.get('warnings', []))}",
-                                color="warning",
-                                style={"text-align": "center", "font-size": "0.8rem"},
-                            ),
-                            width=2,
-                        ),
-                        dbc.Col(
-                            dbc.Alert(
-                                f"⏱️ {duration:.1f}s",
-                                color="light",
+                                html.Span([
+                                    html.I(className="bi bi-trash-fill me-2"),
+                                    str(deleted),
+                                ]),
+                                className="alert alert-orange",
                                 style={
                                     "text-align": "center",
                                     "font-size": "0.8rem",
-                                    "color": "#000000",
+                                },
+                            ),
+                            width=2,
+                        ),
+                        dbc.Col(
+                            dbc.Alert(
+                                html.Span([
+                                    html.I(className="bi bi-x-octagon-fill me-2"),
+                                    str(len(problems.get('rejected', []))),
+                                ]),
+                                color="danger",
+                                className="border border-2 border-danger",
+                                style={"text-align": "center", "font-size": "0.8rem"},
+                            ),
+                            width=2,
+                        ),
+                        dbc.Col(
+                            dbc.Alert(
+                                html.Span([
+                                    html.I(className="bi bi-exclamation-triangle-fill me-2"),
+                                    str(len(problems.get('warnings', []))),
+                                ]),
+                                color="warning",
+                                className="border border-2 border-warning",
+                                style={"text-align": "center", "font-size": "0.8rem"},
+                            ),
+                            width=2,
+                        ),
+                        dbc.Col(
+                            dbc.Alert(
+                                html.Span([
+                                    html.I(className="bi bi-clock-fill me-2"),
+                                    f"{duration:.1f}s",
+                                ]),
+                                className="alert alert-purple",
+                                style={
+                                    "text-align": "center",
+                                    "font-size": "0.8rem",
                                 },
                             ),
                             width=2,
@@ -2295,33 +2415,45 @@ def register_settings_callbacks(app):
                     className="mb-3",
                 )
 
-                # Mostrar, debajo de métricas, el mismo mensaje del alert de acciones de sync
-                alert_block = (
-                    dbc.Alert(alert_children, color=alert_color, className="mb-2")
-                    if alert_open and alert_children
-                    else None
+                # Mostrar fecha y hora del último sync (timestamp completo dd/mm/yyyy HH:MM:SS)
+                last_time = problems.get("timestamp", "")
+
+                time_info = html.Div(
+                    html.Small(
+                        [
+                            html.I(className="bi bi-clock-history me-2"),
+                            f"Last sync at {last_time}",
+                        ],
+                        style={"color": "#AAAAAA"},
+                    ),
+                    className="mt-2",
                 )
-                return html.Div([metrics, alert_block] if alert_block else [metrics])
+
+                return html.Div([metrics, time_info])
             else:
                 # Sin métricas detalladas: mostrar resumen y, debajo, el mismo alert si está abierto
                 summary = dbc.Alert(
-                    f"📊 Sync problems detected: {len(problems.get('rejected', []))} rejected, {len(problems.get('warnings', []))} warnings",
+                    html.Span([
+                        html.I(className="bi bi-bar-chart-fill me-2"),
+                        f"Sync problems detected: {len(problems.get('rejected', []))} rejected, {len(problems.get('warnings', []))} warnings",
+                    ]),
                     color="warning",
                     style={"font-size": "0.9rem"},
                 )
-                alert_block = (
-                    dbc.Alert(alert_children, color=alert_color, className="mt-2")
-                    if alert_open and alert_children
-                    else None
-                )
-                return html.Div([summary, alert_block] if alert_block else [summary])
+                return summary
 
         except Exception as e:
             return dbc.Alert(
-                f"❌ Error loading sync results: {str(e)}",
+                html.Span([
+                    html.I(className="bi bi-x-circle-fill me-2"),
+                    f"Error loading sync results: {str(e)}",
+                ]),
                 color="danger",
                 style={"font-size": "0.9rem"},
             )
+
+    # Controlar el intervalo de refresco según estado SSE y pestaña activa
+    # (Auto-refresh interval control removed)
 
     @app.callback(
         Output("edit-user-info-text", "children", allow_duplicate=True),

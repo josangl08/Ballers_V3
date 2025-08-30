@@ -286,8 +286,19 @@ def force_manual_sync() -> Dict[str, Any]:
 
         duration = time.time() - start_time
 
-        # Save sync problems using NotificationController
+        # Save sync problems and stats using NotificationController
         save_sync_problems(rejected_events, warning_events)
+        try:
+            from controllers.notification_controller import update_sync_stats
+
+            update_sync_stats(
+                imported=imported,
+                updated=updated,
+                deleted=deleted,
+                duration=duration,
+            )
+        except Exception:
+            pass
 
         # Logging
         total_problems = len(rejected_events) + len(warning_events)

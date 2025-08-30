@@ -225,8 +225,20 @@ class WebhookServer:
 
                 duration = time.time() - start_time
 
-                # Guardar problemas usando NotificationController existente
+                # Guardar problemas y métricas usando NotificationController existente
                 save_sync_problems(rejected_events, warning_events)
+                try:
+                    from controllers.notification_controller import update_sync_stats
+
+                    update_sync_stats(
+                        imported=imported,
+                        updated=updated,
+                        deleted=deleted,
+                        duration=duration,
+                    )
+                except Exception as _:
+                    # No bloquear por métricas
+                    pass
 
                 # Calcular totales para logging y notificaciones
                 total_changes = imported + updated + deleted

@@ -92,7 +92,7 @@ def get_app_layout():
                 max_intervals=-1,
                 n_intervals=0,
             ),
-            # SSE connector para real-time updates (SOLUCIÓN: Zero-polling)
+            # SSE connector for real-time updates (SOLUCIÓN: Zero-polling)
             html.Div(id="sse-connector", style={"display": "none"}),
             # Layout principal
             html.Div(id="main-content"),

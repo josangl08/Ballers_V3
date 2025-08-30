@@ -3250,6 +3250,19 @@ iframe[id*="dash-calendar"] * {
     border-left: 4px solid #17a2b8 !important;
 }
 
+/* Custom alert accents for Monitoring metrics */
+.alert-orange {
+    background-color: rgba(253, 126, 20, 0.15) !important; /* Orange soft */
+    color: #ff9f40 !important; /* Bright orange text/icon */
+    border-left: 4px solid #ff9f40 !important; /* Left accent */
+}
+
+.alert-purple {
+    background-color: rgba(138, 99, 210, 0.15) !important; /* Light purple */
+    color: #b28dff !important; /* Bright/light purple */
+    border-left: 4px solid #b28dff !important; /* Left accent */
+}
+
 /* Statistics Summary Table Styling */
 .stats-summary-table {
     font-family: 'Inter', sans-serif;

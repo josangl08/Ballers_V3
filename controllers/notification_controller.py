@@ -289,6 +289,30 @@ def save_sync_problems(rejected_events: List[Dict], warning_events: List[Dict]) 
     controller.save_problems(rejected_events, warning_events)
 
 
+def update_sync_stats(imported: int, updated: int, deleted: int, duration: float) -> None:
+    """
+    Actualiza métricas del último sync almacenado para mostrarlas en Monitoring.
+    Crea la estructura si no existe aún.
+    """
+    global _global_notifications_store
+    controller = NotificationController()
+    problems = controller.get_problems()
+
+    if not problems:
+        # Crear entrada vacía si no existe
+        current_timestamp = dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        problems = SyncProblemsData(
+            rejected=[], warnings=[], timestamp=current_timestamp, seen=False
+        )
+
+    problems.imported = int(imported or 0)
+    problems.updated = int(updated or 0)
+    problems.deleted = int(deleted or 0)
+    problems.duration = float(duration or 0.0)
+
+    _global_notifications_store[NotificationController.STORAGE_KEY] = problems
+
+
 def get_sync_problems() -> Optional[Dict[str, Any]]:
     """
     Función de conveniencia para mantener compatibilidad.
