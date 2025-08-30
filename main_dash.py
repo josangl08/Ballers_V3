@@ -14,12 +14,12 @@ from callbacks.ballers_callbacks import register_ballers_callbacks
 
 # Importar callbacks organizados
 from callbacks.navigation_callbacks import register_navigation_callbacks
+from callbacks.notification_callbacks import NotificationCallbacks
 from callbacks.player_callbacks import register_player_callbacks
 from callbacks.professional_tabs_callbacks import register_professional_tabs_callbacks
 from callbacks.settings_callbacks import register_settings_callbacks
 from callbacks.sidebar_callbacks import register_sidebar_callbacks
 from callbacks.webhook_callbacks import register_webhook_callbacks
-from callbacks.notification_callbacks import NotificationCallbacks
 from common.datepicker_utils import (
     create_datepicker_dummy_divs,
     register_datepicker_callbacks,
@@ -41,7 +41,7 @@ from controllers.webhook_integration import (
 # Sistema de webhook events movido a callbacks/webhook_callbacks.py
 
 # Configurar React version para dash-mantine-components
-dash._dash_renderer._set_react_version('18.2.0')
+dash._dash_renderer._set_react_version("18.2.0")
 
 # Configuración de la aplicación Dash
 app = dash.Dash(
@@ -64,47 +64,49 @@ def get_app_layout():
     """Retorna el layout principal de la aplicación Dash."""
     return dmc.MantineProvider(
         dbc.Container(
-        [
-            dcc.Location(id="url", refresh=False),
-            # SISTEMA HÍBRIDO DE SESIONES:
-            # Store principal (expira al cerrar navegador si no hay "Remember Me")
-            dcc.Store(id="session-store", storage_type="session"),
-            # Store persistente para "Remember Me" (localStorage, 30 días)
-            dcc.Store(id="persistent-session-store", storage_type="local"),
-            # Store para gestión de timeout e inactividad
-            dcc.Store(
-                id="session-activity",
-                storage_type="memory",
-                data={"last_activity": None, "remember_me": False},
-            ),
-            # 🛡️ FALLBACK STORE: Para modo degradado sin SSE
-            dcc.Store(id="fallback-trigger", storage_type="memory", data=0),
-            dcc.Store(
-                id="sse-status",
-                storage_type="memory",
-                data={"connected": False, "last_heartbeat": 0},
-            ),
-            # 🛡️ FALLBACK INTELIGENTE: Interval de seguridad si SSE falla (deshabilitado por defecto)
-            dcc.Interval(
-                id="fallback-interval",
-                interval=30000,  # 30 segundos - muy conservador
-                disabled=True,  # INACTIVO por defecto - solo se activa si SSE falla
-                max_intervals=-1,
-                n_intervals=0,
-            ),
-            # SSE connector for real-time updates (SOLUCIÓN: Zero-polling)
-            html.Div(id="sse-connector", style={"display": "none"}),
-            # Layout principal
-            html.Div(id="main-content"),
-            # Download for player PDF exports
-            dcc.Download(id="download-profile-pdf"),
-            # html2canvas for client-side snapshots
-            html.Script(src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"),
-            # Divs dummy para callbacks de datepicker
-            *create_datepicker_dummy_divs(),
-        ],
-        fluid=True,
-    )
+            [
+                dcc.Location(id="url", refresh=False),
+                # SISTEMA HÍBRIDO DE SESIONES:
+                # Store principal (expira al cerrar navegador si no hay "Remember Me")
+                dcc.Store(id="session-store", storage_type="session"),
+                # Store persistente para "Remember Me" (localStorage, 30 días)
+                dcc.Store(id="persistent-session-store", storage_type="local"),
+                # Store para gestión de timeout e inactividad
+                dcc.Store(
+                    id="session-activity",
+                    storage_type="memory",
+                    data={"last_activity": None, "remember_me": False},
+                ),
+                # 🛡️ FALLBACK STORE: Para modo degradado sin SSE
+                dcc.Store(id="fallback-trigger", storage_type="memory", data=0),
+                dcc.Store(
+                    id="sse-status",
+                    storage_type="memory",
+                    data={"connected": False, "last_heartbeat": 0},
+                ),
+                # 🛡️ FALLBACK INTELIGENTE: Interval de seguridad si SSE falla (deshabilitado por defecto)
+                dcc.Interval(
+                    id="fallback-interval",
+                    interval=30000,  # 30 segundos - muy conservador
+                    disabled=True,  # INACTIVO por defecto - solo se activa si SSE falla
+                    max_intervals=-1,
+                    n_intervals=0,
+                ),
+                # SSE connector for real-time updates (SOLUCIÓN: Zero-polling)
+                html.Div(id="sse-connector", style={"display": "none"}),
+                # Layout principal
+                html.Div(id="main-content"),
+                # Download for player PDF exports
+                dcc.Download(id="download-profile-pdf"),
+                # html2canvas for client-side snapshots
+                html.Script(
+                    src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
+                ),
+                # Divs dummy para callbacks de datepicker
+                *create_datepicker_dummy_divs(),
+            ],
+            fluid=True,
+        )
     )
 
 

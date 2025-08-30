@@ -783,6 +783,7 @@ class UserController:
 
         # Encontrar otro coach activo para reasignar
         from sqlalchemy.orm import joinedload
+
         available_coaches = (
             self.db.query(Coach)
             .options(joinedload(Coach.user))
@@ -807,7 +808,11 @@ class UserController:
         for session in future_sessions:
             session.coach_id = target_coach.coach_id
             # Actualizar snapshot con el nuevo coach
-            session.coach_name_snapshot = target_coach.user.name if target_coach.user else f"Coach {target_coach.coach_id}"
+            session.coach_name_snapshot = (
+                target_coach.user.name
+                if target_coach.user
+                else f"Coach {target_coach.coach_id}"
+            )
             session.notes = (session.notes or "") + f" [REASSIGNED from deleted coach]"
             sessions_reassigned += 1
 

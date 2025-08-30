@@ -1,8 +1,8 @@
 # pages/settings_dash.py - Migración visual de settings.py a Dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
-from common.datepicker_utils import create_auto_hide_datepicker
 
+from common.datepicker_utils import create_auto_hide_datepicker
 from common.notification_component import NotificationComponent
 from common.upload_component import create_upload_component
 

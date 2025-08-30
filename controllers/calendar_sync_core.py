@@ -4,7 +4,6 @@ Núcleo de sincronización con Google Calendar.
 Maneja la sincronización bidireccional sin coordinar auto-sync ni estadísticas.
 """
 import datetime as dt
-import os
 import logging
 import os
 import re
@@ -604,10 +603,16 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
 
                 # Validar que coach y player exiten en bd
                 coach_exists = (
-                    db.query(Coach).options(joinedload(Coach.user)).filter(Coach.coach_id == coach_id).first()
+                    db.query(Coach)
+                    .options(joinedload(Coach.user))
+                    .filter(Coach.coach_id == coach_id)
+                    .first()
                 )
                 player_exists = (
-                    db.query(Player).options(joinedload(Player.user)).filter(Player.player_id == player_id).first()
+                    db.query(Player)
+                    .options(joinedload(Player.user))
+                    .filter(Player.player_id == player_id)
+                    .first()
                 )
 
                 if not coach_exists:
@@ -680,8 +685,16 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                     )
 
                 # Obtener nombres para snapshots
-                coach_name_snapshot = coach_exists.user.name if coach_exists and coach_exists.user else f"Coach {coach_id}"
-                player_name_snapshot = player_exists.user.name if player_exists and player_exists.user else f"Player {player_id}"
+                coach_name_snapshot = (
+                    coach_exists.user.name
+                    if coach_exists and coach_exists.user
+                    else f"Coach {coach_id}"
+                )
+                player_name_snapshot = (
+                    player_exists.user.name
+                    if player_exists and player_exists.user
+                    else f"Player {player_id}"
+                )
 
                 new_session = Session(
                     coach_id=coach_id,

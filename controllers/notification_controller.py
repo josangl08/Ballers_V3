@@ -132,7 +132,6 @@ class NotificationController:
             print(f"⚠️ Error getting sync problems: {e}")
             return None
 
-
     def has_problems(self) -> bool:
         """
         Verifica si hay problemas de sincronización pendientes.
@@ -289,7 +288,9 @@ def save_sync_problems(rejected_events: List[Dict], warning_events: List[Dict]) 
     controller.save_problems(rejected_events, warning_events)
 
 
-def update_sync_stats(imported: int, updated: int, deleted: int, duration: float) -> None:
+def update_sync_stats(
+    imported: int, updated: int, deleted: int, duration: float
+) -> None:
     """
     Actualiza métricas del último sync almacenado para mostrarlas en Monitoring.
     Crea la estructura si no existe aún.
