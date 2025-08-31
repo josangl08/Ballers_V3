@@ -197,10 +197,10 @@ data/ballers_app.db*
 *.db-journal
 
 # Assets dinámicos
-assets/profile_photos/*
-!assets/profile_photos/.gitkeep
-!assets/default_profile.png
-assets/ballers/
+#assets/profile_photos/*
+#!assets/profile_photos/.gitkeep
+#!assets/default_profile.png
+#assets/ballers/
 assets/exports/*.pdf
 exports/*.pdf
 
