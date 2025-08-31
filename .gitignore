@@ -209,8 +209,11 @@ logs/
 data/logs/
 *.log
 
-# ML System - outputs completos
-ml_system/outputs/
+# ML System - outputs completos (excluir archivos grandes, mantener modelos)
+ml_system/outputs/*
+!ml_system/outputs/models/
+ml_system/outputs/models/*
+!ml_system/outputs/models/*.joblib
 
 # ML System - archivos experimentales y desarrollo
 ml_system/archive/
