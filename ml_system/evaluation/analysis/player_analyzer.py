@@ -88,7 +88,6 @@ class PlayerAnalyzer:
     def predict_future_pdi(self, player_id: int, season: str) -> Optional[float]:
         """
         Predice el PDI futuro de un jugador usando el modelo optimizado de producción.
-
         ACTUALIZADO: Ahora usa PdiPredictionService con modelo ensemble MAE 3.692 optimizado.
         Mantiene compatibilidad con la interfaz existente pero usa mejor predicción.
 

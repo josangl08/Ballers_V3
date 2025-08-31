@@ -7,25 +7,13 @@ import datetime as dt
 import dash_bootstrap_components as dbc
 from dash import Input, Output, State, dcc, html
 
+from callbacks.notification_callbacks import NotificationCallbacks
+from common.notification_system import NotificationManager
 from controllers.internal_calendar import show_calendar_dash, update_and_get_sessions
 from controllers.session_controller import SessionController
 from controllers.validation_controller import ValidationController  # noqa: F401
 from models import SessionStatus
 
-
-def _get_toast_style():
-    """Helper function para obtener el estilo consistente del toast."""
-    return {
-        "position": "fixed",
-        "top": "20px",
-        "right": "20px",
-        "z-index": "1060",
-        "min-width": "350px",
-        "max-width": "500px",
-        "box-shadow": "0 8px 16px rgba(0, 0, 0, 0.15)",
-        "border-radius": "8px",
-        "animation": "slideInRight 0.3s ease-out",
-    }
 
 
 def _update_calendar_and_table_content(from_date, to_date, coach_filter, status_filter):
@@ -101,6 +89,9 @@ def _update_calendar_and_table_content(from_date, to_date, coach_filter, status_
 
 def register_administration_callbacks(app):
     """Registra callbacks de Administration copiando estructura de ballers."""
+    
+    # Registrar sistema de notificaciones unificado para admin
+    NotificationCallbacks.register_notification_callbacks(app, "admin")
 
     @app.callback(
         Output("admin-user-type-store", "data"),
@@ -742,10 +733,7 @@ def register_administration_callbacks(app):
 
     @app.callback(
         [
-            Output("admin-alert", "children"),
-            Output("admin-alert", "is_open"),
-            Output("admin-alert", "color"),
-            Output("admin-alert", "style"),
+            Output("admin-notification-store", "data"),
             Output("admin-sessions-table", "children", allow_duplicate=True),
             Output("admin-calendar", "children", allow_duplicate=True),
         ],
@@ -799,7 +787,7 @@ def register_administration_callbacks(app):
         if not n_clicks:
             from dash import no_update
 
-            return "", False, "info", {}, no_update, no_update
+            return None, no_update, no_update
 
         try:
             from controllers.session_controller import create_session_with_calendar
@@ -814,10 +802,7 @@ def register_administration_callbacks(app):
                 from dash import no_update
 
                 return (
-                    "Please fill in all required fields",
-                    True,
-                    "warning",
-                    _get_toast_style(),
+                    NotificationManager.warning("Please fill in all required fields"),
                     no_update,
                     no_update,
                 )
@@ -835,10 +820,7 @@ def register_administration_callbacks(app):
                 from dash import no_update
 
                 return (
-                    f"Coach error: {coach_error}",
-                    True,
-                    "danger",
-                    _get_toast_style(),
+                    NotificationManager.error(f"Coach error: {coach_error}"),
                     no_update,
                     no_update,
                 )
@@ -852,10 +834,7 @@ def register_administration_callbacks(app):
                     from dash import no_update
 
                     return (
-                        f"Player error: {player_error}",
-                        True,
-                        "danger",
-                        _get_toast_style(),
+                        NotificationManager.error(f"Player error: {player_error}"),
                         no_update,
                         no_update,
                     )
@@ -873,10 +852,7 @@ def register_administration_callbacks(app):
                 from dash import no_update
 
                 return (
-                    f"Validation error: {form_error}",
-                    True,
-                    "danger",
-                    _get_toast_style(),
+                    NotificationManager.error(f"Validation error: {form_error}"),
                     no_update,
                     no_update,
                 )
@@ -926,10 +902,7 @@ def register_administration_callbacks(app):
                     )
 
                     return (
-                        f"Session created successfully: {message}",
-                        True,
-                        "success",
-                        _get_toast_style(),
+                        NotificationManager.success(f"Session created successfully: {message}"),
                         table_content,
                         calendar_content,
                     )
@@ -938,10 +911,7 @@ def register_administration_callbacks(app):
                     from dash import no_update
 
                     return (
-                        f"Session created successfully: {message}",
-                        True,
-                        "success",
-                        _get_toast_style(),
+                        NotificationManager.success(f"Session created successfully: {message}"),
                         no_update,
                         no_update,
                     )
@@ -949,10 +919,7 @@ def register_administration_callbacks(app):
                 from dash import no_update
 
                 return (
-                    f"Error creating session: {message}",
-                    True,
-                    "danger",
-                    _get_toast_style(),
+                    NotificationManager.error(f"Error creating session: {message}"),
                     no_update,
                     no_update,
                 )
@@ -961,10 +928,7 @@ def register_administration_callbacks(app):
             from dash import no_update
 
             return (
-                f"Unexpected error: {str(e)}",
-                True,
-                "danger",
-                _get_toast_style(),
+                NotificationManager.error(f"Unexpected error: {str(e)}"),
                 no_update,
                 no_update,
             )
@@ -1509,10 +1473,7 @@ def register_administration_callbacks(app):
 
     @app.callback(
         [
-            Output("admin-alert", "children", allow_duplicate=True),
-            Output("admin-alert", "is_open", allow_duplicate=True),
-            Output("admin-alert", "color", allow_duplicate=True),
-            Output("admin-alert", "style", allow_duplicate=True),
+            Output("admin-notification-store", "data", allow_duplicate=True),
             Output("admin-sessions-table", "children", allow_duplicate=True),
             Output("admin-calendar", "children", allow_duplicate=True),
             Output("admin-edit-session-selector", "options", allow_duplicate=True),
@@ -1573,16 +1534,13 @@ def register_administration_callbacks(app):
         if not n_clicks:
             from dash import no_update
 
-            return "", False, "info", {}, no_update, no_update, no_update
+            return None, no_update, no_update, no_update
 
         if not session_id:
             from dash import no_update
 
             return (
-                "Please select a session to update",
-                True,
-                "warning",
-                _get_toast_style(),
+                NotificationManager.warning("Please select a session to update"),
                 no_update,
                 no_update,
                 no_update,
@@ -1601,10 +1559,7 @@ def register_administration_callbacks(app):
                 from dash import no_update
 
                 return (
-                    "Please fill in all required fields",
-                    True,
-                    "warning",
-                    _get_toast_style(),
+                    NotificationManager.warning("Please fill in all required fields"),
                     no_update,
                     no_update,
                     no_update,
@@ -1623,10 +1578,7 @@ def register_administration_callbacks(app):
                 from dash import no_update
 
                 return (
-                    f"Coach error: {coach_error}",
-                    True,
-                    "danger",
-                    _get_toast_style(),
+                    NotificationManager.error(f"Coach error: {coach_error}"),
                     no_update,
                     no_update,
                     no_update,
@@ -1641,10 +1593,7 @@ def register_administration_callbacks(app):
                     from dash import no_update
 
                     return (
-                        f"Player error: {player_error}",
-                        True,
-                        "danger",
-                        _get_toast_style(),
+                        NotificationManager.error(f"Player error: {player_error}"),
                         no_update,
                         no_update,
                         no_update,
@@ -1663,10 +1612,7 @@ def register_administration_callbacks(app):
                 from dash import no_update
 
                 return (
-                    f"Validation error: {form_error}",
-                    True,
-                    "danger",
-                    _get_toast_style(),
+                    NotificationManager.error(f"Validation error: {form_error}"),
                     no_update,
                     no_update,
                     no_update,
@@ -1775,10 +1721,7 @@ def register_administration_callbacks(app):
                     session_options = no_update
 
                 return (
-                    f"Session updated successfully: {message}",
-                    True,
-                    "success",
-                    _get_toast_style(),
+                    NotificationManager.success(f"Session updated successfully: {message}"),
                     table_content,
                     calendar_content,
                     session_options,
@@ -1787,10 +1730,7 @@ def register_administration_callbacks(app):
                 from dash import no_update
 
                 return (
-                    f"Error updating session: {message}",
-                    True,
-                    "danger",
-                    _get_toast_style(),
+                    NotificationManager.error(f"Error updating session: {message}"),
                     no_update,
                     no_update,
                     no_update,
@@ -1800,32 +1740,13 @@ def register_administration_callbacks(app):
             from dash import no_update
 
             return (
-                f"Unexpected error: {str(e)}",
-                True,
-                "danger",
-                _get_toast_style(),
+                NotificationManager.error(f"Unexpected error: {str(e)}"),
                 no_update,
                 no_update,
                 no_update,
             )
 
-    # Callback clientside para cerrar automáticamente las alertas
-    app.clientside_callback(
-        """
-        function(is_open) {
-            if (is_open) {
-                setTimeout(function() {
-                    // Activar el callback para cerrar
-                    window.dash_clientside.set_props('admin-alert', {'is_open': false});
-                }, 5000);
-            }
-            return window.dash_clientside.no_update;
-        }
-        """,
-        Output("admin-alert", "data-temp", allow_duplicate=True),
-        Input("admin-alert", "is_open"),
-        prevent_initial_call=True,
-    )
+    # Sistema de notificaciones ya maneja auto-hide automáticamente
 
     # Callback para sincronizar el input de búsqueda visible con el invisible
     @app.callback(
@@ -1866,10 +1787,7 @@ def register_administration_callbacks(app):
     @app.callback(
         [
             Output("admin-delete-confirmation-modal", "is_open", allow_duplicate=True),
-            Output("admin-alert", "children", allow_duplicate=True),
-            Output("admin-alert", "is_open", allow_duplicate=True),
-            Output("admin-alert", "color", allow_duplicate=True),
-            Output("admin-alert", "style", allow_duplicate=True),
+            Output("admin-notification-store", "data", allow_duplicate=True),
             Output("admin-sessions-table", "children", allow_duplicate=True),
             Output("admin-calendar", "children", allow_duplicate=True),
             Output("admin-edit-session-selector", "options", allow_duplicate=True),
@@ -1916,15 +1834,12 @@ def register_administration_callbacks(app):
 
         if not n_clicks or not session_id:
             return (
-                False,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
+                False,  # modal is_open
+                None,   # notification
+                no_update,  # sessions table
+                no_update,  # calendar
+                no_update,  # selector options
+                no_update,  # selector value
             )
 
         try:
@@ -2018,10 +1933,7 @@ def register_administration_callbacks(app):
 
                 return (
                     False,  # Cerrar modal
-                    f"Session deleted successfully: {message}",
-                    True,
-                    "success",
-                    _get_toast_style(),  # Reutiliza helper toast
+                    NotificationManager.success(f"Session deleted successfully: {message}"),
                     table_content,
                     calendar_content,
                     session_options,
@@ -2030,10 +1942,7 @@ def register_administration_callbacks(app):
             else:
                 return (
                     False,
-                    f"Error deleting session: {message}",
-                    True,
-                    "danger",
-                    _get_toast_style(),  # Reutiliza helper toast
+                    NotificationManager.error(f"Error deleting session: {message}"),
                     no_update,
                     no_update,
                     no_update,
@@ -2043,10 +1952,7 @@ def register_administration_callbacks(app):
         except Exception as e:
             return (
                 False,
-                f"Unexpected error: {str(e)}",
-                True,
-                "danger",
-                _get_toast_style(),  # Reutiliza helper toast
+                NotificationManager.error(f"Unexpected error: {str(e)}"),
                 no_update,
                 no_update,
                 no_update,

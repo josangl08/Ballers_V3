@@ -2776,46 +2776,7 @@ iframe[id*="dash-calendar"] * {
     }
 }
 
-/* Toast notification styles */
-#admin-alert.alert {
-    padding-right: 50px !important;
-    color: white !important;
-    font-weight: 500 !important;
-    background-color: rgba(33, 37, 41, 0.95) !important; /* Más opaco */
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-/* Toast colors específicos con más opacidad */
-#admin-alert.alert-success {
-    background-color: rgba(25, 135, 84, 0.95) !important;
-    border-color: rgba(25, 135, 84, 0.8) !important;
-}
-
-#admin-alert.alert-danger {
-    background-color: rgba(220, 53, 69, 0.95) !important;
-    border-color: rgba(220, 53, 69, 0.8) !important;
-}
-
-#admin-alert.alert-warning {
-    background-color: rgba(255, 193, 7, 0.95) !important;
-    border-color: rgba(255, 193, 7, 0.8) !important;
-    color: #212529 !important; /* Texto oscuro para warning */
-}
-
-#admin-alert .btn-close {
-    position: absolute !important;
-    top: 50% !important;
-    right: 8px !important;
-    transform: translateY(-50%) !important;
-    opacity: 0.8 !important;
-    filter: invert(1) !important; /* Hace la X blanca */
-}
-
-#admin-alert .btn-close:hover {
-    opacity: 1 !important;
-    transform: translateY(-50%) scale(1.1) !important;
-}
+/* Eliminado override específico de #admin-alert para unificar estilo de toasts con Settings */
 
 /* JavaScript para forzar cierre del minicalendario */
 /* Se ejecuta cuando se selecciona una fecha en los inputs date */
@@ -3227,26 +3188,79 @@ iframe[id*="dash-calendar"] * {
     box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    position: fixed !important; /* asegurar posicionamiento */
+    padding-right: 36px !important; /* margen para la X */
 }
+
+/* Forzar variables Bootstrap del alert dentro de nuestros toasts para mayor contraste */
+.notification-alert.alert-success {
+    --bs-alert-bg: rgba(40, 167, 69, 0.25) !important;
+    --bs-alert-color: #28a745 !important;
+    --bs-alert-border-color: rgba(40,167,69,0.35) !important;
+}
+.notification-alert.alert-danger {
+    --bs-alert-bg: rgba(220, 53, 69, 0.25) !important;
+    --bs-alert-color: #dc3545 !important;
+    --bs-alert-border-color: rgba(220,53,69,0.35) !important;
+}
+.notification-alert.alert-warning {
+    --bs-alert-bg: rgba(255, 193, 7, 0.25) !important;
+    --bs-alert-color: #ffc107 !important;
+    --bs-alert-border-color: rgba(255,193,7,0.35) !important;
+}
+.notification-alert.alert-info {
+    --bs-alert-bg: rgba(23, 162, 184, 0.25) !important;
+    --bs-alert-color: #17a2b8 !important;
+    --bs-alert-border-color: rgba(23,162,184,0.35) !important;
+}
+
+/* Botón de cierre en toasts: centrado vertical y color igual al texto */
+.notification-alert .btn-close,
+#admin-alert.notification-alert .btn-close,
+#settings-alert.notification-alert .btn-close {
+    position: absolute !important;
+    top: 50% !important;
+    right: 10px !important;
+    transform: translateY(-50%) !important;
+    opacity: 0.95 !important;
+    width: 24px !important;
+    height: 24px !important;
+    background: none !important; /* Ocultar icono por defecto */
+    background-image: none !important; /* Forzar sin ícono Bootstrap */
+    filter: none !important; /* Evitar invert() */
+    color: inherit !important; /* Igual que el texto */
+}
+
+.notification-alert .btn-close::before,
+#admin-alert.notification-alert .btn-close::before,
+#settings-alert.notification-alert .btn-close::before {
+    content: '×';
+    display: block;
+    font-size: 22px;
+    line-height: 22px;
+    color: currentColor; /* Hereda el color del texto del alert */
+}
+
+.notification-alert .btn-close:hover { opacity: 1 !important; }
 
 /* Override de colores Bootstrap para mayor contraste */
 .alert-success {
-    background-color: rgba(40, 167, 69, 0.15) !important;
+    background-color: rgba(40, 167, 69, 0.20) !important; /* +opacidad */
     border-left: 4px solid #28a745 !important;
 }
 
 .alert-danger {
-    background-color: rgba(220, 53, 69, 0.15) !important;
+    background-color: rgba(220, 53, 69, 0.20) !important; /* +opacidad */
     border-left: 4px solid #dc3545 !important;
 }
 
 .alert-warning {
-    background-color: rgba(255, 193, 7, 0.15) !important;
+    background-color: rgba(255, 193, 7, 0.20) !important; /* +opacidad */
     border-left: 4px solid #ffc107 !important;
 }
 
 .alert-info {
-    background-color: rgba(23, 162, 184, 0.15) !important;
+    background-color: rgba(23, 162, 184, 0.20) !important; /* +opacidad */
     border-left: 4px solid #17a2b8 !important;
 }
 

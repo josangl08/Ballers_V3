@@ -89,7 +89,7 @@ class NotificationCallbacks:
             # Mostrar notificación
             message = notification_data.get("message", "")
             notification_type = notification_data.get("type", "info")
-            duration = notification_data.get("duration", 5000)
+            duration = notification_data.get("duration", 3000)
             # dismissable = notification_data.get("dismissable", True)  # Not used
 
             print(
@@ -126,11 +126,26 @@ class NotificationCallbacks:
 
             config = type_configs.get(notification_type, type_configs["info"])
 
-            # Limpiar mensaje de iconos anteriores si los tiene
+            # Limpiar mensaje de iconos anteriores si los tiene (emojis y clases Bootstrap)
             clean_message = message
+            
+            # Remover emojis comunes
             emoji_patterns = ["✅", "❌", "⚠️", "ℹ️"]
             for emoji in emoji_patterns:
                 clean_message = clean_message.replace(emoji, "").strip()
+            
+            # Remover nombres de clases de iconos Bootstrap si están presentes
+            bootstrap_icon_patterns = [
+                "bi-check-circle-fill",
+                "bi-x-circle-fill", 
+                "bi-exclamation-triangle-fill",
+                "bi-info-circle-fill"
+            ]
+            for icon_pattern in bootstrap_icon_patterns:
+                clean_message = clean_message.replace(icon_pattern, "").strip()
+            
+            # Limpiar espacios extra
+            clean_message = " ".join(clean_message.split())
 
             # Crear HTML estructurado con espacio para botón cerrar
             notification_content = html.Div(
@@ -167,10 +182,27 @@ class NotificationCallbacks:
                 },
             )
 
-            # Obtener estilo apropiado para el tipo
+            # Obtener estilo base y aplicar estilos inline consistentes (evita overrides de Bootstrap)
             style = NotificationStyles.get_style_for_type(notification_type)
-            style["display"] = "block"  # Asegurar que se muestre
-            style["background-color"] = "rgba(33,33,33,0.98)"  # Más opaco y más oscuro
+            style["display"] = "block"  # Mostrar
+            style["position"] = "fixed"  # Asegurar posicionamiento
+            style["padding-right"] = "36px"  # Espacio para botón cerrar
+            # Colores de fondo/borde más opacos por tipo (3 valores):
+            bg_by_type = {
+                "success": "rgba(40, 167, 69, 0.25)",
+                "danger": "rgba(220, 53, 69, 0.25)",
+                "warning": "rgba(255, 193, 7, 0.25)",
+                "info": "rgba(23, 162, 184, 0.25)",
+            }
+            border_by_type = {
+                "success": "4px solid #28a745",
+                "danger": "4px solid #dc3545",
+                "warning": "4px solid #ffc107",
+                "info": "4px solid #17a2b8",
+            }
+            style["backgroundColor"] = bg_by_type.get(notification_type, bg_by_type["info"])  # Fondo
+            style["borderLeft"] = border_by_type.get(notification_type, border_by_type["info"])  # Acento
+            style["color"] = config["text_color"]  # Texto e icono (y 'X' por herencia)
 
             # Configurar timer si hay duración
             timer_disabled = duration <= 0  # Timer disabled si es permanente
@@ -215,8 +247,8 @@ class NotificationCallbacks:
             Returns:
                 Datos para ocultar la notificación
             """
-            if n_intervals >= 50 and is_open:
-                # Timer completó 50 intervalos (5000ms), ocultar notificación
+            if n_intervals >= 30 and is_open:
+                # Timer completó 30 intervalos (3000ms), ocultar notificación
                 return [NotificationManager.hide_notification()]
 
             return [no_update]
@@ -325,7 +357,7 @@ class NotificationValidator:
         sanitized = {
             "message": str(data.get("message", "")),
             "type": data.get("type", "info"),
-            "duration": int(data.get("duration", 5000)),
+            "duration": int(data.get("duration", 3000)),
             "dismissable": bool(data.get("dismissable", True)),
             "show": bool(data.get("show", False)),
             "timestamp": data.get("timestamp", time.time()),
@@ -338,7 +370,7 @@ class NotificationValidator:
 
         # Validar duración
         if sanitized["duration"] < 0:
-            sanitized["duration"] = 5000
+            sanitized["duration"] = 3000
 
         return sanitized
 

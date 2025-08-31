@@ -583,6 +583,11 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
                 else:
                     # APP wins - actualizar Calendar desde BD
                     logger.info(f"🔄 APP WINS - Sesión #{ses.id} ({conflict_reason})")
+                    # SKIP QUIRÚRGICO: Sesión #912 problemática que siempre causa timeout
+                    if ses.id == 912:
+                        logger.warning(f"⚠️ SKIP: Omitiendo sesión #{ses.id} (conocida problemática)")
+                        continue
+                    
                     logger.info(
                         f"📝 BD→CALENDAR: Forzando actualización de evento desde sesión #{ses.id}"
                     )

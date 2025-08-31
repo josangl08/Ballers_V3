@@ -3903,7 +3903,8 @@ def create_evolution_tab_content(player, player_stats, player_analyzer):
                         ],
                         width=12,
                     )
-                ]
+                ],
+                style={"display": "none"}  # OCULTAR: Development Roadmap & Recommendations
             ),
         ],
         fluid=True,

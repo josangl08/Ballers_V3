@@ -33,7 +33,7 @@ class User(Base):
     phone: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     line: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     profile_photo: Mapped[str] = mapped_column(
-        String, default="assets/profiles_photos/default_profile.png"
+        String, default="assets/profile_photos/default_profile.png"
     )
     fecha_registro: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

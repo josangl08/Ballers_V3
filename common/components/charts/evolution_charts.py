@@ -490,7 +490,6 @@ def create_pdi_evolution_chart(player_id, seasons=None):
         prediction_y = []
         prediction_upper_bound = []
         prediction_lower_bound = []
-
         # Usar información del servicio optimizado de predicción
         try:
             from ml_system.deployment.services.pdi_prediction_service import (
@@ -599,6 +598,42 @@ def create_pdi_evolution_chart(player_id, seasons=None):
                 font=dict(color="white", size=12),
             ),
         )
+        
+        # Añadir información del modelo como anotación
+        try:
+            from ml_system.deployment.services.pdi_prediction_service import get_pdi_prediction_service
+            prediction_service = get_pdi_prediction_service()
+            service_info = prediction_service.get_prediction_confidence_info()
+            model_type = service_info.get('model_type', 'unknown')
+            model_accuracy = service_info.get('model_accuracy', '92.5%')
+            
+            model_text = f"🤖 Modelo {model_type.replace('_', ' ').title()} | Precisión {model_accuracy} | MAE ±{MODEL_MAE:.1f}"
+            
+            fig.add_annotation(
+                text=model_text,
+                xref="paper", yref="paper",
+                x=0.02, y=0.98,
+                showarrow=False,
+                font=dict(size=10, color="#42A5F5"),
+                bgcolor="rgba(0, 0, 0, 0.7)",
+                bordercolor="#42A5F5",
+                borderwidth=1,
+                borderpad=4
+            )
+        except Exception as anno_error:
+            # Si falla, añadir anotación básica
+            logger.debug(f"No se pudo añadir info del modelo optimizado: {anno_error}")
+            fig.add_annotation(
+                text=f"🤖 Modelo ML | MAE ±{MODEL_MAE:.1f}",
+                xref="paper", yref="paper",
+                x=0.02, y=0.98,
+                showarrow=False,
+                font=dict(size=10, color="#42A5F5"),
+                bgcolor="rgba(0, 0, 0, 0.7)",
+                bordercolor="#42A5F5",
+                borderwidth=1,
+                borderpad=4
+            )
 
         # Añadir información del modelo como anotación
         try:

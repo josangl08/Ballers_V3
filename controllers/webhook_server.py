@@ -54,6 +54,9 @@ class WebhookServer:
             "server_started_at": None,
             "sync_errors": 0,
         }
+        
+        # Simple duplicate detection (última ventana de 2 segundos)
+        self.last_webhook_timestamp = 0
 
         # SSE Event queue for real-time updates (SOLUCIÓN: Zero-polling)
         self.sse_event_queue = queue.Queue(maxsize=100)
@@ -83,10 +86,23 @@ class WebhookServer:
                 logger.info(
                     f"📡 Webhook received: channel={channel_id}, state={resource_state}"
                 )
+                
+                # Actualizar estadísticas
+                self.stats["webhooks_received"] += 1
+                self.stats["last_webhook_time"] = dt.datetime.now().isoformat()
+                
+                # Simple detección de duplicados (ventana de 2 segundos)
+                current_time = time.time()
+                if current_time - self.last_webhook_timestamp < 2.0:
+                    logger.info("🔄 Webhook duplicado detectado, ignorando")
+                    return jsonify({"status": "duplicate_ignored"}), 200
+                
+                self.last_webhook_timestamp = current_time
 
-                # Procesar webhook en background
+                # Procesar webhook directamente
                 if resource_state in ["exists", "updated"]:
                     self._process_webhook_async(channel_id, resource_id, resource_state)
+                    self.stats["webhooks_processed"] += 1
                 elif resource_state == "sync":
                     logger.info(
                         "📞 Webhook sync message received (channel established)"
@@ -203,6 +219,7 @@ class WebhookServer:
             logger.error(f"Webhook validation error: {e}")
             return False
 
+
     def _process_webhook_async(
         self, channel_id: str, resource_id: str, resource_state: str
     ):
@@ -252,9 +269,6 @@ class WebhookServer:
                 # Calcular totales para logging y notificaciones
                 total_changes = imported + updated + deleted
                 total_problems = len(rejected_events) + len(warning_events)
-
-                # Actualizar estadísticas
-                self.stats["webhooks_processed"] += 1
 
                 # Notificar cambios a la UI para auto-refresh
                 self._notify_ui_changes(

@@ -875,6 +875,9 @@ def register_settings_callbacks(app):
             Output("edit-wyscout-id", "value", allow_duplicate=True),
             Output("edit-wyscout-search-btn", "disabled"),
             Output("edit-wyscout-help", "style"),
+            # Profile picture fields to clear when form is hidden
+            Output("edit-profile-picture", "contents", allow_duplicate=True),
+            Output("edit-profile-picture", "filename", allow_duplicate=True),
         ],
         [Input("edit-user-selector", "value")],
         prevent_initial_call=True,
@@ -910,6 +913,8 @@ def register_settings_callbacks(app):
                 "",  # wyscout_id (empty)
                 True,  # wyscout search button disabled
                 {"display": "none"},  # help text hidden
+                None,  # profile picture contents (clear)
+                None,  # profile picture filename (clear)
             )
 
         try:
@@ -1117,6 +1122,8 @@ def register_settings_callbacks(app):
                 user_data.get("wyscout_id", "") or "",  # wyscout_id
                 False,  # wyscout search button enabled when user selected
                 {"display": "block"},  # help text visible
+                None,  # profile picture contents (keep current)
+                None,  # profile picture filename (keep current)
             )
 
         except Exception as e:
@@ -1147,6 +1154,8 @@ def register_settings_callbacks(app):
                 "",  # wyscout_id (empty)
                 True,  # wyscout search button disabled
                 {"display": "none"},  # help text hidden
+                None,  # profile picture contents (clear)
+                None,  # profile picture filename (clear)
             )
 
     @app.callback(

@@ -104,7 +104,6 @@ class ModelLoader:
         """
         try:
             model_name = model_path.name
-
             # Metadata basada en el nombre del modelo
             if "xgboost" in model_name.lower():
                 metadata = {
@@ -260,7 +259,6 @@ def load_production_model() -> Tuple[Optional[Any], Dict[str, Any]]:
     model, metadata = _model_loader_instance.get_cached_model()
     if model is not None:
         return model, metadata
-
     # Si no hay cache, cargar modelo
     return _model_loader_instance.load_model()
 
