@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
@@ -26,9 +26,9 @@ class Player(Base):
     enrolment: Mapped[int] = mapped_column(Integer, default=0)
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     # Campos para jugadores profesionales
-    is_professional: Mapped[bool] = mapped_column(Boolean, default=False)
-    wyscout_id: Mapped[Optional[int]] = mapped_column(
-        Integer, nullable=True, unique=True
+    is_professional: Mapped[int] = mapped_column(Integer, default=0)
+    wyscout_id: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, unique=True
     )
 
     user: Mapped["User"] = relationship(back_populates="player_profile")

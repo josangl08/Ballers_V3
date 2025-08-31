@@ -279,15 +279,29 @@ def force_manual_sync() -> Dict[str, Any]:
             sync_calendar_to_db_with_feedback()
         )
 
-        # Update past sessions if needed
+        # Update past sessions and ensure DB→Calendar push runs
         n_past = update_past_sessions()
-        if n_past > 0:
+        # Siempre ejecutar BD→Calendar para vincular/crear eventos faltantes
+        try:
             sync_db_to_calendar()
+        except Exception as _:
+            logger.warning("⚠️ DB→Calendar push skipped due to error; continuing")
 
         duration = time.time() - start_time
 
-        # Save sync problems using NotificationController
+        # Save sync problems and stats using NotificationController
         save_sync_problems(rejected_events, warning_events)
+        try:
+            from controllers.notification_controller import update_sync_stats
+
+            update_sync_stats(
+                imported=imported,
+                updated=updated,
+                deleted=deleted,
+                duration=duration,
+            )
+        except Exception:
+            pass
 
         # Logging
         total_problems = len(rejected_events) + len(warning_events)

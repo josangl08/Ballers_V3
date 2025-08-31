@@ -243,11 +243,15 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
         seen_ev_ids: set[str] = set()
 
         now = dt.datetime.now(dt.timezone.utc)
-        win_start = now - dt.timedelta(days=15)
-        win_end = now + dt.timedelta(days=30)
+        # Ventana configurable por variables de entorno (valores por defecto: 10 atrás, 20 adelante)
+        past_days = int(os.getenv("SYNC_WINDOW_PAST_DAYS", "10"))
+        future_days = int(os.getenv("SYNC_WINDOW_FUTURE_DAYS", "20"))
+        win_start = now - dt.timedelta(days=past_days)
+        win_end = now + dt.timedelta(days=future_days)
 
         logger.info(
-            f"📅 Ventana de sincronización: {win_start.date()} a {win_end.date()}"
+            f"📅 Ventana de sincronización: {win_start.date()} a {win_end.date()} "
+            f"(past={past_days}d, future={future_days}d)"
         )
 
         # Obtener eventos de Google Calendar
@@ -352,11 +356,26 @@ def sync_calendar_to_db_with_feedback() -> Tuple[int, int, int, List[Dict], List
 
                 # Si no tiene hash, calcularlo ahora (sesión antigua)
                 if not current_hash:
-                    current_hash = calculate_session_hash(ses)
-                    ses.sync_hash = current_hash
-                    logger.debug(f"🔧 Hash inicial calculado para sesión #{ses.id}")
+                    try:
+                        current_hash = calculate_session_hash(ses)
+                        ses.sync_hash = current_hash
+                        logger.debug(f"🔧 Hash inicial calculado para sesión #{ses.id}")
+                    except Exception as e:
+                        logger.warning(
+                            f"⚠️  Error calculando hash de sesión #{ses.id}: {e}"
+                        )
+                        # Usar hash por defecto para evitar fallos
+                        current_hash = (
+                            f"default_{ses.id}_{int(ses.start_time.timestamp())}"
+                        )
+                        ses.sync_hash = current_hash
 
-                event_hash = calculate_event_hash(ev)
+                try:
+                    event_hash = calculate_event_hash(ev)
+                except Exception as e:
+                    logger.warning(f"⚠️  Error calculando hash de evento: {e}")
+                    # Usar hash por defecto para evitar fallos
+                    event_hash = f"event_{ev.get('id', 'unknown')}"
 
                 logger.debug(
                     f"🔍 Hash check Sesión #{ses.id}: BD='{current_hash[:8]}...' vs Event='{event_hash[:8]}...'"
@@ -840,11 +859,26 @@ def sync_db_to_calendar() -> Tuple[int, int]:
 
         for ses in db.query(Session).all():
             if not ses.calendar_event_id:
-                # Sin event_id → crear nuevo
-                success = controller._push_session_to_calendar(ses)
-                if success:
-                    pushed += 1
-                    logger.info(f"📤 NUEVO: Sesión #{ses.id} creada en Calendar")
+                # NUEVO: Verificar si ya existe evento duplicado antes de crear
+                existing_event_id = controller._find_existing_calendar_event(ses)
+                if existing_event_id:
+                    # Ya existe evento para esta sesión → vincular
+                    logger.info(
+                        f"🔗 VINCULANDO: Sesión #{ses.id} ya tiene evento {existing_event_id[:8]}..."
+                    )
+                    ses.calendar_event_id = existing_event_id
+                    # Actualizar tracking para sincronizar hashes
+                    from controllers.calendar_utils import update_session_tracking
+
+                    update_session_tracking(ses)
+                    db.add(ses)
+                    pushed += 1  # Contarlo como "pushed" aunque sea vincular
+                else:
+                    # Sin event_id y no existe → crear nuevo
+                    success = controller._push_session_to_calendar(ses)
+                    if success:
+                        pushed += 1
+                        logger.info(f"📤 NUEVO: Sesión #{ses.id} creada en Calendar")
             else:
                 # Verificar si necesita actualizacion
                 if session_needs_update(ses):

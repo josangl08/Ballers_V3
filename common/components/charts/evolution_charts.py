@@ -485,14 +485,34 @@ def create_pdi_evolution_chart(player_id, seasons=None):
             )
         )
 
-        # --- Lógica de Predicción ---
+        # --- Lógica de Predicción Optimizada ---
         prediction_x = []
         prediction_y = []
         prediction_upper_bound = []
         prediction_lower_bound = []
-        MODEL_MAE = 3.73  # Error Absoluto Medio de nuestro modelo
 
-        if player_analyzer.pdi_predictor_model is not None and all_seasons_metrics:
+        # Usar información del servicio optimizado de predicción
+        try:
+            from ml_system.deployment.services.pdi_prediction_service import (
+                get_pdi_prediction_service,
+            )
+
+            prediction_service = get_pdi_prediction_service()
+            service_info = prediction_service.get_prediction_confidence_info()
+            MODEL_MAE = service_info.get(
+                "model_mae", 3.692
+            )  # MAE del modelo optimizado
+            model_type = service_info.get("model_type", "optimized")
+            logger.info(
+                f"🎯 Usando modelo {model_type} con MAE {MODEL_MAE} para intervalos de confianza"
+            )
+        except Exception as e:
+            logger.warning(
+                f"No se pudo cargar servicio optimizado, usando MAE por defecto: {e}"
+            )
+            MODEL_MAE = 3.73  # Fallback al valor anterior
+
+        if all_seasons_metrics:
             last_season_str = seasons_list[-1]
 
             pred_1_year = player_analyzer.predict_future_pdi(player_id, last_season_str)
@@ -573,7 +593,55 @@ def create_pdi_evolution_chart(player_id, seasons=None):
             height=400,
             margin=dict(t=40, b=40, l=60, r=40),
             hovermode="x unified",
+            hoverlabel=dict(
+                bgcolor="rgba(30, 30, 30, 0.95)",  # Fondo oscuro
+                bordercolor="#24DE84",
+                font=dict(color="white", size=12),
+            ),
         )
+
+        # Añadir información del modelo como anotación
+        try:
+            from ml_system.deployment.services.pdi_prediction_service import (
+                get_pdi_prediction_service,
+            )
+
+            prediction_service = get_pdi_prediction_service()
+            service_info = prediction_service.get_prediction_confidence_info()
+            model_type = service_info.get("model_type", "unknown")
+            model_accuracy = service_info.get("model_accuracy", "92.5%")
+
+            model_text = f"🤖 Modelo {model_type.replace('_', ' ').title()} | Precisión {model_accuracy} | MAE ±{MODEL_MAE:.1f}"
+
+            fig.add_annotation(
+                text=model_text,
+                xref="paper",
+                yref="paper",
+                x=0.02,
+                y=0.98,
+                showarrow=False,
+                font=dict(size=10, color="#42A5F5"),
+                bgcolor="rgba(0, 0, 0, 0.7)",
+                bordercolor="#42A5F5",
+                borderwidth=1,
+                borderpad=4,
+            )
+        except Exception as anno_error:
+            # Si falla, añadir anotación básica
+            logger.debug(f"No se pudo añadir info del modelo optimizado: {anno_error}")
+            fig.add_annotation(
+                text=f"🤖 Modelo ML | MAE ±{MODEL_MAE:.1f}",
+                xref="paper",
+                yref="paper",
+                x=0.02,
+                y=0.98,
+                showarrow=False,
+                font=dict(size=10, color="#42A5F5"),
+                bgcolor="rgba(0, 0, 0, 0.7)",
+                bordercolor="#42A5F5",
+                borderwidth=1,
+                borderpad=4,
+            )
 
         return dcc.Graph(
             figure=fig, style={"height": "400px"}, config={"displayModeBar": False}

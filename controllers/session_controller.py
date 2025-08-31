@@ -414,13 +414,96 @@ class SessionController:
 
     # Metodos privados para Google Calendar
 
+    def _find_existing_calendar_event(self, session: Session) -> Optional[str]:
+        """
+        Buscar si ya existe un evento en Calendar para esta sesión
+        basándose en título, fecha y hora.
+
+        Returns:
+            event_id si encuentra coincidencia, None si no existe
+        """
+        try:
+            from datetime import timedelta
+
+            import controllers.google_client as google_client
+            from controllers.calendar_utils import build_calendar_event_body
+
+            # Construir el cuerpo del evento para obtener el título esperado
+            expected_body = build_calendar_event_body(session)
+            expected_summary = expected_body.get("summary", "").lower().strip()
+
+            # Buscar en una ventana de tiempo alrededor de la sesión
+            start_time = session.start_time - timedelta(hours=1)
+            end_time = session.start_time + timedelta(hours=3)
+
+            time_min = start_time.isoformat() + "Z"
+            time_max = end_time.isoformat() + "Z"
+
+            calendar_service = google_client.calendar()
+            events_result = (
+                calendar_service.events()
+                .list(
+                    calendarId=CAL_ID, timeMin=time_min, timeMax=time_max, maxResults=50
+                )
+                .execute()
+            )
+
+            events = events_result.get("items", [])
+
+            for event in events:
+                event_summary = event.get("summary", "").lower().strip()
+
+                # Comparar títulos (fuzzy match)
+                if self._titles_match(expected_summary, event_summary):
+                    logger.info(f"🎯 Evento existente encontrado: {event.get('id')}")
+                    return event.get("id")
+
+            return None
+
+        except Exception as e:
+            logger.error(f"❌ Error buscando evento existente: {e}")
+            return None
+
+    def _titles_match(self, title1: str, title2: str) -> bool:
+        """
+        Comparar dos títulos con tolerancia a diferencias menores
+        """
+        # Normalizar títulos (eliminar espacios extra, caracteres especiales)
+        import re
+
+        def normalize_title(title):
+            # Convertir a minúsculas y eliminar caracteres especiales
+            normalized = re.sub(r"[^\w\s]", "", title.lower())
+            # Eliminar espacios múltiples
+            normalized = re.sub(r"\s+", " ", normalized).strip()
+            return normalized
+
+        norm1 = normalize_title(title1)
+        norm2 = normalize_title(title2)
+
+        # Comparación exacta
+        if norm1 == norm2:
+            return True
+
+        # Comparación por palabras clave (mínimo 70% de coincidencia)
+        words1 = set(norm1.split())
+        words2 = set(norm2.split())
+
+        if not words1 or not words2:
+            return False
+
+        intersection = words1.intersection(words2)
+        union = words1.union(words2)
+
+        similarity = len(intersection) / len(union) if union else 0
+        return similarity >= 0.7
+
     def _push_session_to_calendar(self, session: Session) -> bool:
         """
         Crea evento en Google Calendar.
         🔧 CORREGIDO: Actualiza correctamente los campos de tracking después de creación exitosa.
         """
         try:
-
             body = build_calendar_event_body(session)
             event = calendar().events().insert(calendarId=CAL_ID, body=body).execute()
 

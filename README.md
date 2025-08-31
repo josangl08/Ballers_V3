@@ -19,11 +19,13 @@ Ballers App es una plataforma web moderna que integra gestión de sesiones de en
 - **Auto-actualización** de sesiones pasadas
 - **Gestión de conflictos** inteligente
 
-### 🔄 **Sincronización Automática**
+### 🔄 **Sincronización en Tiempo Real**
+- **Webhook System** para actualizaciones instantáneas de Google Calendar
 - **Auto-sync** configurable con Google Calendar
 - **Resolución de conflictos** automática
 - **Notificaciones** de cambios y problemas
 - **Logs detallados** de sincronización
+- **SSE (Server-Sent Events)** para updates en tiempo real
 
 ### 📊 **Análisis y Reportes**
 - **Dashboard financiero** integrado con Google Sheets
@@ -31,6 +33,20 @@ Ballers App es una plataforma web moderna que integra gestión de sesiones de en
 - **Evolución temporal** de tests físicos
 - **Exportación a PDF** de perfiles y sesiones
 - **Gráficos interactivos** con Plotly
+
+### 🤖 **Sistema ML de Predicción PDI**
+- **Modelo ML Optimizado** con MAE 3.692 para predicción de Player Development Index
+- **Predicciones futuras** a 1-2 años con intervalos de confianza
+- **Feature Engineering** avanzado con 35+ características
+- **Integración Thai League** con datos de 5 temporadas (2020-2025)
+- **Análisis profesional** para jugadores con Wyscout ID
+
+### 🏆 **Jugadores Profesionales**
+- **Sistema híbrido** para jugadores amateurs y profesionales
+- **Integración Wyscout** para IDs de jugadores profesionales
+- **Datos Thai League** automáticos desde GitHub
+- **Estadísticas profesionales** completas (50+ métricas)
+- **Matching inteligente** de jugadores con fuzzy search
 
 ### 🖨️ **Exportación e Impresión**
 - **Reportes PDF** profesionales de jugadores
@@ -90,7 +106,7 @@ Ballers App es una plataforma web moderna que integra gestión de sesiones de en
 
 ### **1. Clonar el repositorio**
 ```bash
-git clone https://github.com/josangl08/Ballers_V2/tree/development
+git clone https://github.com/josangl08/Ballers_V3.git
 cd ballers-app
 ```
 
@@ -200,42 +216,66 @@ Después de ejecutar `seed_database.py`:
 ## 🏗️ **Estructura del Proyecto**
 
 ```
-ballers-app/
+ballers_v3/
 ├── 📁 assets/                 # Recursos estáticos
 │   ├── ballers/              # Logos y imágenes
-│   └── profile_photos/       # Fotos de usuarios
+│   ├── profile_photos/       # Fotos de usuarios
+│   └── style.css            # Estilos principales
+├── 📁 callbacks/             # Sistema de callbacks Dash
+│   ├── auth_callbacks.py    # Autenticación
+│   ├── navigation_callbacks.py # Navegación
+│   ├── sidebar_callbacks.py # Menú lateral
+│   ├── professional_tabs_callbacks.py # Jugadores profesionales
+│   └── settings_callbacks.py # Configuraciones
 ├── 📁 common/                # Utilidades compartidas
-│   ├── export.py            # Funciones de exportación
-│   ├── login.py             # Sistema de autenticación
-│   ├── menu.py              # Menú lateral
-│   └── utils.py             # Utilidades generales
+│   ├── components/          # Componentes UI reutilizables
+│   │   ├── charts/          # Gráficos y visualizaciones
+│   │   ├── forms/           # Formularios
+│   │   └── tables/          # Tablas de datos
+│   ├── authentication.py   # Sistema de autenticación
+│   ├── menu.py             # Menú lateral
+│   └── utils.py            # Utilidades generales
 ├── 📁 controllers/          # Lógica de negocio
 │   ├── auth_controller.py   # Autenticación
-│   ├── calendar_sync_core.py # Sincronización
+│   ├── calendar_sync_core.py # Sincronización Google Calendar
 │   ├── export_controller.py # Generación PDFs
 │   ├── player_controller.py # Gestión jugadores
 │   ├── session_controller.py # Gestión sesiones
 │   ├── sync_coordinator.py  # Coordinación auto-sync
+│   ├── thai_league_controller.py # Datos profesionales
 │   ├── user_controller.py   # Gestión usuarios
-│   ├── validation_controller.py # Validaciones
-|   └── ...                  # Otros controladores
+│   └── validation_controller.py # Validaciones
 ├── 📁 data/                 # Base de datos y datos
-│   ├── ballers_app.db      # Base de datos SQLite
-│   └── seed_database.py    # Script de inicialización
-├── 📁 models/              # Modelos de datos
+│   ├── ballers_app.db      # Base de datos SQLite (desarrollo)
+│   ├── seed_database.py    # Script de inicialización
+│   └── thai_league/        # Datos Thai League profesionales
+├── 📁 ml_system/           # Sistema Machine Learning
+│   ├── data_acquisition/   # Adquisición de datos
+│   ├── data_processing/    # Procesamiento de datos
+│   ├── data_understanding/ # Análisis exploratorio
+│   ├── deployment/         # Modelo en producción
+│   │   ├── models/         # Modelos entrenados
+│   │   └── services/       # Servicios ML (PDI prediction)
+│   ├── evaluation/         # Evaluación de modelos
+│   ├── modeling/           # Entrenamiento de modelos
+│   └── outputs/           # Resultados y reportes
+├── 📁 models/              # Modelos de datos SQLAlchemy
 │   ├── user_model.py       # Modelo de usuarios
 │   ├── session_model.py    # Modelo de sesiones
-│   └── ...                 # Otros modelos
+│   ├── professional_stats_model.py # Estadísticas profesionales
+│   └── thai_league_seasons_model.py # Temporadas Thai League
 ├── 📁 pages/               # Páginas de la aplicación
 │   ├── ballers.py          # Página principal
 │   ├── administration.py   # Panel de administración
+│   ├── calendar_page.py    # Calendario de sesiones
 │   └── settings.py         # Configuraciones
-├── 📁 styles/              # Estilos CSS
-│   └── style.css           # Estilos personalizados
-├── 📄 main.py              # Punto de entrada
+├── 📁 tests/               # Tests automatizados
+│   └── test_dash_app.py    # Tests de integración Dash
+├── 📄 main_dash.py         # Aplicación principal Dash
 ├── 📄 config.py            # Configuración global
-├── 📄 requirements.txt     # Dependencias
-└── 📄 README.md            # Este archivo
+├── 📄 requirements.txt     # Dependencias Python
+├── 📄 CLAUDE.md           # Instrucciones para desarrollo
+└── 📄 README.md           # Este archivo
 ```
 
 ## 🔧 **Tecnologías Utilizadas**
@@ -243,8 +283,11 @@ ballers-app/
 ### **Backend**
 - **[Dash](https://dash.plotly.com/)** - Framework web principal
 - **[SQLAlchemy](https://www.sqlalchemy.org/)** - ORM para base de datos
-- **[SQLite](https://www.sqlite.org/)** - Base de datos
+- **[SQLite](https://www.sqlite.org/)** - Base de datos (desarrollo)
+- **[PostgreSQL](https://www.postgresql.org/)** - Base de datos (producción)
 - **[Google APIs](https://developers.google.com/)** - Calendar y Sheets
+- **[Scikit-learn](https://scikit-learn.org/)** - Machine Learning
+- **[NumPy](https://numpy.org/)** & **[Pandas](https://pandas.pydata.org/)** - Análisis de datos
 
 ### **Frontend**
 - **[Plotly](https://plotly.com/)** - Gráficos interactivos
@@ -256,18 +299,25 @@ ballers-app/
 - **[Matplotlib](https://matplotlib.org/)** - Gráficos para PDFs
 - **[Pandas](https://pandas.pydata.org/)** - Manipulación de datos
 
+### **Machine Learning**
+- **Ensemble Models** - Combinación de Random Forest + XGBoost
+- **Feature Engineering** - 35+ características temporales y posicionales
+- **CRISP-DM Methodology** - Metodología estándar de ciencia de datos
+- **Cross-Validation** - Validación temporal sin data leakage
+
 ### **Deployment**
 - **[Render](https://render.com/)** - Hosting en la nube
 - **[Supabase](https://supabase.com/)** - Base de datos PostgreSQL
 - **[GitHub](https://github.com/)** - Control de versiones
+- **Webhook Integration** - Tiempo real con Google Calendar
 
 
 ## 👨‍💻 **Autor**
 
 **José Ángel Alonso**
 - 📧 Email: josangl08@hotmail.com
-- 🐙 GitHub: [@tuusuario](https://github.com/josangl08)
-- 💼 LinkedIn: [Tu LinkedIn](www.linkedin.com/in/jose-angel-alonso-martin-1191891a2)
+- 🐙 GitHub: (https://github.com/josangl08)
+- 💼 LinkedIn: (www.linkedin.com/in/jose-angel-alonso-martin-1191891a2)
 
 ---
 

@@ -15,9 +15,9 @@ class ScheduleConfig:
 
     # Horarios estrictos para crear sesiones
     CREATE_START_HOUR_MIN = 8  # 8:00
-    CREATE_START_HOUR_MAX = 18  # último inicio: 18:00
+    CREATE_START_HOUR_MAX = 20  # último inicio: 20:00 (incluido)
     CREATE_END_HOUR_MIN = 9  # 9:00
-    CREATE_END_HOUR_MAX = 19  # último fin: 19:00
+    CREATE_END_HOUR_MAX = 21  # último fin: 21:00 (incluido)
 
     # Horarios base para editar (recomendados)
     EDIT_BASE_START_MIN = 8  # 8:00
@@ -174,20 +174,23 @@ class ValidationController:
         if end_time <= start_time:
             return False, "The end time must be later than the start time."
 
-        # 2. Verificar horario de trabajo estricto (8:00 - 18:00)
+        # 2. Verificar horario de trabajo estricto (8:00 - 20:00, ambos incluidos)
         WORK_START = dt.time(8, 0)
-        WORK_END = dt.time(18, 0)
+        WORK_END = dt.time(20, 0)
 
-        if start_time < WORK_START or start_time >= WORK_END:
+        if start_time < WORK_START or start_time > WORK_END:
             return (
                 False,
                 f"The start time must be between {WORK_START.strftime('%H:%M')} and {WORK_END.strftime('%H:%M')}.",
             )
 
-        if end_time <= WORK_START or end_time > dt.time(19, 0):  # Fin hasta 19:00
+        # Fin permitido 09:00 - 21:00 (ambos incluidos)
+        END_MIN = dt.time(9, 0)
+        END_MAX = dt.time(21, 0)
+        if end_time < END_MIN or end_time > END_MAX:
             return (
                 False,
-                f"The end time must be between {WORK_START.strftime('%H:%M')} and 19:00.",
+                f"The end time must be between {END_MIN.strftime('%H:%M')} and {END_MAX.strftime('%H:%M')}.",
             )
 
         # 3. Verificar duración
@@ -265,7 +268,7 @@ class ValidationController:
         else:
             # Modo flexible para imports
             if duration_minutes < 45:
-                return False, "The session should last at least 15 minutes."
+                return False, "The session should last at least 45 minutes."
             if duration_minutes > 180:
                 return False, "The session cannot last more than 3 hours."
 
@@ -427,20 +430,20 @@ class ValidationController:
         if end_dt.time() < RECOMMENDED_START:
             if end_dt.time() >= EXTENDED_START:
                 warnings.append(
-                    f"Early end: {start_dt.time().strftime('%H:%M')} (recommended: 9:00-19:00)"
+                    f"Early end: {end_dt.time().strftime('%H:%M')} (recommended: 9:00-19:00)"
                 )
             else:
                 warnings.append(
-                    f"Very early end: {start_dt.time().strftime('%H:%M')} (limit: 7:00)"
+                    f"Very early end: {end_dt.time().strftime('%H:%M')} (limit: 7:00)"
                 )
         if end_dt.time() > RECOMMENDED_END:
             if end_dt.time() <= EXTENDED_END:
                 warnings.append(
-                    f"Late end: {start_dt.time().strftime('%H:%M')} (recommended: 9:00-19:00)"
+                    f"Late end: {end_dt.time().strftime('%H:%M')} (recommended: 9:00-19:00)"
                 )
             else:
                 warnings.append(
-                    f"Very late end: {start_dt.time().strftime('%H:%M')} (limit: 21:00)"
+                    f"Very late end: {end_dt.time().strftime('%H:%M')} (limit: 21:00)"
                 )
 
         return warnings

@@ -223,15 +223,31 @@ class WebhookServer:
                     sync_calendar_to_db_with_feedback()
                 )
 
-                # Actualizar sesiones pasadas si es necesario
+                # Actualizar sesiones pasadas y garantizar BD→Calendar
                 n_past = update_past_sessions()
-                if n_past > 0:
+                try:
                     sync_db_to_calendar()
+                except Exception:
+                    logger.warning(
+                        "⚠️ DB→Calendar push skipped due to error; continuing"
+                    )
 
                 duration = time.time() - start_time
 
-                # Guardar problemas usando NotificationController existente
+                # Guardar problemas y métricas usando NotificationController existente
                 save_sync_problems(rejected_events, warning_events)
+                try:
+                    from controllers.notification_controller import update_sync_stats
+
+                    update_sync_stats(
+                        imported=imported,
+                        updated=updated,
+                        deleted=deleted,
+                        duration=duration,
+                    )
+                except Exception as _:
+                    # No bloquear por métricas
+                    pass
 
                 # Calcular totales para logging y notificaciones
                 total_changes = imported + updated + deleted
@@ -284,8 +300,9 @@ class WebhookServer:
 
             # Configuración para Render: host 0.0.0.0 y puerto dinámico
             import os
+
             from config import ENVIRONMENT
-            
+
             if ENVIRONMENT == "production":
                 # Render: puerto dinámico, host público
                 host = "0.0.0.0"
@@ -311,8 +328,11 @@ class WebhookServer:
             protocol = "https" if ENVIRONMENT == "production" else "http"
             if ENVIRONMENT == "production":
                 from config import WEBHOOK_BASE_URL
+
                 logger.info(f"🚀 Webhook server started on {host}:{port}")
-                logger.info(f"📡 Public webhook endpoint: {WEBHOOK_BASE_URL}/webhook/calendar")
+                logger.info(
+                    f"📡 Public webhook endpoint: {WEBHOOK_BASE_URL}/webhook/calendar"
+                )
             else:
                 logger.info(f"🚀 Webhook server started on {protocol}://{host}:{port}")
                 logger.info(
@@ -345,11 +365,12 @@ class WebhookServer:
         """Obtiene estado detallado del servidor"""
         # URL adaptativa según entorno
         from config import ENVIRONMENT, WEBHOOK_BASE_URL
+
         if ENVIRONMENT == "production":
             webhook_url = f"{WEBHOOK_BASE_URL}/webhook/calendar"
         else:
             webhook_url = f"http://localhost:{self.port}/webhook/calendar"
-            
+
         return {
             "running": self.is_running(),
             "port": self.port,

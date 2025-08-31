@@ -211,13 +211,43 @@ def register_player_callbacks(app):
                                                     dbc.ModalBody(
                                                         [
                                                             html.P(
-                                                                "PDF export functionality will be available soon.",
+                                                                "Generate a professional PDF report using current filters (date range, status) and selected performance metrics (Test Results tab).",
                                                                 style={
                                                                     "color": "#FFFFFF",
-                                                                    "fontSize": "1.0rem",
-                                                                    "textAlign": "center",
-                                                                    "margin": "2rem 0",
+                                                                    "fontSize": "0.95rem",
+                                                                    "margin": "0 0 1rem 0",
                                                                 },
+                                                            ),
+                                                            html.Ul(
+                                                                [
+                                                                    html.Li(
+                                                                        "Includes: Personal info, session summary, calendar view, session table, and performance evolution chart (if metrics selected)",
+                                                                        style={
+                                                                            "color": "#CCCCCC",
+                                                                            "fontSize": "0.9rem",
+                                                                        },
+                                                                    ),
+                                                                    html.Li(
+                                                                        "Tip: Choose metrics in 'Test Results' > metrics selector to include the evolution chart",
+                                                                        style={
+                                                                            "color": "#CCCCCC",
+                                                                            "fontSize": "0.9rem",
+                                                                        },
+                                                                    ),
+                                                                ],
+                                                                style={
+                                                                    "marginBottom": "1rem"
+                                                                },
+                                                            ),
+                                                            dbc.Button(
+                                                                [
+                                                                    html.I(
+                                                                        className="bi bi-download me-2"
+                                                                    ),
+                                                                    "Generate PDF",
+                                                                ],
+                                                                id="export-generate-btn",
+                                                                className="btn-admin-style w-100",
                                                             ),
                                                         ],
                                                         className="modal-body-standard",
@@ -304,6 +334,67 @@ def register_player_callbacks(app):
         if trigger == "export-cancel-btn":
             return False
         return is_open
+
+    @app.callback(
+        Output("download-profile-pdf", "data"),
+        [Input("export-generate-btn", "n_clicks")],
+        [
+            State("selected-player-id", "data"),
+            State(
+                {"type": "auto-hide-date", "index": "ballers-filter-from-date"}, "value"
+            ),
+            State(
+                {"type": "auto-hide-date", "index": "ballers-filter-to-date"}, "value"
+            ),
+            State("status-filters", "data"),
+        ],
+        prevent_initial_call=True,
+    )
+    def handle_export_generate(n_clicks, player_id, from_date, to_date, status_filter):
+        """Genera el PDF del perfil y dispara la descarga."""
+        import datetime as dt
+
+        from dash import dcc, no_update
+
+        from controllers.export_controller import generate_player_pdf
+
+        if not n_clicks:
+            return no_update
+
+        try:
+            if not player_id:
+                return no_update
+
+            # Parsear fechas ISO (YYYY-MM-DD)
+            start_date = (
+                dt.date.fromisoformat(from_date)
+                if from_date
+                else dt.date.today().replace(day=1)
+            )
+            end_date = dt.date.fromisoformat(to_date) if to_date else dt.date.today()
+
+            # Filtros de estado por defecto
+            if not status_filter:
+                status_filter = ["scheduled", "completed", "canceled"]
+
+            # Métricas seleccionadas: si el selector no está presente, omitir el gráfico
+            selected_metrics = []
+
+            # Generar PDF
+            buffer, filename = generate_player_pdf(
+                player_id=player_id,
+                start_date=start_date,
+                end_date=end_date,
+                status_filter=status_filter,
+                selected_metrics=selected_metrics,
+            )
+
+            content = buffer.getvalue()
+            return dcc.send_bytes(lambda b: b.write(content), filename)
+
+        except Exception as e:
+            print(f"❌ Error generating PDF: {e}")
+            return no_update
 
     @app.callback(
         Output("calendar-display", "children"),

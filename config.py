@@ -54,12 +54,10 @@ def get_config_value(key, default=None):
 BASE_DIR = Path(__file__).parent
 DATA_DIR = os.path.join(BASE_DIR, "data")
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
-STYLES_DIR = os.path.join(BASE_DIR, "styles")
 PROFILE_PHOTOS_DIR = os.path.join(ASSETS_DIR, "profile_photos")
 
 # Crear directorios si no existen
 os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(STYLES_DIR, exist_ok=True)
 os.makedirs(PROFILE_PHOTOS_DIR, exist_ok=True)
 
 # Configuración de base de datos dual (SQLite local / PostgreSQL producción)
@@ -77,7 +75,7 @@ DEBUG = get_config_value("DEBUG", "False") == "True"
 LOG_LEVEL = get_config_value("LOG_LEVEL", "INFO")
 ENVIRONMENT = get_config_value("ENVIRONMENT", "development")
 DEFAULT_PROFILE_PHOTO = os.path.join(ASSETS_DIR, "default_profile.png")
-CSS_FILE = os.path.join(STYLES_DIR, "style.css")
+CSS_FILE = os.path.join(ASSETS_DIR, "style.css")
 
 # Configuración de la aplicación (Dash)
 APP_NAME = "Ballers App"
@@ -119,15 +117,17 @@ def get_google_service_account_from_env_vars():
                 "universe_domain": "googleapis.com",
             }
 
-            if os.getenv("DEBUG") == "True":
-                print(
+            if DEBUG:
+                logger.info(
                     "✅ Credenciales Google cargadas desde variables de entorno individuales"
                 )
             return credentials
 
     except Exception as e:
-        if os.getenv("DEBUG") == "True":
-            print(f"⚠️ Error obteniendo credenciales desde variables individuales: {e}")
+        if DEBUG:
+            logger.warning(
+                f"⚠️ Error obteniendo credenciales desde variables individuales: {e}"
+            )
 
     return None
 
@@ -153,27 +153,24 @@ def get_google_service_account_info():
         if google_json_str:
             try:
                 credentials = json.loads(google_json_str)
-                if os.getenv("DEBUG") == "True":
-                    print(
-                        "✅ Credenciales Google cargadas desde "
-                        "variable de entorno JSON"
+                if DEBUG:
+                    logger.info(
+                        "✅ Credenciales Google cargadas desde variable de entorno JSON"
                     )
                 return credentials
             except json.JSONDecodeError as e:
-                if os.getenv("DEBUG") == "True":
-                    print(
-                        f"⚠️ Error parseando JSON de "
-                        f"GOOGLE_SERVICE_ACCOUNT_JSON: {e}"
+                if DEBUG:
+                    logger.warning(
+                        f"⚠️ Error parseando JSON de GOOGLE_SERVICE_ACCOUNT_JSON: {e}"
                     )
 
         # 3. Intentar desde archivo especificado en GOOGLE_SA_PATH
         google_sa_path = get_config_value("GOOGLE_SA_PATH")
         if google_sa_path and os.path.exists(google_sa_path):
             with open(google_sa_path, "r") as f:
-                if os.getenv("DEBUG") == "True":
-                    print(
-                        f"✅ Credenciales Google cargadas desde "
-                        f"archivo: {google_sa_path}"
+                if DEBUG:
+                    logger.info(
+                        f"✅ Credenciales Google cargadas desde archivo: {google_sa_path}"
                     )
                 return json.load(f)
 
@@ -181,19 +178,18 @@ def get_google_service_account_info():
         default_path = os.path.join(DATA_DIR, "google_service_account.json")
         if os.path.exists(default_path):
             with open(default_path, "r") as f:
-                if os.getenv("DEBUG") == "True":
-                    print(
-                        f"✅ Credenciales Google cargadas desde "
-                        f"archivo por defecto: {default_path}"
+                if DEBUG:
+                    logger.info(
+                        f"✅ Credenciales Google cargadas desde archivo por defecto: {default_path}"
                     )
                 return json.load(f)
 
     except Exception as e:
-        if os.getenv("DEBUG") == "True":
-            print(f"⚠️ Error obteniendo credenciales Google: {e}")
+        if DEBUG:
+            logger.error(f"⚠️ Error obteniendo credenciales Google: {e}")
 
-    if os.getenv("DEBUG") == "True":
-        print("❌ No se pudieron cargar credenciales de Google")
+    if DEBUG:
+        logger.error("❌ No se pudieron cargar credenciales de Google")
     return None
 
 
@@ -202,19 +198,15 @@ CALENDAR_ID = get_config_value("CALENDAR_ID", "")
 ACCOUNTING_SHEET_ID = get_config_value("ACCOUNTING_SHEET_ID", "")
 
 # Debug: verificar IDs críticos
-if os.getenv("DEBUG") == "True":
-    print(f"📅 CALENDAR_ID configurado: {'✅' if CALENDAR_ID else '❌'}")
-    print(
+if DEBUG:
+    logger.debug(f"📅 CALENDAR_ID configurado: {'✅' if CALENDAR_ID else '❌'}")
+    logger.debug(
         f"📊 ACCOUNTING_SHEET_ID configurado: {'✅' if ACCOUNTING_SHEET_ID else '❌'}"
     )
 
 
 # Lista de tipos de archivos permitidos para fotos de perfil
 ALLOWED_PHOTO_EXTENSIONS = ["jpg", "jpeg", "png"]
-MAX_PHOTO_SIZE_MB = 2
-
-# Constantes de la aplicación
-SESSION_DURATION_DEFAULT = 60  # minutos
 
 # Clave secreta para sesiones
 SESSION_SECRET = get_config_value("SESSION_SECRET", "your-default-secret-key")
@@ -222,32 +214,38 @@ SESSION_SECRET = get_config_value("SESSION_SECRET", "your-default-secret-key")
 # Configuración de calendario
 CALENDAR_ENABLED = get_config_value("CALENDAR_ENABLED", "True") == "True"
 
+
 # Configuración webhook para producción Render
 def get_webhook_config():
     """
     Configuración webhook adaptativa para desarrollo y producción.
-    
+
     Desarrollo: localhost con puerto fijo
     Producción: Render con puerto dinámico y HTTPS
     """
     # Puerto dinámico para Render (usa PORT env var)
     port = int(str(get_config_value("PORT", get_config_value("WEBHOOK_PORT", "8001"))))
-    
+
     # Base URL adaptativa según entorno
     base_url = get_config_value("WEBHOOK_BASE_URL")
     if not base_url:
         if ENVIRONMENT == "production":
-            # URL Render automática (debe configurarse en env vars)
-            base_url = "https://ballers-v3.onrender.com"
+            # URL Render desde variable de entorno (más flexible)
+            base_url = get_config_value(
+                "RENDER_APP_URL", "https://ballers-v3.onrender.com"
+            )
         else:
             # Desarrollo local
             base_url = f"http://localhost:{port}"
-    
+
     return {
         "port": port,
         "base_url": base_url,
-        "secret_token": get_config_value("WEBHOOK_SECRET_TOKEN", "default-secret-token")
+        "secret_token": get_config_value(
+            "WEBHOOK_SECRET_TOKEN", "default-secret-token"
+        ),
     }
+
 
 # Configuración webhook
 _webhook_config = get_webhook_config()
@@ -276,23 +274,19 @@ SESSION_DURATION = {
 
 # Información para logging
 if DEBUG:
-    print("🔧 Configuración cargada:")
-    print(f"   - Entorno: {ENVIRONMENT}")
-    print(f"   - Base de datos: {SUPABASE_DATABASE_URL}")
+    logger.info("🔧 Configuración cargada:")
+    logger.info(f"   - Entorno: {ENVIRONMENT}")
+    logger.info(f"   - Base de datos: {SUPABASE_DATABASE_URL}")
     if ENVIRONMENT == "production":
-        print(
+        logger.info(
             f"   - Supabase URL: {'✅ Configurado' if SUPABASE_URL else '❌ No configurado'}"
         )
-        print(
+        logger.info(
             f"   - Supabase Key: {'✅ Configurado' if SUPABASE_ANON_KEY else '❌ No configurado'}"
         )
-    print(
-        f"   - Calendar ID: {CALENDAR_ID[:20]}..."
-        if CALENDAR_ID
-        else "   - Calendar ID: ❌ No configurado"
+    calendar_status = f"{CALENDAR_ID[:20]}..." if CALENDAR_ID else "❌ No configurado"
+    logger.info(f"   - Calendar ID: {calendar_status}")
+    sheets_status = (
+        f"{ACCOUNTING_SHEET_ID[:20]}..." if ACCOUNTING_SHEET_ID else "❌ No configurado"
     )
-    print(
-        f"   - Sheets ID: {ACCOUNTING_SHEET_ID[:20]}..."
-        if ACCOUNTING_SHEET_ID
-        else "   - Sheets ID: ❌ No configurado"
-    )
+    logger.info(f"   - Sheets ID: {sheets_status}")

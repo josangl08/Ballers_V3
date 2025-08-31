@@ -612,31 +612,11 @@ class UserController:
                 if "notes" in profile_data:
                     user.player_profile.notes = profile_data["notes"]
 
-                # Campos profesionales - usar nueva lógica de producto
+                # Campos profesionales: actualizar de forma transaccional junto con el resto
                 if "is_professional" in profile_data:
-                    new_is_professional = profile_data["is_professional"]
-                    current_is_professional = user.player_profile.is_professional
-
-                    # Si hay cambio en el estado profesional, usar estrategia especializada
-                    if new_is_professional != current_is_professional:
-                        # Commit cambios previos antes de manejar professional status
-                        self.db.commit()
-
-                        # TODO: Implement professional status change handling
-                        # success, message = handle_professional_status_change(
-                        #     user.user_id, new_is_professional
-                        # )
-                        success, message = True, "Professional status updated"
-
-                        if not success:
-                            self.db.rollback()
-                            return (
-                                False,
-                                f"Error updating professional status: {message}",
-                            )
-                    else:
-                        # No hay cambio, solo actualizar el campo
-                        user.player_profile.is_professional = new_is_professional
+                    user.player_profile.is_professional = (
+                        1 if profile_data["is_professional"] else 0
+                    )
 
                 if "wyscout_id" in profile_data:
                     user.player_profile.wyscout_id = self._convert_wyscout_id_to_int(

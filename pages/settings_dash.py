@@ -768,7 +768,54 @@ def create_system_settings_dash():
                     "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
                 },
             ),
-            # Database/Google Sheets Management (migrado de lines 1002-1020)
+            # Manual Synchronization (just below monitoring)
+            dbc.Card(
+                [
+                    dbc.CardBody(
+                        [
+                            html.H5(
+                                "Manual Synchronization",
+                                className="card-title",
+                                style={
+                                    "color": "var(--color-primary)",
+                                    "font-size": "1.1rem",
+                                },
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            dbc.Button(
+                                                "Manual Sync (2-way)",
+                                                id="manual-sync-btn",
+                                                className="btn-admin-style w-100",
+                                            )
+                                        ],
+                                        width=6,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Button(
+                                                "Pull from Google Calendar",
+                                                id="sync-from-calendar-btn",
+                                                className="btn-admin-style w-100",
+                                            )
+                                        ],
+                                        width=6,
+                                    ),
+                                ]
+                            ),
+                        ]
+                    )
+                ],
+                className="mb-4",
+                style={
+                    "background-color": "#333333",
+                    "border-radius": "10px",
+                    "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
+                },
+            ),
+            # Database/Google Sheets Management (moved below Manual Synchronization)
             dbc.Card(
                 [
                     dbc.CardBody(
@@ -815,59 +862,7 @@ def create_system_settings_dash():
                     "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
                 },
             ),
-            # Manual Synchronization (limpiado: solo Manual Sync y Pull from Google)
-            dbc.Card(
-                [
-                    dbc.CardBody(
-                        [
-                            html.H5(
-                                "Manual Synchronization",
-                                className="card-title",
-                                style={
-                                    "color": "var(--color-primary)",
-                                    "font-size": "1.1rem",
-                                },
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Button(
-                                                "Manual Sync Now (2-way)",
-                                                id="manual-sync-btn",
-                                                className="btn-admin-style w-100",
-                                            )
-                                        ],
-                                        width=6,
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Button(
-                                                "Pull from Google Calendar",
-                                                id="sync-from-calendar-btn",
-                                                className="btn-admin-style w-100",
-                                            )
-                                        ],
-                                        width=6,
-                                    ),
-                                ]
-                            ),
-                        ]
-                    )
-                ],
-                className="mb-4",
-                style={
-                    "background-color": "#333333",
-                    "border-radius": "10px",
-                    "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
-                },
-            ),
-            # Intervalo de refresco de resultados de sync (también se actualiza en clicks)
-            dcc.Interval(
-                id="sync-results-refresh-interval",
-                interval=10_000,  # 10 segundos
-                n_intervals=0,
-            ),
+            # (Auto-refresh interval removed; Monitoring updates only on manual sync)
             # Alert para mensajes (oculto, solo para propagar eventos/mensajes a Monitoring)
             dbc.Alert(
                 "",
@@ -877,57 +872,8 @@ def create_system_settings_dash():
                 className="mt-3",
                 style={"display": "none"},
             ),
-            # Real-time Sync Management (Webhook-based)
-            dbc.Card(
-                [
-                    dbc.CardBody(
-                        [
-                            html.H5(
-                                "Real-time Sync Management",
-                                className="card-title",
-                                style={
-                                    "color": "var(--color-primary)",
-                                    "font-size": "1.1rem",
-                                },
-                            ),
-                            # Webhook status display (placeholder)
-                            dbc.Alert(
-                                "🚀 Webhook-based real-time sync (implementation in progress)",
-                                color="info",
-                                className="mb-3",
-                            ),
-                            # Manual sync as fallback
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Button(
-                                                "Manual Sync Now",
-                                                id="manual-sync-btn",
-                                                className="btn-admin-style w-100",
-                                            )
-                                        ],
-                                        width=12,
-                                    ),
-                                ]
-                            ),
-                        ]
-                    )
-                ],
-                style={
-                    "background-color": "#333333",
-                    "border-radius": "10px",
-                    "box-shadow": "0 4px 8px rgba(0, 0, 0, 0.1)",
-                },
-            ),
-            # Alert para mensajes
-            dbc.Alert(
-                "",
-                id="system-settings-alert",
-                is_open=False,
-                dismissable=True,
-                className="mt-3",
-            ),
+            # (Real-time Sync Management card removed)
+            # (Visible alert removed to avoid messages under the removed card)
         ]
     )
 

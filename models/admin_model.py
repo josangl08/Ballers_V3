@@ -18,6 +18,6 @@ class Admin(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.user_id"), unique=True, nullable=False
     )
-    system_permissions: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    role: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="admin_profile")

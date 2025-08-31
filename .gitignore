@@ -212,6 +212,9 @@ data/logs/
 # ML System - outputs completos
 ml_system/outputs/
 
+# ML System - archivos experimentales y desarrollo
+ml_system/archive/
+
 # Dash temporales
 .dash_callback_cache/
 assets/.dash_callback_cache/
@@ -221,13 +224,17 @@ backups/
 data/test/
 data/usuarios_generados.txt
 *.backup
+*.backup2
 *.bak
 tmp/
 temp/
+controllers/*.backup*
+callbacks/*.backup*
 
 # Documentación de desarrollo (mantener README.md)
 CLAUDE.md
 PROYECTO_STATUS.md
+TESTING_CREDENTIALS.md
 
 # Legacy - no necesario en producción
 legacy/
