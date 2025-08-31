@@ -5,7 +5,7 @@ Callbacks relacionados con la página de Administration - COPIANDO ESTRUCTURA DE
 import datetime as dt
 
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, html, dcc
+from dash import Input, Output, State, dcc, html
 
 from controllers.internal_calendar import show_calendar_dash, update_and_get_sessions
 from controllers.session_controller import SessionController
@@ -324,7 +324,9 @@ def register_administration_callbacks(app):
 
         preferred = _minutes_to_hhmm(start_min + 60)
         values = [o["value"] for o in end_opts]
-        end_value = preferred if preferred in values else (values[0] if values else None)
+        end_value = (
+            preferred if preferred in values else (values[0] if values else None)
+        )
         return end_opts, end_value
 
     @app.callback(
@@ -349,7 +351,9 @@ def register_administration_callbacks(app):
             return end_opts, current_end_value
 
         preferred = _minutes_to_hhmm(start_min + 60)
-        end_value = preferred if preferred in values else (values[0] if values else None)
+        end_value = (
+            preferred if preferred in values else (values[0] if values else None)
+        )
         return end_opts, end_value
 
     # Callback para manejar filtros rápidos y actualizar estilos
@@ -1273,11 +1277,12 @@ def register_administration_callbacks(app):
                 import plotly.graph_objs as go
                 from dash import dcc
 
-                # Procesar datos para el gráfico como en Streamlit
+                # Procesar datos para el gráfico como Dash
                 fecha_col = df_no_total.columns[0]
                 df_chart = df_no_total.copy()
+                # Parseo de fechas respetando formato habitual DD/MM/YYYY en la hoja
                 df_chart[fecha_col] = pd.to_datetime(
-                    df_chart[fecha_col], errors="coerce"
+                    df_chart[fecha_col], errors="coerce", dayfirst=True
                 )
                 df_chart["Mes"] = df_chart[fecha_col].dt.to_period("M").astype(str)
 
@@ -1294,16 +1299,42 @@ def register_administration_callbacks(app):
                     "Balance mensual"
                 ].cumsum()
 
-                # Crear gráfico de línea con estilo del proyecto
+                # Crear gráfico de líneas: Ingresos (azul), Gastos (rojo), Balance mensual (verde corporativo)
                 fig = go.Figure()
+
+                # Línea de Ingresos (azul)
                 fig.add_trace(
                     go.Scatter(
                         x=monthly_summary["Mes"],
-                        y=monthly_summary["Balance acumulado"],
+                        y=monthly_summary["Ingresos"],
                         mode="lines+markers",
-                        line=dict(color="var(--color-primary)", width=3),
-                        marker=dict(size=8, color="var(--color-primary)"),
-                        name="Balance Acumulado",
+                        line=dict(color="#0d6efd", width=2),
+                        marker=dict(size=6, color="#0d6efd"),
+                        name="Income",
+                    )
+                )
+
+                # Línea de Gastos (rojo)
+                fig.add_trace(
+                    go.Scatter(
+                        x=monthly_summary["Mes"],
+                        y=monthly_summary["Gastos"],
+                        mode="lines+markers",
+                        line=dict(color="#dc3545", width=2),
+                        marker=dict(size=6, color="#dc3545"),
+                        name="Expenses",
+                    )
+                )
+
+                # Línea de Balance Mensual (verde corporativo)
+                fig.add_trace(
+                    go.Scatter(
+                        x=monthly_summary["Mes"],
+                        y=monthly_summary["Balance mensual"],
+                        mode="lines+markers",
+                        line=dict(color="#24DE84", width=3),
+                        marker=dict(size=8, color="#24DE84"),
+                        name="Balance",
                     )
                 )
 
@@ -1324,7 +1355,7 @@ def register_administration_callbacks(app):
                     ),
                     margin=dict(l=40, r=40, t=60, b=40),
                     height=400,
-                    showlegend=False,
+                    showlegend=True,
                 )
 
                 chart = dcc.Graph(figure=fig, style={"margin-top": "20px"})

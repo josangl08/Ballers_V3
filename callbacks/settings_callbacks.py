@@ -195,7 +195,7 @@ def register_settings_callbacks(app):
         [Input("user-type-selector", "value")],
     )
     def toggle_user_type_fields(user_type):
-        """Muestra/oculta campos según el tipo de usuario - migrado de Streamlit"""
+        """Muestra/oculta campos según el tipo de usuario - adaptado para Dash"""
         player_style = (
             {"display": "block"} if user_type == "player" else {"display": "none"}
         )
@@ -337,10 +337,8 @@ def register_settings_callbacks(app):
         if user_type == "coach":
             profile_data["license"] = license_name or ""
         elif user_type == "player":
-            # Procesar estado profesional - Corregir conversión de lista a boolean
-            is_professional = bool(
-                is_professional_value and "professional" in is_professional_value
-            )
+            # Procesar estado profesional - Convertir a integer para base de datos
+            is_professional = 1 if (is_professional_value and "professional" in is_professional_value) else 0
 
             profile_data.update(
                 {
@@ -873,6 +871,9 @@ def register_settings_callbacks(app):
             Output("edit-wyscout-id", "value", allow_duplicate=True),
             Output("edit-wyscout-search-btn", "disabled"),
             Output("edit-wyscout-help", "style"),
+            # Profile picture fields to clear when form is hidden
+            Output("edit-profile-picture", "contents", allow_duplicate=True),
+            Output("edit-profile-picture", "filename", allow_duplicate=True),
         ],
         [Input("edit-user-selector", "value")],
         prevent_initial_call=True,
@@ -908,6 +909,8 @@ def register_settings_callbacks(app):
                 "",  # wyscout_id (empty)
                 True,  # wyscout search button disabled
                 {"display": "none"},  # help text hidden
+                None,  # profile picture contents (clear)
+                None,  # profile picture filename (clear)
             )
 
         try:
@@ -1115,6 +1118,8 @@ def register_settings_callbacks(app):
                 user_data.get("wyscout_id", "") or "",  # wyscout_id
                 False,  # wyscout search button enabled when user selected
                 {"display": "block"},  # help text visible
+                None,  # profile picture contents (keep current)
+                None,  # profile picture filename (keep current)
             )
 
         except Exception as e:
@@ -1145,6 +1150,8 @@ def register_settings_callbacks(app):
                 "",  # wyscout_id (empty)
                 True,  # wyscout search button disabled
                 {"display": "none"},  # help text hidden
+                None,  # profile picture contents (clear)
+                None,  # profile picture filename (clear)
             )
 
     @app.callback(
@@ -1475,10 +1482,8 @@ def register_settings_callbacks(app):
         if user_type == "coach":
             profile_data["license"] = license_name or ""
         elif user_type == "player":
-            # Procesar estado profesional - Corregir conversión de lista a boolean
-            is_professional = bool(
-                is_professional_value and "professional" in is_professional_value
-            )
+            # Procesar estado profesional - Convertir a integer para base de datos
+            is_professional = 1 if (is_professional_value and "professional" in is_professional_value) else 0
 
             profile_data.update(
                 {
@@ -1723,6 +1728,41 @@ def register_settings_callbacks(app):
                 no_update,  # Keep user selection
                 NotificationManager.error(f"Error: {str(e)}"),
             )
+
+    # ========================================================================
+    # AUTO-OCULTAR FORM DE EDICIÓN TRAS GUARDAR (3s)
+    # ========================================================================
+    @app.callback(
+        Output("edit-user-selector", "value", allow_duplicate=True),
+        [Input("settings-alert-timer", "n_intervals")],
+        [
+            State("settings-notification-store", "data"),
+            State("users-subtabs", "active_tab"),
+            State("edit-user-selector", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    def auto_hide_edit_form_after_save(n_intervals, notification_data, active_subtab, selected_user_id):
+        """Limpia la selección tras 3s de una notificación de actualización exitosa para ocultar el formulario."""
+        # Requiere estar en la subpestaña de edición y tener un usuario seleccionado
+        if active_subtab != "edit-user" or not selected_user_id:
+            raise PreventUpdate
+
+        # Timer de notificación: 100ms por tick -> 3s ~ 30 ticks
+        if not n_intervals or n_intervals < 30:
+            raise PreventUpdate
+
+        # Validar que la última notificación sea de éxito y corresponda a actualización
+        if not notification_data or notification_data.get("type") != "success":
+            raise PreventUpdate
+
+        msg = (notification_data.get("message") or "").lower()
+        # Mensajes de actualización usan "actualizado exitosamente" via NotificationHelper.user_updated
+        if "actualizado" not in msg:
+            raise PreventUpdate
+
+        # Limpiar selector -> callbacks existentes ocultan info y form
+        return None
 
     # ========================================================================
     # CALLBACKS PARA USER STATUS TAB
@@ -2548,10 +2588,8 @@ def register_settings_callbacks(app):
             if not user_data or user_data["user_type"] != "player":
                 return no_update
 
-            # Determinar si es profesional
-            is_professional = bool(
-                is_professional_value and "professional" in is_professional_value
-            )
+            # Determinar si es profesional - Convertir a integer para base de datos
+            is_professional = 1 if (is_professional_value and "professional" in is_professional_value) else 0
 
             # Recrear la información del usuario con el Baller Level actualizado
             status_icon = (
