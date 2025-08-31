@@ -841,60 +841,64 @@ class AdvancedFeatureEngineer:
 
         logger.info("🚀 AdvancedFeatureEngineer inicializado con Legacy Integration")
 
-    def engineer_advanced_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def engineer_advanced_features(self, df: pd.DataFrame, target_mode: str = 'current') -> pd.DataFrame:
         """
-        Genera conjunto completo de features avanzadas.
+        Genera conjunto completo de features avanzadas sin data leakage.
 
         Args:
             df: DataFrame con datos de jugadores (formato Thai League CSV)
+            target_mode: 'current' para PDI actual, 'future' para predicción temporal
 
         Returns:
             DataFrame con features avanzadas añadidas
         """
         try:
             logger.info(
-                f"🔧 Iniciando feature engineering avanzado para {len(df)} registros"
+                f"🔧 Feature engineering avanzado ({target_mode} mode) para {len(df)} registros"
             )
 
             df_enhanced = df.copy()
 
-            # 1. Features posicionales
+            # 1. Features posicionales (sin circularidad)
             logger.info("📊 Generando features posicionales...")
-            positional_features = self._generate_positional_features(df_enhanced)
+            positional_features = self._generate_positional_features_v2(df_enhanced)
 
-            # 2. Features de edad
-            logger.info("🎂 Generando features de edad...")
-            age_features = self._generate_age_features(df_enhanced)
+            # 2. Features temporales (si hay columna season)
+            logger.info("⏱️ Generando features temporales...")
+            temporal_features = self._generate_temporal_features_v2(df_enhanced, target_mode)
 
-            # 3. Features de tier de rendimiento
-            logger.info("🏆 Generando features de tier...")
-            tier_features = self._generate_tier_features(df_enhanced)
+            # 3. Features de desarrollo de jugador
+            logger.info("🎯 Generando features de desarrollo...")
+            development_features = self._generate_development_features(df_enhanced)
 
-            # 4. Features de interacción
-            logger.info("🔗 Generando features de interacción...")
-            interaction_features = self._generate_interaction_features(df_enhanced)
+            # 4. Features de interacción mejorados
+            logger.info("🔗 Generando features de interacción mejorados...")
+            interaction_features = self._generate_interaction_features_v2(df_enhanced)
 
-            # 5. Features rolling (multi-temporada si hay columna season)
-            logger.info("📈 Generando features rolling...")
-            rolling_features = self._generate_rolling_features(df_enhanced)
+            # 5. Features de consistencia y estabilidad
+            logger.info("🎯 Generando features de consistencia...")
+            consistency_features = self._generate_consistency_features(df_enhanced)
 
-            # 6. Legacy Feature Weights (NUEVO)
-            logger.info("⚖️ Generando legacy feature weights...")
-            legacy_features = self._generate_legacy_weighted_features(df_enhanced)
+            # 6. Legacy Feature Weights optimizados
+            logger.info("⚖️ Generando legacy feature weights optimizados...")
+            legacy_features = self._generate_legacy_weighted_features_v2(df_enhanced)
 
             # Combinar todos los features
             all_features = [
                 positional_features,
-                age_features,
-                tier_features,
+                temporal_features,
+                development_features,
                 interaction_features,
-                rolling_features,
+                consistency_features,
                 legacy_features,
             ]
 
             for features_df in all_features:
                 if features_df is not None and len(features_df) > 0:
                     df_enhanced = pd.concat([df_enhanced, features_df], axis=1)
+
+            # Post-processing: eliminar features con alta correlación o bajo valor
+            df_enhanced = self._post_process_features(df_enhanced, target_mode)
 
             logger.info(
                 f"✅ Feature engineering completado: {len(df_enhanced.columns)} columnas totales"
@@ -922,6 +926,102 @@ class AdvancedFeatureEngineer:
 
         except Exception as e:
             logger.error(f"Error generando features posicionales: {e}")
+            return pd.DataFrame()
+
+    def _generate_positional_features_v2(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Features posicionales mejorados sin circularidad."""
+        try:
+            positional_data = []
+            
+            for idx, row in df.iterrows():
+                features = {}
+                position = row.get("Primary position", "CMF")
+                
+                # Normalizar posición a grupos principales
+                pos_normalized = self.legacy_weights._normalize_position_for_weights(position)
+                features["position_normalized"] = pos_normalized
+                
+                # One-hot encoding para posiciones principales
+                for pos in ["GK", "CB", "FB", "DMF", "CMF", "AMF", "W", "CF"]:
+                    features[f"pos_is_{pos}"] = 1.0 if pos_normalized == pos else 0.0
+                
+                # Métricas específicas por posición (sin usar PDI)
+                age = row.get("Age", 25)
+                minutes = row.get("Minutes played", 0)
+                
+                # Factor de experiencia por posición
+                if pos_normalized in ["GK", "CB"]:
+                    experience_factor = min(1.0, (age - 18) / 12)  # Mejoran con edad
+                else:
+                    experience_factor = max(0.3, 1.0 - ((age - 26) * 0.02))  # Peak ~26
+                    
+                features["position_experience_factor"] = experience_factor
+                
+                # Factor de actividad por posición
+                if minutes > 0:
+                    if pos_normalized in ["W", "CF"]:
+                        activity_factor = min(1.0, minutes / 2000)  # Requieren más descanso
+                    else:
+                        activity_factor = min(1.0, minutes / 2500)
+                else:
+                    activity_factor = 0.0
+                    
+                features["position_activity_factor"] = activity_factor
+                
+                positional_data.append(features)
+            
+            return pd.DataFrame(positional_data, index=df.index)
+            
+        except Exception as e:
+            logger.error(f"Error en features posicionales v2: {e}")
+            return pd.DataFrame()
+
+    def _generate_temporal_features_v2(self, df: pd.DataFrame, target_mode: str) -> pd.DataFrame:
+        """Features temporales mejorados sin data leakage."""
+        try:
+            if "season" not in df.columns:
+                return pd.DataFrame(index=df.index)
+                
+            temporal_data = []
+            
+            # Convertir seasons a años numéricos
+            def season_to_year(season_str):
+                try:
+                    return int(str(season_str).split("-")[0])
+                except:
+                    return None
+                    
+            df_with_year = df.copy()
+            df_with_year["season_year"] = df_with_year["season"].apply(season_to_year)
+            
+            for idx, row in df_with_year.iterrows():
+                features = {}
+                
+                current_year = row.get("season_year")
+                if pd.isna(current_year):
+                    features["career_stage"] = 0.5
+                    features["season_experience"] = 0.0
+                    features["temporal_trend"] = 0.0
+                    temporal_data.append(features)
+                    continue
+                
+                # Etapa de carrera basada en edad
+                age = row.get("Age", 25)
+                if age < 22:
+                    features["career_stage"] = 0.2  # Joven/desarrollo
+                elif age < 27:
+                    features["career_stage"] = 0.8  # Prime
+                elif age < 32:
+                    features["career_stage"] = 1.0  # Experiencia
+                else:
+                    features["career_stage"] = 0.6  # Veterano
+                
+                temporal_data.append(features)
+            
+            return pd.DataFrame(temporal_data, index=df.index)
+            
+        except Exception as e:
+            logger.error(f"Error en features temporales v2: {e}")
             return pd.DataFrame()
 
     def _generate_age_features(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -1321,6 +1421,155 @@ def validate_advanced_features(
     except Exception as e:
         logger.error(f"Error validando features avanzadas: {e}")
         return {"status": "Error", "error": str(e)}
+    
+    def _generate_development_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Features de potencial y desarrollo de jugador."""
+        try:
+            development_data = []
+            
+            for idx, row in df.iterrows():
+                features = {}
+                
+                age = row.get("Age", 25)
+                minutes = row.get("Minutes played", 0)
+                matches = row.get("Matches played", 0)
+                
+                # Potencial de desarrollo basado en edad
+                if age < 21:
+                    features["development_potential"] = 1.0
+                elif age < 25:
+                    features["development_potential"] = 0.8
+                elif age < 28:
+                    features["development_potential"] = 0.5
+                else:
+                    features["development_potential"] = 0.2
+                
+                # Regularidad y estabilidad
+                if matches > 0 and minutes > 0:
+                    avg_minutes_per_match = minutes / matches
+                    features["playing_regularity"] = min(1.0, avg_minutes_per_match / 90)
+                    features["match_involvement"] = min(1.0, matches / 35)
+                else:
+                    features["playing_regularity"] = 0.0
+                    features["match_involvement"] = 0.0
+                
+                development_data.append(features)
+            
+            return pd.DataFrame(development_data, index=df.index)
+            
+        except Exception as e:
+            logger.error(f"Error en features de desarrollo: {e}")
+            return pd.DataFrame()
+    
+    def _generate_interaction_features_v2(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Features de interacción mejorados."""
+        try:
+            interaction_data = []
+            
+            for idx, row in df.iterrows():
+                features = {}
+                
+                age = row.get("Age", 25)
+                minutes = row.get("Minutes played", 0)
+                pass_acc = row.get("Pass accuracy, %", 0)
+                duels_won = row.get("Duels won, %", 0)
+                
+                features["age_experience_combo"] = age * (minutes / 2500) if minutes > 0 else 0
+                features["efficiency_volume_combo"] = (pass_acc / 100) * (minutes / 2500) if pass_acc > 0 and minutes > 0 else 0
+                features["technical_physical_balance"] = (pass_acc + duels_won) / 200 if pass_acc > 0 or duels_won > 0 else 0
+                
+                interaction_data.append(features)
+            
+            return pd.DataFrame(interaction_data, index=df.index)
+            
+        except Exception as e:
+            logger.error(f"Error en features de interacción v2: {e}")
+            return pd.DataFrame()
+    
+    def _generate_consistency_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Features de consistencia y estabilidad."""
+        try:
+            consistency_data = []
+            
+            for idx, row in df.iterrows():
+                features = {}
+                
+                yellow_cards = row.get("Yellow cards", 0)
+                red_cards = row.get("Red cards", 0)
+                matches = max(1, row.get("Matches played", 1))
+                
+                discipline_score = max(0, 1.0 - ((yellow_cards + red_cards * 3) / matches))
+                features["discipline_consistency"] = discipline_score
+                
+                minutes = row.get("Minutes played", 0)
+                if matches > 0:
+                    availability_score = (matches / 35) * (minutes / (matches * 90))
+                    features["availability_score"] = min(1.0, availability_score)
+                else:
+                    features["availability_score"] = 0.0
+                
+                consistency_data.append(features)
+            
+            return pd.DataFrame(consistency_data, index=df.index)
+            
+        except Exception as e:
+            logger.error(f"Error en features de consistencia: {e}")
+            return pd.DataFrame()
+    
+    def _generate_legacy_weighted_features_v2(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Legacy features optimizados."""
+        try:
+            base_features = self._generate_legacy_weighted_features(df)
+            
+            if base_features.empty:
+                return pd.DataFrame()
+                
+            enhanced_data = []
+            
+            for idx, row in df.iterrows():
+                enhanced = base_features.loc[idx].to_dict() if idx in base_features.index else {}
+                
+                universal_score = enhanced.get("legacy_universal_score", 50)
+                zone_score = enhanced.get("legacy_zone_score", 50)
+                position_score = enhanced.get("legacy_position_score", 50)
+                
+                optimized_score = (universal_score * 0.35 + zone_score * 0.40 + position_score * 0.25)
+                enhanced["legacy_optimized_score"] = optimized_score
+                
+                enhanced_data.append(enhanced)
+            
+            return pd.DataFrame(enhanced_data, index=df.index)
+            
+        except Exception as e:
+            logger.error(f"Error en legacy features v2: {e}")
+            return pd.DataFrame()
+    
+    def _post_process_features(self, df: pd.DataFrame, target_mode: str) -> pd.DataFrame:
+        """Post-procesa features eliminando correlaciones altas."""
+        try:
+            # Identificar features numéricos nuevos
+            original_cols = ['Player', 'Age', 'Minutes played', 'Goals per 90', 'Pass accuracy, %']
+            numeric_features = df.select_dtypes(include=[np.number]).columns
+            new_features = [col for col in numeric_features if col not in original_cols and col in df.columns]
+            
+            if len(new_features) == 0:
+                return df
+                
+            # Eliminar features con varianza muy baja
+            low_variance_features = []
+            for feature in new_features:
+                if feature in df.columns and df[feature].var() < 1e-6:
+                    low_variance_features.append(feature)
+            
+            if low_variance_features:
+                logger.info(f"Eliminando {len(low_variance_features)} features con baja varianza")
+                df = df.drop(columns=low_variance_features)
+                
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error en post-processing: {e}")
+            return df
 
 
 if __name__ == "__main__":

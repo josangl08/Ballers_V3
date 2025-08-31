@@ -4,6 +4,7 @@ import datetime
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 from common.datepicker_utils import create_auto_hide_datepicker
+from common.notification_component import NotificationComponent
 
 
 def create_fixed_calendar_component():
@@ -82,13 +83,8 @@ def show_administration_content_dash(session_data=None):
             dcc.Store(id="admin-active-filter", data="today"),
             # Input invisible para search (usado en callbacks)
             dbc.Input(id="admin-session-search", style={"display": "none"}),
-            # Toast alert (invisible inicialmente, se posiciona con callback)
-            dbc.Alert(
-                id="admin-alert",
-                is_open=False,
-                dismissable=True,
-                style={"display": "none"},  # Inicialmente oculto
-            ),
+            # Sistema de notificaciones centralizado (reemplaza admin-alert)
+            *NotificationComponent.create_notification_system("admin"),
             # Stores básicos para funcionalidad
         ]
     )

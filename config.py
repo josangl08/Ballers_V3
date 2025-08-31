@@ -64,10 +64,11 @@ os.makedirs(PROFILE_PHOTOS_DIR, exist_ok=True)
 
 # Rutas de archivos importantes
 db_path = get_config_value("DATABASE_PATH", os.path.join(DATA_DIR, "ballers_app.db"))
-if not os.path.isabs(db_path):
+if db_path and not os.path.isabs(db_path):
     db_path = os.path.join(BASE_DIR, db_path)
-DATABASE_PATH = db_path
-DEFAULT_PROFILE_PHOTO = os.path.join(ASSETS_DIR, "default_profile.png")
+DATABASE_PATH = db_path or os.path.join(DATA_DIR, "ballers_app.db")
+# Imagen por defecto para perfiles (dentro de assets/profile_photos)
+DEFAULT_PROFILE_PHOTO = os.path.join(ASSETS_DIR, "profile_photos", "default_profile.png")
 CSS_FILE = os.path.join(STYLES_DIR, "style.css")
 
 # Configuración de la aplicación (Dash)

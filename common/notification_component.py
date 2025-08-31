@@ -60,7 +60,7 @@ class NotificationComponent:
                 interval=100,  # Check cada 100ms para responsividad
                 n_intervals=0,
                 disabled=True,  # Disabled por defecto
-                max_intervals=50,  # 100ms x 50 = 5000ms = 5 segundos
+                max_intervals=30,  # 100ms x 30 = 3000ms = 3 segundos
             ),
         ]
 
@@ -127,7 +127,7 @@ class NotificationComponent:
                 interval=100,
                 n_intervals=0,
                 disabled=True,
-                max_intervals=50,  # 100ms x 50 = 5000ms = 5 segundos
+                max_intervals=30,  # 100ms x 30 = 3000ms = 3 segundos
             ),
         ]
 
@@ -153,26 +153,11 @@ class NotificationStyles:
 
     # Estilos por tipo de notificación
     TYPE_STYLES = {
-        "success": {
-            **ALERT_BASE_STYLE,
-            "border-left": "4px solid #28a745",
-            "background-color": "rgba(40, 167, 69, 0.1)",
-        },
-        "danger": {
-            **ALERT_BASE_STYLE,
-            "border-left": "4px solid #dc3545",
-            "background-color": "rgba(220, 53, 69, 0.1)",
-        },
-        "warning": {
-            **ALERT_BASE_STYLE,
-            "border-left": "4px solid #ffc107",
-            "background-color": "rgba(255, 193, 7, 0.1)",
-        },
-        "info": {
-            **ALERT_BASE_STYLE,
-            "border-left": "4px solid #17a2b8",
-            "background-color": "rgba(23, 162, 184, 0.1)",
-        },
+        # Estilos base; colores de fondo y bordes se controlan en assets/style.css
+        "success": {**ALERT_BASE_STYLE},
+        "danger": {**ALERT_BASE_STYLE},
+        "warning": {**ALERT_BASE_STYLE},
+        "info": {**ALERT_BASE_STYLE},
     }
 
     # CSS para animaciones (para agregar al archivo style.css si se necesita)

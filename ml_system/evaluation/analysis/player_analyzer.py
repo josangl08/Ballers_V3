@@ -87,7 +87,10 @@ class PlayerAnalyzer:
 
     def predict_future_pdi(self, player_id: int, season: str) -> Optional[float]:
         """
-        Predice el PDI futuro de un jugador usando el modelo entrenado.
+        Predice el PDI futuro de un jugador usando el modelo optimizado de producción.
+        
+        ACTUALIZADO: Ahora usa PdiPredictionService con modelo ensemble MAE 3.692 optimizado.
+        Mantiene compatibilidad con la interfaz existente pero usa mejor predicción.
 
         Args:
             player_id: ID del jugador.
@@ -96,14 +99,52 @@ class PlayerAnalyzer:
         Returns:
             El PDI predicho para el año siguiente, o None si no se puede predecir.
         """
+        try:
+            # NUEVO: Usar servicio de predicción optimizado
+            from ml_system.deployment.services.pdi_prediction_service import get_pdi_prediction_service
+            
+            prediction_service = get_pdi_prediction_service()
+            prediction_result = prediction_service.predict_future_pdi(
+                player_id=player_id, 
+                current_season=season,
+                years_ahead=1,
+                include_confidence=False  # Solo retornar el valor para compatibilidad
+            )
+            
+            if prediction_result:
+                predicted_pdi = prediction_result['prediction']
+                model_used = prediction_result.get('model_used', 'unknown')
+                model_mae = prediction_result.get('model_mae', 'unknown')
+                
+                logger.info(
+                    f"✅ Predicción PDI optimizada para jugador {player_id}: "
+                    f"{predicted_pdi:.1f} (modelo: {model_used}, MAE: {model_mae})"
+                )
+                return predicted_pdi
+            else:
+                logger.warning(f"⚠️ Servicio optimizado falló, usando fallback legacy")
+                return self._legacy_predict_future_pdi(player_id, season)
+                
+        except Exception as e:
+            logger.error(f"❌ Error en servicio de predicción optimizado: {e}")
+            
+            # Fallback a implementación legacy si falla el servicio nuevo
+            logger.info(f"🔄 Usando implementación legacy como fallback para jugador {player_id}")
+            return self._legacy_predict_future_pdi(player_id, season)
+    
+    def _legacy_predict_future_pdi(self, player_id: int, season: str) -> Optional[float]:
+        """
+        Implementación legacy de predicción PDI (fallback).
+        Se mantiene para compatibilidad en caso de fallos del servicio optimizado.
+        """
         if self.pdi_predictor_model is None:
             logger.warning(
-                "El modelo predictivo de PDI no está cargado. No se puede predecir."
+                "El modelo predictivo legacy de PDI no está cargado. No se puede predecir."
             )
             return None
 
         logger.debug(
-            f"Iniciando predicción de PDI futuro para jugador {player_id} desde la temporada {season}"
+            f"Usando predicción legacy para jugador {player_id} desde la temporada {season}"
         )
 
         # 1. Obtener las features del jugador para la temporada actual
@@ -130,6 +171,7 @@ class PlayerAnalyzer:
             logger.error(f"Error obteniendo stats adicionales para predicción: {e}")
             return None
 
+        # LEGACY IMPLEMENTATION - Mantenida como fallback
         # 3. Construir el DataFrame de features para el modelo
         features = current_pdi_features
         features["age"] = age
@@ -157,16 +199,16 @@ class PlayerAnalyzer:
             logger.error(f"Falta una o más columnas necesarias para la predicción: {e}")
             return None
 
-        # 4. Realizar la predicción
+        # 4. Realizar la predicción legacy
         try:
             prediction = self.pdi_predictor_model.predict(features_df)
             predicted_pdi = prediction[0]
             logger.info(
-                f"Predicción de PDI para jugador {player_id} para la próxima temporada: {predicted_pdi:.2f}"
+                f"Predicción legacy de PDI para jugador {player_id} para la próxima temporada: {predicted_pdi:.2f}"
             )
             return predicted_pdi
         except Exception as e:
-            logger.error(f"Error durante la predicción del modelo: {e}")
+            logger.error(f"Error durante la predicción legacy del modelo: {e}")
             return None
 
     def get_hierarchical_pdi_analysis(

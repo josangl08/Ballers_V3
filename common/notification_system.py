@@ -36,7 +36,7 @@ class NotificationManager:
     """
 
     # Configuración por defecto
-    DEFAULT_DURATION = NotificationDuration.MEDIUM.value
+    DEFAULT_DURATION = NotificationDuration.SHORT.value
     DEFAULT_DISMISSABLE = True
 
     # Iconos Bootstrap por tipo de notificación
@@ -74,10 +74,9 @@ class NotificationManager:
         if dismissable is None:
             dismissable = cls.DEFAULT_DISMISSABLE
 
-        # Agregar icono si está habilitado
+        # Los iconos se manejan visualmente en los callbacks, no como texto
+        # Mantener el mensaje limpio sin concatenar nombres de clases CSS
         final_message = message
-        if include_icon and notification_type in cls.ICONS:
-            final_message = f"{cls.ICONS[notification_type]} {message}"
 
         return {
             "message": final_message,
