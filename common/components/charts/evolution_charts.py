@@ -499,9 +499,9 @@ def create_pdi_evolution_chart(player_id, seasons=None):
 
             prediction_service = get_pdi_prediction_service()
             service_info = prediction_service.get_prediction_confidence_info()
-            MODEL_MAE = service_info.get(
+            MODEL_MAE = float(service_info.get(
                 "model_mae", 3.692
-            )  # MAE del modelo optimizado
+            ))  # Asegurar que sea float
             model_type = service_info.get("model_type", "optimized")
             logger.info(
                 f"🎯 Usando modelo {model_type} con MAE {MODEL_MAE} para intervalos de confianza"
@@ -630,7 +630,7 @@ def create_pdi_evolution_chart(player_id, seasons=None):
             # Si falla, añadir anotación básica
             logger.debug(f"No se pudo añadir info del modelo optimizado: {anno_error}")
             fig.add_annotation(
-                text=f"🤖 Modelo ML | MAE ±{MODEL_MAE:.1f}",
+                text=f"Modelo ML | MAE ±{float(MODEL_MAE):.1f}",
                 xref="paper",
                 yref="paper",
                 x=0.02,
